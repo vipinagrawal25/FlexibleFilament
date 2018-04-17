@@ -6,6 +6,6 @@ MODEL=particle_in_mag
 CUDA=nocuda
 # ---------------------------------------------------------------------
 default:
-	(cd src/;ln -sf models/${MODEL}.h model.h;  ln -sf CUDA/${CUDA}.h cuda.h; ln -sf ../input.h .; make; mv ode.exe ..)
+	(cd src/;ln -sf models/${MODEL}.h model.h;  ln -sf models${MODEL}.cpp model.cpp; ln -sf ../input.h .; make; mv ode.exe ..)
 clean:
 	cd src/; rm -f *.o *.mod *.exe

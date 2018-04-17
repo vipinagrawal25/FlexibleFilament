@@ -5,9 +5,11 @@
 #include<math.h>
 #include "ode.h"
 #include "model.h"
-#include "cuda.h"
+#include "input.h"
+//#include "cuda.h"
 using namespace std;
 /**************************/
+unsigned int const ndim=Nensemble*pdim;
 /* ----------------------------------------*/
 int main(){
   double y[ndim];
@@ -35,4 +37,3 @@ int main(){
 //----------------------------
 }
 /* ----------------------------------------*/
-
