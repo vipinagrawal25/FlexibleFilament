@@ -8,7 +8,7 @@ void euler(unsigned int ndim, double *y, double time,double dt){
   int idim;
   eval_rhs(time,y,k1);
   for(idim=0;idim<ndim;idim++){
-    y[idim]=y[idim]+k1[idim]*dt;
+    y[idim]=y[idim]+k1[idim]*dt;  
   }
 }
 /*********************************/

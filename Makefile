@@ -1,7 +1,7 @@
 # Makefile for compiling the ode-solver in cpp 
 # ---------------------------------------------------------------------
 compile=g++ -g  -r16
-MODEL=harmonic
+MODEL= harmonic2
 #MODEL=particle_in_mag
 CUDA=nocuda
 # ---------------------------------------------------------------------

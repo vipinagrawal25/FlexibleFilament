@@ -20,8 +20,15 @@ int main(){
   //  setup_cuda();
 //----------------------------
   int itn=0;
+  ofstream outfile;
+  outfile.open("position.txt", ios::out); 
   while(time <= TMAX){
-        printf("%f\t%f\t%f\n",time,y[0],y[1]);
+
+    /* Changes made by Vipin to write in a file*/
+
+    outfile << time << '\t' << y[0] << '\t' << y[1] << '\t' << y[2] << '\t' << y[3] << endl;
+
+    //    printf("%f\t%f\t%f\n",time,y[0],y[2]);
 	//    if (ldiagnos==0) {Diagnostics(itn,&y[0],time);};
     for(int ibody=0;ibody<Nensemble;ibody++){
       int irb=pdim*ibody;
@@ -33,7 +40,10 @@ int main(){
     itn=itn+1;
     ldiagnos=itn%idiag;
   } 
-  cout<<"Done, time="<<time-dt<<"\t TMAX="<<TMAX<<"\n";
+  //cout<<"Done, time="<<time-dt<<"\t TMAX="<<TMAX<<"\n";
+
+  outfile.close();
+
 //----------------------------
 }
 /* ----------------------------------------*/

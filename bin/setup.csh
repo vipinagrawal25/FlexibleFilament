@@ -7,3 +7,7 @@ ln -s $ES/src/models/*.cpp src/models/
 ln -s $ES/src/models/*.h src/models/ 
 mkdir -p src/modules
 ln -s $ES/src/modules/*.h src/modules/ 
+cp $ES/Makefile .
+cp $ES/input.h .
+echo "copied Makefile and input.h.."
+echo " Now modify them accroding to your problem."
