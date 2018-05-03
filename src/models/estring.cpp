@@ -18,12 +18,12 @@ void eval_rhs(double time,double y[],double rhs[]){
   for (int ip=0;ip<Np;ip++){
     vec3 EForce=dHdR(ip, R);
     dR[ip]=EForce*OneByGamma;
-
-    if (ip==Np)
-    {
-      dR[Np] = dR
-    }
   }
+  
+  // External force applied on the end point.
+  vec3 FF0(0.,0., FFZ0);
+  dR[Np-1] = dR[Np-1]-FF0*OneByGamma; 
+  
   for (int ip=0;ip<Np;ip++){
     rhs[3*ip]=dR[ip].x;
     rhs[3*ip+1]=dR[ip].y;
@@ -116,6 +116,7 @@ vec3 dHdR(int kp, vec3 X[]){
     // FF = FF - (ukm1*(bkm1-aa) - uk*(bk-a))*HH/aa;    // Inextensibility constraint 
   }
 
+  return FF;
   
 }
 /**************************/
