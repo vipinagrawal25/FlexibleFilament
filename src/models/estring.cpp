@@ -3,13 +3,17 @@
 #include "ode.h"
 #include "modules/3vec.h"
 #include "model.h"
+#include <cmath>
 using namespace std;
+
 /**************************/
-vec3 dHdR(int kp, vec3 X[]);
+void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, bool flag_kappa);
 void getub(double *bk, vec3 *uk, int kp, vec3 X[]);
 /**************************/
-void eval_rhs(double time,double y[],double rhs[]){
-  vec3 R[Np],dR[Np];	// R is the position of the beads.
+void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
+  vec3 R[Np],dR[Np], EForce;	// R is the position of the beads.
+  // double CurvSqr[Np];
+  double kappasqr, MaterialCoordinate;
   for (int ip=0;ip<Np;ip++){
     R[ip].x=y[3*ip];
     R[ip].y=y[3*ip+1];
@@ -17,14 +21,20 @@ void eval_rhs(double time,double y[],double rhs[]){
   }
 
   for (int ip=0;ip<Np;ip++){
-    vec3 EForce=dHdR(ip, R);
-    dR[ip]=EForce*OneByGamma;
+    kappasqr=CurvSqr[ip];
+    MaterialCoordinate=SS[ip];
+    dHdR(ip, R, &EForce, &kappasqr, &MaterialCoordinate, flag_kappa);
+    dR[ip]=EForce*1/Gamma;
+    CurvSqr[ip]=kappasqr;
+    SS[ip]=MaterialCoordinate;
+    // cout << CurvSqr[ip] << endl;
   }
   
   // External force applied on the end point.
-  vec3 FF0(0., 0., FFZ0);
+  vec3 FF0(0., 0., -FFZ0*sin(omega*time));
   // cout << FF0.z <<endl;
-  dR[Np-1] = dR[Np-1]-FF0*OneByGamma; 
+  dR[Np-1] = dR[Np-1]-FF0*1/Gamma; 
+  //dR[Np-1].y = 0;                     // Constraint that last point should always remain on z axis. 
   
   for (int ip=0;ip<Np;ip++){
     rhs[3*ip]=dR[ip].x;
@@ -40,11 +50,13 @@ void getub(double *bk, vec3 *uk, int kp, vec3 X[]){
   *uk =dX/bb;
 }
 /**************************/
-vec3 dHdR(int kp, vec3 X[]){
+void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, bool flag_kappa){
 	// This function calculates the force at every node which is a function of X, time.
   vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.), Xzero(0.,0.,0.), dX(0.,0.,0.);
   double bkm2, bkm1, bk, bkp1;
-  vec3 FF;
+  vec3 FF = *add_FF;              // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
+
+  //vec3 FF;
   Xzero.x=0.; Xzero.y=0.;Xzero.z=Z0;
 
   if (kp == 0)
@@ -62,6 +74,8 @@ vec3 dHdR(int kp, vec3 X[]){
     // Add an extra term for inextensibility constraint
     FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa; 
     // cout << FF.z << endl;
+    *add_kappasqr=0.;
+    *add_FF = FF;
   }
 
   else if (kp == 1)
@@ -79,6 +93,8 @@ vec3 dHdR(int kp, vec3 X[]){
     FF = FF*(AA/aa);
     // cout << FF.z << endl;
     FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH/aa;   // Inextensibility constraint
+    *add_kappasqr=0.;
+    *add_FF = FF;
   }
 
 
@@ -97,7 +113,8 @@ vec3 dHdR(int kp, vec3 X[]){
     // cout << FF.z << endl;
     FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
     // cout << FF.z << endl;
-
+    *add_kappasqr=0.;
+    *add_FF = FF;
   }
 
   else if (kp == Np-1)
@@ -111,6 +128,8 @@ vec3 dHdR(int kp, vec3 X[]){
     FF = FF*(AA/aa);
     // cout << bkm1 << endl;
     FF = FF - (ukm1*(bkm1-aa))*HH/aa;
+    *add_kappasqr=0.;
+    *add_FF = FF;
   }
 
   else
@@ -125,15 +144,19 @@ vec3 dHdR(int kp, vec3 X[]){
         );
     FF = FF*(AA/aa);
     // cout << bkm1 <<endl;
-    // cout << FF.z << endl;
+    // cout << FF.y << endl;
     FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
     // cout << FF.x << endl;
     // cout << FF.y << endl;     
 
+    if (flag_kappa)
+    {
+      *add_kappasqr=2.*(1.-dot(uk,ukm1));
+      // cout << kappasqr << endl;
+    }
+    *add_FF = FF;
   }
-
-  return FF;
-
+  *add_SS = (kp+1)*bkm1;
 }
 /**************************/
 void diagnos(int p){
@@ -161,10 +184,12 @@ void diagnos(int p){
 /**************************/
 void iniconf(double y[]){
   vec3 R[Np];	// R is the position of the beads.
+  double k = 0.5;      // determines the frequency for initial configuration
   for (int ip=0;ip<Np;ip++){
     R[ip].x=0.;
-    R[ip].y=0.;
     R[ip].z=aa*double(ip+1);
+    R[ip].y=aa*sin(2*M_PI*k*aa*double(ip+1));
+    // cout << M_PI << endl;
     y[3*ip]=R[ip].x;
     y[3*ip+1]=R[ip].y;
     y[3*ip+2]=R[ip].z;
