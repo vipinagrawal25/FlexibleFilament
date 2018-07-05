@@ -90,8 +90,8 @@ int main(){
 
   cout<<"Done, time="<<time<<"\t TMAX="<<TMAX<<"\n";
   itn=itn+1;
-
 }
+
 outfile_time.close();
 outfile_curvature.close();
 outfile_SS.close();
