@@ -2,7 +2,8 @@
 #define FILE_INPUT_SEEN
 /* ----------------------------------------*/
 unsigned int const Nensemble=1;
-double TMAX=1000.,dt=0.01;
-int idiag=1;
+double dt = pow(10,-3);
+double TMAX=5000;
+int idiag=100;
 /* ----------------------------------------*/
 #endif /* !FILE_INPUT_SEEN */
