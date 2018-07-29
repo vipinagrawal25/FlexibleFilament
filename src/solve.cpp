@@ -29,6 +29,7 @@ int main(){
   //  setup_cuda();
 //----------------------------
   int itn=1;  
+  clock_t timer;
   // int temp = log10(TMAX/dt);
   // int temp2 = pow(10,temp+1);
   
@@ -44,17 +45,17 @@ int main(){
   ofstream outfile_SS;
   outfile_SS.open("output/material_point.txt", ios::out);  
 
+  timer = clock();
   while(time < TMAX){
     ldiagnos=itn%idiag;
-
+    // time = time + dt;
     // for(int ibody=0;ibody<Nensemble;ibody++){
-    time = time+dt;
     // int irb=pdim*ibody;
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim,&y[irb],time-dt,dt);
 
-    rnkf45(pdim, &y[0], time-dt, &dt, &CurvSqr[0], &SS[0], ldiagnos);
+    rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], ldiagnos);
     // cout << dt << endl;
     // }
     if (ldiagnos == 0) {
@@ -92,10 +93,12 @@ int main(){
   itn=itn+1;
 }
 
+timer = clock()-timer;
 outfile_time.close();
 outfile_curvature.close();
 outfile_SS.close();
-cout << itn/idiag << endl;
+cout << "Total number of files saved: " << itn/idiag << endl;
+cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
 //----------------------------
 }
 /* ----------------------------------------*/
