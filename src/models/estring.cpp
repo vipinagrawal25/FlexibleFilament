@@ -9,11 +9,14 @@ using namespace std;
 /**************************/
 void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, bool flag_kappa);
 void getub(double *bk, vec3 *uk, int kp, vec3 X[]);
+int MatrixtoVector(int i, int j, int N);
+int Distance(vec3 X[], int i, int j);
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
-  vec3 R[Np],dR[Np], EForce;	// R is the position of the beads.
+  vec3 R[Np],dR[Np], EForce[Np], EForce_ip, dR_temp;  // R is the position of the beads.
   // double CurvSqr[Np];
-  double kappasqr, MaterialCoordinate;
+  double kappasqr, MaterialCoordinate, Mobility[Np*(Np+1)/2];
+
   for (int ip=0;ip<Np;ip++){
     R[ip].x=y[3*ip];
     R[ip].y=y[3*ip+1];
@@ -23,17 +26,43 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
   for (int ip=0;ip<Np;ip++){
     kappasqr=CurvSqr[ip];
     MaterialCoordinate=SS[ip];
-    dHdR(ip, R, &EForce, &kappasqr, &MaterialCoordinate, flag_kappa);
-    dR[ip]=EForce*1/Gamma;
+    dHdR(ip, R, &EForce_ip, &kappasqr, &MaterialCoordinate, flag_kappa);
+    EForce[ip] = EForce_ip;
+    // dR[ip]=EForce*Mobility;
     CurvSqr[ip]=kappasqr;
     SS[ip]=MaterialCoordinate;
     // cout << CurvSqr[ip] << endl;
   }
+
+  for (int ip = 0; ip < Np; ++ip)
+  {
+    for (int jp = ip; jp < Np; ++jp)
+    {
+      if (jp==ip)
+      {
+          Mobility[MatrixtoVector(ip,jp,Np)] = 2*(1.0/3*M_PI*viscosity*dd);
+      }
+      else
+      {
+          Mobility[MatrixtoVector(ip,jp,Np)] = 1.0/(8*M_PI*viscosity*Distance())
+      }
+    }
+  }
+
+  for (int ip = 0; ip < Np; ++ip)
+  {
+    dR_temp(0.,0.,0.);
+    for (int ip = 0; ip < Np; ++ip)
+    {
+
+    }
+    dR[ip] = dR_temp;
+  }
   
   // External force applied on the end point.
-  vec3 FF0(0., 0., FFZ0);
+  vec3 FF0(0., 0., -FFZ0*sin(omega*time));
   // cout << FF0.z <<endl;
-  dR[Np-1] = dR[Np-1]-FF0*1/Gamma; 
+  dR[Np-1] = dR[Np-1]-FF0*Mobility; 
   //dR[Np-1].y = 0;                     // Constraint that last point should always remain on z axis. 
   
   for (int ip=0;ip<Np;ip++){
@@ -51,7 +80,7 @@ void getub(double *bk, vec3 *uk, int kp, vec3 X[]){
 }
 /**************************/
 void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, bool flag_kappa){
-	// This function calculates the force at every node which is a function of X, time.
+     // This function calculates the force at every node which is a function of X, time.
   vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.), Xzero(0.,0.,0.), dX(0.,0.,0.);
   double bkm2, bkm1, bk, bkp1;
   vec3 FF = *add_FF;              // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
@@ -70,9 +99,9 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
            + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
            - (ukm1/bkm1)*( dot(ukm1,uk) )
            );
-      FF = FF*AA/aa;
+      FF = FF*AA;
       // Add an extra term for inextensibility constraint
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa; 
+      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH; 
       // cout << FF.z << endl;
       *add_kappasqr=0.;
       *add_FF = FF;
@@ -90,9 +119,9 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
           + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );
-      FF = FF*(AA/aa);
+      FF = FF*(AA);
       // cout << FF.z << endl;
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH/aa;   // Inextensibility constraint
+      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH;   // Inextensibility constraint
       *add_kappasqr=0.;
       *add_FF = FF;
       *add_SS = (kp+1)*bkm1;   
@@ -107,10 +136,10 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
           + (uk/bk)*( dot(uk,ukm1))
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );    
-      FF = FF*(AA/aa);
+      FF = FF*(AA);
       // cout << bk << endl;
       // cout << FF.z << endl;
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
+      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH;    // Inextensibility constraint 
       // cout << FF.z << endl;
       *add_kappasqr=0.;
       *add_FF = FF;  
@@ -124,10 +153,10 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
       FF = (     (ukm2)/bkm1
         - (ukm1/bkm1)*( dot(ukm1,ukm2) )
         );
-      FF = FF*(AA/aa);
+      FF = FF*(AA);
       // cout << bkm1 << endl;
       // cout << FF.y << endl;
-      FF = FF - (ukm1*(bkm1-aa))*HH/aa;
+      FF = FF - (ukm1*(bkm1-aa))*HH;
       // cout << FF.y << endl;
       *add_kappasqr=0.;
       *add_FF = FF;
@@ -143,10 +172,10 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
           + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );
-      FF = FF*(AA/aa);
+      FF = FF*(AA);
       // cout << bkm1 <<endl;
       // cout << FF.y << endl;
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
+      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH;    // Inextensibility constraint 
       // cout << FF.x << endl;
       // cout << FF.y << endl;     
 
@@ -285,14 +314,14 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
 // }
 /**************************/
 void iniconf(double y[]){
-  vec3 R[Np];	// R is the position of the beads.
+  vec3 R[Np];  // R is the position of the beads.
   double k = 1;      // determines the frequency for initial configuration
   double CurvLength = 0;  // determines the total length of the curve
   for (int ip=0;ip<Np;ip++){
     R[ip].x=0.;
     R[ip].z=aa*double(ip+1);
-    // R[ip].y=aa*sin(M_PI*k*aa*double(ip+1));
-    R[ip].y = 0;    
+    R[ip].y=aa*sin(M_PI*k*aa*double(ip+1));
+    // R[ip].y = 0;    
     if (ip>0)
     {
         CurvLength = CurvLength + sqrt((R[ip].x - R[ip-1].x)*(R[ip].x - R[ip-1].x) + (R[ip].y - R[ip-1].y)*(R[ip].y - R[ip-1].y) + (R[ip].z - R[ip-1].z)*(R[ip].z - R[ip-1].z));
@@ -316,4 +345,29 @@ void iniconf(double y[]){
   //     R[ip].y = R[ip].y/CurvLength;
   // }
 
+}
+
+/*********************************************/
+int MatrixtoVector(int i, int j, int N)
+{
+  /* This function is defined to save the storage space of Mobility matrix from N^2 to N(N+1)/2 Given an 
+  index of 2-D Mobility matrix this will map them to find out the same index in the 1-D Mobility vector.*/
+
+  if (i<=j)
+  {
+    return (i * N - (i - 1) * i / 2 + j - i);
+  }
+  else
+  {
+    return (j * N - (j - 1) * j / 2 + i - j);  
+  }
+
+}
+
+/********************************************/
+int Distance(vec3 R[], int i, int j)
+{
+  /*This calculated the distance at two index i and j on the elastic string*/
+
+  return ( (R[i].x - R[j].x)*(R[i].x - R[j].x) + (R[i].y - R[j].y)*(R[i].y - R[j].y) + (R[i].z - R[j].z)*(R[i].z - R[j].z) )
 }
