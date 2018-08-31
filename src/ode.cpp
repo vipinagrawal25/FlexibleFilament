@@ -28,26 +28,43 @@ using namespace std;
 //   }
 // }
 // /*********************************/
-// void rnkt4(unsigned int ndim, double *y, double time, double dt){
-//   double  temp[ndim],k1[ndim],k2[ndim],k3[ndim],k4[ndim];
-//   int idim;
-//   eval_rhs(time,y,k1);
-//   for(idim=0;idim<ndim;idim++){
-//     temp[idim]=y[idim]+k1[idim]*dt/2.;
-//   }
-//   eval_rhs(time+(dt/2.),temp,k2);
-//   for(idim=0;idim<ndim;idim++){
-//     temp[idim]=y[idim]+k2[idim]*dt/2.;
-//   }
-//   eval_rhs(time+(dt/2.),temp,k3);
-//   for(idim=0;idim<ndim;idim++){
-//     temp[idim]=y[idim]+k3[idim]*dt;
-//   }
-//   eval_rhs(time+dt,temp,k4);
-//   for(idim=0;idim<ndim;idim++){
-//     y[idim]=y[idim]+dt*(  (k1[idim]/6.) + (k2[idim]/3.) + (k3[idim]/3.) + (k4[idim]/6.) );
-//   }
-// }
+void rnkt4(unsigned int ndim, double *y, double *add_time, double *add_dt, double* CurvSqr, double* SS, double ldiagnos)
+{
+  double temp[ndim],k1[ndim],k2[ndim],k3[ndim],k4[ndim];
+  int idim;
+  double dt = *add_dt;
+  double time = *add_time;
+  bool flag_kappa;
+
+  if (ldiagnos)
+  {
+      flag_kappa = false;
+  }
+  else
+  {
+      flag_kappa = true;
+  }
+
+  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
+  for(idim=0;idim<ndim;idim++){
+    temp[idim]=y[idim]+k1[idim]*dt/2.;
+  }
+  flag_kappa = false;
+  eval_rhs(time+(dt/2.),temp,k2,flag_kappa,CurvSqr,SS);
+  for(idim=0;idim<ndim;idim++){
+    temp[idim]=y[idim]+k2[idim]*dt/2.;
+  }
+  eval_rhs(time+(dt/2.),temp,k3,flag_kappa,CurvSqr,SS);
+  for(idim=0;idim<ndim;idim++){
+    temp[idim]=y[idim]+k3[idim]*dt;
+  }
+  eval_rhs(time+dt,temp,k4,flag_kappa,CurvSqr,SS);
+  for(idim=0;idim<ndim;idim++){
+    y[idim]=y[idim]+dt*(  (k1[idim]/6.) + (k2[idim]/3.) + (k3[idim]/3.) + (k4[idim]/6.) );
+  }
+
+  *add_time = time + dt;
+}
 
 void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, double* CurvSqr, double* SS, double ldiagnos)
 {
@@ -58,7 +75,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 	int idim ;
 	double error = 0;
 	double dt = *add_dt;
-	double tol_dt = pow(10,-10)*dt;
+	double tol_dt = pow(10,-6)*dt;
   bool flag_kappa;
   double time = *add_time;
 
@@ -128,7 +145,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
  		error = error + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
  	}
-    error = sqrt(error/ndim);
+    error = sqrt(error)/ndim;
     // cout << error << endl;
  	s = 0.84*pow(tol_dt/error,0.25);
 
@@ -358,7 +375,7 @@ void DP54(unsigned int ndim, double *y, double *add_time, double* add_dt, double
   }
   eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
 
-for (int idim = 0; idim < ndim; ++idim)
+  for (int idim = 0; idim < ndim; ++idim)
   {
     yold[idim] = y[idim];
   
