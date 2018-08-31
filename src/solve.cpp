@@ -25,6 +25,7 @@ int main(){
   int k;
   int ldiagnos=0;
   iniconf(y);
+  double dt_min = 10;
   // cout << HH << endl;
   //  setup_cuda();
 //----------------------------
@@ -56,6 +57,10 @@ int main(){
     // rnkt4(pdim,&y[irb],time-dt,dt);
 
     rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], ldiagnos);
+    if (dt<dt_min)
+    {
+        dt_min = dt;
+    }
     // cout << dt << endl;
     // }
     if (ldiagnos == 0) {
@@ -99,6 +104,7 @@ outfile_curvature.close();
 outfile_SS.close();
 cout << "Total number of files saved: " << itn/idiag << endl;
 cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
+cout << "Minimum value of dt: " << dt_min << endl;
 //----------------------------
 }
 /* ----------------------------------------*/
