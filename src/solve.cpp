@@ -24,18 +24,21 @@ int main(){
   double time=0.;
   int k;
   int ldiagnos=0;
+  int tdiagnos = 0;
   iniconf(y);
   double dt_min = 10;
   // cout << HH << endl;
   //  setup_cuda();
 //----------------------------
   int itn=1;  
+  int filenumber=1;
   clock_t timer;
+  int timer_global;
   // int temp = log10(TMAX/dt);
   // int temp2 = pow(10,temp+1);
   
   // Deleting contents of the folder and creating folder again.
-  system("exec rmtrash output");    
+  system("exec rm -r output");    
   system("exec mkdir output");
   ofstream outfile_time;
   outfile_time.open("output/time.txt", ios::out); 
@@ -46,9 +49,10 @@ int main(){
   ofstream outfile_SS;
   outfile_SS.open("output/material_point.txt", ios::out);  
 
-  timer = clock();
+  // timer = clock();
   while(time < TMAX){
-    ldiagnos=itn%idiag;
+    // ldiagnos=itn%idiag;
+    // tdiagnos=time%tdiag;
     // time = time + dt;
     // for(int ibody=0;ibody<Nensemble;ibody++){
     // int irb=pdim*ibody;
@@ -56,20 +60,25 @@ int main(){
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim,&y[irb],time-dt,dt);
 
-    rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], ldiagnos);
+  	timer = clock();
+    rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
+    timer = clock() - timer;
+    timer_global = timer_global + timer;
+    // cout << timer << endl;
     if (dt<dt_min)
     {
         dt_min = dt;
     }
     // cout << dt << endl;
     // }
-    if (ldiagnos == 0) {
-      outfile_time << time << '\t' ;
+    tdiagnos = 0;
+    if (time<=tdiag*filenumber && time+dt>=tdiag*filenumber) {
+      outfile_time << time << '\t';
        // cout << time << '\t' << y[0] << '\t' << (sin(2*time+10*sin(0.1*time)))/sqrt(6+3*cos(0.1*time)) << '\t' << 1/sqrt(6+3 *cos(0.1*time))<<endl;
       // cout << dt << endl;
       ofstream outfile;
       string l = "output/position";
-      l.append(to_string(itn/idiag));
+      l.append(to_string(filenumber));
       l.append(".txt");
       outfile.open(l, ios::out);
 
@@ -92,19 +101,27 @@ int main(){
       //   outfile << y[3*ip+2] << '\t';
       // }
       // outfile << endl;
+      filenumber = filenumber+1;
+      cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<TMAX<<"\n";
+      tdiagnos =1;
   }
-
-  cout<<"Done, time="<<time<<"\t TMAX="<<TMAX<<"\n";
   itn=itn+1;
 }
-
-timer = clock()-timer;
+// timer = clock()-timer;
 outfile_time.close();
 outfile_curvature.close();
 outfile_SS.close();
-cout << "Total number of files saved: " << itn/idiag << endl;
-cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
+
+ofstream outfile_information;
+outfile_information.open("Results/NpChange/info.txt", ios::out | ios::app);
+outfile_information << itn << '\t' << ((double)timer)/CLOCKS_PER_SEC << '\t' << dt_min << '\t' << TMAX << '\t' << 
+Np << endl;
+
+cout << "Total number of iteration: " << itn << endl;
+// cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
+cout << "Total time elapsed: " << (double)timer_global/CLOCKS_PER_SEC << "s" << endl;
 cout << "Minimum value of dt: " << dt_min << endl;
+// cout << filenumber-1 << endl;
 //----------------------------
 }
 /* ----------------------------------------*/
