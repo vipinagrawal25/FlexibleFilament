@@ -1,4 +1,4 @@
-compile=g++ -g -Wno-deprecated 
+compile=g++ -g -Wno-deprecated -std=c++0x
 default:
 	${compile} -o ode.exe ode.cpp solve.cpp model.cpp  
 clean:
