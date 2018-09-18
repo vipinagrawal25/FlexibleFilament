@@ -10,12 +10,21 @@ using namespace std;
 void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, bool flag_kappa);
 void getub(double *bk, vec3 *uk, int kp, vec3 X[]);
 int MatrixtoVector(int i, int j, int N);
-int Distance(vec3 X[], int i, int j);
+void GetRij(vec3 X[], int i, int j, double *Distance, vec3 *rij);
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
-  vec3 R[Np],dR[Np], EForce[Np], EForce_ip, dR_temp;  // R is the position of the beads.
+  vec3 R[Np],dR[Np], EForce[Np], EForce_ip;  // R is the position of the beads.
   // double CurvSqr[Np];
-  double kappasqr, MaterialCoordinate, Mobility[Np*(Np+1)/2];
+  double kappasqr, MaterialCoordinate, Mobility[Np*(Np+1)/2][6], c1, c2;
+
+  // Initializing Mobility Matrix.
+  for (int i = 0; i < Np*(Np+1)/2; ++i)
+  {
+      for (int j = 0; j < 6; ++j)
+      {
+          Mobility[i][j] = 0;
+      }
+  }
 
   for (int ip=0;ip<Np;ip++){
     R[ip].x=y[3*ip];
@@ -28,41 +37,92 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
     MaterialCoordinate=SS[ip];
     dHdR(ip, R, &EForce_ip, &kappasqr, &MaterialCoordinate, flag_kappa);
     EForce[ip] = EForce_ip;
-    // dR[ip]=EForce*Mobility;
+    // EForce[ip] = EForce[ip]*aa*aa;
+    // dR[ip]=EForce*OneByGamma;
     CurvSqr[ip]=kappasqr;
     SS[ip]=MaterialCoordinate;
     // cout << CurvSqr[ip] << endl;
   }
 
-  for (int ip = 0; ip < Np; ++ip)
-  {
-    for (int jp = ip; jp < Np; ++jp)
-    {
-      if (jp==ip)
-      {
-          Mobility[MatrixtoVector(ip,jp,Np)] = 2*(1.0/3*M_PI*viscosity*dd);
-      }
-      else
-      {
-          Mobility[MatrixtoVector(ip,jp,Np)] = 1.0/(8*M_PI*viscosity*Distance())
-      }
-    }
-  }
+  vec3 FF0(0., 0., -FFZ0*sin(omega*time));
+  EForce[Np-1] = EForce[Np-1]-FF0;
+  
+  // cout << EForce[Np-1].x << endl;
 
-  for (int ip = 0; ip < Np; ++ip)
+  if (UseRP == 'Y')
   {
-    dR_temp(0.,0.,0.);
+    // cout << "Heheheheh" ;
+    vec3 rij;
+    double distance;
     for (int ip = 0; ip < Np; ++ip)
     {
+      for (int jp = ip; jp < Np; ++jp)
+      {
+        if (jp==ip)
+        {
+            Mobility[MatrixtoVector(ip,ip,Np)][0] = 1.0/(3*M_PI*viscosity*dd);
+            Mobility[MatrixtoVector(ip,ip,Np)][3] = Mobility[MatrixtoVector(ip,ip,Np)][0];
+            Mobility[MatrixtoVector(ip,ip,Np)][5] = Mobility[MatrixtoVector(ip,ip,Np)][0];
+        }
+        else
+        {   
+            GetRij(R, ip, jp, &distance, &rij);
+            c1 = 1.0/(8*M_PI*viscosity*distance)*(1+ dd*dd*1.0/(6*distance*distance));
+            c2 = 1.0/(8*M_PI*viscosity*distance*distance*distance)*(1-dd*dd*1.0/(2*distance*distance));
+            // cout << c1 << '\t' << c2 << '\t' << distance << '\t' << ip << '\t' << jp << '\t' << rij.x << '\t' << rij.y << '\t' << rij.z <<endl;
+            Mobility[MatrixtoVector(ip,jp,Np)][0] = c1+c2*(rij.x)*(rij.x);
+            Mobility[MatrixtoVector(ip,jp,Np)][1] = c2*(rij.x)*(rij.y);
+            Mobility[MatrixtoVector(ip,jp,Np)][2] = c2*(rij.x)*(rij.z);
+            
+            // Mobility[MatrixtoVector(ip,jp,Np)][3] = 1.0/(8*M_PI*viscosity*distance)*(1+ dd*dd*1.0/(24*distance*distance)+(rij.y)*(rij.x)*(1-dd*dd*1.0/(8*distance*distance)));
+            Mobility[MatrixtoVector(ip,jp,Np)][3] = c1+c2*(rij.y)*(rij.y);
+            Mobility[MatrixtoVector(ip,jp,Np)][4] = c2*(rij.y)*(rij.z);
 
+            // Mobility[MatrixtoVector(ip,jp,Np)][6] = 1.0/(8*M_PI*viscosity*distance)*(1+ dd*dd*1.0/(24*distance*distance)+(rij.x)*(rij.)*(1-dd*dd*1.0/(8*distance*distance)));
+            // Mobility[MatrixtoVector(ip,jp,Np)][7] = 1.0/(8*M_PI*viscosity*distance)*(1+ dd*dd*1.0/(24*distance*distance)+(rij.x)*(rij.z)*(1-dd*dd*1.0/(8*distance*distance)));
+            Mobility[MatrixtoVector(ip,jp,Np)][5] = c1+c2*(rij.z)*(rij.z);
+        }
+      }
     }
-    dR[ip] = dR_temp;
-  }
+
+    for (int ip = 0; ip < Np; ++ip)
+    {
+      vec3 dR_temp(0.,0.,0.);
+      for (int jp = 0; jp < Np; ++jp)
+      {
+        dR_temp.x = dR_temp.x + (Mobility[MatrixtoVector(ip,jp,Np)][0])*(EForce[jp].x)
+                              + (Mobility[MatrixtoVector(ip,jp,Np)][1])*(EForce[jp].y)
+                              + (Mobility[MatrixtoVector(ip,jp,Np)][2])*(EForce[jp].z);
+
+        dR_temp.y = dR_temp.y + (Mobility[MatrixtoVector(ip,jp,Np)][1])*(EForce[jp].x)
+                              + (Mobility[MatrixtoVector(ip,jp,Np)][3])*(EForce[jp].y)
+                              + (Mobility[MatrixtoVector(ip,jp,Np)][4])*(EForce[jp].z);
+
+        // if (ip == 18)
+        // {
+        //     cout << Mobility[MatrixtoVector(ip,jp,Np)][4] << '\t' << jp << endl;
+        // }
+
+        dR_temp.z = dR_temp.z + (Mobility[MatrixtoVector(ip,jp,Np)][1])*(EForce[jp].x)
+                              + (Mobility[MatrixtoVector(ip,jp,Np)][4])*(EForce[jp].y)
+                              + (Mobility[MatrixtoVector(ip,jp,Np)][5])*(EForce[jp].z);                      
+      }
+      dR[ip] = dR_temp;
+    }
+
+  } 
+  else
+  {
+    for (int ip = 0; ip < Np; ++ip)
+    {
+        dR[ip] = EForce[ip]*OneByGamma;
+    }
+  } 
+    
   
   // External force applied on the end point.
-  vec3 FF0(0., 0., -FFZ0*sin(omega*time));
   // cout << FF0.z <<endl;
-  dR[Np-1] = dR[Np-1]-FF0*Mobility; 
+  // dR[Np-1] = dR[Np-1]-FF0*; 
   //dR[Np-1].y = 0;                     // Constraint that last point should always remain on z axis. 
   
   for (int ip=0;ip<Np;ip++){
@@ -99,9 +159,9 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
            + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
            - (ukm1/bkm1)*( dot(ukm1,uk) )
            );
-      FF = FF*AA;
+      FF = FF*AA/aa;
       // Add an extra term for inextensibility constraint
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH; 
+      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa; 
       // cout << FF.z << endl;
       *add_kappasqr=0.;
       *add_FF = FF;
@@ -119,9 +179,9 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
           + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );
-      FF = FF*(AA);
+      FF = FF*(AA/aa);
       // cout << FF.z << endl;
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH;   // Inextensibility constraint
+      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH/aa;   // Inextensibility constraint
       *add_kappasqr=0.;
       *add_FF = FF;
       *add_SS = (kp+1)*bkm1;   
@@ -136,10 +196,10 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
           + (uk/bk)*( dot(uk,ukm1))
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );    
-      FF = FF*(AA);
+      FF = FF*(AA/aa);
       // cout << bk << endl;
       // cout << FF.z << endl;
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH;    // Inextensibility constraint 
+      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
       // cout << FF.z << endl;
       *add_kappasqr=0.;
       *add_FF = FF;  
@@ -153,10 +213,10 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
       FF = (     (ukm2)/bkm1
         - (ukm1/bkm1)*( dot(ukm1,ukm2) )
         );
-      FF = FF*(AA);
+      FF = FF*(AA/aa);
       // cout << bkm1 << endl;
       // cout << FF.y << endl;
-      FF = FF - (ukm1*(bkm1-aa))*HH;
+      FF = FF - (ukm1*(bkm1-aa))*HH/aa;
       // cout << FF.y << endl;
       *add_kappasqr=0.;
       *add_FF = FF;
@@ -172,10 +232,10 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
           + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );
-      FF = FF*(AA);
+      FF = FF*(AA/aa);
       // cout << bkm1 <<endl;
       // cout << FF.y << endl;
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH;    // Inextensibility constraint 
+      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
       // cout << FF.x << endl;
       // cout << FF.y << endl;     
 
@@ -187,98 +247,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
       *add_FF = FF;
       *add_SS = (kp+1)*bkm1;
       break;
-  }
-
-
-  // if (kp == 0)
-  // {
-  //   dX = X[kp-1+1]-Xzero;
-  //   bkm1 = norm(dX);
-  //   ukm1=dX/bkm1;
-  //   getub(&bk, &uk, kp, X);
-  //   getub(&bkp1, &ukp1, kp+1, X);
-  //   FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
-  //        + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
-  //        - (ukm1/bkm1)*( dot(ukm1,uk) )
-  //        );
-  //   FF = FF*AA/aa;
-  //   // Add an extra term for inextensibility constraint
-  //   FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa; 
-  //   // cout << FF.z << endl;
-  //   *add_kappasqr=0.;
-  //   *add_FF = FF;
-  // }
-
-  // else if (kp == 1)
-  // {
-  //   dX = X[kp-2+1]-Xzero;
-  //   bkm2 = norm(dX);
-  //   ukm2 = dX/bkm2;
-  //   getub(&bkm1, &ukm1, kp-1, X);
-  //   getub(&bk, &uk, kp, X);
-  //   getub(&bkp1, &ukp1, kp+1, X);
-  //   FF = (     (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
-  //       + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
-  //       - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
-  //       );
-  //   FF = FF*(AA/aa);
-  //   // cout << FF.z << endl;
-  //   FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH/aa;   // Inextensibility constraint
-  //   *add_kappasqr=0.;
-  //   *add_FF = FF;
-  // }
-
-
-  // else if (kp == Np-2)
-  // {
-  //   getub(&bkm2, &ukm2, kp-2, X);
-  //   getub(&bkm1, &ukm1, kp-1, X);
-  //   getub(&bk, &uk, kp, X);
-
-  //   FF = (     (uk+ukm2)/bkm1 - (ukm1)/bk
-  //       + (uk/bk)*( dot(uk,ukm1))
-  //       - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
-  //       );    
-  //   FF = FF*(AA/aa);
-  //   // cout << bk << endl;
-  //   // cout << FF.z << endl;
-  //   FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
-  //   // cout << FF.z << endl;
-  //   *add_kappasqr=0.;
-  //   *add_FF = FF;
-  // }
-
-  // else if (kp == Np-1)
-  // {
-  //   getub(&bkm2, &ukm2, kp-2, X);
-  //   getub(&bkm1, &ukm1, kp-1, X);
-  
-  //   FF = (     (ukm2)/bkm1
-  //       - (ukm1/bkm1)*( dot(ukm1,ukm2) )
-  //       );
-  //   FF = FF*(AA/aa);
-  //   // cout << bkm1 << endl;
-  //   FF = FF - (ukm1*(bkm1-aa))*HH/aa;
-  //   *add_kappasqr=0.;
-  //   *add_FF = FF;
-  // }
-
-  // else
-  // {
-  //   getub(&bkm2, &ukm2, kp-2, X);
-  //   getub(&bkm1, &ukm1, kp-1, X);
-  //   getub(&bk, &uk, kp, X);
-  //   getub(&bkp1, &ukp1, kp+1, X);
-  //   FF = (     (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
-  //       + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
-  //       - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
-  //       );
-  //   FF = FF*(AA/aa);
-  //   // cout << bkm1 <<endl;
-  //   // cout << FF.y << endl;
-  //   FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
-  //   // cout << FF.x << endl;
-  //   // cout << FF.y << endl;     
+  }  
 
   //   if (flag_kappa)
   //   {
@@ -365,9 +334,11 @@ int MatrixtoVector(int i, int j, int N)
 }
 
 /********************************************/
-int Distance(vec3 R[], int i, int j)
+void GetRij(vec3 R[], int i, int j, double *Distance, vec3 *rij)
 {
   /*This calculated the distance at two index i and j on the elastic string*/
-
-  return ( (R[i].x - R[j].x)*(R[i].x - R[j].x) + (R[i].y - R[j].y)*(R[i].y - R[j].y) + (R[i].z - R[j].z)*(R[i].z - R[j].z) )
+  // *Distance = (R[i].x - R[j].x)*(R[i].x - R[j].x) + (R[i].y - R[j].y)*(R[i].y - R[j].y) + (R[i].z - R[j].z)*(R[i].z - R[j].z);
+  *rij = R[j] - R[i];
+  double Dis = norm(R[j]-R[i]); 
+  *Distance = Dis;
 }
