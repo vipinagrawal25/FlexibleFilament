@@ -9,6 +9,8 @@ mkdir -p src/modules
 ln -s $ES/src/modules/*.h src/modules/ 
 cp $ES/Makefile .
 cp $ES/input.h .
-cp $ES/PythonScripts/
+mkdir -p PythonScripts
+ln -s $ES/PythonScripts/*.py PythonScripts/
+ln -s $ES/PythonScripts/*.ipynb PythonScripts/
 echo "copied Makefile and input.h.."
 echo " Now modify them accroding to your problem."
