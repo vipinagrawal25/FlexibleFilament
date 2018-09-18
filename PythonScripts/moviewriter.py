@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as manimation
 
-itn = 1470
+itn = 3000
 FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Movie Test', artist='Matplotlib',
                 comment='Movie support!')
@@ -19,8 +19,8 @@ writer = FFMpegWriter(fps=15, metadata=metadata)
 #     
 #     ax = fig.gca(projection='3d')
 fig = plt.figure()
-ax1=fig.add_subplot(1,2,1,projection='3d')
-ax2=fig.add_subplot(1,2,2)
+ax1=fig.add_subplot(1,1,1,projection='3d')
+# ax2=fig.add_subplot(1,2,2)
 
 def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,isnap):
 	# ax = fig.add_subplot(2,1,1, projection='3d')
@@ -41,7 +41,6 @@ def MakePlot2D(ax,Xaxis,Yaxis,isnap):
 
 time = loadtxt('output/time.txt')
 
-
 with writer.saving(fig,"output/movie.mp4", 100):
 	for isnap in range(1,itn,1):
 		dd = loadtxt('output/position'+str(isnap)+'.txt')
@@ -50,8 +49,8 @@ with writer.saving(fig,"output/movie.mp4", 100):
 		zz = dd[:,2]
 		MakePlot3D(ax1,xx,yy,zz,isnap)
 		ax1.hold(False)
-		MakePlot2D(ax2,xx,yy,isnap)
-		ax2.hold(False)
+		# MakePlot2D(ax2,xx,yy,isnap)
+		# ax2.hold(False)
 		writer.grab_frame()
 		print('plot = ' + str(isnap)+ 'Done')
 
