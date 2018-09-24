@@ -1,7 +1,11 @@
 #ifndef FILE_ESTRING_SEEN
 #define FILE_ESTRING_SEEN
-/*---------------------------------------*/
-#include<math.h>
+/**************************/
+void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, bool flag_kappa);
+void getub(double *bk, vec3 *uk, int kp, vec3 X[]);
+int MatrixtoVector(int i, int j, int N);
+void GetRij(vec3 X[], int i, int j, double *Distance, vec3 *rij);
+/**************************/
 using namespace std;
 /* ----------------------------------------*/
 unsigned int const Np= 40;				// total number of points on the rod.
