@@ -17,6 +17,8 @@ public:
   vec3 operator-(vec3);
   vec3 operator*(double);
   vec3 operator/(double);
+
+private:
 };
 
 vec3::vec3(){
@@ -63,6 +65,27 @@ vec3 vec3::operator*(double param){
   return(temp);
 }
 
+Tens2 vec3::operator*(vec3 param)
+{   
+    // This is a direct product of 2 vectors. Assuming vec3 a column vector with 3 entries
+    // then this operator defines w = uv' (Where v' is the transpose of the matrix.)
+    // It should be noted that this product is not commutative.
+
+    Tens2 temp;
+    temp.xx = x*(param.x);
+    temp.xy = x*(param.y);
+    temp.xz = x*(param.z);
+
+    temp.yx = y*(param.x);
+    temp.yy = y*(param.y);
+    temp.yz = y*(param.z);
+
+    temp.zx = z*(param.x);
+    temp.zy = z*(param.y);
+    temp.zz = z*(param.z);
+
+}
+
 vec3 vec3::operator/(double param){
   vec3 temp;
   temp.x=x/param;
@@ -92,6 +115,13 @@ double sqnorm(vec3 a){
 void PVec3(vec3 a){
   cout<<a.x<<"\t"<<a.y<<"\t"<<a.z<<"\n";
 }
+
+Tens2 DirectProduct(vec3 a, vec3 b)
+{
+    Tens2 temp;
+    temp.xx = a.x
+}
+
 /*---------------------------------------*/
 #endif /* !FILE_3vec_SEEN */
 
