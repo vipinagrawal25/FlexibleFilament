@@ -52,7 +52,7 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
   
   // cout << EForce[Np-1].x << endl;
 
-  if (UseRP == 'Yold')
+  if (UseRP == 'O')
   {
     // cout << "Heheheheh" ;
     vec3 rij;
