@@ -3,20 +3,24 @@
 /*---------------------------------------*/
 #include <iostream>
 #include<math.h>
+#include "3vec.h"
 using namespace std;
 /*-------------------------*/
 class Tens2{
 public:
   double xx,xy,xz,yx,yy,yz,zx,zy,zz;
   Tens2();
-  Tens2(int,int,int);
-  Tens2(float,float,float);
-  Tens2(double,double,double);
+  Tens2(int,int,int,int,int,int,int,int,int);
+  Tens2(float,float,float,float,float,float,float,float,float);
+  Tens2(double,double,double,double,double,double,double,double,double);
     // definining operators 
   Tens2 operator+(Tens2);
   Tens2 operator-(Tens2);
   Tens2 operator*(double);
   Tens2 operator/(double);
+
+private:
+
 };
 
 Tens2::Tens2(){
@@ -61,7 +65,7 @@ Tens2::Tens2(float a, float b, float c, float d, float e, float f, float g, floa
   zz = (double) i;
 }
 
-Tens2::Tens2(double a, doubleb, double c, double d, double e, double f, double g, double h, double i){
+Tens2::Tens2(double a, double b, double c, double d, double e, double f, double g, double h, double i){
   xx =  a;
   xy =  b;
   xz =  c;
@@ -126,10 +130,10 @@ Tens2 Tens2::operator*(double param){
   return(temp);
 }
 
-Tens2 operator*(const double param, const Tens2 a)
+Tens2 operator*(const double param, Tens2 a)
 {
     // This function is just here because multiplication between double and a Tensor needs to be commutative.
-    return a*param;
+    return(a*param);
 }
 
 Tens2 Tens2::operator/(double param){
@@ -149,19 +153,8 @@ Tens2 Tens2::operator/(double param){
   return(temp);
 }
 
-vec3 dot(Tens2 a, vec3 b)
-{
-    // Ci = Aij*Bj; (Einstein Convention)
-    // It should be a simple matrix multiplication, where A is 3X3 matrix and B is 3X1.
 
-    vec3 temp;
 
-    temp.x = (a.xx)*(b.x)+(a.xy)*(b.y)+(a.xz)*(b.z);
-    temp.y = (a.yx)*(b.x)+(a.yy)*(b.y)+(a.yz)*(b.z);
-    temp.z = (a.zx)*(b.x)+(a.zy)*(b.y)+(a.zz)*(b.z);
-
-    return (temp);
-}
 
 // This defines the kronecker delta function or a unit tensor matrix. dab = \delta_{\alpha \beta}
 Tens2 dab(1,0,0,0,1,0,0,0,1);
