@@ -3,6 +3,7 @@
 /*---------------------------------------*/
 #include <iostream>
 #include<math.h>
+#include "2Tens.h"
 using namespace std;
 /*-------------------------*/
 class vec3{
@@ -17,6 +18,7 @@ public:
   vec3 operator-(vec3);
   vec3 operator*(double);
   vec3 operator/(double);
+  Tens2 operator*(vec3);
 
 private:
 };
@@ -84,6 +86,7 @@ Tens2 vec3::operator*(vec3 param)
     temp.zy = z*(param.y);
     temp.zz = z*(param.z);
 
+    return(temp);
 }
 
 vec3 vec3::operator/(double param){
@@ -116,11 +119,37 @@ void PVec3(vec3 a){
   cout<<a.x<<"\t"<<a.y<<"\t"<<a.z<<"\n";
 }
 
-Tens2 DirectProduct(vec3 a, vec3 b)
+vec3 dot(Tens2 a, vec3 b)
 {
-    Tens2 temp;
-    temp.xx = a.x
+    // Ci = Aij*Bj; (Einstein Convention)
+    // It should be a simple matrix multiplication, where A is 3X3 matrix and B is 3X1.
+
+    vec3 temp;
+
+    temp.x = (a.xx)*(b.x)+(a.xy)*(b.y)+(a.xz)*(b.z);
+    temp.y = (a.yx)*(b.x)+(a.yy)*(b.y)+(a.yz)*(b.z);
+    temp.z = (a.zx)*(b.x)+(a.zy)*(b.y)+(a.zz)*(b.z);
+
+    return (temp);
 }
+
+// Tens2 DirectProduct(vec3 a, vec3 b)
+// {
+//     Tens2 temp;
+//     temp.xx = a.x*b.x;
+//     temp.xy = a.x*b.y;
+//     temp.xz = a.x*b.z;
+    
+//     temp.yx = a.y*b.x;
+//     temp.yy = a.y*b.y;
+//     temp.yz = a.y*b.z;
+
+//     temp.zx = a.z*b.x;
+//     temp.zy = a.z*b.y;
+//     temp.zz = a.z*b.z;
+
+//     return(temp);
+// }
 
 /*---------------------------------------*/
 #endif /* !FILE_3vec_SEEN */
