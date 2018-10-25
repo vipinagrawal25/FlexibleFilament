@@ -5,12 +5,20 @@
 #include "modules/2Tens.h"
 #include "model.h"
 // #include <cmath>
+
+/**************************/
+void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, bool flag_kappa);
+void getub(double *bk, vec3 *uk, int kp, vec3 X[]);
+int MatrixtoVector(int i, int j, int N);
+void GetRij(vec3 X[], int i, int j, double *Distance, vec3 *rij);
+/**************************/
+
 using namespace std;
 
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
   vec3 R[Np],dR[Np], EForce[Np], EForce_ip;  // R is the position of the beads.
   // double CurvSqr[Np];
-  double kappasqr, MaterialCoordinate;
+  double kappasqr, MaterialCoordinate, Mobility[Np*(Np+1)/2][6];
 
   // Initializing Mobility Matrix.
   for (int i = 0; i < Np*(Np+1)/2; ++i)
@@ -48,7 +56,7 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
   {
     // cout << "Heheheheh" ;
     vec3 rij;
-    double distance, Mobility[Np*(Np+1)/2][6], c1, c2;
+    double distance, c1, c2;
     for (int ip = 0; ip < Np; ++ip)
     {
       for (int jp = ip; jp < Np; ++jp)
@@ -78,7 +86,7 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
 
     for (int ip = 0; ip < Np; ++ip)
     {
-      vec3 dR_temp();
+      vec3 dR_temp;
       for (int jp = 0; jp < Np; ++jp)
       {
         dR_temp.x = dR_temp.x + (Mobility[MatrixtoVector(ip,jp,Np)][0])*(EForce[jp].x)
@@ -112,7 +120,7 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
     double d_rij;
     vec3 rij;
 
-    mu_ii = dab/(3*M_PI*viscosity*dd)
+    mu_ii = dab/(3*M_PI*viscosity*dd);
     // rij = R[j]-R[i] and d_rij is just the norm of this value.
 
     for (int ip = 0; ip < Np; ++ip)
