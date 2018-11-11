@@ -138,26 +138,28 @@ Tens2 operator*(const double param, Tens2 a)
 
 Tens2 Tens2::operator/(double param){
   Tens2 temp;
-  temp.xx=param/xx;
-  temp.xy=param/xy;
-  temp.xz=param/xz;
+  temp.xx=xx/param;
+  temp.xy=xy/param;
+  temp.xz=xz/param;
 
-  temp.yx=param/yx;
-  temp.yy=param/yy;
-  temp.yz=param/yz;
+  temp.yx=yx/param;
+  temp.yy=yy/param;
+  temp.yz=yz/param;
 
-  temp.zx=param/zx;
-  temp.zy=param/zy;
-  temp.zz=param/zz;
+  temp.zx=zx/param;
+  temp.zy=zy/param;
+  temp.zz=zz/param;
 
   return(temp);
 }
 
-
+void PTens2(Tens2 a){
+  cout<<a.xx<<"\t"<<a.xy<<"\t"<<a.xz<<"\n"<<a.yx<<"\t"<<a.yy<<"\t"<<a.yz<<"\t"<<a.zx<<"\t"<<a.zy<<"\t"<<a.zz<<"\n";
+}
 
 
 // This defines the kronecker delta function or a unit tensor matrix. dab = \delta_{\alpha \beta}
-Tens2 dab(1,0,0,0,1,0,0,0,1);
+Tens2 dab(1.,0.,0.,0.,1.,0.,0.,0.,1.);
 
 /*---------------------------------------*/
 #endif /* !FILE_3vec_SEEN */
