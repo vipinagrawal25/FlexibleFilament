@@ -121,6 +121,7 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
     vec3 rij;
 
     mu_ii = dab/(3*M_PI*viscosity*dd);
+    // PTens2(mu_ii);
     // rij = R[j]-R[i] and d_rij is just the norm of this value.
 
     for (int ip = 0; ip < Np; ++ip)
@@ -320,7 +321,7 @@ void iniconf(double y[]){
   for (int ip=0;ip<Np;ip++){
     R[ip].x=0.;
     R[ip].z=aa*double(ip+1);
-    R[ip].y=aa*sin(M_PI*k*aa*double(ip+1));
+    R[ip].y=aa*sin(M_PI*k*aa*double(ip+1)/height);
     // R[ip].y = 0;    
     if (ip>0)
     {
