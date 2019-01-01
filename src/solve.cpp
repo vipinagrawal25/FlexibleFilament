@@ -25,7 +25,7 @@ int main(){
   int k;
   int ldiagnos=0;
   int tdiagnos = 0;
-  iniconf(y);
+  iniconf(y, conf_number);
   double dt_min = 10;
   // cout << HH << endl;
   //  setup_cuda();
@@ -113,9 +113,9 @@ outfile_curvature.close();
 outfile_SS.close();
 
 ofstream outfile_information;
-outfile_information.open("Results/NpChange/info.txt", ios::out | ios::app);
-outfile_information << itn << '\t' << ((double)timer)/CLOCKS_PER_SEC << '\t' << dt_min << '\t' << TMAX << '\t' << 
-Np << endl;
+outfile_information.open("info.txt", ios::out | ios::app);
+outfile_information << itn << '\t' << '\t' <<  ((double)timer_global)/CLOCKS_PER_SEC << '\t' << dt_min << '\t' << TMAX << '\t' << '\t' <<
+viscosity << endl;
 
 cout << "Total number of iteration: " << itn << endl;
 // cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;

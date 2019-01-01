@@ -4,26 +4,32 @@
 /**************************/
 using namespace std;
 /* ----------------------------------------*/
-unsigned int const Np= 20;				// total number of points on the rod.
-unsigned int const pdim=3*Np; 
-double const aa =  1.0/(double)(Np); 	// distance between two nodes.
+unsigned int const Np= 20;			// total number of points on the rod.
+unsigned int const pdim=3*Np;
+double const height = 1;					// height of the box we are doing simulations in.
+double const aa =  height/(double)(Np); 	// distance between two nodes.
 // AA = AA/aa ;							// See the equation number 35 in DOI: 10.1063/1.1848511
 double const AA = 0.001;		 		// 0.001 is bending rigidity constant (AA = EI/aa), unit -> Pa.m^4
 double const dd = 0.1*aa;				// This is also not needed in the case, if back reaction from the fluid is neglected.
-double const viscosity = 0.001;				// Equivalent to dynamic viscosity of water
-double const HH = AA*(1./(aa*aa));		// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
+double const viscosity = 1;				// Equivalent to dynamic viscosity of water
+double const HH = 16*AA*(1./(aa*aa));		// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
 // The below line is commented because of some error. So I included it in last formulae itself.
 // HH =  HH/aa; 			// This is done to model the rod perfectly (Also see: https://goo.gl/nbELSx Week 27/2018 DS)
 // double const HH = 0.;
 double const OneByGamma=1.;				// Mobility is just the inverse of Gamma. So OneByGamma is actually the mobility of the system if no
 										// back reaction is taken into the account.
 double const Z0=0.;
-double const FFZ0 = 0.1;				// Force Value on the ends
-double const omega = 0.02;
-char const UseRP = 'N';
+double const FFZ0 = 0.;				// Force Value on the ends
+double const omega = 0.4;
+char const UseRP = 'Y';					// Y is for the new one, O is for old one and N is for not using 
+										// Rotne Pragor tensor. 
+int const conf_number = 1;
+
+double const ShearRate = 0.2;
 
 /* ----------------------------------------*/
-void iniconf(double *y);
+void iniconf(double *y, int conf_number); // The § number is defined for different
+											// Initial configuration into the system.
 void diagnos(double time, int itn, double y[]);
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */

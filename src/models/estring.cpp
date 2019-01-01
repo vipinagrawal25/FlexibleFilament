@@ -96,6 +96,7 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
         dR_temp.y = dR_temp.y + (Mobility[MatrixtoVector(ip,jp,Np)][1])*(EForce[jp].x)
                               + (Mobility[MatrixtoVector(ip,jp,Np)][3])*(EForce[jp].y)
                               + (Mobility[MatrixtoVector(ip,jp,Np)][4])*(EForce[jp].z);
+                              
 
         // if (ip == 18)
         // {
@@ -139,6 +140,8 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
             dR[ip] = dR[ip] + dot(mu_ij,EForce[jp]);
             dR[jp] = dR[jp] + dot(mu_ij,EForce[jp]);
         }
+
+        dR[ip].y = dR[ip].y + ShearRate*(1 - R[ip].z)*sin(omega*time);
     }
   }
 
@@ -314,39 +317,54 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
   // cout << time << '\t' << y[0] << endl;
 // }
 /**************************/
-void iniconf(double y[]){
-  vec3 R[Np];  // R is the position of the beads.
-  double k = 1;      // determines the frequency for initial configuration
-  double CurvLength = 0;  // determines the total length of the curve
-  for (int ip=0;ip<Np;ip++){
-    R[ip].x=0.;
-    R[ip].z=aa*double(ip+1);
-    R[ip].y=aa*sin(M_PI*k*aa*double(ip+1)/height);
-    // R[ip].y = 0;    
-    if (ip>0)
-    {
-        CurvLength = CurvLength + sqrt((R[ip].x - R[ip-1].x)*(R[ip].x - R[ip-1].x)
-            + (R[ip].y - R[ip-1].y)*(R[ip].y - R[ip-1].y) + (R[ip].z - R[ip-1].z)*(R[ip].z - R[ip-1].z));
-        // cout << CurvLength << endl;
-    }
-    else
-    {
-        CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
-    }
-    // cout << M_PI << endl;
-    y[3*ip]=R[ip].x;
-    y[3*ip+1]=R[ip].y;
-    y[3*ip+2]=R[ip].z;
-  }
+void iniconf(double y[], int configuration)
+{
+    vec3 R[Np];  // R is the position of the beads.
+    double k = 1;      // determines the frequency for initial configuration
+    double CurvLength = 0;  // determines the total length of the curve
 
-  // R[Np-1].y = aa;
-  // y[3*Np-2] = aa;
-  // cout << aa << endl;
-  // for (int ip = 0; ip < Np; ++ip)
-  // {
-  //     R[ip].y = R[ip].y/CurvLength;
-  // }
+    switch(configuration)
+    {
+      case 0:
+        for (int ip=0;ip<Np;ip++){
+          R[ip].x=0.;
+          R[ip].z=aa*double(ip+1);
+          R[ip].y=aa*sin(M_PI*k*aa*double(ip+1)/height);
+          // R[ip].y = 0;    
+          if (ip>0)
+          {
+              CurvLength = CurvLength + sqrt((R[ip].x - R[ip-1].x)*(R[ip].x - R[ip-1].x)
+                  + (R[ip].y - R[ip-1].y)*(R[ip].y - R[ip-1].y) + (R[ip].z - R[ip-1].z)*(R[ip].z - R[ip-1].z));
+              // cout << CurvLength << endl;
+          }
+          else
+          {
+              CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
+          }
+          // cout << M_PI << endl;
+          y[3*ip]=R[ip].x;
+          y[3*ip+1]=R[ip].y;
+          y[3*ip+2]=R[ip].z;
+        }
+        break;
 
+      case 1:
+        // In this case we implement the initial configuration for GI Taylor experiment. 
+        // i.e. the rod is stretched half of the height of the box but still fixed from bottom end.
+        
+        for (int ip = 0; ip < Np; ++ip)
+        {
+            R[ip].x = 0;
+            R[ip].y = 0;
+            R[ip].z = height/4+aa*double(ip+1)/2;
+
+            y[3*ip] = R[ip].x;
+            y[3*ip+1] = R[ip].y;
+            y[3*ip+2] = R[ip].z;
+        }
+
+        break;
+    }
 }
 
 /*********************************************/
