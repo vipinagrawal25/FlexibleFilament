@@ -41,7 +41,7 @@ int main(){
   system("exec rm -r output");    
   system("exec mkdir output");
   ofstream outfile_time;
-  outfile_time.open("output/time.txt", ios::out); 
+  outfile_time.open("output/time.txt", ios::out);
 
   ofstream outfile_curvature;
   outfile_curvature.open("output/curvature.txt", ios::out);
@@ -86,8 +86,11 @@ int main(){
 
       for (int ip = 0; ip < Np; ++ip)
       {
-        outfile << y[3*ip] << '\t' << y[3*ip+1] << '\t' << y[3*ip+2] << endl ;
-        outfile_curvature << CurvSqr[ip] << '\t' ;
+        outfile << y[3*ip]/height << '\t' << y[3*ip+1]/height << '\t' << y[3*ip+2]/height << endl ;   
+        /* Non-dimensionalizing the co-ordinate with respect to the height of the rod*/
+        
+        outfile_curvature << CurvSqr[ip]*aa*aa << '\t' ;  /* Square of curvature is non-dimensionalized with the multiplication of square of 
+                                                             bead distance */ 
         outfile_SS << SS[ip] << '\t';
         // cout << CurvSqr[ip] << endl;
       }
