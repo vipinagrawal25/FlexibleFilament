@@ -7,7 +7,7 @@
 // #include <cmath>
 
 /**************************/
-void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, bool flag_kappa);
+void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa);
 void getub(double *bk, vec3 *uk, int kp, vec3 X[]);
 int MatrixtoVector(int i, int j, int N);
 void GetRij(vec3 X[], int i, int j, double *Distance, vec3 *rij);
@@ -18,7 +18,7 @@ using namespace std;
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
   vec3 R[Np],dR[Np], EForce[Np], EForce_ip;  // R is the position of the beads.
   // double CurvSqr[Np];
-  double kappasqr, MaterialCoordinate, Mobility[Np*(Np+1)/2][6];
+  double kappasqr, Mobility[Np*(Np+1)/2][6];
 
   // Initializing Mobility Matrix.
   for (int i = 0; i < Np*(Np+1)/2; ++i)
@@ -29,6 +29,9 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
       }
   }
 
+  SS[0] = 0;    // Initializing the material co-ordinate
+  // SS[Np-1] = 1;
+
   for (int ip=0;ip<Np;ip++){
     R[ip].x=y[3*ip];
     R[ip].y=y[3*ip+1];
@@ -37,17 +40,21 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
 
   for (int ip=0;ip<Np;ip++){
     kappasqr=CurvSqr[ip];
-    MaterialCoordinate=SS[ip];
-    dHdR(ip, R, &EForce_ip, &kappasqr, &MaterialCoordinate, flag_kappa);
+
+    if (ip<Np-1)
+    {
+        SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip]);
+    }
+
+    dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
     EForce[ip] = EForce_ip;
     // EForce[ip] = EForce[ip]*aa*aa;
     // dR[ip]=EForce*OneByGamma;
     CurvSqr[ip]=kappasqr;
-    SS[ip]=MaterialCoordinate;
     // cout << CurvSqr[ip] << endl;
   }
 
-  vec3 FF0(0., 0., -FFZ0*sin(omega*time));
+  vec3 FF0(0., 0., FFZ0*sin(omega*time));
   EForce[Np-1] = EForce[Np-1]-FF0;
   
   // cout << EForce[Np-1].x << endl;
@@ -173,7 +180,7 @@ void getub(double *bk, vec3 *uk, int kp, vec3 X[]){
   *uk =dX/bb;
 }
 /**************************/
-void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, bool flag_kappa){
+void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa){
      // This function calculates the force at every node which is a function of X, time.
   vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.), Xzero(0.,0.,0.), dX(0.,0.,0.);
   double bkm2, bkm1, bk, bkp1;
@@ -181,45 +188,86 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
     // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
 
   //vec3 FF;
-  Xzero.x=0.; Xzero.y=0.;Xzero.z=Z0;
+  
+  if (conf_number==0)
+  {
+      Xzero.x=0.; Xzero.y=0.; Xzero.z=Z0;      
+  }
+
+  /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be fixed in general.
+  But for some cases like the implementation of the taylor experiment, we want this to be free. For this I am implementing Xzero 
+  based on the configuration. Since finally with this function we just want to calculate the force on particular node. So we can
+  just change the way we calculate force on 1st and 2nd node for different configuration.*/
+
+  /* One thing should be noted that now the expression inside case 0 and case 1 would change depending upon the configuration.
+  Suppose if XZero is taken as the fixed point, now we dont need to calculate F^{0} but only F^{1} which would be implemented
+  in case 0 because Xzero is the bottom most point for which we dont care to calculate the force and X[0] is the first point being
+  implemented in case 0. Though for a different configuration these things should be changed.*/
 
   switch(kp){
     case 0:
-      dX = X[kp-1+1]-Xzero;
-      bkm1 = norm(dX);
-      ukm1=dX/bkm1;
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
-      FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
-           + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
-           - (ukm1/bkm1)*( dot(ukm1,uk) )
-           );
-      FF = FF*AA/aa;
-      // Add an extra term for inextensibility constraint
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa; 
-      // cout << FF.z << endl;
+      if (conf_number==0){
+          dX = X[kp-1+1]-Xzero;
+          bkm1 = norm(dX);
+          ukm1=dX/bkm1;
+          FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
+               + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
+               - (ukm1/bkm1)*( dot(ukm1,uk) )
+               );
+          FF = FF*AA/aa;
+          // Add an extra term for inextensibility constraint
+          FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa; 
+          // cout << FF.z << endl;
+          *add_FF = FF;
+          // *add_SS = (kp+1)*bkm1;
+      }
+      else{
+          FF = ( (uk/bk)*( dot(uk,ukp1) )  - (ukp1)/bk );
+          FF = FF*AA/aa;
+          // Add an extra term for inextensibility constraint
+          FF = FF + ( uk*(bk-aa))*HH/aa; 
+          // cout << FF.z << endl;
+          *add_FF = FF;
+          // *add_SS = 0;
+          break;
+      }
+      
       *add_kappasqr=0.;
-      *add_FF = FF;
-      *add_SS = (kp+1)*bkm1;
-      break;
+      break;     
 
     case 1:
-      dX = X[kp-2+1]-Xzero;
-      bkm2 = norm(dX);
-      ukm2 = dX/bkm2;
+
       getub(&bkm1, &ukm1, kp-1, X);
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
-      FF = (     (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
-          + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
-          - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
-          );
-      FF = FF*(AA/aa);
-      // cout << FF.z << endl;
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH/aa;   // Inextensibility constraint
+      
+      if (conf_number==0)
+      {
+          FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
+              + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
+              - (ukm1/bkm1)*( dot(ukm1,uk) )
+              );
+          FF = FF*(AA/aa);
+          // cout << FF.z << endl;
+          FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH/aa;   // Inextensibility constraint
+          *add_FF = FF;
+      }
+      else
+      {
+          FF = (     (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
+              + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
+              - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
+              );
+          FF = FF*(AA/aa);
+          // cout << FF.z << endl;
+          FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH/aa;   // Inextensibility constraint
+          *add_FF = FF;
+      }
+
       *add_kappasqr=0.;
-      *add_FF = FF;
-      *add_SS = (kp+1)*bkm1;   
+      // *add_SS = (kp+1)*bkm1;      
       break;
 
     case Np-2:
@@ -238,7 +286,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
       // cout << FF.z << endl;
       *add_kappasqr=0.;
       *add_FF = FF;  
-      *add_SS = (kp+1)*bkm1;
+      // *add_SS = (kp+1)*bkm1;
       break;
 
     case Np-1:
@@ -255,7 +303,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
       // cout << FF.y << endl;
       *add_kappasqr=0.;
       *add_FF = FF;
-      *add_SS = (kp+1)*bkm1;
+      // *add_SS = (kp+1)*bkm1;
       break;
 
     default:
@@ -276,11 +324,11 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, double* add_SS, 
 
       if (flag_kappa)
       {
-        *add_kappasqr=2.*(1.-dot(uk,ukm1));
+        *add_kappasqr=2.*(1.-dot(uk,ukm1))/(aa*aa);
         // cout << kappasqr << endl;
       }
       *add_FF = FF;
-      *add_SS = (kp+1)*bkm1;
+      // *add_SS = (kp+1)*bkm1;
       break;
   }  
 
@@ -328,8 +376,8 @@ void iniconf(double y[], int configuration)
       case 0:
         for (int ip=0;ip<Np;ip++){
           R[ip].x=0.;
-          R[ip].z=aa*double(ip+1);
           R[ip].y=aa*sin(M_PI*k*aa*double(ip+1)/height);
+          R[ip].z=aa*double(ip+1);  
           // R[ip].y = 0;    
           if (ip>0)
           {
@@ -342,15 +390,22 @@ void iniconf(double y[], int configuration)
               CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
           }
           // cout << M_PI << endl;
+
           y[3*ip]=R[ip].x;
           y[3*ip+1]=R[ip].y;
           y[3*ip+2]=R[ip].z;
         }
+
+        for (int ip = 0; ip < Np; ++ip)
+        {
+            R[ip].y = R[ip].y/CurvLength; 
+        }
+
         break;
 
       case 1:
         // In this case we implement the initial configuration for GI Taylor experiment. 
-        // i.e. the rod is stretched half of the height of the box but still fixed from bottom end.
+        // i.e. a straight rod is stretched half of the height of the box and free to move from bottom.
         
         for (int ip = 0; ip < Np; ++ip)
         {
