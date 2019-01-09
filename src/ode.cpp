@@ -76,7 +76,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 	double error = 0;
 	double dt = *add_dt;
 	// double tol_dt = pow(10,-9)*dt;
-  double tol_dt = 0.00001;
+  double tol_dt = 0.000001*ndim;
   bool flag_kappa;
   double time = *add_time;
 
@@ -392,7 +392,7 @@ void DP54(unsigned int ndim, double *y, double *add_time, double* add_dt, double
     err = err + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
   }
 
-  err = sqrt(err/ndim);
+  err = sqrt(err)/ndim;
 
   s = 0.87*pow(tol_dt/err,0.20);
   // cout << error << endl;
