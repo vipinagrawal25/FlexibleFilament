@@ -14,6 +14,12 @@ void diagnos(int p);
 unsigned int const ndim=Nensemble*pdim;
 /* ----------------------------------------*/
 int main(){
+
+  if (dd>aa){
+      cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
+      return 0;
+  }
+
   double y[ndim];
   double CurvSqr[Np], SS[Np];
   for (int ip = 0; ip < Np; ++ip)
@@ -89,7 +95,7 @@ int main(){
         outfile << y[3*ip]/height << '\t' << y[3*ip+1]/height << '\t' << y[3*ip+2]/height << endl ;   
         /* Non-dimensionalizing the co-ordinate with respect to the height of the rod*/
         
-        outfile_curvature << CurvSqr[ip]*aa*aa << '\t' ;  /* Square of curvature is non-dimensionalized with the multiplication of square of 
+        outfile_curvature << CurvSqr[ip]*aa*aa << '\t' ;  /*Square of curvature is non-dimensionalized with the multiplication of square of 
                                                              bead distance */ 
         outfile_SS << SS[ip] << '\t';
         // cout << CurvSqr[ip] << endl;
@@ -116,9 +122,9 @@ outfile_curvature.close();
 outfile_SS.close();
 
 ofstream outfile_information;
-outfile_information.open("info.txt", ios::out | ios::app);
-outfile_information << itn << '\t' << '\t' <<  ((double)timer_global)/CLOCKS_PER_SEC << '\t' << dt_min << '\t' << TMAX << '\t' << '\t' <<
-viscosity << endl;
+outfile_information.open("info.csv", ios::out | ios::app);
+outfile_information << itn << ";" <<  ((double)timer_global)/CLOCKS_PER_SEC << ";" << dt_min << ";" << TMAX << ';' <<
+viscosity << ';' << ShearRate << ';' <<  omega << ";" << Np << ";" << YY << ";" << dd << ";" << height << endl;
 
 cout << "Total number of iteration: " << itn << endl;
 // cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
