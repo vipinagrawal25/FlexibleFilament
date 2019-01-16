@@ -54,7 +54,7 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
     // cout << CurvSqr[ip] << endl;
   }
 
-  vec3 FF0(0., 0., FFZ0*sin(omega*time));
+  vec3 FF0(0., 0., -FFZ0*sin(omega*time));
   EForce[Np-1] = EForce[Np-1]-FF0;
   
   // cout << EForce[Np-1].x << endl;
@@ -148,7 +148,15 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
             dR[jp] = dR[jp] + dot(mu_ij,EForce[jp]);
         }
 
-        dR[ip].y = dR[ip].y + ShearRate*(1 - R[ip].z)*sin(omega*time);
+        if (sin(omega*time) >= 0)
+        {
+            dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*(sin(omega*time));    
+        }
+        else
+        {
+            dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*(sin(omega*time));
+        }
+
     }
   }
 
@@ -396,22 +404,22 @@ void iniconf(double y[], int configuration)
           y[3*ip+2]=R[ip].z;
         }
 
-        for (int ip = 0; ip < Np; ++ip)
-        {
-            R[ip].y = R[ip].y/CurvLength; 
-        }
+        // for (int ip = 0; ip < Np; ++ip)
+        // {
+        //     R[ip].y = R[ip].y/CurvLength; 
+        // }
 
         break;
 
       case 1:
         // In this case we implement the initial configuration for GI Taylor experiment. 
-        // i.e. a straight rod is stretched half of the height of the box and free to move from bottom.
+        // i.e. a straight rod which is stretched half of the height of the box and free to move from bottom.
         
         for (int ip = 0; ip < Np; ++ip)
         {
             R[ip].x = 0;
             R[ip].y = 0;
-            R[ip].z = height/4+aa*double(ip+1)/2;
+            R[ip].z = aa*double(ip+1);
 
             y[3*ip] = R[ip].x;
             y[3*ip+1] = R[ip].y;
