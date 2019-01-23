@@ -1,5 +1,5 @@
 #include <iostream>
-#include<fstream>
+#include <fstream>
 #include "ode.h"
 #include "modules/3vec.h"
 #include "modules/2Tens.h"
@@ -41,10 +41,16 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
   for (int ip=0;ip<Np;ip++){
     kappasqr=CurvSqr[ip];
 
-    if (ip<Np-1)
+    if (flag_kappa)
     {
-        SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip]);
-    }
+      if (ip<Np-1)
+      {
+          SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip]);
+      }
+      // else{
+        // cout << flag_kappa << endl;
+      // }
+    }    
 
     dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
     EForce[ip] = EForce_ip;
@@ -150,11 +156,11 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
 
         if (sin(omega*time) >= 0)
         {
-            dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*(sin(omega*time));    
+            dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
         }
         else
         {
-            dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*(sin(omega*time));
+            dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*floor(sin(omega*time));
         }
 
     }
@@ -330,10 +336,11 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       // cout << FF.x << endl;
       // cout << FF.y << endl;     
 
-      if (flag_kappa)
+      if (flag_kappa==false)
       {
         *add_kappasqr=2.*(1.-dot(uk,ukm1))/(aa*aa);
         // cout << kappasqr << endl;
+        // cout << "This is also high level shit" << endl;
       }
       *add_FF = FF;
       // *add_SS = (kp+1)*bkm1;
@@ -419,7 +426,7 @@ void iniconf(double y[], int configuration)
         {
             R[ip].x = 0;
             R[ip].y = 0;
-            R[ip].z = aa*double(ip+1);
+            R[ip].z = (double)height/4+aa*double(ip+1);
 
             y[3*ip] = R[ip].x;
             y[3*ip+1] = R[ip].y;
