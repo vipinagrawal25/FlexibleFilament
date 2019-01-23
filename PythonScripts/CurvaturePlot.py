@@ -4,9 +4,12 @@ import ipywidgets as wid
 from mpl_toolkits.mplot3d import Axes3D
 
 # This section is intended for calculating the surface plot of curvature.
-Np = 30
-dd = loadtxt('case1/curvature.txt')
-dd_SS = loadtxt('case1/material_point.txt')
+Np = 20
+
+FILE = 'case8'
+
+dd = loadtxt(FILE+'/curvature.txt')
+dd_SS = loadtxt(FILE+'/material_point.txt')
 dd = dd
 Y = dd_SS
 timeAxis = dd[:,0]

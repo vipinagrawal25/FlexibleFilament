@@ -11,7 +11,7 @@ itn = 3000
 FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Movie Test', artist='Matplotlib',
                 comment='Movie support!')
-writer = FFMpegWriter(fps=15, metadata=metadata)
+writer = FFMpegWriter(fps=10, metadata=metadata)
 
 # l, = ax.plot([], [], [], 'o-' )
 # m, = plt.title([])
