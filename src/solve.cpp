@@ -14,13 +14,12 @@ void diagnos(int p);
 unsigned int const ndim=Nensemble*pdim;
 /* ----------------------------------------*/
 int main(){
-
   if (dd>aa){
       cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
       return 0;
   }
 
-  double y[ndim];
+  double y[ndim], y0[ndim];
   double CurvSqr[Np], SS[Np];
   for (int ip = 0; ip < Np; ++ip)
   {
@@ -32,6 +31,8 @@ int main(){
   int ldiagnos=0;
   int tdiagnos = 0;
   iniconf(y, conf_number);
+  iniconf(y0, conf_number); 
+
   double dt_min = 10;
   // cout << HH << endl;
   //  setup_cuda();
@@ -40,6 +41,7 @@ int main(){
   int filenumber=1;
   clock_t timer;
   int timer_global;
+  double MeanSqDis;     // To store Mean square displacement for the rod.
   // int temp = log10(TMAX/dt);
   // int temp2 = pow(10,temp+1);
   
@@ -55,8 +57,20 @@ int main(){
   ofstream outfile_SS;
   outfile_SS.open("output/material_point.txt", ios::out);  
 
+  // For storing the Mean square displacement of the rod with time, every row would have different MSD wrt time 
+  // for a particular value of AA.
+
+  fstream outfile_MSD;
+  outfile_MSD.open("MSD.csv", ios::out | ios::app);
+  if (SaveInfo == 'Y')
+  {
+    outfile_MSD << YY << ";" ;    
+  }
+
+
   // timer = clock();
-  while(time < TMAX){
+  while(time < TMAX)
+  {
     // ldiagnos=itn%idiag;
     // tdiagnos=time%tdiag;
     // time = time + dt;
@@ -73,12 +87,13 @@ int main(){
     // cout << timer << endl;
     if (dt<dt_min)
     {
-        dt_min = dt;
+      dt_min = dt;
     }
     // cout << dt << endl;
     // }
     tdiagnos = 0;
-    if (time<=tdiag*filenumber && time+dt>=tdiag*filenumber) {
+    if (time<=tdiag*filenumber && time+dt>=tdiag*filenumber) 
+    {
       outfile_time << time << '\t';
        // cout << time << '\t' << y[0] << '\t' << (sin(2*time+10*sin(0.1*time)))/sqrt(6+3*cos(0.1*time)) << '\t' << 1/sqrt(6+3 *cos(0.1*time))<<endl;
       // cout << dt << endl;
@@ -92,18 +107,35 @@ int main(){
 
       for (int ip = 0; ip < Np; ++ip)
       {
-        outfile << y[3*ip]/height << '\t' << y[3*ip+1]/height << '\t' << y[3*ip+2]/height << endl ;   
+        outfile << y[3*ip] << '\t' << y[3*ip+1] << '\t' << y[3*ip+2] << endl ; 
+
         /* Non-dimensionalizing the co-ordinate with respect to the height of the rod*/
         
-        outfile_curvature << CurvSqr[ip]*aa*aa << '\t' ;  /*Square of curvature is non-dimensionalized with the multiplication of square of 
+        outfile_curvature << CurvSqr[ip]<< '\t' ;  /*Square of curvature is non-dimensionalized with the multiplication of square of 
                                                              bead distance */ 
-        outfile_SS << SS[ip] << '\t';
+        outfile_SS << SS[ip] << '\t';        
+
+        
+    
+        // MeanSqDis = MeanSqDis+(y[3*idim]-y0[idim])*(y[idim]-y0[idim]);
+
+        // outfile_MSD << MeanSqDis << ';' ; 
         // cout << CurvSqr[ip] << endl;
       }
 
+      if (SaveInfo == 'Y')
+      {
+          MeanSqDis = 0;
+          for (int idim = 0; idim < ndim; ++idim)
+          {
+              MeanSqDis = MeanSqDis+(y[idim]-y0[idim])*(y[idim]-y0[idim]);
+          }
+          outfile_MSD << MeanSqDis << ";" ;
+      }
+       
       outfile_curvature << endl;
       outfile_SS << endl;
-      outfile.close();
+      outfile.close(); 
 
       // for (int ip = 0; ip < Np; ++ip)
       // {
@@ -117,19 +149,26 @@ int main(){
   itn=itn+1;
 }
 // timer = clock()-timer;
-outfile_time.close();
-outfile_curvature.close();
-outfile_SS.close();
+  outfile_time.close();
+  outfile_curvature.close();
+  outfile_SS.close();
 
-ofstream outfile_information;
-outfile_information.open("info.csv", ios::out | ios::app);
-outfile_information << itn << ";" <<  ((double)timer_global)/CLOCKS_PER_SEC << ";" << dt_min << ";" << TMAX << ';' <<
-viscosity << ';' << ShearRate << ';' <<  omega << ";" << Np << ";" << YY << ";" << dd << ";" << height << endl;
+  if (SaveInfo=='Y')
+  {
+    outfile_MSD << endl;
+    outfile_MSD.close();
 
-cout << "Total number of iteration: " << itn << endl;
-// cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
-cout << "Total time elapsed: " << (double)timer_global/CLOCKS_PER_SEC << "s" << endl;
-cout << "Minimum value of dt: " << dt_min << endl;
+    ofstream outfile_information;
+    outfile_information.open("info.csv", ios::out | ios::app);
+    outfile_information << itn << ";" <<  ((double)timer_global)/CLOCKS_PER_SEC << ";" << dt_min << ";" << TMAX << ';' <<
+    viscosity << ';' << ShearRate << ';' <<  omega << ";" << Np << ";" << YY << ";" << dd << ";" << height << endl;
+  }
+
+
+  cout << "Total number of iteration: " << itn << endl;
+  // cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
+  cout << "Total time elapsed: " << (double)timer_global/CLOCKS_PER_SEC << "s" << endl;
+  cout << "Minimum value of dt: " << dt_min << endl;
 // cout << filenumber-1 << endl;
 //----------------------------
 }
