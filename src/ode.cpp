@@ -76,7 +76,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 	double error = 0;
 	double dt = *add_dt;
 	// double tol_dt = pow(10,-9)*dt;
-  double tol_dt = 0.000001;
+  double tol_dt = 0.0000001;
   bool flag_kappa;
   double time = *add_time;
 
@@ -94,11 +94,12 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
   if (ldiagnos)
   {
-      flag_kappa = false;
+      flag_kappa = true;
+      // cout<< "This is a high level shit" << endl;
   }
   else
   {
-      flag_kappa = true;
+      flag_kappa = false;
   }
 
 	eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
@@ -153,7 +154,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
   if (s>10)
   {
-      s=2;
+      s=10;
       *add_time = time + dt;
       *add_dt = s*dt;
   }
@@ -165,6 +166,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
        s = 0.2; 
     }
     rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
+    // cout << error << endl;
   }
   else
   {
@@ -178,6 +180,8 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   // cout << error << endl;
     // cout << s << endl;
   // CurvSqr = CurvSqr_Store;
+
+  // cout << error << endl;
 }	
 
 // void rnkf451(unsigned int ndim, double *y, double *add_time, double* add_dt, double* CurvSqr, double* SS, double ldiagnos)
