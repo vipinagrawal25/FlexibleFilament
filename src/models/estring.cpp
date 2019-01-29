@@ -19,7 +19,9 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
   vec3 R[Np],dR[Np], EForce[Np], EForce_ip;  // R is the position of the beads.
   // double CurvSqr[Np];
   double kappasqr, Mobility[Np*(Np+1)/2][6];
+  double mu0 = 1./(3*M_PI*viscosity*dd);
 
+  double onebythree = 1./3.;
   // Initializing Mobility Matrix.
   for (int i = 0; i < Np*(Np+1)/2; ++i)
   {
@@ -134,7 +136,7 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
     double d_rij;
     vec3 rij;
 
-    mu_ii = dab/(3*M_PI*viscosity*dd);
+    mu_ii = dab*mu0;
     // PTens2(mu_ii);
     // rij = R[j]-R[i] and d_rij is just the norm of this value.
 
@@ -149,7 +151,9 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
         {
             GetRij(R, ip, jp, &d_rij, &rij);
             double c1 = 1/(8*M_PI*viscosity*d_rij);
-            mu_ij = c1*(dab + rij*rij/(d_rij*d_rij) + dd*dd/(2*d_rij*d_rij)*(dab/3 - rij*rij/(d_rij*d_rij)));
+            double dsqr1 = 1./(d_rij*d_rij);
+            //mu_ij = c1*(dab + rij*rij/(d_rij*d_rij) + dd*dd/(2*d_rij*d_rij)*(dab/3 - rij*rij/(d_rij*d_rij)));
+            mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
             dR[ip] = dR[ip] + dot(mu_ij,EForce[jp]);
             dR[jp] = dR[jp] + dot(mu_ij,EForce[jp]);
         }

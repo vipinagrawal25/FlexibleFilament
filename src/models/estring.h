@@ -4,7 +4,7 @@
 /**************************/
 using namespace std;
 /* ----------------------------------------*/
-unsigned int const Np= 20;			// total number of points on the rod.
+unsigned int const Np= 40;			// total number of points on the rod.
 unsigned int const pdim=3*Np;
 double const height = 1;					// height of the box we are doing simulations in.
 double const aa = height/(double)(Np); 	// distance between two nodes.
@@ -29,7 +29,7 @@ double const Z0=0.;						// If we want the bottom point of the rod to be fixed.
 double const FFZ0 = 0*height*height;					// Different force for different configuration.
 
 double const omega = 0.3;
-char const UseRP = 'Y';					// Y is for the new one, O is for old one and N is for not using 
+char const UseRP = 'N';					// Y is for the new one, O is for old one and N is for not using 
 										// Rotne Pragor tensor. 
 int const conf_number = 1;
 double const ShearRate = 0.2;
