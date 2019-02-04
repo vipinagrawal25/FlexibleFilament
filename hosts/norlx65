@@ -1,1 +1,1 @@
-compile=pgc++
+compile=g++ -O3
