@@ -430,7 +430,7 @@ void iniconf(double y[], int configuration)
         {
             R[ip].x = 0;
             R[ip].y = 0;
-            R[ip].z = (double)height/4+aa*double(ip+1);
+            R[ip].z = aa*double(ip+1);
 
             y[3*ip] = R[ip].x;
             y[3*ip+1] = R[ip].y;
