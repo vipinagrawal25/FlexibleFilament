@@ -160,6 +160,7 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
 
         if (sin(omega*time) >= 0)
         {
+            // cout << "Kya ye yaha aa raha hai?" << endl;
             dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
         }
         else
@@ -172,10 +173,12 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
 
   else
   {
+    // cout << "Yaha nahi aayega to kaha jayega" << endl;
     for (int ip = 0; ip < Np; ++ip)
     {
         dR[ip] = EForce[ip]*OneByGamma;
     }
+    // cout << EForce[Np-1].y << endl; 
   } 
     
   
@@ -248,7 +251,10 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
           FF = FF + ( uk*(bk-aa))*HH/aa; 
           // cout << FF.z << endl;
           *add_FF = FF;
+          // cout << "Kya ye yaha aa raha hai?" << endl;
           // *add_SS = 0;
+          // cout << bk << '\t' << aa << endl;  
+
           break;
       }
       
@@ -263,9 +269,12 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       
       if (conf_number==0)
       {
-          FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
+          dX = X[kp-2+1]-Xzero;
+          bkm2 = norm(dX);
+          ukm2 = dX/bkm2;
+          FF = (  (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
               + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
-              - (ukm1/bkm1)*( dot(ukm1,uk) )
+              - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
               );
           FF = FF*(AA/aa);
           // cout << FF.z << endl;
@@ -274,14 +283,16 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       }
       else
       {
-          FF = (     (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
+          FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
               + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
-              - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
+              - (ukm1/bkm1)*( dot(ukm1,uk) )
               );
           FF = FF*(AA/aa);
           // cout << FF.z << endl;
-          FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH/aa;   // Inextensibility constraint
+          FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;   // Inextensibility constraint
+          // cout << "Good for you " << endl;
           *add_FF = FF;
+
       }
 
       *add_kappasqr=0.;
@@ -408,6 +419,7 @@ void iniconf(double y[], int configuration)
           {
               CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
           }
+          // cout << CurvLength << endl;
           // cout << M_PI << endl;
 
           y[3*ip]=R[ip].x;
@@ -432,11 +444,14 @@ void iniconf(double y[], int configuration)
             R[ip].y = 0;
             R[ip].z = aa*double(ip+1);
 
+            // cout << R[ip].z << endl ;
+
             y[3*ip] = R[ip].x;
             y[3*ip+1] = R[ip].y;
             y[3*ip+2] = R[ip].z;
         }
 
+        // cout << aa << endl;
         break;
     }
 }
