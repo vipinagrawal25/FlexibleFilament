@@ -1,1 +1,1 @@
-compile=g++ -O3
+compile=g++
