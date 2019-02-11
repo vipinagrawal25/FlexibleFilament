@@ -76,7 +76,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 	double error = 0;
 	double dt = *add_dt;
 	// double tol_dt = pow(10,-9)*dt;
-  double tol_dt = 0.0000001;
+  double tol_dt = pow(10,-9);
   bool flag_kappa;
   double time = *add_time;
 
@@ -152,11 +152,21 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
     // cout << error << endl;
  	s = 0.84*pow(tol_dt/error,0.25);
 
+  // cout << s << endl;
+
   if (s>10)
   {
-      s=10;
-      *add_time = time + dt;
-      *add_dt = s*dt;
+    // cout << s << endl;
+    if (isinf(s))
+    {
+        s=1;
+    }
+    else
+    {
+        s=10;
+    }    
+    *add_time = time + dt;
+    *add_dt = s*dt;
   }
   else if (s < 0.5)
   {
@@ -164,8 +174,8 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
     if (s<0.2)
     {
        s = 0.2; 
-    }
-    rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
+       rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
+   }
     // cout << error << endl;
   }
   else

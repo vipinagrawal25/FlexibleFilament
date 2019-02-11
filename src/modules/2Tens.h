@@ -138,17 +138,17 @@ Tens2 operator*(const double param, Tens2 a)
 
 Tens2 Tens2::operator/(double param){
   Tens2 temp;
-  temp.xx=xx*1./param;
-  temp.xy=xy*1./param;
-  temp.xz=xz*1./param;
+  temp.xx=xx/param;
+  temp.xy=xy/param;
+  temp.xz=xz/param;
 
-  temp.yx=yx*1./param;
-  temp.yy=yy*1./param;
-  temp.yz=yz*1./param;
+  temp.yx=yx/param;
+  temp.yy=yy/param;
+  temp.yz=yz/param;
 
-  temp.zx=zx*1./param;
-  temp.zy=zy*1./param;
-  temp.zz=zz*1./param;
+  temp.zx=zx/param;
+  temp.zy=zy/param;
+  temp.zz=zz/param;
 
   return(temp);
 }
