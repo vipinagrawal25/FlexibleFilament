@@ -4,7 +4,7 @@
 /**************************/
 using namespace std;
 /* ----------------------------------------*/
-unsigned int const Np=50;			// total number of points on the rod.
+unsigned int const Np=100;			// total number of points on the rod.
 unsigned int const pdim=3*Np;
 double const height = 1;					// height of the box we are doing simulations in.
 double const aa = height/(double)(Np-1); 	// distance between two nodes.

@@ -180,7 +180,7 @@ int main(){
     ofstream outfile_information;
     outfile_information.open("info.csv", ios::out | ios::app);
     outfile_information << itn << ";" <<  ((double)timer_global)/CLOCKS_PER_SEC << ";" << dt_min << ";" << TMAX << ';' <<
-    viscosity << ';' << ShearRate << ';' <<  omega << ";" << Np << ";" << YY << ";" << dd << ";" << height << ";" << MeanSqDis << endl;
+    viscosity << ';' << ShearRate << ';' <<  omega << ";" << Np << ";" << AA << ";" << HH << ";" << dd << ";" << height << ";" << MeanSqDis << endl;
   }
 
 
