@@ -20,6 +20,13 @@ int main(){
   }
 
   double y[ndim], y0[ndim];
+
+  double lengthmin=height;
+  double lengthmax=0;
+
+  // it will show the average deflection of the rod from the height.
+  double MSElen=0;  
+  
   double CurvSqr[Np], SS[Np];
   for (int ip = 0; ip < Np; ++ip)
   {
@@ -29,7 +36,7 @@ int main(){
   double time=0.;
   int k;
   int ldiagnos=0;
-  int tdiagnos = 0;
+  int tdiagnos = 1;
   iniconf(y, conf_number);
   iniconf(y0, conf_number); 
 
@@ -60,12 +67,12 @@ int main(){
   // For storing the Mean square displacement of the rod with time, every row would have different MSD wrt time 
   // for a particular value of AA.
 
-  fstream outfile_MSD;
-  outfile_MSD.open("MSD.csv", ios::out | ios::app);
-  if (SaveInfo == 'Y')
-  {
-    outfile_MSD << YY << ";" ;    
-  }
+  // fstream outfile_MSD;
+  // outfile_MSD.open("MSD.csv", ios::out | ios::app);
+  // if (SaveInfo == 'Y')
+  // {
+  //   outfile_MSD << YY << ";" ;    
+  // }
 
 
   // timer = clock();
@@ -89,6 +96,19 @@ int main(){
     {
       dt_min = dt;
     }
+
+    MSElen = MSElen+(height-SS[Np-1])*(height-SS[Np-1]);
+
+    if (SS[Np-1]>lengthmax)
+    {
+        lengthmax=SS[Np-1];
+    }
+
+    if (SS[Np-1]<lengthmin)
+    {
+        lengthmin=SS[Np-1];
+    }
+
     // cout << dt << endl;
     // }
     tdiagnos = 0;
@@ -114,7 +134,6 @@ int main(){
         outfile_curvature << CurvSqr[ip]<< '\t' ;  /*Square of curvature is non-dimensionalized with the multiplication of square of 
                                                              bead distance */ 
         outfile_SS << SS[ip] << '\t';        
-
         
     
         // MeanSqDis = MeanSqDis+(y[3*idim]-y0[idim])*(y[idim]-y0[idim]);
@@ -130,7 +149,7 @@ int main(){
           {
               MeanSqDis = MeanSqDis+(y[idim]-y0[idim])*(y[idim]-y0[idim]);
           }
-          outfile_MSD << MeanSqDis << ";" ;
+          // outfile_MSD << MeanSqDis << ";" ;
       }
        
       outfile_curvature << endl;
@@ -155,20 +174,24 @@ int main(){
 
   if (SaveInfo=='Y')
   {
-    outfile_MSD << endl;
-    outfile_MSD.close();
+    // outfile_MSD << endl;
+    // outfile_MSD.close();
 
     ofstream outfile_information;
     outfile_information.open("info.csv", ios::out | ios::app);
     outfile_information << itn << ";" <<  ((double)timer_global)/CLOCKS_PER_SEC << ";" << dt_min << ";" << TMAX << ';' <<
-    viscosity << ';' << ShearRate << ';' <<  omega << ";" << Np << ";" << YY << ";" << dd << ";" << height << endl;
+    viscosity << ';' << ShearRate << ';' <<  omega << ";" << Np << ";" << YY << ";" << dd << ";" << height << ";" << MeanSqDis << endl;
   }
 
 
   cout << "Total number of iteration: " << itn << endl;
   // cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
   cout << "Total time elapsed: " << (double)timer_global/CLOCKS_PER_SEC << "s" << endl;
-  cout << "Minimum value of dt: " << dt_min << endl;
+  cout << "Minimum value of dt: " << dt_min << endl;  
+  cout << "Difference between max length and Minimum length of the rod: " << lengthmax-lengthmin << endl;
+  // cout << lengthmax << '\t' << lengthmin << endl;
+  cout << "The average change in the length of the rod is: " << sqrt(MSElen)/itn << endl;
+
 // cout << filenumber-1 << endl;
 //----------------------------
 }

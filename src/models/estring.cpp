@@ -442,7 +442,7 @@ void iniconf(double y[], int configuration)
         {
             R[ip].x = 0;
             R[ip].y = 0;
-            R[ip].z = aa*double(ip+1);
+            R[ip].z = aa*double(ip);
 
             // cout << R[ip].z << endl ;
 
