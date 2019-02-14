@@ -8,7 +8,7 @@ ln -s $ES/src/models/*.h src/models/
 mkdir -p src/modules
 ln -s $ES/src/modules/*.h src/modules/ 
 cp $ES/Makefile .
-ln -s $ES/input.h .
+cp $ES/input.h .
 mkdir -p PythonScripts
 ln -s $ES/PythonScripts/*.py PythonScripts/
 ln -s $ES/PythonScripts/*.ipynb PythonScripts/

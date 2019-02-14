@@ -41,6 +41,7 @@ int main(){
   iniconf(y0, conf_number); 
 
   double dt_min = 10;
+  double gamma = 8*M_PI*viscosity*aa*aa*aa*ShearRate*height/AA ;
   // cout << HH << endl;
   //  setup_cuda();
 //----------------------------
@@ -53,7 +54,7 @@ int main(){
   // int temp2 = pow(10,temp+1);
   
   // Deleting contents of the folder and creating folder again.
-  system("exec rm -r output");    
+  system("exec rm -f output/*.txt");    
   system("exec mkdir output");
   ofstream outfile_time;
   outfile_time.open("output/time.txt", ios::out);
@@ -67,11 +68,11 @@ int main(){
   // For storing the Mean square displacement of the rod with time, every row would have different MSD wrt time 
   // for a particular value of AA.
 
-  // fstream outfile_MSD;
-  // outfile_MSD.open("MSD.csv", ios::out | ios::app);
+  fstream outfile_MSD;
+  outfile_MSD.open("MSD.txt", ios::out | ios::app);
   // if (SaveInfo == 'Y')
   // {
-  //   outfile_MSD << YY << ";" ;    
+  //   outfile_MSD << YY << ";" ;
   // }
 
 
@@ -149,7 +150,7 @@ int main(){
           {
               MeanSqDis = MeanSqDis+(y[idim]-y0[idim])*(y[idim]-y0[idim]);
           }
-          // outfile_MSD << MeanSqDis << ";" ;
+          outfile_MSD << MeanSqDis << ";" ;
       }
        
       outfile_curvature << endl;
@@ -174,13 +175,14 @@ int main(){
 
   if (SaveInfo=='Y')
   {
-    // outfile_MSD << endl;
-    // outfile_MSD.close();
+    outfile_MSD << endl;
+    outfile_MSD.close();
 
     ofstream outfile_information;
-    outfile_information.open("info.csv", ios::out | ios::app);
-    outfile_information << itn << ";" <<  ((double)timer_global)/CLOCKS_PER_SEC << ";" << dt_min << ";" << TMAX << ';' <<
-    viscosity << ';' << ShearRate << ';' <<  omega << ";" << Np << ";" << AA << ";" << HH << ";" << dd << ";" << height << ";" << MeanSqDis << endl;
+    outfile_information.open("../info.csv", ios::out | ios::app);
+    outfile_information << itn << ";" <<  ((double)timer_global)/CLOCKS_PER_SEC << ";" << TMAX << ';' << dt_min << ";" << viscosity << ';'
+    << ShearRate << ';' <<  omega << ";" << Np << ";" << AA << ";" << HH << ";" << dd << ";" << height << ";" << sigma << ";" 
+    << gamma << ";" << HH*aa*aa/AA << endl;
   }
 
 
