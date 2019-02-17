@@ -6,7 +6,7 @@ from mpl_toolkits.mplot3d import Axes3D
 # This section is intended for calculating the surface plot of curvature.
 Np = 20
 
-FILE = 'case15'
+FILE = 'output'
 
 dd = loadtxt(FILE+'/curvature.txt')
 dd_SS = loadtxt(FILE+'/material_point.txt')
