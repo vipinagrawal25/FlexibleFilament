@@ -17,8 +17,6 @@ double const viscosity = 10;				// Equivalent to kinematic viscosity of glycerin
 
 // double const AA = 3*pow(10,-4);		 	// AA is bending rigidity constant (AA = EI), unit -> Pa.m^4, 3.14/(16*4) = 0.05
 
-double const HH = 40;		// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
-
 // The below line is commented because of some error. So I included it in last formulae itself.
 // HH =  HH/aa; 			// This is done to model the rod perfectly (Also see: https://goo.gl/nbELSx Week 27/2018 DS)
 
@@ -30,9 +28,11 @@ double const FFZ0 = 0*height*height;					// Different force for different config
 
 // Sigma is a dimensionless number, which is described as frequency parameter.
 double const sigma=1.5;					
-double const ShearRate = 2*1;	
-double const AA = 1.5*pow(10,-4)*ShearRate;
+double const ShearRate = 2;
 double const omega = ShearRate*sigma;
+
+double const AA = 1.5*pow(10,-4)*1;
+double const HH = 64*AA/(aa*aa);		// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
 
 // double TMAX = ShearRate*10;
 // double tdiag = TMAX/2000;
@@ -41,7 +41,7 @@ char const UseRP = 'Y';					// Y is for the new one, O is for old one and N is f
 										// Rotne Pragor tensor. 
 int const conf_number = 1;
 
-char const SaveInfo = 'N';	// This decides whether the simulation is important enough to save the information.
+char const SaveInfo = 'Y';	// This decides whether the simulation is important enough to save the information.
 								// Set N for not saving.
 
 /* ----------------------------------------*/

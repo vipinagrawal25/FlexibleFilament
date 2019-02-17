@@ -44,7 +44,7 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,isnap):
 
 time = loadtxt(FILE+'/time.txt')
 
-with writer.saving(fig,FILE+"/movie.mp4", 100):
+with writer.saving(fig,"movie.mp4", 100):
 	for isnap in range(1,itn,1):
 		dd = loadtxt(FILE+'/position'+str(isnap)+'.txt')
 		xx = dd[:,0]

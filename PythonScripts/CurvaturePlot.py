@@ -6,13 +6,13 @@ from mpl_toolkits.mplot3d import Axes3D
 # This section is intended for calculating the surface plot of curvature.
 Np = 20
 
-FILE = 'case8'
+FILE = 'case15'
 
 dd = loadtxt(FILE+'/curvature.txt')
 dd_SS = loadtxt(FILE+'/material_point.txt')
-dd = dd
+dd = dd/400
 Y = dd_SS
-timeAxis = dd[:,0]
+timeAxis = loadtxt(FILE+'/time.txt')/3.14
 
 
 IndexAxis = arange(Np)
