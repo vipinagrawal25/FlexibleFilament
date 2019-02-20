@@ -3,6 +3,7 @@
 #include<cmath>
 #include "ode.h"
 #include "model.h"
+#define tiny pow(10,-15)
 using namespace std;
 /*********************************/
 // void euler(unsigned int ndim, double *y, double time,double dt){
@@ -79,6 +80,10 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   double tol_dt = pow(10,-7);
   bool flag_kappa;
   double time = *add_time;
+  double Delta = 0; 
+  double epsilon = 0.84;
+  double truncationmax=2;
+  double truncationmin=0.1;
 
   double ci[6] = {0,0.25,3./8,12./13,1.,1./2} ;
   double aij[6][5] = {
@@ -150,39 +155,39 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
     error = sqrt(error);
     // error = error/ndim;
     // cout << error << endl;
- 	s = 0.84*pow(tol_dt/error,0.25);
 
   // cout << s << endl;
 
-  if (s>10)
+  if (error<tiny)
   {
-    // cout << s << endl;
-    if (isinf(s))
-    {
-        s=1;
-    }
-    else
-    {
-        s=10;
-    }    
-    *add_time = time + dt;
-    *add_dt = s*dt;
-  }
-  else if (s < 0.5)
-  {
-    *add_dt = s*dt;
-    if (s<0.2)
-    {
-       s = 0.2; 
-       rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
-   }
-    // cout << error << endl;
+      Delta = 1;
   }
   else
   {
-    *add_time = time + dt;
-    *add_dt = s*dt;
+      Delta = tol_dt/error;
   }
+
+  s = epsilon*pow(Delta,0.25);
+
+  if (Delta>=1)
+  {
+      *add_time = time + dt;
+      if (s>truncationmax)
+      {
+          s=truncationmax;
+      }
+      *add_dt = s*dt;
+  }
+  else
+  { 
+      if (s<truncationmin)
+      {
+          s = truncationmin;
+      }
+      *add_dt = s*dt;
+      rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
+  }
+
 
   // *add_time = time + dt;
   // *add_dt = s*dt;
@@ -193,132 +198,6 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
   // cout << error << endl;
 }	
-
-// void rnkf451(unsigned int ndim, double *y, double *add_time, double* add_dt, double* CurvSqr, double* SS, double ldiagnos)
-// {
-//   // In this function I have implemented Runge Kutta fehlberg Method which is more suitable than rkf45 for high order integration.
-//   // Details could be found in Numerical recipes book and a short description on the link: 
-//   // https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method
-//   double temp[ndim], s, yold[ndim];
-//   int idim ;  
-//   double error = 0;
-//   double dt = *add_dt;
-//   double tol_dt = pow(10,-10)*dt;
-//   bool flag_kappa;
-//   double time = *add_time;
-
-//   double ci[6] = {0,0.25,3./8,12./13,1.,1./2} ;
-//   double aij[6][5] = {
-//     {0,0,0,0,0},
-//     {0.25,0,0,0,0},
-//     {3./32.,9./32.,0,0,0},
-//     {1932./2197.,-7200./2197.,7296./2197.,0,0},
-//     {439./216.,-8.,3680./513.,-845./4104.,0},
-//     {-8./27.,2.,-3544./2565.,1859./4104.,-11./40.}
-//   };
-//   double bistar[6] = {16./135.,0,6656./12825.,28561./56430.,-9./50.,2./55.};
-//   double bi[6] = {25./216.,0,1408./2565.,2197./4104.,-1./5.,0};
-    
-//   double k[6][ndim], k_temp[ndim];
-//   // eval_rhs(time,y,k1,flag_kappa);
-
-//   if (ldiagnos)
-//   {
-//       flag_kappa = true;
-//   }
-//   else
-//   {
-//       flag_kappa = false;
-//   }
-
-//   for (int i = 0; i < 7; ++i)
-//   {
-//     for (int j = 0; j < ndim; ++j)
-//     {
-//       k[i][ndim] = 0;
-//     }
-//   }
-
-//   for (int j = 0; j < 6; ++j)
-//   {
-//     for (int idim = 0; idim < ndim; ++idim)
-//     {
-//       temp[idim] = y[idim];
-//       for (int i = 0; i < 5; ++i)
-//       {
-//         temp[idim] = temp[idim] + aij[j][i]*dt*k[i][idim];       
-//       }
-//     }
-
-//     eval_rhs(time+dt*ci[j],temp,k_temp,flag_kappa,CurvSqr,SS);
-
-//     for (int idim = 0; idim < ndim; ++idim)
-//     {
-//         k[j][idim] = k_temp[idim];
-//     }
-
-//     if (j == 0)
-//     {
-//         flag_kappa = false;
-//     }
-
-//   }
-
-//   for (int idim = 0; idim < ndim; ++idim)
-//   {   
-//       // temp[idim] = y[idim];
-//       // for (int j = 0; j < 6; ++j)
-//       // {
-//       //     temp[idim] = temp[idim] + bi[j]*k[j][idim]*dt;
-//       // }
-//        temp[idim] = y[idim] + 25.*k[0][idim]*dt/216. + 1408.*k[2][idim]*dt/2565. + 2197.*k[3][idim]*dt/4104 - k[4][idim]*dt/5.;      
-//   }
-  
-//   // eval_rhs(time+dt,temp,k_temp,flag_kappa,CurvSqr,SS);
-
-//   // for (int idim = 0; idim < ndim; ++idim)
-//   // {
-//   //     k[6][idim] = k_temp[idim];
-//   // }
-
-//   for (int idim = 0; idim < ndim; ++idim)
-//   {
-//       for (int i = 0; i < 6; ++i)
-//       {
-//           y[idim] = y[idim] + bistar[i]*k[i][idim]*dt;     
-//       }
-
-//       // y[idim] = y[idim]+ 16*k[0][idim]*dt/135. + 6656.*k[2][idim]*dt/12825. + 28561.*k[3][idim]*dt/56430. - 9.*k[4][idim]*dt/50. + 2.*k[5][idim]*dt/55.;
-//       error = error + (temp[idim]-y[idim])*(temp[idim]-y[idim]);       
-
-//   }
-
-//   error = sqrt(error/ndim);
-
-//   s = 0.84*pow(tol_dt/error,0.2);
-//   // cout << error << endl;
-//   // if (s > 10)
-//   // {
-//   //     s = 10;
-//   // }
-//   // else if (s<0.2)
-//   // {
-//   //     s = 0.2;
-//   // }
-//   // cout << s << endl;
-//   *add_time = time + dt;
-//   *add_dt = s*dt;
-
-//   // If the time stepping in next iteration is lesser than half of the current time step then the current step should be 
-//   // repeated
-//   // if (s<1)
-//   // {
-//   //   /* code */
-//   // }
-
-//   // cout << *add_dt << endl;
-
-// }
 
 
 void DP54(unsigned int ndim, double *y, double *add_time, double* add_dt, double* CurvSqr, double* SS, double ldiagnos)
@@ -407,18 +286,18 @@ void DP54(unsigned int ndim, double *y, double *add_time, double* add_dt, double
     err = err + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
   }
 
-  err = sqrt(err)/ndim;
+  err = sqrt(err);
 
   s = 0.87*pow(tol_dt/err,0.20);
-  // cout << error << endl;
-  // if (s > 10)
-  // {
-  //     s = 10;
-  // }
-  // else if (s<0.2)
-  // {
-  //     s = 0.2;
-  // }
+  // cout << error << endl; 
+  if (s > 10)
+  {
+      s = 10;
+  }
+  else if (s<0.2)
+  {
+      s = 0.2;
+  }
   // cout << s << endl;
   *add_time = time + dt;
   *add_dt = s*dt;
