@@ -453,6 +453,26 @@ void iniconf(double y[], int configuration)
 
         // cout << aa << endl;
         break;
+
+        case 2:
+        // In this case we implement the initial configuration for GI Taylor experiment. 
+        // i.e. a straight rod which is stretched half of the height of the box and free to move from bottom.
+        
+        for (int ip = 0; ip < Np; ++ip)
+        {
+            R[ip].z = 0;
+            R[ip].y = 0;
+            R[ip].x = aa*double(ip);
+
+            // cout << R[ip].z << endl ;
+
+            y[3*ip] = R[ip].x;
+            y[3*ip+1] = R[ip].y;
+            y[3*ip+2] = R[ip].z;
+        }
+
+        // cout << aa << endl;
+        break;
     }
 }
 
