@@ -22,7 +22,7 @@ int main(){
   double y[ndim], y0[ndim];
 
   double lengthmin=height;
-  double lengthmax=0;
+  double lengthmax=height;
 
   // it will show the average deflection of the rod from the height.
   double MSElen=0;  
@@ -108,6 +108,7 @@ int main(){
     if (SS[Np-1]<lengthmin)
     {
         lengthmin=SS[Np-1];
+        cout << lengthmin << endl;
     }
 
     // cout << dt << endl;
@@ -115,7 +116,7 @@ int main(){
     tdiagnos = 0;
     if (time<=tdiag*filenumber && time+dt>=tdiag*filenumber) 
     {
-      outfile_time << time << '\t';
+      outfile_time << time*omega/M_PI << '\t';
        // cout << time << '\t' << y[0] << '\t' << (sin(2*time+10*sin(0.1*time)))/sqrt(6+3*cos(0.1*time)) << '\t' << 1/sqrt(6+3 *cos(0.1*time))<<endl;
       // cout << dt << endl;
       ofstream outfile;
@@ -190,8 +191,8 @@ int main(){
   // cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
   cout << "Total time elapsed: " << (double)timer_global/CLOCKS_PER_SEC << "s" << endl;
   cout << "Minimum value of dt: " << dt_min << endl;  
-  cout << "Difference between max length and Minimum length of the rod: " << lengthmax-lengthmin << endl;
-  // cout << lengthmax << '\t' << lengthmin << endl;
+  // cout << "Difference between max length and Minimum length of the rod: " << lengthmax-lengthmin << endl;
+  cout << "Max Length: " << lengthmax << '\t' << "Min Length: " <<lengthmin << endl;
   cout << "The average change in the length of the rod is: " << sqrt(MSElen)/itn << endl;
 
 // cout << filenumber-1 << endl;
