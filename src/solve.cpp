@@ -38,7 +38,7 @@ int main(){
   int ldiagnos=0;
   int tdiagnos = 1;
   iniconf(y, conf_number);
-  iniconf(y0, conf_number); 
+  iniconf(y0, conf_number);
 
   double dt_min = 10;
   double gamma = 8*M_PI*viscosity*aa*aa*aa*ShearRate*height/AA ;
@@ -54,8 +54,10 @@ int main(){
   // int temp2 = pow(10,temp+1);
   
   // Deleting contents of the folder and creating folder again.
-  system("exec rm -f output/*.txt");    
+  system("exec rm -rf output");    
   system("exec mkdir output");
+  system("exec rm -f MSD.txt");
+
   ofstream outfile_time;
   outfile_time.open("output/time.txt", ios::out);
 
@@ -125,7 +127,7 @@ int main(){
       l.append(".txt");
       outfile.open(l, ios::out);
 
-      outfile_curvature << time << '\t' ;
+      outfile_curvature << time*omega/M_PI << '\t' ;
 
       for (int ip = 0; ip < Np; ++ip)
       {
@@ -151,7 +153,7 @@ int main(){
           {
               MeanSqDis = MeanSqDis+(y[idim]-y0[idim])*(y[idim]-y0[idim]);
           }
-          outfile_MSD << MeanSqDis << ";" ;
+          outfile_MSD << MeanSqDis << "\t" ;
       }
        
       outfile_curvature << endl;

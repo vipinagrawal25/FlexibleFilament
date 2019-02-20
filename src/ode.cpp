@@ -82,8 +82,8 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   double time = *add_time;
   double Delta = 0; 
   double epsilon = 0.84;
-  double truncationmax=2;
-  double truncationmin=0.1;
+  double truncationmax=5;
+  double truncationmin=0.2;
 
   double ci[6] = {0,0.25,3./8,12./13,1.,1./2} ;
   double aij[6][5] = {
