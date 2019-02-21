@@ -22,9 +22,11 @@ def curvatureplot( FILE='output', Np=100, omega=3 ):
 	cbar = colorbar(surf)
 	ax.set_xlabel('time')
 	ax.set_ylabel('material_point')
-	# ax.set_zlabel('Curvature')
-	# ax.set_zlabel('Curvature')
-	show()
+
+	plt.savefig(surf,'curvatureplot.eps')
+	plt.savefig(surf,'curvatureplot.png')
+
+	
 	return 
 
 def MSD_plot(FILE='.',step=1):
