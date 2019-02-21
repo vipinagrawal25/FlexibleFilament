@@ -136,7 +136,7 @@ int main(){
         /* Non-dimensionalizing the co-ordinate with respect to the height of the rod*/
         
         outfile_curvature << CurvSqr[ip]*aa*aa<< '\t' ;  /*Square of curvature is non-dimensionalized with the multiplication of square of 
-                                                             bead distance */ 
+                                                             bead distance */   
         outfile_SS << SS[ip] << '\t';        
         
     
