@@ -23,14 +23,17 @@ def curvatureplot( FILE='output', Np=100, omega=3 ):
 	ax.set_xlabel('time')
 	ax.set_ylabel('material_point')
 
-	plt.savefig(surf,'curvatureplot.eps')
-	plt.savefig(surf,'curvatureplot.png')
-
-	
+	plt.savefig('curvatureplot.eps')
+	plt.savefig('curvatureplot.png',dpi=300)
+	# show()
+	close()
 	return 
 
 def MSD_plot(FILE='.',step=1):
-	MSD = loadtxt(FILE+'/MSD.txt',delimiter=',',usecols=range(2000))
+	MSD = loadtxt(FILE+'/MSD.txt',delimiter=';',usecols=range(2000))
 	plt.plot(MSD[1::step])
+	plt.savefig('MSDplot.eps')
+	plt.savefig('MSDplot.png',dpi=300)
+	show()
 
 
