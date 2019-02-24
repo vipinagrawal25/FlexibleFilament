@@ -156,7 +156,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
     // error = error/ndim;
     // cout << error << endl;
 
-  // cout << s << endl;
+  cout << s << '\t' << dt << endl;
 
   if (error<tiny)
   {
