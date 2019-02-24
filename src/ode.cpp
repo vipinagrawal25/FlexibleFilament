@@ -3,7 +3,7 @@
 #include<cmath>
 #include "ode.h"
 #include "model.h"
-#define tiny pow(10,-15)
+#define tiny pow(10,-20)
 using namespace std;
 /*********************************/
 // void euler(unsigned int ndim, double *y, double time,double dt){
@@ -156,19 +156,21 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
     // error = error/ndim;
     // cout << error << endl;
 
-  cout << s << '\t' << dt << endl;
+  // cout << dt << endl;
 
   if (error<tiny)
   {
-      Delta = 1;
+      Delta = 2.1;
+      // cout << "Yaha error chota hai " << endl;
   }
   else
   {
       Delta = tol_dt/error;
+      // cout << "Yaha error bada hai " << endl;
   }
 
   s = epsilon*pow(Delta,0.25);
-
+  // cout << s << endl;
   if (Delta>=1)
   {
       *add_time = time + dt;

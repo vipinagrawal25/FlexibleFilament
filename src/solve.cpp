@@ -67,7 +67,7 @@ int main(){
   ofstream outfile_SS;
   outfile_SS.open("output/material_point.txt", ios::out);  
 
-  // For storing the Mean square displacement of the rod with time, every row would have different MSD wrt time 
+  // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt time 
   // for a particular value of AA.
 
   fstream outfile_MSD;
@@ -91,7 +91,9 @@ int main(){
     // rnkt4(pdim,&y[irb],time-dt,dt);
 
   	timer = clock();
-    rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
+
+    rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);           
+
     timer = clock() - timer;
     timer_global = timer_global + timer;
     // cout << timer << endl;
@@ -110,7 +112,7 @@ int main(){
     if (SS[Np-1]<lengthmin)
     {
         lengthmin=SS[Np-1];
-        cout << lengthmin << endl;
+        // cout << lengthmin << endl;
     }
 
     // cout << dt << endl;
