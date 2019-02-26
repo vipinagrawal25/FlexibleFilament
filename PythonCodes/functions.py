@@ -32,8 +32,8 @@ def curvatureplot( FILE='output', Np=100, omega=3 ):
 def MSD_plot(FILE='.',step=1):
 	step = int(step)
 	print (step)
-	MSD = loadtxt(FILE+'/MSD.txt',delimiter=';',usecols=range(2000))
-	# MSD = loadtxt(FILE+'/MSD.txt')
+	# MSD = loadtxt(FILE+'/MSD.txt',delimiter=';',usecols=range(2000))
+	MSD = loadtxt(FILE+'/MSD.txt')
 	fig = figure()
 	fig=plt.plot(MSD[1::step],'o')
 	return fig
