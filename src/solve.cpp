@@ -48,7 +48,7 @@ int main(){
   int itn=1;  
   int filenumber=1;
   clock_t timer;
-  int timer_global;
+  clock_t timer_global;
   double MeanSqDis;     // To store Mean square displacement for the rod.
   // int temp = log10(TMAX/dt);
   // int temp2 = pow(10,temp+1);
@@ -79,6 +79,8 @@ int main(){
 
 
   // timer = clock();
+  timer_global = clock();
+
   while(time < TMAX)
   {
     // ldiagnos=itn%idiag;
@@ -90,12 +92,12 @@ int main(){
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim,&y[irb],time-dt,dt);
 
-  	timer = clock();
+  	// timer = clock();
 
     rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);           
 
-    timer = clock() - timer;
-    timer_global = timer_global + timer;
+    // timer = clock() - timer;
+    // timer_global = timer_global + timer;
     // cout << timer << endl;
     if (dt<dt_min)
     {
@@ -174,6 +176,7 @@ int main(){
   itn=itn+1;
 }
 // timer = clock()-timer;
+  timer_global = clock() - timer_global;  
   outfile_time.close();
   outfile_curvature.close();
   outfile_SS.close();
