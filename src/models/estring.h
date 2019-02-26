@@ -39,7 +39,7 @@ double const HH = 64*AA/(aa*aa);		// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -
 
 char const UseRP = 'Y';					// Y is for the new one, O is for old one and N is for not using 
 										// Rotne Pragor tensor. 
-int const conf_number = 1;
+int const conf_number = 2;
 
 char const SaveInfo = 'Y';	// This decides whether the simulation is important enough to save the information.
 								// Set N for not saving.

@@ -156,7 +156,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
     // error = error/ndim;
     // cout << error << endl;
 
-  // cout << dt << endl;
+  // cout << dt << "\t" << error << endl;
 
   if (error<tiny)
   {
@@ -190,7 +190,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
       rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
 
-
+  // cout << Delta << endl;
   // *add_time = time + dt;
   // *add_dt = s*dt;
 

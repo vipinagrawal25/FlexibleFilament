@@ -48,7 +48,7 @@ int main(){
   int itn=1;  
   int filenumber=1;
   clock_t timer;
-  clock_t timer_global;
+  double timer_global;
   double MeanSqDis;     // To store Mean square displacement for the rod.
   // int temp = log10(TMAX/dt);
   // int temp2 = pow(10,temp+1);
@@ -78,8 +78,8 @@ int main(){
   // }
 
 
-  // timer = clock();
-  timer_global = clock();
+  timer = clock();
+  timer_global = timer/CLOCKS_PER_SEC;
 
   while(time < TMAX)
   {
@@ -176,7 +176,7 @@ int main(){
   itn=itn+1;
 }
 // timer = clock()-timer;
-  timer_global = clock() - timer_global;  
+  timer_global = clock()/CLOCKS_PER_SEC - timer_global;  
   outfile_time.close();
   outfile_curvature.close();
   outfile_SS.close();
@@ -196,7 +196,7 @@ int main(){
 
   cout << "Total number of iteration: " << itn << endl;
   // cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
-  cout << "Total time elapsed: " << (double)timer_global/CLOCKS_PER_SEC << "s" << endl;
+  cout << "Total time elapsed: " << timer_global << "s" << endl;
   cout << "Minimum value of dt: " << dt_min << endl;  
   // cout << "Difference between max length and Minimum length of the rod: " << lengthmax-lengthmin << endl;
   cout << "Max Length: " << lengthmax << '\t' << "Min Length: " <<lengthmin << endl;

@@ -158,15 +158,31 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
             dR[jp] = dR[jp] + dot(mu_ij,EForce[jp]);
         }
 
-        if (sin(omega*time) >= 0)
+        if (conf_number == 1)
         {
-            // cout << "Kya ye yaha aa raha hai?" << endl;
-            dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
+            if (sin(omega*time) >= 0)
+            {
+                // cout << "Kya ye yaha aa raha hai?" << endl;
+                dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
+            }
+            else
+            {
+                dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*floor(sin(omega*time));
+            }
         }
-        else
+        else if (conf_number==2)
         {
-            dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*floor(sin(omega*time));
+            if (sin(omega*time) >= 0)
+            {
+                // cout << "Kya ye yaha aa raha hai?" << endl;
+                dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*ceil(sin(omega*time));    
+            }
+            else
+            {
+                dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*floor(sin(omega*time));
+            }
         }
+        
 
     }
   }
@@ -210,7 +226,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
 
   //vec3 FF;
   
-  if (conf_number==0)
+  if (conf_number==0 || conf_number ==2)
   {
       Xzero.x=0.; Xzero.y=0.; Xzero.z=Z0;      
   }
@@ -229,7 +245,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
     case 0:
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
-      if (conf_number==0){
+      if (conf_number==0||conf_number==2){
           dX = X[kp-1+1]-Xzero;
           bkm1 = norm(dX);
           ukm1=dX/bkm1;
@@ -267,7 +283,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
       
-      if (conf_number==0)
+      if (conf_number==0||conf_number==2)
       {
           dX = X[kp-2+1]-Xzero;
           bkm2 = norm(dX);
