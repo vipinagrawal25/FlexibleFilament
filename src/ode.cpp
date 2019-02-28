@@ -160,7 +160,8 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
   if (error<tiny)
   {
-      Delta = 1;
+      Delta = 10000;
+      cout << "Kya error itna chota hai " << endl;
   }
   else
   {
@@ -187,6 +188,38 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
       *add_dt = s*dt;
       rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
+
+    // if (s>10)
+    // {
+    // // cout << s << endl;
+    //   if (isinf(s))
+    //   {
+    //       s=1;
+    //   }
+    //   else
+    //   {
+    //       s=10;
+    //   }    
+    //   *add_time = time + dt;
+    //   *add_dt = s*dt;
+    // }
+    // else if (s < 0.5)
+    // {
+    //   if (s<0.2)
+    //   {
+    //      s = 0.2; 
+    //   }
+    //   *add_dt = s*dt;
+    //   rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
+    //   // cout << s << endl;
+    // // cout << error << endl;
+    // }
+    // else
+    // {
+    //   *add_time = time + dt;
+    //   *add_dt = s*dt;
+    // }
+
 
 
   // *add_time = time + dt;
