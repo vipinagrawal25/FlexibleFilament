@@ -228,6 +228,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
   
   if (conf_number==0 || conf_number ==2)
   {
+    // cout << "ise yaha aana chahiye kyuki 2 number hai " << endl;
       Xzero.x=0.; Xzero.y=0.; Xzero.z=Z0;      
   }
 
@@ -248,6 +249,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       if (conf_number==0||conf_number==2){
           dX = X[kp-1+1]-Xzero;
           bkm1 = norm(dX);
+          cout << bkm1 << endl;
           ukm1=dX/bkm1;
           FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
                + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
@@ -369,7 +371,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
 
       if (flag_kappa==false)
       {
-        *add_kappasqr=2.*(1.-dot(uk,ukm1))/(aa*aa);
+        *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
         // cout << kappasqr << endl;
         // cout << "This is also high level shit" << endl;
       }
@@ -478,7 +480,9 @@ void iniconf(double y[], int configuration)
         {
             R[ip].z = 0;
             R[ip].y = 0;
-            R[ip].x = aa*double(ip);
+            R[ip].x = aa*double(ip+1);
+
+            // cout << "ab hopefully sab kuch sahi ho jaana chahiye" << endl;
 
             // cout << R[ip].z << endl ;
 
@@ -486,10 +490,12 @@ void iniconf(double y[], int configuration)
             y[3*ip+1] = R[ip].y;
             y[3*ip+2] = R[ip].z;
         }
+        // cout << "Ye loop kitni baar hai" << endl;
 
         // cout << aa << endl;
         break;
     }
+
 }
 
 /*********************************************/

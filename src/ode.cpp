@@ -82,7 +82,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   double time = *add_time;
   double Delta = 0; 
   double epsilon = 0.84;
-  double truncationmax=5;
+  double truncationmax=10;
   double truncationmin=0.2;
 
   double ci[6] = {0,0.25,3./8,12./13,1.,1./2} ;
@@ -160,7 +160,10 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
   if (error<tiny)
   {
-      Delta = 2.1;
+
+      // This condition had been put so that we dont need to divide by error which might be very less.
+      // But Delta should be big enough, because we think that the error is small because time step had been small in previous step.
+      Delta = 10000;
       // cout << "Yaha error chota hai " << endl;
   }
   else
