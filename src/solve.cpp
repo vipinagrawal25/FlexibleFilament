@@ -83,6 +83,7 @@ int main(){
 
   while(time < TMAX)
   {
+    // cout << time << endl;
     // ldiagnos=itn%idiag;
     // tdiagnos=time%tdiag;
     // time = time + dt;
