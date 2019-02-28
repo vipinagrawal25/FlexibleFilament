@@ -4,13 +4,13 @@ MODEL= estring
 #MODEL=particle_in_mag
 CUDA=nocuda
 target=output
-HOST=norlx65
+# HOST=norlx65
 # ---------------------------------------------------------------------
 default:
-	(cd src/;ln -sf models/${MODEL}.h model.h;  ln -sf models/${MODEL}.cpp model.cpp; ln -sf ../input.h .; ln -sf hosts/${HOST} ../host; make;\
- mv ode.exe ..)
+	(cd src/;ln -sf models/${MODEL}.h model.h;  ln -sf models/${MODEL}.cpp model.cpp; ln -sf ../input.h .; make; mv ode.exe ..)
 clean:
-	cd src/; rm -f *.o *.mod *.exe; rm -f model.cpp; rm -f model.h; rm -f input.h;
+	(cd src/; rm -f *.o *.mod *.exe; rm -f model.cpp; rm -f model.h; rm -f input.h;)
 multirun:
-	(cd src/;ln -sf ../${target}/${MODEL}.h model.h; ln -sf models/${MODEL}.cpp model.cpp; ln -sf ../input.h .; ln -sf hosts/${HOST} ../host; \
-	 make; cd ..; mv src/ode.exe ${target}; echo "The executable file has been moved to ${target}.")
+	(cd src/;ln -sf ../${target}/${MODEL}.h model.h;ln -sf ../${target}/input.h input.h;  ln -sf models/${MODEL}.cpp model.cpp; \
+	 make; mv ode.exe ../${target}; cd ..; echo "The executable file has been moved to ${target}.")
+

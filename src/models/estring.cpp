@@ -246,10 +246,10 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
     case 0:
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
-      if (conf_number==0||conf_number==2){
+      if (conf_number==0 || conf_number==2){
           dX = X[kp-1+1]-Xzero;
           bkm1 = norm(dX);
-          cout << bkm1 << endl;
+          // cout << bkm1 << endl;
           ukm1=dX/bkm1;
           FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
                + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
@@ -285,7 +285,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
       
-      if (conf_number==0||conf_number==2)
+      if (conf_number==0|| conf_number ==2)
       {
           dX = X[kp-2+1]-Xzero;
           bkm2 = norm(dX);
@@ -474,26 +474,24 @@ void iniconf(double y[], int configuration)
 
         case 2:
         // In this case we implement the initial configuration for GI Taylor experiment. 
-        // i.e. a straight rod which is stretched half of the height of the box and free to move from bottom.
-        
-        for (int ip = 0; ip < Np; ++ip)
-        {
-            R[ip].z = 0;
-            R[ip].y = 0;
-            R[ip].x = aa*double(ip+1);
+        // i.e. a straight rod which is stretched of the height of the box but fixed from bottom.
+          
+          for (int ip = 0; ip < Np; ++ip)
+          {
+              R[ip].x = 0;
+              R[ip].y = 0;
+              R[ip].z = aa*double(ip+1);
 
-            // cout << "ab hopefully sab kuch sahi ho jaana chahiye" << endl;
+              // cout << "ab hopefully sab kuch sahi ho jaana chahiye" << endl;
 
-            // cout << R[ip].z << endl ;
+              // cout << R[ip].z << endl ;
 
-            y[3*ip] = R[ip].x;
-            y[3*ip+1] = R[ip].y;
-            y[3*ip+2] = R[ip].z;
-        }
-        // cout << "Ye loop kitni baar hai" << endl;
+              y[3*ip] = R[ip].x;
+              y[3*ip+1] = R[ip].y;
+              y[3*ip+2] = R[ip].z;
+          }
 
-        // cout << aa << endl;
-        break;
+          break;
     }
 
 }

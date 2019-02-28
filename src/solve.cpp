@@ -121,6 +121,7 @@ int main(){
     // cout << dt << endl;
     // }
     tdiagnos = 0;
+    // cout << "Yaar ye code chal kyu nahi raha hai " << endl;
     if (time<=tdiag*filenumber && time+dt>=tdiag*filenumber) 
     {
       outfile_time << time*omega/M_PI << '\t';
