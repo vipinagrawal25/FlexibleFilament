@@ -4,6 +4,7 @@
 #include "modules/3vec.h"
 #include "modules/2Tens.h"
 #include "model.h"
+#include<string>
 // #include <cmath>
 
 /**************************/
@@ -19,9 +20,10 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
   vec3 R[Np],dR[Np], EForce[Np], EForce_ip;  // R is the position of the beads.
   // double CurvSqr[Np];
   double kappasqr, Mobility[Np*(Np+1)/2][6];
-  double mu0 = 1./(3*M_PI*viscosity*dd);
-
   double onebythree = 1./3.;
+
+  double mu0 = onebythree/(M_PI*viscosity*dd);
+
   // Initializing Mobility Matrix.
   for (int i = 0; i < Np*(Np+1)/2; ++i)
   {
@@ -193,6 +195,19 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
     for (int ip = 0; ip < Np; ++ip)
     {
         dR[ip] = EForce[ip]*OneByGamma;
+
+        if (conf_number == 1)
+        {
+            if (sin(omega*time) >= 0)
+            {
+                // cout << "Kya ye yaha aa raha hai?" << endl;
+                dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
+            }
+            else
+            {
+                dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*floor(sin(omega*time));
+            }
+        }
     }
     // cout << EForce[Np-1].y << endl; 
   } 
@@ -390,29 +405,6 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
   // *add_SS = (kp+1)*bkm1;
  }
 /**************************/
-// void diagnos(int p){
-  // cout << time<<'\t' ;
-  // for (int ip=0;ip<Np;ip++){
-  //   cout << y[3*ip] <<'\t' << y[3*ip+1]  <<'\t' << y[3*ip+2] << '\t' ;
-  // }
-  // cout << '\n';
-
-  // ofstream outfile;
-  // string l = "output/position";
-  // l.append(to_string(itn));
-  // l.append(".txt");
-  // outfile.open(l, ios::out);
-
-  // for (int ip = 0; ip < Np; ++ip)
-  //   {
-  //     outfile << y[3*ip] << '\t' << y[3*ip+1] << '\t' << y[3*ip+2] << endl ;
-  //   }
-
-  // outfile.close(); 
-  // cout << p << endl;
-  // cout << time << '\t' << y[0] << endl;
-// }
-/**************************/
 void iniconf(double y[], int configuration)
 {
     vec3 R[Np];  // R is the position of the beads.
@@ -492,6 +484,26 @@ void iniconf(double y[], int configuration)
           }
 
           break;
+
+        case -1:
+          string l = "output/position";
+          l.append(to_string(lastfile));
+          l.append(".txt");
+
+          ifstream myfile(l,ios::in);
+          string line;
+
+          // cout << "Yaha aane ka matlab file khula hai" << endl;
+          int ip = 0;
+          while ( getline (myfile,line,'\t') )
+          {
+              // cout << "Yadi ye yaha nahi aa raha hai to iska matlab ye while loop ne gandagi faila rakhi hai" <<endl;
+              y[ip] = stod(line);
+              // cout << y[ip] << endl;
+
+              ip = ip+1;
+          }
+          myfile.close();
     }
 
 }
