@@ -4,7 +4,7 @@
 /**************************/
 using namespace std;
 /* ----------------------------------------*/
-unsigned int const Np=100;			// total number of points on the rod.
+unsigned int const Np=101;			// total number of points on the rod.
 unsigned int const pdim=3*Np;
 double const height = 1;					// height of the box we are doing simulations in.
 double const aa = height/(double)(Np-1); 	// distance between two nodes.
@@ -39,10 +39,12 @@ double const HH = 64*AA/(aa*aa);		// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -
 
 char const UseRP = 'Y';					// Y is for the new one, O is for old one and N is for not using 
 										// Rotne Pragor tensor. 
-int const conf_number = -1;	
+
 // This sets up the initial configuration of the system. If it's -1, it means that I need to start the code from somewhere in the middle,
 // Which essentialy means that I will just read data from a file and set that as the initial point of the system. Though it would create
 // problem in calculating Mean Square displacement.
+int const conf_number = -1;	
+int const lastfile=9;
 
 char const SaveInfo = 'Y';	// This decides whether the simulation is important enough to save the information.
 								// Set N for not saving.
@@ -50,6 +52,5 @@ char const SaveInfo = 'Y';	// This decides whether the simulation is important e
 /* ----------------------------------------*/
 void iniconf(double *y, int conf_number); 	// The § number is defined for different
 											// Initial configuration into the system.
-void diagnos(double time, int itn, double y[]);
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */
