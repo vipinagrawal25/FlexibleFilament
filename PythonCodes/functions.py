@@ -18,7 +18,7 @@ def curvatureplot( FILE='output', Np=100, omega=3 ):
 	(IndexAxis,X) = meshgrid(IndexAxis, timeAxis)
 	fig = figure()
 	ax = fig.add_subplot(111)
-	surf = ax.contourf(X,Y,heightAxis)
+	surf = ax.contourf(X,Y,heightAxis,cmap='plasma')
 	cbar = colorbar(surf)
 	ax.set_xlabel('time')
 	ax.set_ylabel('material_point')
@@ -31,12 +31,11 @@ def curvatureplot( FILE='output', Np=100, omega=3 ):
 
 chitra = plt.figure();
 def MSD_plot(FILE='.',step=1, fig=chitra):
-	step = int(step)
-	print (step)
+	step = int(around(step))
 	# MSD = loadtxt(FILE+'/MSD.txt',delimiter=';',usecols=range(2000))
 	MSD = loadtxt(FILE+'/MSD.txt')
 	# fig = figure()
-	plt.plot(MSD[1::step],'o')
+	plt.plot(MSD[0::step],'o')
+	# index = 0;
+	
 	return fig
-
-

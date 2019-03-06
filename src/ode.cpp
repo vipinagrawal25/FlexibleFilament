@@ -160,8 +160,8 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
   if (error<tiny)
   {
-      Delta = 10000;
-      cout << "Kya error itna chota hai " << endl;
+      Delta = 10;
+      // cout << "Kya error itna chota hai " << endl;
   }
   else
   {
