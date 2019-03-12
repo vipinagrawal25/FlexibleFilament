@@ -12,7 +12,8 @@ using namespace std;
 /**************************/
 unsigned int const ndim=Nensemble*pdim;
 /* ----------------------------------------*/
-int main(){
+int main()
+{
   double y[ndim], y0[ndim], CurvSqr[Np], SS[Np],time,MeanSqDis,timer_global;
   int filenumber;
 
@@ -42,7 +43,6 @@ int main(){
   // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt time 
   // for a particular value of AA.
 
-  fstream outfile_MSD("MSD.txt", ios::app);
 
   if (dd>aa){
       cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
@@ -69,7 +69,8 @@ int main(){
             char ch;
             input_time.get(ch);                            // Get current byte's data
 
-            if((int)input_time.tellg() <= 1) {             // If the data was at or before the 0th byte
+            if((int)input_time.tellg() <= 1) 
+            {                                   // If the data was at or before the 0th byte
                 input_time.seekg(0);                       // The first line is the last line
                 keepLooping = false;                // So stop there
             }
@@ -86,7 +87,7 @@ int main(){
         time = stod(lastline);
 
         input_time.close();   // close the file and open it in append mode later.
-      // }
+      }
 
       ifstream myfile("output/position1.txt");
       string line;
@@ -127,7 +128,7 @@ int main(){
       }
   }
 
-
+  fstream outfile_MSD("MSD.txt", ios::out|ios::app);
   fstream outfile_time("output/time.txt", ios::app);
   fstream outfile_curvature("output/curvature.txt", ios::app);
   fstream outfile_SS("output/material_point.txt", ios::app);
@@ -234,9 +235,9 @@ int main(){
       filenumber = filenumber+1;
       cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<TMAX<<"\n";
       tdiagnos =1;
+    }
+    itn=itn+1;
   }
-  itn=itn+1;
-}
 // timer = clock()-timer;
   timer_global = clock()/CLOCKS_PER_SEC - timer_global;  
   outfile_time.close();
@@ -245,14 +246,21 @@ int main(){
 
   if (SaveInfo=='Y')
   {
-    outfile_MSD << endl;
+    // outfile_MSD << endl;
     outfile_MSD.close();
 
     ofstream outfile_information;
     outfile_information.open("../info.csv", ios::out | ios::app);
-    outfile_information << itn << ";" <<  ((double)timer_global) << ";" << TMAX << ';' << dt_min << ";" << viscosity << ';'
+    outfile_information << itn << ";" <<  timer_global << ";" << TMAX << ';' << dt_min << ";" << viscosity << ';'
     << ShearRate << ';' <<  omega << ";" << Np << ";" << AA << ";" << HH << ";" << dd << ";" << height << ";" << sigma << ";" 
     << gamma << ";" << HH*aa*aa/AA << endl;
+    outfile_information.close();
+
+    outfile_information.open("info.txt", ios::out);
+    outfile_information << itn << '\t' <<  timer_global << '\t' << TMAX << '\t' << dt_min << '\t' << viscosity << '\t'
+    << ShearRate << '\t' <<  omega << '\t' << Np << '\t' << AA << '\t' << HH << '\t' << dd << '\t' << height << '\t' << sigma << '\t' 
+    << gamma << '\t' << HH*aa*aa/AA << endl;
+    outfile_information.close();
   }
 
 
