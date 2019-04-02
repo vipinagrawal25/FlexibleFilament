@@ -30,12 +30,12 @@ def curvatureplot( FILE='output', Np=100, omega=3 ):
 	return 
 
 chitra = plt.figure();
-def MSD_plot(FILE='.',step=1, fig=chitra):
+def MSD_plot(FILE='MSD.txt',step=1, fig=chitra):
 	step = int(around(step))
 	# MSD = loadtxt(FILE+'/MSD.txt',delimiter=';',usecols=range(2000))
-	MSD = loadtxt(FILE+'/MSD.txt')
+	MSD = loadtxt(FILE)
 	# fig = figure()
-	plt.plot(MSD[0::step],'o')
+	plt.plot(1/100*MSD[0::step],'o')
 	# index = 0;
-	
+	plt.show()
 	return fig

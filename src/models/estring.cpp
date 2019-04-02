@@ -147,7 +147,7 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
         // The mu_ij in the next line represents the mobility tensor when j is equal to i and in 
         // response to that the for loop is started from ip+1 .
 
-        dR[ip] = dR[ip] + dot(mu_ii,EForce[ip]);
+        dR[ip] = dR[ip] + dot(mu_ii, EForce[ip]);
         
         for (int jp = ip+1; jp < Np; ++jp)
         {
@@ -156,8 +156,8 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
             double dsqr1 = 1./(d_rij*d_rij);
             //mu_ij = c1*(dab + rij*rij/(d_rij*d_rij) + dd*dd/(2*d_rij*d_rij)*(dab/3 - rij*rij/(d_rij*d_rij)));
             mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
-            dR[ip] = dR[ip] + dot(mu_ij,EForce[jp]);
-            dR[jp] = dR[jp] + dot(mu_ij,EForce[jp]);
+            dR[ip] = dR[ip] + dot(mu_ij, EForce[ip]);
+            dR[jp] = dR[jp] + dot(mu_ij, EForce[ip]);
         }
 
         if (conf_number == 1)
