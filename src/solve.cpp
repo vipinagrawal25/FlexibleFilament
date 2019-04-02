@@ -270,8 +270,8 @@ int main()
   cout << "Minimum value of dt: " << dt_min << endl;  
   // cout << "Difference between max length and Minimum length of the rod: " << lengthmax-lengthmin << endl;
   cout << "Max Length: " << lengthmax << '\t' << "Min Length: " <<lengthmin << endl;
-  cout << "The average change in the length of the rod is: " << sqrt(MSElen)/itn << endl;
-
+  // cout << "The average change in the length of the rod is: " << sqrt(MSElen)/itn << endl;
+  cout << "Gamma: " << gamma << "K: " << HH*aa*aa/AA << endl;
 // cout << filenumber-1 << endl;
 //----------------------------
 }

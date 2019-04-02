@@ -50,10 +50,10 @@ with writer.saving(fig,"movie.mp4", 100):
 		yy = dd[:,1]
 		zz = dd[:,2]
 		MakePlot3D(ax1,xx,yy,zz,isnap)
-		ax1.hold(False)
 		# MakePlot2D(ax2,xx,yy,isnap)
 		# ax2.hold(False)
 		writer.grab_frame()
+		ax1.clear()
 		print('plot = ' + str(isnap)+ 'Done')
 
 # with writer.saving(fig, FILE+"/movie.mp4", 100):	
