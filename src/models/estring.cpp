@@ -5,6 +5,7 @@
 #include "modules/2Tens.h"
 #include "model.h"
 #include<string>
+#include<vector>
 // #include <cmath>
 
 /**************************/
@@ -405,7 +406,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
   // *add_SS = (kp+1)*bkm1;
  }
 /**************************/
-void iniconf(double y[], int configuration)
+void iniconf(double *y, int configuration)
 {
     vec3 R[Np];  // R is the position of the beads.
     double k = 1;      // determines the frequency for initial configuration
@@ -490,20 +491,22 @@ void iniconf(double y[], int configuration)
           l.append(to_string(lastfile));
           l.append(".txt");
 
-          ifstream myfile(l,ios::in);
-          string line;
-
+          ifstream myfile(l,ios::in); 
+          double num = 0.0;           
+          
           // cout << "Yaha aane ka matlab file khula hai" << endl;
+          
           int ip = 0;
-          while ( getline (myfile,line,'\t') )
+          while(myfile >> num)
           {
-              // cout << "Yadi ye yaha nahi aa raha hai to iska matlab ye while loop ne gandagi faila rakhi hai" <<endl;
-              y[ip] = stod(line);
-              // cout << y[ip] << endl;
-
-              ip = ip+1;
+            y[ip] = num;
+            ip = ip+1;
+            //keep storing values from the text file so long as data exists:
           }
+
           myfile.close();
+
+          // cout << "Aakhir ye code aisa kyu karta hai" << endl;
     }
 
 }

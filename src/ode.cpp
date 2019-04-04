@@ -108,14 +108,18 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   }
 
 	eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
+
   // CurvSqr_Store = CurvSqr;
 
 	for(idim=0;idim<ndim;idim++)
 	{
       temp[idim]=y[idim]+k1[idim]*dt*aij[1][0];
   }
-  flag_kappa = false; 
+
+  flag_kappa = false;
   eval_rhs(time+dt*ci[1],temp,k2, flag_kappa, CurvSqr, SS);
+
+  // cout << y[34] << '\t' << k2[34] << '\t' << dt << '\t' << temp[34] << endl;
 
   for(idim=0;idim<ndim;idim++)
   {
@@ -141,7 +145,6 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
  	}
  	eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
 
-
  	for (int idim = 0; idim < ndim; ++idim)
  	{
     temp[idim] = y[idim] + bi[0]*k1[idim]*dt + bi[2]*k3[idim]*dt + bi[3]*k4[idim]*dt + bi[4]*k5[idim]*dt;
@@ -149,14 +152,11 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
     
     yold[idim] = y[idim];
     y[idim] = y[idim]+ bistar[0]*k1[idim]*dt + bistar[2]*k3[idim]*dt + bistar[3]*k4[idim]*dt + bistar[4]*k5[idim]*dt + bistar[5]*k6[idim]*dt;
-
+    // cout << temp[idim] << endl;
  		error = error + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
  	}
-    error = sqrt(error);
-    // error = error/ndim;
-    // cout << error << endl;
-
-  // cout << s << endl;
+  // cout << error << endl;
+  error = sqrt(error);
 
   if (error<tiny)
   {
@@ -169,6 +169,8 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   }
 
   s = epsilon*pow(Delta,0.25);
+
+  cout << dt << endl;
 
   if (Delta>=1)
   {
@@ -188,7 +190,6 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
       *add_dt = s*dt;
       rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
-
     // if (s>10)
     // {
     // // cout << s << endl;

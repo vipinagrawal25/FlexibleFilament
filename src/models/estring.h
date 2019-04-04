@@ -50,7 +50,7 @@ char const SaveInfo = 'Y';	// This decides whether the simulation is important e
 								// Set N for not saving.
 
 /* ----------------------------------------*/
-void iniconf(double *y, int conf_number); 	// The § number is defined for different
+void iniconf(double *y, int conf_number); 	// The configuration number is defined for different
 											// Initial configuration into the system.
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */

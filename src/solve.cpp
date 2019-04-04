@@ -4,6 +4,7 @@
 #include<time.h>
 #include<math.h>
 #include<string>
+#include<vector>
 #include "ode.h"
 #include "model.h"
 #include "input.h"
@@ -16,7 +17,7 @@ int main()
 {
   double y[ndim], y0[ndim], CurvSqr[Np], SS[Np],time,MeanSqDis,timer_global;
   int filenumber;
-
+  string lastline;
   int ldiagnos=0;
   int tdiagnos = 1;
 
@@ -49,67 +50,135 @@ int main()
       return 0;
   }
 
-  iniconf(y, conf_number);
 
   if (conf_number == -1)
   {
       filenumber = lastfile+1;
-      time = 40;
+
+      // -----------------------------------------------------------------------------------------------------
+      double num = 0.0;
+      string line;
+
+      ifstream outfile_time("output/time.txt");
+      fstream outfile_time_new("output/time_new.txt", ios::out);   // Just a new time file which would be renamed later anyway.
+
+      ifstream outfile_MSD("MSD.txt");
+      fstream outfile_MSD_new("MSD_new.txt",ios::out);
+
+      ifstream outfile_curvature("output/curvature.txt");
+      fstream outfile_curvature_new("output/curvature_new.txt",ios::out) ;
+
+      ifstream outfile_SS("output/material_point.txt");
+      fstream outfile_SS_new("output/material_point_new.txt",ios::out) ;
+
+      int ifile = 0;
+
+      // This loop just make reads data from existing time file and dump it into the new file till it is allowed.
+      while(ifile<=lastfile)
+      {
+        if (outfile_time >> num)
+        {
+          time = num;
+          outfile_time_new << num << endl;
+
+          outfile_MSD >> num;
+          outfile_MSD_new << num << endl;
+
+          getline(outfile_curvature,line,'\n');
+          outfile_curvature_new << line << endl;
+
+          getline(outfile_SS,line,'\n');
+          outfile_SS_new << line << endl;
+
+          ifile = ifile+1;
+        }
+        else
+        {
+          cout << "ERROR: The last code has not been run till the file which has been mentioned. This does not make sense." << endl;
+          return 0;
+        }
+      }
+
+      system("exec rm -f output/time.txt")
+      system("exec mv output/time_new.txt output/time.txt")
+      fstream outfile_time("output/time.txt", ios::app);    // Now opening file again in append mode.
+
+      system("exec rm -f MSD.txt")
+      system("exec mv MSD_new.txt MSD.txt")
+      fstream outfile_time("MSD.txt", ios::app);    // Now opening file again in append mode. 
+
+      system("exec rm -f output/curvature.txt")
+      system("exec mv output/curvature_new.txt output/curvature.txt")
+      fstream outfile_curvature("output/curvature.txt", ios::app);    // Now opening file again in append mode.
+
+      system("exec rm -f output/material_point.txt")
+      system("exec mv output/material_point_new.txt output/material_point.txt")
+      fstream outfile_SS("output/material_point.txt", ios::app);    // Now opening file again in append mode.      
+      // -----------------------------------------------------------------------------------------------------------
+
+
+      /* */
+
+      filenumber = lastfile+1;
+
+      char ch = ' ';
 
       // This whole thing has been written to calculate the time at which the last code was stopped.
-      ifstream input_time ("output/time.txt",ios::in);
-      // input_time.open();
+      ifstream input_time ("output/time.txt");
+      
       if(input_time.is_open()) 
       {
-        input_time.seekg(-1,ios_base::end);                // go to one spot before the EOF
+        input_time.seekg(0,ios_base::end);                // go to one spot before the EOF
 
-        bool keepLooping = true;
-        while(keepLooping) 
-        {
-            char ch;
-            input_time.get(ch);                            // Get current byte's data
-
-            if((int)input_time.tellg() <= 1) 
-            {                                   // If the data was at or before the 0th byte
-                input_time.seekg(0);                       // The first line is the last line
-                keepLooping = false;                // So stop there
+         while(ch != '\n')
+         {
+            input_time.seekg(-2,ios_base::cur); //Two steps back, this means we
+                                              //will NOT check the last character
+            if((int)input_time.tellg() <= 0)
+            {        //If passed the start of the file,
+                input_time.seekg(0);                 //this is the start of the line
+                break;
             }
-            else if(ch == '\n') {                   // If the data was a newline
-                keepLooping = false;                // Stop at the current position.
-            }
-            else {                                  // If the data was neither a newline nor at the 0 byte
-                input_time.seekg(-2,ios_base::cur);        // Move to the front of that data, then to the front of the data before it
-            }
-        }
+            input_time.get(ch);                      //Check the next character
+          }
+         
+        getline(input_time,lastline); 
+        input_time.close();
 
-        string lastline;
-        getline(input_time,lastline);                      // Read the current line
-        time = stod(lastline);
-
-        input_time.close();   // close the file and open it in append mode later.
+        // cout << time << endl;
+        // cout << lastline << endl;
+        // time = stod(lastline);
       }
+      time = strtod(lastline.c_str(),NULL) ;
 
-      ifstream myfile("output/position1.txt");
-      string line;
       // getline(myfile,line);
       // cout << "Aisa ho hi nahi sakta ki ye yaha na aaye" << endl;
-      int ip =0;
-      while ( getline (myfile,line,'\t') )
-      {
-          // cout << "Yadi ye yaha nahi aa raha hai to iska matlab ye while loop ne gandagi faila rakhi hai" <<endl;
-          // cout << line << '\n';
-          y0[ip] = stod(line);
-      }
-      myfile.close();
+     
+    ifstream ifile("output/position0.txt", ios::in);
+    
+
+    //keep storing values from the text file so long as data exists:
+    int idim = 0;
+    while (ifile >> num) {
+        y0[idim] = num;
+        idim = idim+1;
+    }
   }
   else
   {
+
       filenumber = 1;
       time = 0;
+
       // Deleting contents of the folder and creating folder again.
       system("exec rm -rf output");
       system("exec mkdir output");
       system("exec rm -f MSD.txt");
+
+      fstream outfile_MSD("MSD.txt", ios::out|ios::app);
+      fstream outfile_time("output/time.txt", ios::app);
+      fstream outfile_curvature("output/curvature.txt", ios::app);
+      fstream outfile_SS("output/material_point.txt", ios::app);
 
       iniconf(y0, conf_number);
 
@@ -128,16 +197,14 @@ int main()
       }
   }
 
-  fstream outfile_MSD("MSD.txt", ios::out|ios::app);
-  fstream outfile_time("output/time.txt", ios::app);
-  fstream outfile_curvature("output/curvature.txt", ios::app);
-  fstream outfile_SS("output/material_point.txt", ios::app);
-  ifstream myfile ("output/position1.txt", ios::in);
+  iniconf(y, conf_number);
+
+  // cout << "ab sab kuch sahi chal raha hai" << endl;
+
+  // ifstream myfile ("output/position1.txt", ios::in);
 
   timer = clock();
   timer_global = timer/CLOCKS_PER_SEC;
-
-
 
   while(time < TMAX)
   {
@@ -153,7 +220,9 @@ int main()
 
   	// timer = clock();
 
+    // cout << dt << endl;
     rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);           
+     // cout << "Segmentation fault isse pahle hai ya baad mein" << endl;
 
     // timer = clock() - timer;
     // timer_global = timer_global + timer;
@@ -163,7 +232,7 @@ int main()
       dt_min = dt;
     }
 
-    MSElen = MSElen+(height-SS[Np-1])*(height-SS[Np-1]);
+    // MSElen = MSElen+(height-SS[Np-1])*(height-SS[Np-1]);
 
     if (SS[Np-1]>lengthmax)
     {
@@ -178,20 +247,19 @@ int main()
 
     // cout << dt << endl;
     // }
+
     tdiagnos = 0;
     // cout << "Yaar ye code chal kyu nahi raha hai " << endl;
     if (time<=tdiag*filenumber && time+dt>=tdiag*filenumber) 
     {
        // cout << time << '\t' << y[0] << '\t' << (sin(2*time+10*sin(0.1*time)))/sqrt(6+3*cos(0.1*time)) << '\t' << 1/sqrt(6+3 *cos(0.1*time))<<endl;
       // cout << dt << endl;
+
       ofstream outfile;
       string l = "output/position";
       l.append(to_string(filenumber));
       l.append(".txt");
       outfile.open(l, ios::out);
-
-      outfile_curvature << time*omega/M_PI << '\t' ;
-      outfile_time << time*omega/M_PI;
 
       for (int ip = 0; ip < Np; ++ip)
       {
@@ -231,8 +299,12 @@ int main()
       // {
       //   outfile << y[3*ip+2] << '\t';
       // }
-      // outfile << endl;
+      // outfile << endl;     
       filenumber = filenumber+1;
+
+      outfile_curvature << time*omega/M_PI << '\t' ;
+      outfile_time << time*omega/M_PI;
+
       cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<TMAX<<"\n";
       tdiagnos =1;
     }
@@ -271,7 +343,7 @@ int main()
   // cout << "Difference between max length and Minimum length of the rod: " << lengthmax-lengthmin << endl;
   cout << "Max Length: " << lengthmax << '\t' << "Min Length: " <<lengthmin << endl;
   // cout << "The average change in the length of the rod is: " << sqrt(MSElen)/itn << endl;
-  cout << "Gamma: " << gamma << "K: " << HH*aa*aa/AA << endl;
+  cout << "Gamma: " << gamma << '\t' << "K: " << HH*aa*aa/AA << endl;
 // cout << filenumber-1 << endl;
 //----------------------------
 }
