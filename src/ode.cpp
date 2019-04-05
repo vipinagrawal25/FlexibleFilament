@@ -170,7 +170,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
   s = epsilon*pow(Delta,0.25);
 
-  cout << dt << endl;
+  // cout << dt << endl;
 
   if (Delta>=1)
   {

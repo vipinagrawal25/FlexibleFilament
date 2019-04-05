@@ -8,6 +8,8 @@
 #include "ode.h"
 #include "model.h"
 #include "input.h"
+#include<sys/stat.h>
+
 //#include "cuda.h"
 using namespace std;
 /**************************/
@@ -53,113 +55,173 @@ int main()
 
   if (conf_number == -1)
   {
-      filenumber = lastfile+1;
+    filenumber = lastfile+1;
 
-      // -----------------------------------------------------------------------------------------------------
-      double num = 0.0;
-      string line;
+    // -----------------------------------------------------------------------------------------------------
+    double num = 0.0;
+    string line;
 
-      ifstream outfile_time("output/time.txt");
-      fstream outfile_time_new("output/time_new.txt", ios::out);   // Just a new time file which would be renamed later anyway.
+    ifstream outfile_time("output/time.txt");
+    fstream outfile_time_new("output/time_new.txt", ios::out);   // Just a new time file which would be renamed later anyway.
 
-      ifstream outfile_MSD("MSD.txt");
-      fstream outfile_MSD_new("MSD_new.txt",ios::out);
+    ifstream outfile_MSD("MSD.txt");
+    fstream outfile_MSD_new("MSD_new.txt",ios::out);
 
-      ifstream outfile_curvature("output/curvature.txt");
-      fstream outfile_curvature_new("output/curvature_new.txt",ios::out) ;
+    ifstream outfile_curvature("output/curvature.txt");
+    fstream outfile_curvature_new("output/curvature_new.txt",ios::out) ;
 
-      ifstream outfile_SS("output/material_point.txt");
-      fstream outfile_SS_new("output/material_point_new.txt",ios::out) ;
+    ifstream outfile_SS("output/material_point.txt");
+    fstream outfile_SS_new("output/material_point_new.txt",ios::out) ;
 
-      int ifile = 0;
+    int ifile = 1;
 
-      // This loop just make reads data from existing time file and dump it into the new file till it is allowed.
-      while(ifile<=lastfile)
+    // This loop just make reads data from existing time file and dump it into the new file till it is allowed.
+    while(ifile<=lastfile)
+    { 
+      if (outfile_time >> num)
       {
-        if (outfile_time >> num)
-        {
-          time = num;
-          outfile_time_new << num << endl;
+        time = num;
+        outfile_time_new << num << endl;
 
-          outfile_MSD >> num;
-          outfile_MSD_new << num << endl;
+        outfile_MSD >> num;
+        outfile_MSD_new << num << endl;
 
-          getline(outfile_curvature,line,'\n');
-          outfile_curvature_new << line << endl;
+        getline(outfile_curvature,line,'\n');
+        outfile_curvature_new << line << endl;
 
-          getline(outfile_SS,line,'\n');
-          outfile_SS_new << line << endl;
-
-          ifile = ifile+1;
-        }
-        else
-        {
-          cout << "ERROR: The last code has not been run till the file which has been mentioned. This does not make sense." << endl;
-          return 0;
-        }
+        getline(outfile_SS,line,'\n');
+        outfile_SS_new << line << endl;
+        ifile = ifile+1;
       }
-
-      system("exec rm -f output/time.txt")
-      system("exec mv output/time_new.txt output/time.txt")
-      fstream outfile_time("output/time.txt", ios::app);    // Now opening file again in append mode.
-
-      system("exec rm -f MSD.txt")
-      system("exec mv MSD_new.txt MSD.txt")
-      fstream outfile_time("MSD.txt", ios::app);    // Now opening file again in append mode. 
-
-      system("exec rm -f output/curvature.txt")
-      system("exec mv output/curvature_new.txt output/curvature.txt")
-      fstream outfile_curvature("output/curvature.txt", ios::app);    // Now opening file again in append mode.
-
-      system("exec rm -f output/material_point.txt")
-      system("exec mv output/material_point_new.txt output/material_point.txt")
-      fstream outfile_SS("output/material_point.txt", ios::app);    // Now opening file again in append mode.      
-      // -----------------------------------------------------------------------------------------------------------
-
-
-      /* */
-
-      filenumber = lastfile+1;
-
-      char ch = ' ';
-
-      // This whole thing has been written to calculate the time at which the last code was stopped.
-      ifstream input_time ("output/time.txt");
-      
-      if(input_time.is_open()) 
+      else
       {
-        input_time.seekg(0,ios_base::end);                // go to one spot before the EOF
-
-         while(ch != '\n')
-         {
-            input_time.seekg(-2,ios_base::cur); //Two steps back, this means we
-                                              //will NOT check the last character
-            if((int)input_time.tellg() <= 0)
-            {        //If passed the start of the file,
-                input_time.seekg(0);                 //this is the start of the line
-                break;
-            }
-            input_time.get(ch);                      //Check the next character
-          }
-         
-        getline(input_time,lastline); 
-        input_time.close();
-
-        // cout << time << endl;
-        // cout << lastline << endl;
-        // time = stod(lastline);
+        cout << "ERROR: The last code has not been run till the file which has been mentioned. This does not make sense." << endl;
+        return 0;
       }
-      time = strtod(lastline.c_str(),NULL) ;
+    }
 
-      // getline(myfile,line);
-      // cout << "Aisa ho hi nahi sakta ki ye yaha na aaye" << endl;
-     
-    ifstream ifile("output/position0.txt", ios::in);
+    // Just freeing the memory so that I can open the files in append mode again.
+    // delete [] &outfile_time;
+    // delete [] &outfile_MSD;
+    // delete [] &outfile_curvature;
+    // delete [] &outfile_SS;
+    // Free memory done
+
+    // Closing all the files which we have opened.
+    outfile_time.close();
+    outfile_MSD.close();
+    outfile_curvature.close();
+    outfile_SS.close();
+
+    outfile_time_new.close();
+    outfile_MSD_new.close();
+    outfile_curvature_new.close();
+    outfile_SS_new.close();
+    // Closing files done
+
+    system("exec rm -f output/time.txt");
+    system("exec mv output/time_new.txt output/time.txt");
+    // fstream outfile_time("output/time.txt", ios::app);    // Now opening file again in append mode.
+
+    system("exec rm -f MSD.txt");
+    system("exec mv MSD_new.txt MSD.txt");
+    // fstream outfile_time("MSD.txt", ios::app);    // Now opening file again in append mode. 
+
+    system("exec rm -f output/curvature.txt");
+    system("exec mv output/curvature_new.txt output/curvature.txt");
+    // fstream outfile_curvature("output/curvature.txt", ios::app);    // Now opening file again in append mode.
+
+    system("exec rm -f output/material_point.txt");
+    system("exec mv output/material_point_new.txt output/material_point.txt");
+    // fstream outfile_SS("output/material_point.txt", ios::app);    // Now opening file again in append mode.      
+    // -----------------------------------------------------------------------------------------------------------
+
+
+    /*Code to remove the contents of the output folder after the last file mentioned. The code would have already returned and error message
+    if lastfile is more than the total number of files present*/
+    // The idea is that I check whether the file exists or not, if not come out of loop immediately else remove the file if it has index more than
+    // lastfile mentioned in '.h' file.
+    ifile = lastfile+1;
+
+    string filename = "output/position";
+    filename.append(to_string(ifile));
+    filename.append(".txt");
+
+    struct stat buffer;
     
+    while(!stat(filename.c_str(), &buffer))
+    {
+      string removefile = "exec rm -f ";
+      removefile.append(filename);
+      system(removefile.c_str());
+      
+      ifile = ifile+1;
+      string filename = "output/position";
+      filename.append(to_string(ifile));
+      filename.append(".txt");
+    }
+    
+    // cout << "Bhai ye code pagla gaya hai" << endl; 
+    // system("exec rm -f filename");
 
+
+
+    // while(stat(filename.c_str(),&buffer))
+    // {
+      
+      
+    //   cout << "Ab to mujhe sab kuch sahi lag raha hai lekin tab bhi code andar nahi aa raha hai" << endl;  
+
+    //   ifile = ifile+1;
+    //   string filename = "output/position";
+    //   filename.append(to_string(ifile));
+    //   filename.append(".txt");
+    // }
+    /*The code ends here.*/
+    // ---------------------------------------------------------------------------------------------------------
+
+
+    // filenumber = lastfile+1;
+
+    // char ch = ' ';
+
+    // // This whole thing has been written to calculate the time at which the last code was stopped.
+    // ifstream input_time ("output/time.txt");
+    
+    // if(input_time.is_open()) 
+    // {
+    //   input_time.seekg(0,ios_base::end);                // go to one spot before the EOF
+
+    //    while(ch != '\n')
+    //    {
+    //       input_time.seekg(-2,ios_base::cur); //Two steps back, this means we
+    //                                         //will NOT check the last character
+    //       if((int)input_time.tellg() <= 0)
+    //       {        //If passed the start of the file,
+    //           input_time.seekg(0);                 //this is the start of the line
+    //           break;
+    //       }
+    //       input_time.get(ch);                      //Check the next character
+    //     }
+       
+    //   getline(input_time,lastline); 
+    //   input_time.close();
+
+    //   // cout << time << endl;
+    //   // cout << lastline << endl;
+    //   // time = stod(lastline);
+    // }
+    // time = strtod(lastline.c_str(),NULL) ;
+
+    // getline(myfile,line);
+    // cout << "Aisa ho hi nahi sakta ki ye yaha na aaye" << endl;
+   
+    ifstream initialfile("output/position0.txt", ios::in);
+  
     //keep storing values from the text file so long as data exists:
     int idim = 0;
-    while (ifile >> num) {
+    while (initialfile >> num) 
+    {
         y0[idim] = num;
         idim = idim+1;
     }
@@ -174,11 +236,6 @@ int main()
       system("exec rm -rf output");
       system("exec mkdir output");
       system("exec rm -f MSD.txt");
-
-      fstream outfile_MSD("MSD.txt", ios::out|ios::app);
-      fstream outfile_time("output/time.txt", ios::app);
-      fstream outfile_curvature("output/curvature.txt", ios::app);
-      fstream outfile_SS("output/material_point.txt", ios::app);
 
       iniconf(y0, conf_number);
 
@@ -197,8 +254,13 @@ int main()
       }
   }
 
-  iniconf(y, conf_number);
+  /*Opening every file again in append mode. This thing does not depend on configuration number and that's why it is outside the loop*/
+  fstream outfile_MSD("MSD.txt", ios::app);
+  fstream outfile_time("output/time.txt", ios::app);
+  fstream outfile_curvature("output/curvature.txt", ios::app);
+  fstream outfile_SS("output/material_point.txt", ios::app);
 
+  iniconf(y, conf_number);
   // cout << "ab sab kuch sahi chal raha hai" << endl;
 
   // ifstream myfile ("output/position1.txt", ios::in);
