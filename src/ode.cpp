@@ -77,13 +77,13 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 	double error = 0;
 	double dt = *add_dt;
 	// double tol_dt = pow(10,-9)*dt;
-  double tol_dt = pow(10,-7);
+  double tol_dt = pow(10,-6);
   bool flag_kappa;
   double time = *add_time;
   double Delta = 0; 
   double epsilon = 0.84;
-  double truncationmax=2;
-  double truncationmin=0.1;
+  double truncationmax=5;
+  double truncationmin=0.2;
 
   double ci[6] = {0,0.25,3./8,12./13,1.,1./2} ;
   double aij[6][5] = {
@@ -157,7 +157,6 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
  	}
   // cout << error << endl;
   error = sqrt(error);
-
   if (error<tiny)
   {
       Delta = 10;
@@ -170,9 +169,10 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
   s = epsilon*pow(Delta,0.25);
 
+
   // cout << dt << endl;
 
-  if (Delta>=1)
+  if (Delta>=0.5)
   {
       *add_time = time + dt;
       if (s>truncationmax)
@@ -190,36 +190,39 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
       *add_dt = s*dt;
       rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
-    // if (s>10)
-    // {
-    // // cout << s << endl;
-    //   if (isinf(s))
-    //   {
-    //       s=1;
-    //   }
-    //   else
-    //   {
-    //       s=10;
-    //   }    
-    //   *add_time = time + dt;
-    //   *add_dt = s*dt;
-    // }
-    // else if (s < 0.5)
-    // {
-    //   if (s<0.2)
-    //   {
-    //      s = 0.2; 
-    //   }
-    //   *add_dt = s*dt;
-    //   rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
-    //   // cout << s << endl;
-    // // cout << error << endl;
-    // }
-    // else
-    // {
-    //   *add_time = time + dt;
-    //   *add_dt = s*dt;
-    // }
+
+  // cout << error << '\t' << s << '\t' << dt<< endl;
+
+  // if (s>10)
+  // {
+  // // cout << s << endl;
+  //   if (isinf(s))
+  //   {
+  //       s=1;
+  //   }
+  //   else
+  //   {
+  //       s=10;
+  //   }    
+  //   *add_time = time + dt;
+  //   *add_dt = s*dt;
+  // }
+  // else if (s < 0.5)
+  // {
+  //   if (s<0.2)
+  //   {
+  //      s = 0.2; 
+  //   }
+  //   *add_dt = s*dt;
+  //   rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
+  //   // cout << s << endl;
+  // // cout << error << endl;
+  // }
+  // else
+  // {
+  //   *add_time = time + dt;
+  //   *add_dt = s*dt;
+  // }
 
 
 

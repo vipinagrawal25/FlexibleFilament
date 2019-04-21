@@ -1,8 +1,8 @@
 from numpy import *
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
 
 itn = 4000
@@ -26,7 +26,7 @@ height = 1
 
 def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,isnap):
 	# ax = fig.add_subplot(2,1,1, projection='3d')
-	ax.plot(Xaxis,Yaxis,Zaxis,'o-')
+	ax.plot(Xaxis,Yaxis,Zaxis,'.-')
 	ax.set_xlim(-1, 1)
 	ax.set_ylim(-0.5, 0.5)
 	ax.set_zlim(0,height)
