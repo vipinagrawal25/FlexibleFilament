@@ -70,67 +70,7 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
   
   // cout << EForce[Np-1].x << endl;
 
-  if (UseRP == 'O')
-  {
-    // cout << "Heheheheh" ;
-    vec3 rij;
-    double distance, c1, c2;
-    for (int ip = 0; ip < Np; ++ip)
-    {
-      for (int jp = ip; jp < Np; ++jp)
-      {
-        if (jp==ip)
-        {
-            Mobility[MatrixtoVector(ip,ip,Np)][0] = 1.0/(3*M_PI*viscosity*dd);
-            Mobility[MatrixtoVector(ip,ip,Np)][3] = Mobility[MatrixtoVector(ip,ip,Np)][0];
-            Mobility[MatrixtoVector(ip,ip,Np)][5] = Mobility[MatrixtoVector(ip,ip,Np)][0];
-        }
-        else
-        {   
-            GetRij(R, ip, jp, &distance, &rij);
-            c1 = 1.0/(8*M_PI*viscosity*distance)*(1+ dd*dd*1.0/(6*distance*distance));
-            c2 = 1.0/(8*M_PI*viscosity*distance*distance*distance)*(1-dd*dd*1.0/(2*distance*distance));
-            Mobility[MatrixtoVector(ip,jp,Np)][0] = c1+c2*(rij.x)*(rij.x);
-            Mobility[MatrixtoVector(ip,jp,Np)][1] = c2*(rij.x)*(rij.y);
-            Mobility[MatrixtoVector(ip,jp,Np)][2] = c2*(rij.x)*(rij.z);
-            
-            Mobility[MatrixtoVector(ip,jp,Np)][3] = c1+c2*(rij.y)*(rij.y);
-            Mobility[MatrixtoVector(ip,jp,Np)][4] = c2*(rij.y)*(rij.z);
-
-            Mobility[MatrixtoVector(ip,jp,Np)][5] = c1+c2*(rij.z)*(rij.z);
-        }
-      }
-    }
-
-    for (int ip = 0; ip < Np; ++ip)
-    {
-      vec3 dR_temp;
-      for (int jp = 0; jp < Np; ++jp)
-      {
-        dR_temp.x = dR_temp.x + (Mobility[MatrixtoVector(ip,jp,Np)][0])*(EForce[jp].x)
-                              + (Mobility[MatrixtoVector(ip,jp,Np)][1])*(EForce[jp].y)
-                              + (Mobility[MatrixtoVector(ip,jp,Np)][2])*(EForce[jp].z);
-
-        dR_temp.y = dR_temp.y + (Mobility[MatrixtoVector(ip,jp,Np)][1])*(EForce[jp].x)
-                              + (Mobility[MatrixtoVector(ip,jp,Np)][3])*(EForce[jp].y)
-                              + (Mobility[MatrixtoVector(ip,jp,Np)][4])*(EForce[jp].z);
-                              
-
-        // if (ip == 18)
-        // {
-        //     cout << Mobility[MatrixtoVector(ip,jp,Np)][4] << '\t' << jp << endl;
-        // }
-
-        dR_temp.z = dR_temp.z + (Mobility[MatrixtoVector(ip,jp,Np)][1])*(EForce[jp].x)
-                              + (Mobility[MatrixtoVector(ip,jp,Np)][4])*(EForce[jp].y)
-                              + (Mobility[MatrixtoVector(ip,jp,Np)][5])*(EForce[jp].z);                      
-      }
-      dR[ip] = dR_temp;
-    }
-
-  } 
-
-  else if (UseRP == 'Y')
+  if (UseRP == 'Y')
   {
     // mu_ij represents the one element of mobility matrix (Size: NXN). 
     // Every element of the matrix itself is a 2nd rank tensor and the dimension of that should 3x3.
@@ -160,33 +100,6 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
             dR[ip] = dR[ip] + dot(mu_ij, EForce[ip]);
             dR[jp] = dR[jp] + dot(mu_ij, EForce[ip]);
         }
-
-        if (conf_number == 1)
-        {
-            if (sin(omega*time) >= 0)
-            {
-                // cout << "Kya ye yaha aa raha hai?" << endl;
-                dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
-            }
-            else
-            {
-                dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*floor(sin(omega*time));
-            }
-        }
-        else if (conf_number==2)
-        {
-            if (sin(omega*time) >= 0)
-            {
-                // cout << "Kya ye yaha aa raha hai?" << endl;
-                dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*ceil(sin(omega*time));    
-            }
-            else
-            {
-                dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*floor(sin(omega*time));
-            }
-        }
-        
-
     }
   }
 
@@ -196,23 +109,23 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
     for (int ip = 0; ip < Np; ++ip)
     {
         dR[ip] = EForce[ip]*OneByGamma;
-
-        if (conf_number == 1)
-        {
-            if (sin(omega*time) >= 0)
-            {
-                // cout << "Kya ye yaha aa raha hai?" << endl;
-                dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
-            }
-            else
-            {
-                dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*floor(sin(omega*time));
-            }
-        }
     }
     // cout << EForce[Np-1].y << endl; 
   } 
-    
+  
+  switch(conf_number){
+    case 1:
+      if (sin(omega*time) >= 0){
+        dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
+      }
+      else{
+        dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*floor(sin(omega*time));
+      }
+      break;
+
+      case 2:
+        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z); 
+  }
   
   // External force applied on the end point.
   // cout << FF0.z <<endl;
@@ -254,7 +167,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
   just change the way we calculate force on 1st and 2nd node for different configuration.*/
 
   /* One thing should be noted that now the expression inside case 0 and case 1 would change depending upon the configuration.
-  Suppose if XZero is taken as the fixed point, now we dont need to calculate F^{0} but only F^{1} which would be implemented
+  Suppose if XZero is taken as the fixed point, then we dont need to calculate F^{0} but only F^{1} which would be implemented
   in case 0 because Xzero is the bottom most point for which we dont care to calculate the force and X[0] is the first point being
   implemented in case 0. Though for a different configuration these things should be changed.*/
 
@@ -262,7 +175,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
     case 0:
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
-      if (conf_number==0 || conf_number==2){
+      if (conf_number==0 ){
           dX = X[kp-1+1]-Xzero;
           bkm1 = norm(dX);
           // cout << bkm1 << endl;
@@ -301,7 +214,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
       
-      if (conf_number==0|| conf_number ==2)
+      if (conf_number==0)
       {
           dX = X[kp-2+1]-Xzero;
           bkm2 = norm(dX);
@@ -412,68 +325,101 @@ void iniconf(double *y, int configuration)
     double k = 1;      // determines the frequency for initial configuration
     double CurvLength = 0;  // determines the total length of the curve
 
-    switch(configuration)
+    if (lastfile)
     {
-      case 0:
-        for (int ip=0;ip<Np;ip++){
-          R[ip].x=0.;
-          R[ip].y=aa*sin(M_PI*k*aa*double(ip+1)/height);
-          R[ip].z=aa*double(ip+1);  
-          // R[ip].y = 0;    
-          if (ip>0)
-          {
-              CurvLength = CurvLength + sqrt((R[ip].x - R[ip-1].x)*(R[ip].x - R[ip-1].x)
-                  + (R[ip].y - R[ip-1].y)*(R[ip].y - R[ip-1].y) + (R[ip].z - R[ip-1].z)*(R[ip].z - R[ip-1].z));
-              // cout << CurvLength << endl;
-          }
-          else
-          {
-              CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
-          }
-          // cout << CurvLength << endl;
-          // cout << M_PI << endl;
+        string l = "output/position";
+        l.append(to_string(lastfile));
+        l.append(".txt");
 
-          y[3*ip]=R[ip].x;
-          y[3*ip+1]=R[ip].y;
-          y[3*ip+2]=R[ip].z;
-        }
-
-        // for (int ip = 0; ip < Np; ++ip)
-        // {
-        //     R[ip].y = R[ip].y/CurvLength; 
-        // }
-
-        break;
-
-      case 1:
-        // In this case we implement the initial configuration for GI Taylor experiment. 
-        // i.e. a straight rod which is stretched half of the height of the box and free to move from bottom.
+        ifstream myfile(l,ios::in); 
+        double num = 0.0;           
         
-        for (int ip = 0; ip < Np; ++ip)
+        // cout << "Yaha aane ka matlab file khula hai" << endl;
+        
+        int ip = 0;
+        while(myfile >> num)
         {
-            R[ip].x = 0;
-            R[ip].y = 0;
-            R[ip].z = aa*double(ip);
-
-            // cout << R[ip].z << endl ;
-
-            y[3*ip] = R[ip].x;
-            y[3*ip+1] = R[ip].y;
-            y[3*ip+2] = R[ip].z;
+          y[ip] = num;
+          ip = ip+1;
+          //keep storing values from the text file so long as data exists:
         }
 
-        // cout << aa << endl;
-        break;
+        myfile.close();   
+    }
+    
+    else{
+      switch(configuration)
+      {
+        case 0:
+          for (int ip=0;ip<Np;ip++){
+            R[ip].x=0.;
+            R[ip].y=aa*sin(M_PI*k*aa*double(ip+1)/height);
+            R[ip].z=aa*double(ip+1);  
+            // R[ip].y = 0;    
+            if (ip>0)
+            {
+                CurvLength = CurvLength + sqrt((R[ip].x - R[ip-1].x)*(R[ip].x - R[ip-1].x)
+                    + (R[ip].y - R[ip-1].y)*(R[ip].y - R[ip-1].y) + (R[ip].z - R[ip-1].z)*(R[ip].z - R[ip-1].z));
+                // cout << CurvLength << endl;
+            }
+            else
+            {
+                CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
+            }
+            // cout << CurvLength << endl;
+            // cout << M_PI << endl;
 
-        case 2:
-        // In this case we implement the initial configuration for GI Taylor experiment. 
-        // i.e. a straight rod which is stretched of the height of the box but fixed from bottom.
+            y[3*ip]=R[ip].x;
+            y[3*ip+1]=R[ip].y;
+            y[3*ip+2]=R[ip].z;
+          }
+
+          // for (int ip = 0; ip < Np; ++ip)
+          // {
+          //     R[ip].y = R[ip].y/CurvLength; 
+          // }
+
+          break;
+
+        case 1:
+          // In this case we implement the initial configuration for GI Taylor experiment. 
+          // i.e. a straight rod which is stretched half of the height of the box and free to move from bottom.
           
           for (int ip = 0; ip < Np; ++ip)
           {
               R[ip].x = 0;
               R[ip].y = 0;
-              R[ip].z = aa*double(ip+1);
+              R[ip].z = aa*double(ip);
+
+              // cout << R[ip].z << endl ;
+
+              y[3*ip] = R[ip].x;
+              y[3*ip+1] = R[ip].y;
+              y[3*ip+2] = R[ip].z;
+          }
+
+          // cout << aa << endl;
+          break;
+
+        case 2:
+        // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. The rod
+        // should be deviated a little bit from origin in starting.           
+          for (int ip = 0; ip < Np; ++ip)
+          {
+              R[ip].x = 0;
+              R[ip].y = aa*(double(ip+1)-height);
+              R[ip].z = aa*sin(M_PI*k*aa*double(ip+1)/height);
+
+              if (ip>0)
+              {
+                  CurvLength = CurvLength + sqrt((R[ip].x - R[ip-1].x)*(R[ip].x - R[ip-1].x)
+                  + (R[ip].y - R[ip-1].y)*(R[ip].y - R[ip-1].y) + (R[ip].z - R[ip-1].z)*(R[ip].z - R[ip-1].z));
+                  // cout << CurvLength << endl;
+              }
+              else
+              {
+                  CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
+              }
 
               // cout << "ab hopefully sab kuch sahi ho jaana chahiye" << endl;
 
@@ -484,29 +430,14 @@ void iniconf(double *y, int configuration)
               y[3*ip+2] = R[ip].z;
           }
 
-          break;
-
-        case -1:
-          string l = "output/position";
-          l.append(to_string(lastfile));
-          l.append(".txt");
-
-          ifstream myfile(l,ios::in); 
-          double num = 0.0;           
-          
-          // cout << "Yaha aane ka matlab file khula hai" << endl;
-          
-          int ip = 0;
-          while(myfile >> num)
+          for (int ip = 0; ip < Np; ++ip)
           {
-            y[ip] = num;
-            ip = ip+1;
-            //keep storing values from the text file so long as data exists:
+              R[ip].z = R[ip].z/CurvLength; 
           }
 
-          myfile.close();
-
-          // cout << "Aakhir ye code aisa kyu karta hai" << endl;
+          break;
+        }
+        // cout << "Aakhir ye code aisa kyu karta hai" << endl;
     }
 
 }

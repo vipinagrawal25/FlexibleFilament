@@ -148,6 +148,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
  	for (int idim = 0; idim < ndim; ++idim)
  	{
     temp[idim] = y[idim] + bi[0]*k1[idim]*dt + bi[2]*k3[idim]*dt + bi[3]*k4[idim]*dt + bi[4]*k5[idim]*dt;
+    // cout << temp[idim] << endl;
  		// cout << temp[idim] << endl;
     
     yold[idim] = y[idim];
@@ -168,8 +169,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   }
 
   s = epsilon*pow(Delta,0.25);
-
-
+  
   // cout << dt << endl;
 
   if (Delta>=0.5)
@@ -229,8 +229,8 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   // *add_time = time + dt;
   // *add_dt = s*dt;
 
-  // cout << error << endl;
-    // cout << s << endl;
+ // cout << error << endl;
+ // cout << s << endl;
   // CurvSqr = CurvSqr_Store;
 
   // cout << error << endl;

@@ -15,3 +15,12 @@ How to run the code:
 7> Select the input parameters in input.h
 8> make 
 9> If it compiled then run: ./ode.exe 
+
+## Configuration Number
+This section is about defining conf_number in src.h file
+
+1> Conf_Number == 0 :- A rod which is at equilibrium in vertical direction but have a small deformation in starting in xy plane. This configuration is fixed at bottom.
+2> Conf_Number == 1 :- This configuration is used for demonstration of GI Taylor's experiment. In this case, the rod is free and nowhere clamped. Equation of the rod is X = 0. In this case the shear flow is in perpendicular direction to the rod .
+3> Conf_Number == 2 :- In this case, a free rod is kept in the direction of the flow (at the origin so no force) but the rod is given a small deviation in starting we want to study the dynamics of that.
+
+> Tip: Define lastfile variable to a non-zero value to start the code from middle.

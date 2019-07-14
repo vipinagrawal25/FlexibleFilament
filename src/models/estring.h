@@ -43,8 +43,8 @@ char const UseRP = 'Y';					// Y is for the new one, O is for old one and N is f
 // This sets up the initial configuration of the system. If it's -1, it means that I need to start the code from somewhere in the middle,
 // Which essentialy means that I will just read data from a file and set that as the initial point of the system. Though it would create
 // problem in calculating Mean Square displacement.
-int const conf_number = -1;	
-int const lastfile=9;
+int const conf_number = 2;	
+int const lastfile=0;
 
 char const SaveInfo = 'Y';	// This decides whether the simulation is important enough to save the information.
 								// Set N for not saving.
