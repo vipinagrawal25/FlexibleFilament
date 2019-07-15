@@ -1,3 +1,4 @@
 compile=g++ -O2
 #compile=pgc++ -std=c++0x -O3
 #compile=g++ -pg -O2
+#What the hell is going on ?
