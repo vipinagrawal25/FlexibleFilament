@@ -40,9 +40,7 @@ double const HH = 64*AA/(aa*aa);		// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -
 char const UseRP = 'Y';					// Y is for the new one, O is for old one and N is for not using 
 										// Rotne Pragor tensor. 
 
-// This sets up the initial configuration of the system. If it's -1, it means that I need to start the code from somewhere in the middle,
-// Which essentialy means that I will just read data from a file and set that as the initial point of the system. Though it would create
-// problem in calculating Mean Square displacement.
+// This sets up the initial configuration of the system. For more information go through the Readme file.
 int const conf_number = 2;	
 int const lastfile=0;
 

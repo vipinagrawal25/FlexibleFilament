@@ -52,8 +52,7 @@ int main()
       return 0;
   }
 
-
-  if (conf_number == -1)
+  if (lastfile)
   {
     filenumber = lastfile+1;
 
@@ -179,42 +178,6 @@ int main()
     // }
     /*The code ends here.*/
     // ---------------------------------------------------------------------------------------------------------
-
-
-    // filenumber = lastfile+1;
-
-    // char ch = ' ';
-
-    // // This whole thing has been written to calculate the time at which the last code was stopped.
-    // ifstream input_time ("output/time.txt");
-    
-    // if(input_time.is_open()) 
-    // {
-    //   input_time.seekg(0,ios_base::end);                // go to one spot before the EOF
-
-    //    while(ch != '\n')
-    //    {
-    //       input_time.seekg(-2,ios_base::cur); //Two steps back, this means we
-    //                                         //will NOT check the last character
-    //       if((int)input_time.tellg() <= 0)
-    //       {        //If passed the start of the file,
-    //           input_time.seekg(0);                 //this is the start of the line
-    //           break;
-    //       }
-    //       input_time.get(ch);                      //Check the next character
-    //     }
-       
-    //   getline(input_time,lastline); 
-    //   input_time.close();
-
-    //   // cout << time << endl;
-    //   // cout << lastline << endl;
-    //   // time = stod(lastline);
-    // }
-    // time = strtod(lastline.c_str(),NULL) ;
-
-    // getline(myfile,line);
-    // cout << "Aisa ho hi nahi sakta ki ye yaha na aaye" << endl;
    
     ifstream initialfile("output/position0.txt", ios::in);
   
@@ -323,6 +286,8 @@ int main()
       l.append(".txt");
       outfile.open(l, ios::out);
 
+      outfile_curvature << time/ShearRate << '\t' ;
+
       for (int ip = 0; ip < Np; ++ip)
       {
         outfile << y[3*ip] << '\t' << y[3*ip+1] << '\t' << y[3*ip+2] << endl ; 
@@ -364,8 +329,7 @@ int main()
       // outfile << endl;     
       filenumber = filenumber+1;
 
-      outfile_curvature << time*omega/M_PI << '\t' ;
-      outfile_time << time*omega/M_PI;
+      outfile_time << time/ShearRate;
 
       cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<TMAX<<"\n";
       tdiagnos =1;
@@ -385,9 +349,9 @@ int main()
 
     ofstream outfile_information;
     outfile_information.open("../info.csv", ios::out | ios::app);
-    outfile_information << itn << ";" <<  timer_global << ";" << TMAX << ';' << dt_min << ";" << viscosity << ';'
-    << ShearRate << ';' <<  omega << ";" << Np << ";" << AA << ";" << HH << ";" << dd << ";" << height << ";" << sigma << ";" 
-    << gamma << ";" << HH*aa*aa/AA << endl;
+    outfile_information << itn << "," <<  timer_global << "," << TMAX << ',' << dt_min << "," << viscosity << ','
+    << ShearRate << ',' <<  omega << "," << Np << "," << AA << "," << HH << "," << dd << "," << height << "," << sigma << "," 
+    << gamma << "," << HH*aa*aa/AA << endl;
     outfile_information.close();
 
     outfile_information.open("info.txt", ios::out);

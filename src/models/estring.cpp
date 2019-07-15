@@ -115,16 +115,22 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
   
   switch(conf_number){
     case 1:
-      if (sin(omega*time) >= 0){
-        dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
-      }
-      else{
-        dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*floor(sin(omega*time));
+      for (int ip = 0; ip < Np; ++ip){
+        if (sin(omega*time) >= 0){
+          dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
+        }
+        else{
+          dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*floor(sin(omega*time));
+        }
       }
       break;
 
       case 2:
-        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z); 
+      for (int ip = 0; ip < Np; ++ip)
+      {
+        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z);          
+      }
+      break; 
   }
   
   // External force applied on the end point.
@@ -346,7 +352,7 @@ void iniconf(double *y, int configuration)
 
         myfile.close();   
     }
-    
+
     else{
       switch(configuration)
       {

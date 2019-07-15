@@ -3,6 +3,6 @@
 # CFLAGS=-pg -O3
 include ${ES}/host
 default:
-	(${compile} -Wno-depecated -Wno-unused-result -std=c++0x  -o ode.exe ode.cpp solve.cpp model.cpp)
+	(${compile} -Wno-unused-result -std=c++0x  -o ode.exe ode.cpp solve.cpp model.cpp)
 clean:
 	rm -f *.o *.exe 
