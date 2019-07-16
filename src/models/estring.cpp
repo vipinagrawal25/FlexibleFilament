@@ -13,29 +13,20 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
 void getub(double *bk, vec3 *uk, int kp, vec3 X[]);
 int MatrixtoVector(int i, int j, int N);
 void GetRij(vec3 X[], int i, int j, double *Distance, vec3 *rij);
+void drag(vec3 X[], vec3 dX[], vec3 EForce[]);
 /**************************/
 
 using namespace std;
 
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
-  vec3 R[Np],dR[Np], EForce[Np], EForce_ip;  // R is the position of the beads.
+  vec3 R[Np],dR[Np], EForce[Np], EForce_ip, FF0;  // R is the position of the beads.
   // double CurvSqr[Np];
-  double kappasqr, Mobility[Np*(Np+1)/2][6];
+  double kappasqr;
   double onebythree = 1./3.;
 
-  double mu0 = onebythree/(M_PI*viscosity*dd);
-
-  // Initializing Mobility Matrix.
-  for (int i = 0; i < Np*(Np+1)/2; ++i)
-  {
-      for (int j = 0; j < 6; ++j)
-      {
-          Mobility[i][j] = 0;
-      }
-  }
+  double Curvlength = 0;
 
   SS[0] = 0;    // Initializing the material co-ordinate
-  // SS[Np-1] = 1;
 
   for (int ip=0;ip<Np;ip++){
     R[ip].x=y[3*ip];
@@ -43,79 +34,46 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
     R[ip].z=y[3*ip+2];
   }
 
-  for (int ip=0;ip<Np;ip++){
-    kappasqr=CurvSqr[ip];
-
+  for (int ip = 0; ip < Np-1; ++ip)
+  {
     if (flag_kappa)
     {
-      if (ip<Np-1)
-      {
-          SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip]);
-      }
-      // else{
-        // cout << flag_kappa << endl;
-      // }
-    }    
-
-    dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
-    EForce[ip] = EForce_ip;
-    // EForce[ip] = EForce[ip]*aa*aa;
-    // dR[ip]=EForce*OneByGamma;
-    CurvSqr[ip]=kappasqr;
-    // cout << CurvSqr[ip] << endl;
+      Curvlength = Curvlength+norm(R[ip+1]-R[ip]);
+    }  
   }
 
-  vec3 FF0(0., 0., -FFZ0*sin(omega*time));
-  EForce[Np-1] = EForce[Np-1]-FF0;
-  
-  // cout << EForce[Np-1].x << endl;
+  for (int ip=0;ip<Np;ip++){
+  kappasqr=CurvSqr[ip];
 
-  if (UseRP == 'Y')
+  if (flag_kappa)
   {
-    // mu_ij represents the one element of mobility matrix (Size: NXN). 
-    // Every element of the matrix itself is a 2nd rank tensor and the dimension of that should 3x3.
-
-    Tens2 mu_ij, mu_ii;
-    double d_rij;
-    vec3 rij;
-
-    mu_ii = dab*mu0;
-    // PTens2(mu_ii);
-    // rij = R[j]-R[i] and d_rij is just the norm of this value.
-
-    for (int ip = 0; ip < Np; ++ip)
+    if (ip<Np-1)
     {
-        // The mu_ij in the next line represents the mobility tensor when j is equal to i and in 
-        // response to that the for loop is started from ip+1 .
-
-        dR[ip] = dR[ip] + dot(mu_ii, EForce[ip]);
-        
-        for (int jp = ip+1; jp < Np; ++jp)
-        {
-            GetRij(R, ip, jp, &d_rij, &rij);
-            double c1 = 1/(8*M_PI*viscosity*d_rij);
-            double dsqr1 = 1./(d_rij*d_rij);
-            //mu_ij = c1*(dab + rij*rij/(d_rij*d_rij) + dd*dd/(2*d_rij*d_rij)*(dab/3 - rij*rij/(d_rij*d_rij)));
-            mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
-            dR[ip] = dR[ip] + dot(mu_ij, EForce[ip]);
-            dR[jp] = dR[jp] + dot(mu_ij, EForce[ip]);
-        }
+      SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip])/Curvlength;
     }
+  }    
+
+  dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
+  EForce[ip] = EForce_ip;
+  // EForce[ip] = EForce[ip]*aa*aa;
+  // dR[ip]=EForce*OneByGamma;
+  CurvSqr[ip]=kappasqr;
+  // cout << CurvSqr[ip] << endl;
   }
 
-  else
-  {
-    // cout << "Yaha nahi aayega to kaha jayega" << endl;
-    for (int ip = 0; ip < Np; ++ip)
-    {
-        dR[ip] = EForce[ip]*OneByGamma;
-    }
-    // cout << EForce[Np-1].y << endl; 
-  } 
-  
+  drag(R, dR, EForce);
+
   switch(conf_number){
+    case 0:
+      FF0.x = 0;
+      FF0.y = 0;
+      FF0.z = -FFZ0*sin(omega*time);
+      EForce[Np-1] = EForce[Np-1]-FF0;
+      break;
+
     case 1:
-      for (int ip = 0; ip < Np; ++ip){
+      for (int ip = 0; ip < Np; ++ip)
+      {
         if (sin(omega*time) >= 0){
           dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
         }
@@ -144,6 +102,53 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
     rhs[3*ip+2]=dR[ip].z;
     }
 }
+
+/**************************/
+void drag(vec3 X[], vec3 dX[], vec3 EForce[]){
+  double onebythree = 1./3.;
+  double mu0 = onebythree/(M_PI*viscosity*dd);
+  if (UseRP == 'Y')
+  {
+    // mu_ij represents the one element of mobility matrix (Size: NXN). 
+    // Every element of the matrix itself is a 2nd rank tensor and the dimension of that should 3x3.
+
+    Tens2 mu_ij, mu_ii;
+    double d_rij;
+    vec3 rij;
+
+    mu_ii = dab*mu0;    // dab is the unit 2 dimensional tensor. It is defined in module/2Tens file.
+    // PTens2(mu_ii);
+    // rij = R[j]-R[i] and d_rij is just the norm of this value.
+
+    for (int ip = 0; ip < Np; ++ip)
+    {
+        // The mu_ij in the next line represents the mobility tensor when j is equal to i and in 
+        // response to that the "for loop" is started from ip+1 .
+
+        dX[ip] = dX[ip] + dot(mu_ii, EForce[ip]);
+        
+        for (int jp = ip+1; jp < Np; ++jp)
+        {
+            GetRij(X, ip, jp, &d_rij, &rij);
+            double c1 = 1/(8*M_PI*viscosity*d_rij);
+            double dsqr1 = 1./(d_rij*d_rij);
+            mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
+            dX[ip] = dX[ip] + dot(mu_ij, EForce[ip]);
+            dX[jp] = dX[jp] + dot(mu_ij, EForce[ip]);
+        }
+    }
+  }
+
+  else
+  {
+    for (int ip = 0; ip < Np; ++ip)
+    {
+        dX[ip] = EForce[ip]*mu0;
+    }
+  } 
+ 
+}
+
 /**************************/
 void getub(double *bk, vec3 *uk, int kp, vec3 X[]){
   vec3 dX = X[kp+1]-X[kp];
@@ -364,8 +369,7 @@ void iniconf(double *y, int configuration)
             // R[ip].y = 0;    
             if (ip>0)
             {
-                CurvLength = CurvLength + sqrt((R[ip].x - R[ip-1].x)*(R[ip].x - R[ip-1].x)
-                    + (R[ip].y - R[ip-1].y)*(R[ip].y - R[ip-1].y) + (R[ip].z - R[ip-1].z)*(R[ip].z - R[ip-1].z));
+                CurvLength = CurvLength + norm(R[ip]-R[ip-1]);
                 // cout << CurvLength << endl;
             }
             else
@@ -418,8 +422,7 @@ void iniconf(double *y, int configuration)
 
               if (ip>0)
               {
-                  CurvLength = CurvLength + sqrt((R[ip].x - R[ip-1].x)*(R[ip].x - R[ip-1].x)
-                  + (R[ip].y - R[ip-1].y)*(R[ip].y - R[ip-1].y) + (R[ip].z - R[ip-1].z)*(R[ip].z - R[ip-1].z));
+                  CurvLength = CurvLength + norm(R[ip] - R[ip-1]);
                   // cout << CurvLength << endl;
               }
               else
@@ -448,32 +451,11 @@ void iniconf(double *y, int configuration)
 
 }
 
-/*********************************************/
-int MatrixtoVector(int i, int j, int N)
-{
-  /* This function is defined to save the storage space of Mobility matrix from N^2 to N(N+1)/2 Given an 
-  index of 2-D Mobility matrix this will map them to find out the same index in the 1-D Mobility vector.*/
-
-  if (i<=j)
-  {
-    return (i * N - (i - 1) * i / 2 + j - i);
-  }
-  else
-  {
-    return (j * N - (j - 1) * j / 2 + i - j);  
-  }
-
-}
-
 /********************************************/
 void GetRij(vec3 R[], int i, int j, double *Distance, vec3 *rij)
 {
   /*This calculated the distance at two index i and j on the elastic string*/
-  // *Distance = (R[i].x - R[j].x)*(R[i].x - R[j].x) + (R[i].y - R[j].y)*(R[i].y - R[j].y) 
-    // + (R[i].z - R[j].z)*(R[i].z - R[j].z);
-    // The reason behind to calculate distance in this function is so that the code would waste time 
-    // only once calculating the norm not every time the function norm is to be called.
-    
+
   *rij = R[j] - R[i];
   double Dis = norm(R[j]-R[i]); 
   *Distance = Dis;

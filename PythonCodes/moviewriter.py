@@ -5,21 +5,15 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
 
-itn = 4000
+itn = 2000
 FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Movie Test', artist='Matplotlib',
                 comment='Movie support!')
 writer = FFMpegWriter(fps=10, metadata=metadata)
 
-# l, = ax.plot([], [], [], 'o-' )
-# m, = plt.title([])
-
-#     
-#     ax = fig.gca(projection='3d')
-
 fig = plt.figure()
-ax1=fig.add_subplot(1,1,1,projection='3d')
-# ax2=fig.add_subplot(1,2,2)
+# ax1=fig.add_subplot(1,1,1,projection='3d')
+ax2=fig.add_subplot(1,1,1)
 
 FILE = 'output'
 height = 1
@@ -32,14 +26,15 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,isnap):
 	ax.set_zlim(0,height)
 	plt.title(str(time[isnap]))
 
-# def MakePlot2D(ax,Xaxis,Yaxis,isnap):
-# 	# ax.subplot(2,1,2)
-# 	ax.plot(Xaxis,Yaxis,'o-')
-# 	ax.set_xlim(-1,1.3)
-# 	ax.set_ylim(-1,1.3)
-# 	plt.title(str(time[isnap]))
-# 	# plt.hold(False)
-# 	ax.grid(True)
+def MakePlot2D(ax,Xaxis,Yaxis,isnap):	
+	# ax.subplot(2,1,2)
+	ax.set_xlim(-1,1.3)
+	ax.set_ylim(-1,1.3)
+
+	ax.plot(Xaxis,Yaxis,'o-')
+	plt.title(str(time[isnap]))
+	# plt.hold(False)
+	ax.grid(True)
 
 time = loadtxt(FILE+'/time.txt')
 
@@ -49,11 +44,11 @@ with writer.saving(fig,"movie.mp4", 100):
 		xx = dd[:,0]
 		yy = dd[:,1]
 		zz = dd[:,2]
-		MakePlot3D(ax1,xx,yy,zz,isnap)
-		# MakePlot2D(ax2,xx,yy,isnap)
-		# ax2.hold(False)
+		# MakePlot3D(ax1,xx,yy,zz,isnap)
+		MakePlot2D(ax2,yy,zz,isnap)
 		writer.grab_frame()
-		ax1.clear()
+		ax2.clear()
+		# ax1.clear()
 		print('plot = ' + str(isnap)+ 'Done')
 
 # with writer.saving(fig, FILE+"/movie.mp4", 100):	

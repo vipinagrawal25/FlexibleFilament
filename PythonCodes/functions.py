@@ -8,7 +8,7 @@ def curvatureplot( FILE='output', Np=100, omega=3 ):
 	dd_SS = loadtxt(FILE+'/material_point.txt')
 	dd = dd
 	Y = dd_SS
-	timeAxis = loadtxt(FILE+'/time.txt')*omega/3.14
+	timeAxis = loadtxt(FILE+'/time.txt')
 	IndexAxis = arange(Np)
 	heightAxis = dd[:,1:Np+1]
 	# heightAxis = ndimage.rotate(heightAxis,90)
@@ -24,10 +24,11 @@ def curvatureplot( FILE='output', Np=100, omega=3 ):
 	ax.set_ylabel('material_point')
 
 	plt.savefig('curvatureplot.eps')
-	plt.savefig('curvatureplot.png',dpi=300)
-	# show()
-	close()
-	return 
+	# print "Ye kya ho raha hai bhaiya ye kya ho raha hai"
+	# plt.savefig('curvatureplot.png',dpi=300)
+	plt.show()
+	# close()
+	return fig
 
 chitra = plt.figure();
 def MSD_plot(FILE='MSD.txt',step=1, fig=chitra):

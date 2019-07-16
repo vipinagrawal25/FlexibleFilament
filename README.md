@@ -16,7 +16,7 @@ How to run the code:
 8> make 
 9> If it compiled then run: ./ode.exe 
 
-## Configuration Number
+### Configuration Number
 This section is about defining conf_number in src.h file
 
 1> Conf_Number == 0 :- A rod which is at equilibrium in vertical direction but have a small deformation in starting in xy plane. This configuration is fixed at bottom.

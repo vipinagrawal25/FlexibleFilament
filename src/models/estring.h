@@ -20,8 +20,6 @@ double const viscosity = 10;				// Equivalent to kinematic viscosity of glycerin
 // The below line is commented because of some error. So I included it in last formulae itself.
 // HH =  HH/aa; 			// This is done to model the rod perfectly (Also see: https://goo.gl/nbELSx Week 27/2018 DS)
 
-double const OneByGamma=1/(double)height;				// Mobility is just the inverse of Gamma. So OneByGamma is actually the mobility of the system if no
-														// back reaction is taken into the account.
 double const Z0=0.;						// If we want the bottom point of the rod to be fixed.
 // double const FFZ0 = 1*height;		// Force Value on the ends
 double const FFZ0 = 0*height*height;					// Different force for different configuration.
