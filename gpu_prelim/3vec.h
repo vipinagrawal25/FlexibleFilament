@@ -6,7 +6,7 @@
 #include "2Tens.h"
 using namespace std;
 /*-------------------------*/
-class vec3{
+__device__ class vec3{
 public:
   double x,y,z;
   vec3();

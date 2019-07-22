@@ -293,7 +293,7 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
     }
     *add_kappasqr=0.;
     break;
-  case Np-2:
+  case NN-2:
     getub(&bkm2, &ukm2, kp-2, X);
     getub(&bkm1, &ukm1, kp-1, X);
       getub(&bk, &uk, kp, X);
@@ -306,7 +306,7 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
       *add_kappasqr=0.;
       *add_FF = FF;  
       break;
-  case Np-1:
+  case NN-1:
     switch( bct ){
     case 0: // clamped
       //we should crash here
