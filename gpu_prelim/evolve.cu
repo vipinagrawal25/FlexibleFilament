@@ -92,7 +92,7 @@ __global__ void euler( double psi[], double k0[], EV *tt,
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   /* I do time-marching till time reaches the time to calculate 
      the next diagnostic */
-  if (tid < NN ){
+  while (tid < NN ){
     while( (*tt).time < (*tt).tdiag ){
       eval_rhs( dpsi, psi, tid, (*tt).time, dev_param, diag );
       for (int ip=0; ip<pp; ip++){
@@ -110,7 +110,8 @@ __global__ void euler( double psi[], double k0[], EV *tt,
       }
       __syncthreads( );
     }// the while loop finished here.
-  }// if loop over threads finishes here.
+    tid += blockDim.x * gridDim.x ;
+  }// while loop over threads finishes here.
   // then sync the threads again. 
   __syncthreads( );
 }
@@ -127,7 +128,7 @@ __global__ void rnkt4( double psi[], double kk[], EV *tt,
   int tid = threadIdx.x + blockIdx.x * blockDim.x ;
   /* I do time-marching till time reaches the time to calculate 
      the next diagnostic */
-  if (tid < NN ){
+  while (tid < NN ){
     while( (*tt).time < (*tt).tdiag ){
       // step 1 of rnkt4
       eval_rhs( dpsi, psi, tid, (*tt).time, dev_param, diag );
@@ -179,7 +180,8 @@ __global__ void rnkt4( double psi[], double kk[], EV *tt,
         (*tt).time += (*tt).dt; 
       }
     }// the while loop finished here.
-  }// if loop over threads finishes here.
+    tid += blockDim.x * gridDim.x ;
+  }// while loop over threads finishes here.
   // then sync the threads again. 
   __syncthreads( );
 }
