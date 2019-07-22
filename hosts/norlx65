@@ -1,1 +1,1 @@
-compile=g++ -pg -O2
+compile=g++ -O2

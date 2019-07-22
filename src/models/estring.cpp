@@ -427,12 +427,8 @@ void iniconf(double *y, int configuration)
               }
               else
               {
-                  CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
+                  CurvLength = CurvLength + norm(R[ip]);
               }
-
-              // cout << "ab hopefully sab kuch sahi ho jaana chahiye" << endl;
-
-              // cout << R[ip].z << endl ;
 
               y[3*ip] = R[ip].x;
               y[3*ip+1] = R[ip].y;
@@ -446,8 +442,7 @@ void iniconf(double *y, int configuration)
 
           break;
         }
-        // cout << "Aakhir ye code aisa kyu karta hai" << endl;
-    }
+      }
 
 }
 

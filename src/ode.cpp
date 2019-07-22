@@ -76,7 +76,6 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 	int idim ;
 	double error = 0;
 	double dt = *add_dt;
-	// double tol_dt = pow(10,-9)*dt;
   double tol_dt = pow(10,-6);
   bool flag_kappa;
   double time = *add_time;
@@ -148,20 +147,16 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
  	for (int idim = 0; idim < ndim; ++idim)
  	{
     temp[idim] = y[idim] + bi[0]*k1[idim]*dt + bi[2]*k3[idim]*dt + bi[3]*k4[idim]*dt + bi[4]*k5[idim]*dt;
-    // cout << temp[idim] << endl;
- 		// cout << temp[idim] << endl;
-    
+
     yold[idim] = y[idim];
     y[idim] = y[idim]+ bistar[0]*k1[idim]*dt + bistar[2]*k3[idim]*dt + bistar[3]*k4[idim]*dt + bistar[4]*k5[idim]*dt + bistar[5]*k6[idim]*dt;
-    // cout << temp[idim] << endl;
- 		error = error + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
+    error = error + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
  	}
   // cout << error << endl;
   error = sqrt(error);
   if (error<tiny)
   {
       Delta = 10;
-      // cout << "Kya error itna chota hai " << endl;
   }
   else
   {
@@ -170,8 +165,6 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
   s = epsilon*pow(Delta,0.25);
   
-  // cout << dt << endl;
-
   if (Delta>=0.5)
   {
       *add_time = time + dt;

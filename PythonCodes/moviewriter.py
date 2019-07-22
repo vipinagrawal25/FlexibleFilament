@@ -16,7 +16,7 @@ fig = plt.figure()
 ax2=fig.add_subplot(1,1,1)
 
 FILE = 'output'
-height = 1
+height = 2
 
 def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,isnap):
 	# ax = fig.add_subplot(2,1,1, projection='3d')
@@ -28,7 +28,7 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,isnap):
 
 def MakePlot2D(ax,Xaxis,Yaxis,isnap):	
 	# ax.subplot(2,1,2)
-	ax.set_xlim(-1,1.3)
+	# ax.set_xlim(-1,2*height)
 	ax.set_ylim(-1,1.3)
 
 	ax.plot(Xaxis,Yaxis,'o-')
@@ -50,25 +50,3 @@ with writer.saving(fig,"movie.mp4", 100):
 		ax2.clear()
 		# ax1.clear()
 		print('plot = ' + str(isnap)+ 'Done')
-
-# with writer.saving(fig, FILE+"/movie.mp4", 100):	
-#     for isnap in range(1,itn,1):
-#     	# start = time.time()
-#     	dd = loadtxt(FILE+'/position'+str(isnap)+'.txt')
-#     	zz = dd[:,2]
-#     	yy = dd[:,1]
-#     	xx = dd[:,0]
-#     	# plt.text(0.5, 0.5, str(time[isnap]))
-#     	# l.set_data(xx,yy,zz)
-#     	ax.plot(xx,yy,zz,'o-')
-#     	ax.set_xlim(-1, 1)
-#     	ax.set_ylim(-0.5, 0.5)
-#     	ax.set_zlim(0,1.3)
-#     	plt.title(str(time[isnap]))
-#     	# print(time[isnap])
-#     	writer.grab_frame()
-#     	ax.hold(False)
-#     	# end = time.time()
-#     	# print(end-start)
-#     	print('plot = ' + str(isnap)+ ' Done' )
-
