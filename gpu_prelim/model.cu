@@ -36,6 +36,12 @@ void set_param( void ){
 // double tdiag = TMAX/2000;
   host_param.qdiag = 2 ;
   qdiag = host_param.qdiag ;
+  host_param.bcb = 1 ;
+  host_param.bct = 1;
+  host_param.global_drag = 1;
+  host_param.iext_force = 0;
+  host_param.floc = 0 ;
+  host_param.iext_flow = 1;
   cudaMemcpy( dev_param, &host_param,
                      size_MPARAM, cudaMemcpyHostToDevice ) ;
   write_param( );
@@ -76,10 +82,50 @@ __device__ vec3 Uflow ( vec3 R, struct MPARAM *param){
   return UU;
 }
 /* -----------------------------------------------------------------------------------*/
+__device__ vec3 ext_force( int kelement, vec3 R, double tau,
+                           struct MPARAM *param  ){
+  double omega = (*param).omega;
+  double Famp = (*param).Famp;
+  vec3 FF0;
+  /* iext_force : implements external force on the filament
+     periodic forcing at  position floc  */
+      FF0.x = 0. ;
+      FF0.y = 0. ;
+      FF0.z = -Famp*sin(omega*tau) ;
+      return FF0;
+}
+/* -----------------------------------------------------------------------------------*/  
+__device__ int square_wave( double t, double Tby2) {
+  int s = t/Tby2 ;
+  int sw = -2*(s % 2 ) + 1;
+  return sw;
+}
+/* -----------------------------------------------------------------------------------*/  
+__device__ vec3 ext_flow( int kelement, vec3 R, double tau, struct MPARAM *param  ){
+  int iext_flow = (*param).iext_flow;
+  double ShearRate = (*param).ShearRate;
+  double omega = (*param).omega;
+  double height = (*param).height;
+  vec3 UU ;
+  switch( iext_flow ){
+  case 1:
+    //time-dependent shear U = ( ShearRate*z, 0, 0 ) * square_wave(omega*time) 
+    UU.x = (height - R.z)*ShearRate*square_wave( tau, M_PI/omega ) ;
+    UU.y = 0. ;
+    UU.z = 0;
+    break;
+  case 2:
+    UU.x = R.z*ShearRate ;
+    break; 
+  }
+}
+ /* -----------------------------------------------------------------------------------*/
 __device__ void eval_rhs( double dpsi[], double psi[], int kelement, double tau,
                           struct MPARAM *param, double *diag ){
-
+  int iext_flow = (*param).iext_flow ;
   vec3 R, dR, EForce, FF0;  // R is the position of the beads.
+  int iext_force = (*param).iext_force ;
+  int floc = (*param).floc ;
   /* we are calculating two diagnostic quantities at the moment
 ds : d( material coordinate) . 
 kappasqr : square of local curvature. 
@@ -103,44 +149,15 @@ This number is stored in param.qdiag */
   /* write diagnostic to corresponding array */
   diag[kelement*qdiag +1] = ds ;
   diag[kelement*qdiag +1]  = kappasqr;
+  /* add external force to the filament */
+  if ( (iext_force) && (kelement == floc) ){
+  Eforce = Eforce -  ext_force( kelement, R, tau, param ) ;}
   /* calculate the viscous (possibly non-local ) drag */
   dR = drag(kelement, psi,  EForce, param);
-  /*------------------------------------------------ */
-  dR += Uflow( R, param ); 
-  switch(conf_number){
-    case 0:
-      FF0.x = 0;
-      FF0.y = 0;
-      FF0.z = -FFZ0*sin(omega*time);
-      EForce[Np-1] = EForce[Np-1]-FF0;
-      break;
-
-    case 1:
-      for (int ip = 0; ip < Np; ++ip)
-      {
-        if (sin(omega*time) >= 0){
-          dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
-        }
-        else{
-          dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*floor(sin(omega*time));
-        }
-      }
-      break;
-
-      case 2:
-      for (int ip = 0; ip < Np; ++ip)
-      {
-        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z);          
-      }
-      break; 
-  }
-  
-  // External force applied on the end point.
-  // cout << FF0.z <<endl;
-  // dR[Np-1] = dR[Np-1]-FF0*; 
-  //dR[Np-1].y = 0;
-  // Constraint that last point should always remain on z axis. */
-  
+  /* contribution from external flow */
+  if ( iext_flow  ){ 
+    dR += ext_flow( kelement, R, tau, param  ) ; }
+  /*------ put the rhs back to the dpsi array ----- */
   dpsi[pp*kelement]       = dR.x  ;
   dpsi[pp*kelement + 1] = dR.y ;
   dpsi[pp*kelement + 2] = dR.z ;
