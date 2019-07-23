@@ -159,8 +159,7 @@ void PTens2(Tens2 a){
 
 
 // This defines the kronecker delta function or a unit tensor matrix. dab = \delta_{\alpha \beta}
-Tens2 dab(1.,0.,0.,0.,1.,0.,0.,0.,1.);
-
+__device__ Tens2 dab(1.,0.,0.,0.,1.,0.,0.,0.,1.);
 /*---------------------------------------*/
 #endif /* !FILE_3vec_SEEN */
 

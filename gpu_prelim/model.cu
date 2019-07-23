@@ -3,7 +3,15 @@
 #include <stdlib.h>
 #include "odeN.h"
 #include "model.h"
+#include "3vec.h"
+#include "2Tens.h"
 __host__ void write_param( void );
+__device__ void dHdR(int kp, double psi[], vec3* add_FF,
+                     double* add_kappasqr,  struct MPARAM *param );
+__device__ vec3 drag(int ip,  double psi[], vec3 EForce[],
+                     struct MPARAM *param);
+__device__ void GetRij(double psi[], int i, int j, double *Distance,
+                       vec3 *rij);
 struct MPARAM host_param ;
 struct MPARAM *dev_param;
 double *DIAG ;
@@ -20,11 +28,11 @@ void set_param( void ){
      the particles would also have same diameter. */
   host_param.viscosity = 10;	      // Equivalent to kinematic viscosity of glycerin
   host_param.Z0=0. ;		      // If we want the bottom point of the rod to be fixed.
-  host_param.FFZ0 = 0. ;	      // Different force for different configuration.
+  host_param.Famp = 0. ;	      // Different force for different configuration.
   // Sigma is a dimensionless number, which is described as frequency parameter.
   host_param.sigma=1.5;					
   host_param.ShearRate = 1.;
-  host_param.omega = ShearRate*sigma;
+  host_param.omega = host_param.ShearRate*host_param.sigma ;
   //
   host_param.factorAA = 0.15 ; 
   host_param.AA = host_param.factorAA*pow(10,-4) ; // AA is the bending rigidity.
@@ -35,7 +43,7 @@ void set_param( void ){
 // double TMAX = ShearRate*10;
 // double tdiag = TMAX/2000;
   host_param.qdiag = 2 ;
-  qdiag = host_param.qdiag ;
+  int qdiag = host_param.qdiag ;
   host_param.bcb = 1 ;
   host_param.bct = 1;
   host_param.global_drag = 1;
@@ -47,7 +55,7 @@ void set_param( void ){
   write_param( );
   // allocate host data for diagnostic
   int size_diag = NN*qdiag ; 
-  *DIAG = (double *) malloc( sizeof(double)*size_diag ) ;
+  DIAG = (double *) malloc( sizeof(double)*size_diag ) ;
   cudaMalloc( (void**)&dev_diag, size_diag*sizeof( double ) );
 }
 /* ===================================== */
@@ -76,7 +84,13 @@ void write_param( void ){
   printf( " #============================\n" );
 }
 /* -----------------------------------------------------------------------------------*/
-__device__ vec3 Uflow ( vec3 R, struct MPARAM *param){
+__device__ int square_wave( double t, double Tby2) {
+  int s = t/Tby2 ;
+  int sw = -2*(s % 2 ) + 1;
+  return sw;
+}
+/* -----------------------------------------------------------------------------------*/  
+__device__ vec3 Uflow ( vec3 RR, struct MPARAM *param){
   double gdot = (*param).ShearRate ;
   vec3 UU( gdot*RR.y, 0., 0. );
   return UU;
@@ -94,12 +108,7 @@ __device__ vec3 ext_force( int kelement, vec3 R, double tau,
       FF0.z = -Famp*sin(omega*tau) ;
       return FF0;
 }
-/* -----------------------------------------------------------------------------------*/  
-__device__ int square_wave( double t, double Tby2) {
-  int s = t/Tby2 ;
-  int sw = -2*(s % 2 ) + 1;
-  return sw;
-}
+
 /* -----------------------------------------------------------------------------------*/  
 __device__ vec3 ext_flow( int kelement, vec3 R, double tau, struct MPARAM *param  ){
   int iext_flow = (*param).iext_flow;
@@ -118,19 +127,20 @@ __device__ vec3 ext_flow( int kelement, vec3 R, double tau, struct MPARAM *param
     UU.x = R.z*ShearRate ;
     break; 
   }
+  return UU;
 }
  /* -----------------------------------------------------------------------------------*/
 __device__ void eval_rhs( double dpsi[], double psi[], int kelement, double tau,
                           struct MPARAM *param, double *diag ){
   int iext_flow = (*param).iext_flow ;
-  vec3 R, dR, EForce, FF0;  // R is the position of the beads.
+  vec3 R, dR, EForce, FF0, Rp1;  // R is the position of the beads.
   int iext_force = (*param).iext_force ;
   int floc = (*param).floc ;
   /* we are calculating two diagnostic quantities at the moment
 ds : d( material coordinate) . 
 kappasqr : square of local curvature. 
 This number is stored in param.qdiag */
-  double qdiag = param.qdiag ;
+  int qdiag = (*param).qdiag ;
   double ds, kappasqr ; 
   double onebythree = 1./3.;
   double Curvlength = 0; // length of the filament
@@ -151,12 +161,12 @@ This number is stored in param.qdiag */
   diag[kelement*qdiag +1]  = kappasqr;
   /* add external force to the filament */
   if ( (iext_force) && (kelement == floc) ){
-  Eforce = Eforce -  ext_force( kelement, R, tau, param ) ;}
+  EForce = EForce -  ext_force( kelement, R, tau, param ) ;}
   /* calculate the viscous (possibly non-local ) drag */
   dR = drag(kelement, psi,  EForce, param);
   /* contribution from external flow */
   if ( iext_flow  ){ 
-    dR += ext_flow( kelement, R, tau, param  ) ; }
+    dR = dR + ext_flow( kelement, R, tau, param  ) ; }
   /*------ put the rhs back to the dpsi array ----- */
   dpsi[pp*kelement]       = dR.x  ;
   dpsi[pp*kelement + 1] = dR.y ;
@@ -169,7 +179,7 @@ __device__ vec3 drag(int ip,  double psi[], vec3 EForce[], struct MPARAM *param)
   double dd = (*param).dd;
   double onebythree = 1./3.;
   double mu0 = onebythree/(M_PI*viscosity*dd);
-  if (param.global_drag){
+  if ( (*param).global_drag ){
     /* mu_ij represents the one element of mobility matrix (Size: NXN). 
        Every element of the matrix itself is a 2nd rank tensor with dimension 3x3.*/
     Tens2 mu_ij, mu_ii;
@@ -223,9 +233,9 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
      // This function calculates the force at every node which is a function of X, time.
   vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
   vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
-  AA = (*param).AA ;
-  aa = (*param).aa ;
-  HH = (*param).HH;
+  double AA = (*param).AA ;
+  double aa = (*param).aa ;
+  double HH = (*param).HH;
   int bcb = (*param).bcb ;
   int bct = (*param).bct ;
   double bkm2, bkm1, bk, bkp1;
@@ -294,9 +304,9 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
     *add_kappasqr=0.;
     break;
   case NN-2:
-    getub(&bkm2, &ukm2, kp-2, X);
-    getub(&bkm1, &ukm1, kp-1, X);
-      getub(&bk, &uk, kp, X);
+    getub(&bkm2, &ukm2, kp-2, psi);
+    getub(&bkm1, &ukm1, kp-1, psi);
+    getub(&bk, &uk, kp, psi);
       FF = (     (uk+ukm2)/bkm1 - (ukm1)/bk
           + (uk/bk)*( dot(uk,ukm1))
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
