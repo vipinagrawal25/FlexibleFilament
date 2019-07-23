@@ -10,14 +10,21 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
                      double* add_kappasqr,  struct MPARAM *param );
 __device__ vec3 drag(int ip,  double psi[], vec3 EForce[],
                      struct MPARAM *param);
+__device__ vec3 ext_flow( int kelement, vec3 R, double tau,
+                          struct MPARAM *param  );
+__device__ vec3 ext_force( int kelement, vec3 R, double tau,
+                           struct MPARAM *param  );
 __device__ void GetRij(double psi[], int i, int j, double *Distance,
                        vec3 *rij);
+__device__  void getub(double *bk, vec3 *uk, int kp, double psi[]);
+__device__ int square_wave( double t, double Tby2) ;
+__device__ vec3 Uflow ( vec3 RR, struct MPARAM *param);
 struct MPARAM host_param ;
 struct MPARAM *dev_param;
 double *DIAG ;
 double *dev_diag ;
 /* ========================================= */
-void set_param( void ){
+__host__ void set_param( void ){
   host_param.height = 1.;
   double height = host_param.height ;
   host_param.aa = height/(double)(NN-1);
@@ -50,6 +57,7 @@ void set_param( void ){
   host_param.iext_force = 0;
   host_param.floc = 0 ;
   host_param.iext_flow = 1;
+  cudaMalloc( (void**)&dev_param, size_MPARAM  );
   cudaMemcpy( dev_param, &host_param,
                      size_MPARAM, cudaMemcpyHostToDevice ) ;
   write_param( );
@@ -59,7 +67,7 @@ void set_param( void ){
   cudaMalloc( (void**)&dev_diag, size_diag*sizeof( double ) );
 }
 /* ===================================== */
-void write_param( void ){
+__host__ void write_param( void ){
   printf( "# =========== Model Parameters ==========\n" );
   printf( " #Model : Elastic String \n " ) ;
   printf( "#dimension of ODE:\n pp =  %d \n", pp ) ;
@@ -110,7 +118,8 @@ __device__ vec3 ext_force( int kelement, vec3 R, double tau,
 }
 
 /* -----------------------------------------------------------------------------------*/  
-__device__ vec3 ext_flow( int kelement, vec3 R, double tau, struct MPARAM *param  ){
+__device__ vec3 ext_flow( int kelement, vec3 R, double tau,
+                          struct MPARAM *param  ){
   int iext_flow = (*param).iext_flow;
   double ShearRate = (*param).ShearRate;
   double omega = (*param).omega;
@@ -129,6 +138,42 @@ __device__ vec3 ext_flow( int kelement, vec3 R, double tau, struct MPARAM *param
   }
   return UU;
 }
+/*--------------------------------------------------------------------------------------*/
+__device__ vec3 drag(int ip,  double psi[], vec3 EForce[], struct MPARAM *param){
+  vec3 dR(0., 0., 0.) ;
+  double viscosity = (*param).viscosity ;
+  double dd = (*param).dd;
+  double onebythree = 1./3.;
+  double mu0 = onebythree/(M_PI*viscosity*dd);
+  if ( (*param).global_drag ){
+    /* mu_ij represents the one element of mobility matrix (Size: NXN). 
+       Every element of the matrix itself is a 2nd rank tensor with dimension 3x3.*/
+    Tens2 mu_ij, mu_ii;
+    double d_rij;
+    vec3 rij;
+    //
+    mu_ii = dab*mu0;
+    /* dab is Kroneker delta in 2d. It is defined in module/2Tens file. */
+    // PTens2(mu_ii);
+    // rij = R[j]-R[i] and d_rij is just the norm of this value.
+    for (int jp = 0; jp < NN; ++jp){
+      if (jp == ip){
+        dR =  dR + dot(mu_ii, EForce );
+      }else{
+        GetRij(psi, ip, jp, &d_rij, &rij);
+        double c1 = 1/(8*M_PI*viscosity*d_rij);
+        double dsqr1 = 1./(d_rij*d_rij);
+        mu_ij = c1*(dab + (rij*rij)*dsqr1 +
+                    dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
+        dR +=  dot(mu_ij, EForce );
+      }
+    }
+  } else{
+    /* if we use local drag */
+        dR = EForce*mu0;
+  } 
+  return dR;
+}
  /* -----------------------------------------------------------------------------------*/
 __device__ void eval_rhs( double dpsi[], double psi[], int kelement, double tau,
                           struct MPARAM *param, double *diag ){
@@ -142,8 +187,6 @@ kappasqr : square of local curvature.
 This number is stored in param.qdiag */
   int qdiag = (*param).qdiag ;
   double ds, kappasqr ; 
-  double onebythree = 1./3.;
-  double Curvlength = 0; // length of the filament
   R.x= psi[pp*kelement];
   R.y= psi[pp*kelement + 1];
   R.z= psi[pp*kelement + 2];
@@ -172,43 +215,7 @@ This number is stored in param.qdiag */
   dpsi[pp*kelement + 1] = dR.y ;
   dpsi[pp*kelement + 2] = dR.z ;
 }
-/**************************--------------------------------------------------------------*/
-__device__ vec3 drag(int ip,  double psi[], vec3 EForce[], struct MPARAM *param){
-  vec3 dR(0., 0., 0.) ;
-  double viscosity = (*param).viscosity ;
-  double dd = (*param).dd;
-  double onebythree = 1./3.;
-  double mu0 = onebythree/(M_PI*viscosity*dd);
-  if ( (*param).global_drag ){
-    /* mu_ij represents the one element of mobility matrix (Size: NXN). 
-       Every element of the matrix itself is a 2nd rank tensor with dimension 3x3.*/
-    Tens2 mu_ij, mu_ii;
-    double d_rij;
-    vec3 rij;
-    //
-    mu_ii = dab*mu0;
-    /* dab is Kroneker delta in 2d. It is defined in module/2Tens file. */
-    // PTens2(mu_ii);
-    // rij = R[j]-R[i] and d_rij is just the norm of this value.
-    for (int jp = 0; jp < NN; ++jp){
-      if (jp == ip){
-        dR +=  dot(mu_ii, EForce );
-      }else{
-        GetRij(psi, ip, jp, &d_rij, &rij);
-        double c1 = 1/(8*M_PI*viscosity*d_rij);
-        double dsqr1 = 1./(d_rij*d_rij);
-        mu_ij = c1*(dab + (rij*rij)*dsqr1 +
-                    dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
-        dR +=  dot(mu_ij, EForce );
-      }
-    }
-  } else{
-    /* if we use local drag */
-        dR = EForce*mu0;
-  } 
-  return dR;
-}
-/**************************/
+/*--------------------------------------------------------------*/
 __device__  void getub(double *bk, vec3 *uk, int kp, double psi[]){
   vec3 X(psi[pp*kp], psi[pp*kp+1], psi[pp*kp+2]  ) ;
   vec3 Xp1(psi[(pp+1)*kp], psi[(pp+1)*kp+1], psi[(pp+1)*kp+2]  ) ;
@@ -322,8 +329,8 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
       //we should crash here
       break;
     case 1: //free 
-      getub(&bkm2, &ukm2, kp-2, X);
-      getub(&bkm1, &ukm1, kp-1, X);
+      getub(&bkm2, &ukm2, kp-2, psi);
+      getub(&bkm1, &ukm1, kp-1, psi);
       FF = (     (ukm2)/bkm1
                  - (ukm1/bkm1)*( dot(ukm1,ukm2) )
                  );
@@ -337,10 +344,10 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
 break;
       /* for all other points */
   default:
-    getub(&bkm2, &ukm2, kp-2, X);
-    getub(&bkm1, &ukm1, kp-1, X);
-    getub(&bk, &uk, kp, X);
-    getub(&bkp1, &ukp1, kp+1, X);
+    getub(&bkm2, &ukm2, kp-2, psi);
+    getub(&bkm1, &ukm1, kp-1, psi);
+    getub(&bk, &uk, kp, psi);
+    getub(&bkp1, &ukp1, kp+1, psi);
     FF = (     (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
                + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
                - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )

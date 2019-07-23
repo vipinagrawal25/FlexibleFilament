@@ -43,9 +43,8 @@ extern struct MPARAM host_param;
 extern struct MPARAM *dev_param;
 extern double *DIAG;
 extern double *dev_diag;
-void set_param( void ) ;
+__host__ void set_param( void ) ;
 __device__ void eval_rhs( double dpsi[], double psi[], int kelement, double tau,
                           MPARAM *dev_param, double *diag  );
 __host__ void initial_configuration( double PSI[] );
-void write_param( void );
 #endif /* !MODEL_SEEN */
