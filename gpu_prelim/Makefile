@@ -1,19 +1,19 @@
 compile= nvcc
-options = -dc
+options = -dc 
 link = -l
-default: odeN.o main.o evolve.o model.o cuda.o
-	$(compile) -o odeN.exe odeN.o evolve.o model.o cuda.o main.o
+default: chain.o main.o evolve.o model.o cuda.o
+	$(compile) -o chain.exe chain.o evolve.o model.o cuda.o main.o
 test: cuda.o test.o 
 	$(compile)   cuda.o test.o
-main.o: main.cu odeN.h evolve.h
+main.o: main.cu chain.h evolve.h
 	$(compile) $(options) main.cu
-test.o: test.cu odeN.h
+test.o: test.cu chain.h
 	$(compile) $(options) test.cu
-odeN.o: odeN.cu odeN.h param.h
-	$(compile) $(options) odeN.cu
+chain.o: chain.cu chain.h param.h
+	$(compile) $(options) chain.cu
 evolve.o: evolve.cu evolve.h 
 	$(compile) $(options) evolve.cu
-model.o: model.cu model.h 
+model.o: model.cu model.h 3vec.h 2Tens.h 
 	$(compile) $(options) model.cu
 cuda.o: cuda.h cuda.cu
 	$(compile) $(options) cuda.cu

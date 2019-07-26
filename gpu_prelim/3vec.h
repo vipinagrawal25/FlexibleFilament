@@ -6,52 +6,52 @@
 #include "2Tens.h"
 using namespace std;
 /*-------------------------*/
- class vec3{
+class vec3{
 public:
   double x,y,z;
-  vec3();
-  vec3(int,int,int);
-  vec3(float,float,float);
-  vec3(double,double,double);
+  __device__ vec3();
+  __device__ vec3(int,int,int);
+  __device__ vec3(float,float,float);
+  __device__ vec3(double,double,double);
     // definining operators 
-  vec3 operator+(vec3);
-  vec3 operator-(vec3);
-  vec3 operator*(double);
-  vec3 operator/(double);
-  Tens2 operator*(vec3);
+  __device__ vec3 operator+(vec3);
+  __device__ vec3 operator-(vec3);
+  __device__  vec3 operator*(double);
+  __device__ vec3 operator/(double);
+  __device__ Tens2 operator*(vec3);
 
 private:
 };
 
-vec3::vec3(){
+__device__ vec3::vec3(){
   x = 0.0;
   y = 0.0;
   z = 0.0;
 }
-vec3::vec3(int a, int b, int c){
+__device__ vec3::vec3(int a, int b, int c){
   x = (double) a;
   y = (double) b;
   z = (double) c;
 }
-vec3::vec3(float a, float b, float c){
+__device__ vec3::vec3(float a, float b, float c){
   x = (double) a;
   y = (double) b;
   z = (double) c;
 }
-vec3::vec3(double a, double b, double c){
+__device__ vec3::vec3(double a, double b, double c){
   x =  a;
   y =  b;
   z =  c;
 }
 
-vec3 vec3::operator+(vec3 param){
+__device__ vec3 vec3::operator+(vec3 param){
   vec3 temp;
   temp.x = x+param.x;
   temp.y = y+param.y;
   temp.z = z+param.z;
   return(temp);
 }
-vec3 vec3::operator-(vec3 param){
+__device__ vec3 vec3::operator-(vec3 param){
   vec3 temp;
   temp.x = x-param.x;
   temp.y = y-param.y;
@@ -59,7 +59,7 @@ vec3 vec3::operator-(vec3 param){
   return(temp);
 }
 
-vec3 vec3::operator*(double param){
+__device__ vec3 vec3::operator*(double param){
   vec3 temp;
   temp.x=param*x;
   temp.y=param*y;
@@ -67,7 +67,7 @@ vec3 vec3::operator*(double param){
   return(temp);
 }
 
-Tens2 vec3::operator*(vec3 param)
+__device__ Tens2 vec3::operator*(vec3 param)
 {   
     // This is a direct product of 2 vectors. Assuming vec3 a column vector with 3 entries
     // then this operator defines w = uv' (Where v' is the transpose of the matrix.)
@@ -89,7 +89,7 @@ Tens2 vec3::operator*(vec3 param)
     return(temp);
 }
 
-vec3 vec3::operator/(double param){
+__device__ vec3 vec3::operator/(double param){
   vec3 temp;
   temp.x=x/param;
   temp.y=y/param;
@@ -97,29 +97,29 @@ vec3 vec3::operator/(double param){
   return(temp);
 }
 
-double dot(vec3 a, vec3 b){
+__device__ double dot(vec3 a, vec3 b){
   double temp;
   temp = a.x*b.x+a.y*b.y+a.z*b.z;
   return(temp);
 }
-vec3 cross(vec3 a, vec3 b){
+__device__ vec3 cross(vec3 a, vec3 b){
   vec3 temp;
   temp.x = a.y*b.z-a.z*b.y;
   temp.y = -(a.x*b.z-b.x*a.z);
   temp.z = a.x*b.y-a.y*b.x;
   return(temp);
 }
-double norm(vec3 a){
+__device__ double norm(vec3 a){
   return( sqrt( a.x*a.x+a.y*a.y+a.z*a.z) );}
 /*---------------------------------------*/
-double sqnorm(vec3 a){
+__device__ double sqnorm(vec3 a){
   return( a.x*a.x+a.y*a.y+a.z*a.z) ;}
 /*---------------------------------------*/
 void PVec3(vec3 a){
   cout<<a.x<<"\t"<<a.y<<"\t"<<a.z<<"\n";
 }
 
-vec3 dot(Tens2 a, vec3 b)
+__device__ vec3 dot(Tens2 a, vec3 b)
 {
     // Ci = Aij*Bj; (Einstein Convention)
     // It should be a simple matrix multiplication, where A is 3X3 matrix and B is 3X1.

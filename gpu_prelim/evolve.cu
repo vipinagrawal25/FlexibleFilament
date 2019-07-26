@@ -5,7 +5,7 @@
 #include "evolve.h"
 #include "model.h"
 #include "cuda.h"
-#include "odeN.h"
+#include "chain.h"
 double *dev_kk;
 struct EV TT;
 struct EV *dev_tt;
@@ -27,7 +27,6 @@ void pre_evolve( int Nsize, char *algo){
     printf( "EXITING \n " );
     exit(1);
   }
-  set_param( );
 }
 /*----------------------------------------*/
 void pre_euler( int Nsize ){

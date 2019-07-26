@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include "odeN.h"
+#include "chain.h"
 #include "model.h"
 #include "3vec.h"
 #include "2Tens.h"
@@ -139,7 +139,8 @@ __device__ vec3 ext_flow( int kelement, vec3 R, double tau,
   return UU;
 }
 /*--------------------------------------------------------------------------------------*/
-__device__ vec3 drag(int ip,  double psi[], vec3 EForce[], struct MPARAM *param){
+__device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
+  Tens2 dab(1.,0.,0.,0.,1.,0.,0.,0.,1.);
   vec3 dR(0., 0., 0.) ;
   double viscosity = (*param).viscosity ;
   double dd = (*param).dd;
@@ -158,19 +159,19 @@ __device__ vec3 drag(int ip,  double psi[], vec3 EForce[], struct MPARAM *param)
     // rij = R[j]-R[i] and d_rij is just the norm of this value.
     for (int jp = 0; jp < NN; ++jp){
       if (jp == ip){
-        dR =  dR + dot(mu_ii, EForce );
+        dR =  dR + dot(mu_ii, *EForce );
       }else{
         GetRij(psi, ip, jp, &d_rij, &rij);
         double c1 = 1/(8*M_PI*viscosity*d_rij);
         double dsqr1 = 1./(d_rij*d_rij);
         mu_ij = c1*(dab + (rij*rij)*dsqr1 +
                     dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
-        dR +=  dot(mu_ij, EForce );
+        dR =  dR + dot(mu_ij, *EForce );
       }
     }
   } else{
     /* if we use local drag */
-        dR = EForce*mu0;
+    dR = (*EForce)*mu0;
   } 
   return dR;
 }
@@ -206,7 +207,7 @@ This number is stored in param.qdiag */
   if ( (iext_force) && (kelement == floc) ){
   EForce = EForce -  ext_force( kelement, R, tau, param ) ;}
   /* calculate the viscous (possibly non-local ) drag */
-  dR = drag(kelement, psi,  EForce, param);
+  dR = drag(kelement, psi,  &EForce, param);
   /* contribution from external flow */
   if ( iext_flow  ){ 
     dR = dR + ext_flow( kelement, R, tau, param  ) ; }
