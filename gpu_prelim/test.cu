@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include<stdlib.h>
 #include <math.h>
-#include "evolve.h"
+//#include "evolve.h"
 //#include "chain.h"
 #include "cuda.h"
 #define   nn 10

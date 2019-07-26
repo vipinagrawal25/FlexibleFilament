@@ -10,7 +10,15 @@ void  qdevice(int *count, cudaDeviceProp **prop ) {
   }
   *count = ndevice;
 }
-  /*----------------------------------------------*/
+/*----------------------------------------------*/
   void qfree( cudaDeviceProp *prop ){
     free( prop );
   }
+/*----------------------------------------------*/
+__device__ void scpy( char to[], char from[]){
+  int i=0;
+  while ( (to[i] = from[i]) != '\0')
+    i = i+1;
+}
+/*----------------------------------------------*/
+

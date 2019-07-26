@@ -1,13 +1,16 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include "cuda.h"
 #include "chain.h"
 #include "model.h"
 #include "3vec.h"
 #include "2Tens.h"
+using namespace std;
 __host__ void write_param( void );
 __device__ void dHdR(int kp, double psi[], vec3* add_FF,
-                     double* add_kappasqr,  struct MPARAM *param );
+                     double* add_kappasqr,  struct MPARAM *param,
+                     struct CRASH * );
 __device__ vec3 drag(int ip,  double psi[], vec3 EForce[],
                      struct MPARAM *param);
 __device__ vec3 ext_flow( int kelement, vec3 R, double tau,
@@ -19,11 +22,20 @@ __device__ void GetRij(double psi[], int i, int j, double *Distance,
 __device__  void getub(double *bk, vec3 *uk, int kp, double psi[]);
 __device__ int square_wave( double t, double Tby2) ;
 __device__ vec3 Uflow ( vec3 RR, struct MPARAM *param);
+__device__ void device_exception( struct CRASH *bug, char mesg[] );
 struct MPARAM host_param ;
 struct MPARAM *dev_param;
 double *DIAG ;
 double *dev_diag ;
+struct CRASH BUG;
+struct CRASH *dev_bug;
+int size_diag;
 /* ========================================= */
+__device__ void device_exception( struct CRASH *bug, char *mesg ){
+        (*bug).lstop = 1;
+        scpy( (*bug).message, mesg ) ;
+}
+/*-----------------------------------------------------------------------------*/
 __host__ void set_param( void ){
   host_param.height = 1.;
   double height = host_param.height ;
@@ -62,34 +74,50 @@ __host__ void set_param( void ){
                      size_MPARAM, cudaMemcpyHostToDevice ) ;
   write_param( );
   // allocate host data for diagnostic
-  int size_diag = NN*qdiag ; 
-  DIAG = (double *) malloc( sizeof(double)*size_diag ) ;
-  cudaMalloc( (void**)&dev_diag, size_diag*sizeof( double ) );
+  size_diag = NN*qdiag*sizeof(double) ; 
+  DIAG = (double *) malloc( size_diag ) ;
+  cudaMalloc( (void**)&dev_diag, size_diag );
+  // allocate space for crashing gracefully.
+  BUG.lstop = 0;
+  cudaMalloc( (void**)&dev_bug, size_CRASH );
 }
 /* ===================================== */
 __host__ void write_param( void ){
+  FILE *pout ;
+  pout = fopen ( "wparam.txt", "w" );
   printf( "# =========== Model Parameters ==========\n" );
   printf( " #Model : Elastic String \n " ) ;
   printf( "#dimension of ODE:\n pp =  %d \n", pp ) ;
   printf( "#Number of copies:\n  NN = %d\n", NN ) ;
-  printf( " height = %f \n" , host_param.height) ;	
-  // complete writing out the rest. 
-  /*   double aa; 	// distance between two nodes.
-  double Dbyell // diameter/length of the filament.
-  double dd ;	/* r/l ratio for the rod has been kept constant. 
-                   It should be noted that the particles would also have same diameter. */
-  /*double viscosity ;				
-  double  Z0;	  // If we want the bottom point of the rod to be fixed.
-  double FFZ0 ; // Force Value on the ends
-// Sigma is a dimensionless number, which is described as frequency parameter.
-  double sigma ;					
-  double ShearRate ;
-  double omega ;
-  double  factorAA ; 
-  double AA ;
-  double HH ;		// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
-  double KK; */
+  printf( " height = %f \n" , host_param.height) ;
   printf( " #============================\n" );
+  fprintf( pout, "# =========== Model Parameters ==========\n" );
+  fprintf( pout, " #Model : Elastic String \n " ) ;
+  fprintf( pout, "#dimension of ODE:\n pp =  %d \n", pp ) ;
+  fprintf( pout, "#Number of copies:\n  NN = %d\n", NN ) ;
+  fprintf( pout, " height = %f \n" , host_param.height) ;
+  fprintf( pout, " aa= %f \n" , host_param.aa ) ;
+  fprintf( pout, " Dbyell= %f \n" , host_param.Dbyell ) ;
+  fprintf( pout, " dd= %f \n",  host_param.dd ) ;
+  fprintf( pout, " viscosity = %f \n ",  host_param.viscosity) ;
+  fprintf( pout, " Z0 = %f \n ", host_param.Z0) ;
+  fprintf( pout, " Famp = %f \n ", host_param.Famp ) ;
+  fprintf( pout, " sigma = %f \n ", host_param.sigma ) ;
+  fprintf( pout, " ShearRate = %f \n ", host_param.ShearRate ) ;
+  fprintf( pout, " omega = %f \n ", host_param.omega ) ;
+  fprintf( pout, " factorAA = %f \n ", host_param.factorAA ) ;
+  fprintf( pout, " AA = %f \n ", host_param.AA ) ;
+  fprintf( pout, " KK = %f \n ", host_param.KK ) ;
+  fprintf( pout, " HH = %f \n ", host_param.HH ) ;
+  fprintf( pout, " qdiag=%d\n", host_param.qdiag );
+  fprintf( pout, " bcb=%d\n", host_param.bcb );
+  fprintf( pout, " bct=%d\n", host_param.bct );
+  fprintf( pout, " global_drag=%d\n", host_param.global_drag );
+  fprintf( pout, " iext_force=%d\n", host_param.iext_force );
+  fprintf( pout, " floc=%d\n", host_param.floc );
+  fprintf( pout, " iext_flow=%d\n", host_param.iext_flow );
+  fprintf( pout, " #============================\n" );
+  fclose( pout );
 }
 /* -----------------------------------------------------------------------------------*/
 __device__ int square_wave( double t, double Tby2) {
@@ -177,7 +205,7 @@ __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
 }
  /* -----------------------------------------------------------------------------------*/
 __device__ void eval_rhs( double dpsi[], double psi[], int kelement, double tau,
-                          struct MPARAM *param, double *diag ){
+                          struct MPARAM *param, double *diag, CRASH *bug ){
   int iext_flow = (*param).iext_flow ;
   vec3 R, dR, EForce, FF0, Rp1;  // R is the position of the beads.
   int iext_force = (*param).iext_force ;
@@ -199,7 +227,7 @@ This number is stored in param.qdiag */
     Rp1.z= psi[(pp+1)*kelement + 2];
     ds = norm( Rp1-R);
   }
-  dHdR( kelement, psi, &EForce, &kappasqr, param );
+  dHdR( kelement, psi, &EForce, &kappasqr, param, bug );
   /* write diagnostic to corresponding array */
   diag[kelement*qdiag +1] = ds ;
   diag[kelement*qdiag +1]  = kappasqr;
@@ -237,7 +265,7 @@ __device__ void GetRij(double psi[], int i, int j, double *Distance,
 }
 /**************************/
 __device__ void dHdR(int kp, double psi[], vec3* add_FF,
-                     double* add_kappasqr,  struct MPARAM *param ){
+                     double* add_kappasqr,  struct MPARAM *param, struct CRASH *bug ){
      // This function calculates the force at every node which is a function of X, time.
   vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
   vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
@@ -276,11 +304,12 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
         *add_FF = FF;
         break;
       default: // we must crash now.
+        device_exception( bug, "NN=0,  bcb not implemented " );
         break;
-      }
+      } // 0th element of the chain.
       *add_kappasqr=0.;
       break;     
-  case 1:
+  case 1: //1st element of the chain.
     getub(&bkm1, &ukm1, kp-1, psi);
     getub(&bk, &uk, kp, psi);
     getub(&bkp1, &ukp1, kp+1, psi);
@@ -306,7 +335,8 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
       FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;   // Inextensibility constraint
       *add_FF = FF;
       break;
-    default: // we should crash here
+    default: // any other boundary conditions.
+      device_exception( bug, "NN=1, bcb not implemented ");
       break;
     }
     *add_kappasqr=0.;
@@ -327,7 +357,7 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
   case NN-1:
     switch( bct ){
     case 0: // clamped
-      //we should crash here
+      device_exception( bug , "element NN-1, bct=0 not implemented "); 
       break;
     case 1: //free 
       getub(&bkm2, &ukm2, kp-2, psi);
@@ -339,7 +369,9 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
       FF = FF - (ukm1*(bkm1-aa))*HH/aa;
       *add_kappasqr=0.;
       *add_FF = FF;
-    default: // we should crash here
+      break;
+    default: // any other bct .
+      device_exception( bug, "element NN-1, bct not implemented ");
       break;
     } // bct switch closes here
 break;

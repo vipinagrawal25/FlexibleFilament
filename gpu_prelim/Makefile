@@ -3,12 +3,12 @@ options = -dc
 link = -l
 default: chain.o main.o evolve.o model.o cuda.o
 	$(compile) -o chain.exe chain.o evolve.o model.o cuda.o main.o
-test: cuda.o test.o 
-	$(compile)   cuda.o test.o
+test: model.o test4.o 
+	$(compile)   model.o test4.o
 main.o: main.cu chain.h evolve.h
 	$(compile) $(options) main.cu
-test.o: test.cu chain.h
-	$(compile) $(options) test.cu
+test4.o: test4.cu chain.h
+	$(compile) $(options) test4.cu
 chain.o: chain.cu chain.h param.h
 	$(compile) $(options) chain.cu
 evolve.o: evolve.cu evolve.h 
