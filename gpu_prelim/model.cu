@@ -31,11 +31,6 @@ struct CRASH BUG;
 struct CRASH *dev_bug;
 int size_diag;
 /* ========================================= */
-__device__ void device_exception( struct CRASH *bug, char *mesg ){
-        (*bug).lstop = 1;
-        scpy( (*bug).message, mesg ) ;
-}
-/*-----------------------------------------------------------------------------*/
 __host__ void set_param( void ){
   host_param.height = 1.;
   double height = host_param.height ;
@@ -263,30 +258,25 @@ __device__ void GetRij(double psi[], int i, int j, double *Distance,
   double Dis = norm( Rj-Ri ); 
   *Distance = Dis;
 }
-/**************************/
-__device__ void dHdR(int kp, double psi[], vec3* add_FF,
-                     double* add_kappasqr,  struct MPARAM *param, struct CRASH *bug ){
-     // This function calculates the force at every node which is a function of X, time.
-  vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
-  vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
+/*-----------------------------------------------------------------------------------------------*/
+__device__ vec3 Force_FirstPoint( double psi[],
+                                  struct MPARAM *param, struct CRASH *bug ){
   double AA = (*param).AA ;
   double aa = (*param).aa ;
   double HH = (*param).HH;
   int bcb = (*param).bcb ;
   int bct = (*param).bct ;
-  double bkm2, bkm1, bk, bkp1;
-  vec3 FF = *add_FF;             
-  vec3 Xbot( psi[0], psi[1], psi[2]  );
-  vec3 Xtop( psi[NN-3], psi[NN-2], psi[NN-1]  );
-  switch(kp){
-    case 0:
-      getub(&bk, &uk, kp, psi);
-      getub(&bkp1, &ukp1, kp+1, psi);
-      switch( bcb ){
-      case 0: // this is clamped
-        dX = Xbot - Xzero;
-        bkm1 = norm(dX);
-        ukm1=dX/bkm1;
+  vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
+  vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
+  double bkm2, bkm1, bk, bkp1;             
+  vec3 FF;
+  getub(&bk, &uk, 0, psi);
+  getub(&bkp1, &ukp1, 1, psi);
+  switch( bcb ){
+  case 0: 
+    dX = Xbot - Xzero;
+    bkm1 = norm(dX);
+    ukm1=dX/bkm1;
         FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
                + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
                - (ukm1/bkm1)*( dot(ukm1,uk) )
@@ -294,26 +284,35 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
           FF = FF*AA/aa;
           // Add an extra term for inextensibility constraint
           FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa; 
-          *add_FF = FF;
           break;
       case 1: // free
         FF = ( (uk/bk)*( dot(uk,ukp1) )  - (ukp1)/bk );
         FF = FF*AA/aa;
         // Add an extra term for inextensibility constraint
         FF = FF + ( uk*(bk-aa))*HH/aa; 
-        *add_FF = FF;
         break;
-      default: // we must crash now.
-        device_exception( bug, "NN=0,  bcb not implemented " );
-        break;
-      } // 0th element of the chain.
-      *add_kappasqr=0.;
-      break;     
-  case 1: //1st element of the chain.
-    getub(&bkm1, &ukm1, kp-1, psi);
-    getub(&bk, &uk, kp, psi);
-    getub(&bkp1, &ukp1, kp+1, psi);
-    switch( bcb ){
+  default: // we must crash now.
+    device_exception( bug, "NN=0,  bcb not implemented " );
+    break;
+  }
+  return FF;
+}
+/*-----------------------------------------------------------------------------------------------*/
+__device__ vec3 Force_SecondPoint( double psi[],
+                                  struct MPARAM *param, struct CRASH *bug ){
+  double AA = (*param).AA ;
+  double aa = (*param).aa ;
+  double HH = (*param).HH;
+  int bcb = (*param).bcb ;
+  int bct = (*param).bct ;
+  vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
+  vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
+  double bkm2, bkm1, bk, bkp1;             
+  vec3 FF;
+  getub(&bkm1, &ukm1, 0, psi);
+  getub(&bk, &uk, 1, psi);
+  getub(&bkp1, &ukp1, 2, psi);
+  switch( bcb ){
     case 0: //clamped
       dX = Xbot-Xzero;
       bkm2 = norm(dX);
@@ -324,7 +323,6 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
               );
       FF = FF*(AA/aa);
       FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH/aa;   // Inextensibility constraint
-      *add_FF = FF;
       break;
     case 1: // free
       FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
@@ -333,12 +331,34 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
                  );
       FF = FF*(AA/aa);
       FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;   // Inextensibility constraint
-      *add_FF = FF;
       break;
-    default: // any other boundary conditions.
+  default: // any other boundary conditions.
       device_exception( bug, "NN=1, bcb not implemented ");
       break;
-    }
+  }
+  return FF;
+}
+/*-----------------------------------------------------------------------------------------------*/
+__device__ void dHdR(int kp, double psi[], vec3* add_FF,
+                     double* add_kappasqr,  struct MPARAM *param, struct CRASH *bug ){
+     // This function calculates the force at every node which is a function of X, time.
+  vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
+  vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
+  double AA = (*param).AA ;
+  double aa = (*param).aa ;
+  double HH = (*param).HH;
+  int bcb = (*param).bcb ;
+  int bct = (*param).bct ;
+  double bkm2, bkm1, bk, bkp1;             
+  vec3 Xbot( psi[0], psi[1], psi[2]  );
+  vec3 Xtop( psi[NN-3], psi[NN-2], psi[NN-1]  );
+  switch(kp){
+  case 0: // 0th element of the chain.
+    *add_FF = Force_FirstPoint( psi, param, bug );
+    *add_kappasqr=0.;
+    break;     
+  case 1: //1st element of the chain.
+    *add_FF = Force_SecondPoint( psi, param, bug ); 
     *add_kappasqr=0.;
     break;
   case NN-2:
@@ -355,7 +375,7 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
       *add_FF = FF;  
       break;
   case NN-1:
-    switch( bct ){
+    switch( bct )
     case 0: // clamped
       device_exception( bug , "element NN-1, bct=0 not implemented "); 
       break;
@@ -373,24 +393,24 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
     default: // any other bct .
       device_exception( bug, "element NN-1, bct not implemented ");
       break;
-    } // bct switch closes here
-break;
-      /* for all other points */
-  default:
-    getub(&bkm2, &ukm2, kp-2, psi);
-    getub(&bkm1, &ukm1, kp-1, psi);
-    getub(&bk, &uk, kp, psi);
-    getub(&bkp1, &ukp1, kp+1, psi);
-    FF = (     (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
-               + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
-               - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
-               );
-    FF = FF*(AA/aa);
-    FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
-    *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
-    *add_FF = FF;
-    break;
-  }  
+  }// bct switch closes here 
+  break;
+  /* for all other points */
+ default:
+   getub(&bkm2, &ukm2, kp-2, psi);
+   getub(&bkm1, &ukm1, kp-1, psi);
+   getub(&bk, &uk, kp, psi);
+   getub(&bkp1, &ukp1, kp+1, psi);
+   FF = (     (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
+              + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
+              - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
+              );
+   FF = FF*(AA/aa);
+   FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
+   *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
+   *add_FF = FF;
+   break;
+}  
 }
 /*-------------------------------------------------------------------*/
 __host__ void initial_configuration( double PSI[] ){

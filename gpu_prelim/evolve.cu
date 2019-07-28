@@ -16,6 +16,7 @@ __global__ void rnkt4( double psi[], double k0[], EV *tt, MPARAM *,
                        double *, CRASH *);
 void pre_euler( int Nsize );
 void pre_rnkt4( int Nsize );
+void IStop( void ) ;
 /*-----------------------------------------------------------------------*/
 void IStop( void ){
   printf( "#-I STOP, something went wrong \n") ;

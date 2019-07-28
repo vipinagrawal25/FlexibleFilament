@@ -44,17 +44,13 @@ extern struct MPARAM *dev_param;
 extern double *DIAG;
 extern double *dev_diag;
 extern int size_diag;
-#define lmessage 2048 
-struct CRASH{
-  int lstop;
-  char message[lmessage] ;
-};
-//const int size_CRASH = sizeof(int) + lmessage*sizeof(char);
-const int size_CRASH = sizeof(int) + lmessage*sizeof(char);
+/* The two following structures are defined in cuda.h file */
 extern struct CRASH BUG;
 extern struct CRASH *dev_bug;
+/*------------------------------------------------------------------*/
 __host__ void set_param( void ) ;
 __device__ void eval_rhs( double dpsi[], double psi[], int kelement, double tau,
                           MPARAM *dev_param, double *diag, CRASH *crash  );
 __host__ void initial_configuration( double PSI[] );
+/*------------------------------------------------------------------*/
 #endif /* !MODEL_SEEN */

@@ -21,4 +21,8 @@ __device__ void scpy( char to[], char from[]){
     i = i+1;
 }
 /*----------------------------------------------*/
-
+__device__ void device_exception( struct CRASH *bug, char *mesg ){
+        (*bug).lstop = 1;
+        scpy( (*bug).message, mesg ) ;
+}
+/*-----------------------------------------------------------------------------*/
