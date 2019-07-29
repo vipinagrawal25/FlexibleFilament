@@ -79,20 +79,20 @@ allowed-per-block then we launch in one way */
   printf( "#-I am launching %d threads in %d blocks\n", Nthread, Nblock );
   /* I evolve till I reach the point where the first diagnostic must
      be calculated.  This evolution is done inside the time-stepper */
-  cudaMemcpy( dev_bug, &BUG, size_CRASH, cudaMemcpyHostToDevice);
+ 
   while ( TT.time < TT.tmax){
      // copy time parameters to GPU
     cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice);
     ALGO<<<Nblock,Nthread>>>( dev_psi, dev_kk, dev_tt, dev_param ,
                               dev_diag, dev_bug);
     cudaMemcpy( &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost);
-    cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
-    if ( BUG.lstop) { IStop( );}
-    printf( "#- tmax=%f\t time=%f\t tdiag=%f \n", TT.tmax, TT.time, TT.tdiag) ;
    // set the time for next diagnostic
     TT.tdiag = TT.time+ TT.tmax/(double)TT.ndiag ;
-    // diagnostic written out here
+   printf( "#- tmax=%f\t time=%f\t tdiag=%f \n", TT.tmax, TT.time, TT.tdiag) ;
+   // diagnostic written out here
     cudaMemcpy( &DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
+    cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
+    if ( BUG.lstop) { IStop( );}
   }
   // Once evolution is done, copy the data back to host
   D2H(PSI, dev_psi, ndim);

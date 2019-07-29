@@ -73,8 +73,10 @@ __host__ void set_param( void ){
   DIAG = (double *) malloc( size_diag ) ;
   cudaMalloc( (void**)&dev_diag, size_diag );
   // allocate space for crashing gracefully.
+ cudaMalloc( (void**)&dev_bug, size_CRASH );
   BUG.lstop = 0;
-  cudaMalloc( (void**)&dev_bug, size_CRASH );
+  strcpy(BUG.message, " No bug yet" );
+  cudaMemcpy( dev_bug, &BUG, size_CRASH, cudaMemcpyHostToDevice);
 }
 /* ===================================== */
 __host__ void write_param( void ){
@@ -198,57 +200,7 @@ __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
   } 
   return dR;
 }
- /* -----------------------------------------------------------------------------------*/
-__device__ void eval_rhs( double dpsi[], double psi[], int kelement, double tau,
-                          struct MPARAM *param, double *diag, CRASH *bug ){
-  int iext_flow = (*param).iext_flow ;
-  vec3 R, dR, EForce, FF0, Rp1;  // R is the position of the beads.
-  int iext_force = (*param).iext_force ;
-  int floc = (*param).floc ;
-  /* we are calculating two diagnostic quantities at the moment
-ds : d( material coordinate) . 
-kappasqr : square of local curvature. 
-This number is stored in param.qdiag */
-  int qdiag = (*param).qdiag ;
-  double ds, kappasqr ; 
-  R.x= psi[pp*kelement];
-  R.y= psi[pp*kelement + 1];
-  R.z= psi[pp*kelement + 2];
-  if ( kelement == (NN-1) ){
-    ds = 0.;
-  } else {
-    Rp1.x= psi[(pp+1)*kelement];
-    Rp1.y= psi[(pp+1)*kelement + 1];
-    Rp1.z= psi[(pp+1)*kelement + 2];
-    ds = norm( Rp1-R);
-  }
-  dHdR( kelement, psi, &EForce, &kappasqr, param, bug );
-  /* write diagnostic to corresponding array */
-  diag[kelement*qdiag +1] = ds ;
-  diag[kelement*qdiag +1]  = kappasqr;
-  /* add external force to the filament */
-  if ( (iext_force) && (kelement == floc) ){
-  EForce = EForce -  ext_force( kelement, R, tau, param ) ;}
-  /* calculate the viscous (possibly non-local ) drag */
-  dR = drag(kelement, psi,  &EForce, param);
-  /* contribution from external flow */
-  if ( iext_flow  ){ 
-    dR = dR + ext_flow( kelement, R, tau, param  ) ; }
-  /*------ put the rhs back to the dpsi array ----- */
-  dpsi[pp*kelement]       = dR.x  ;
-  dpsi[pp*kelement + 1] = dR.y ;
-  dpsi[pp*kelement + 2] = dR.z ;
-}
-/*--------------------------------------------------------------*/
-__device__  void getub(double *bk, vec3 *uk, int kp, double psi[]){
-  vec3 X(psi[pp*kp], psi[pp*kp+1], psi[pp*kp+2]  ) ;
-  vec3 Xp1(psi[(pp+1)*kp], psi[(pp+1)*kp+1], psi[(pp+1)*kp+2]  ) ;
-  vec3 dX = Xp1-X;
-  double bb = norm(dX);
-  *bk = bb;
-  *uk =dX/bb;
-}
-/**************************/
+/*----------------------------------------------------------------------------------------------*/
 __device__ void GetRij(double psi[], int i, int j, double *Distance,
                        vec3 *rij){
   vec3 Rj (psi[pp*j], psi[pp*j+1], psi[pp*j+2] );
@@ -265,10 +217,10 @@ __device__ vec3 Force_FirstPoint( double psi[],
   double aa = (*param).aa ;
   double HH = (*param).HH;
   int bcb = (*param).bcb ;
-  int bct = (*param).bct ;
   vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
   vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
-  double bkm2, bkm1, bk, bkp1;             
+  double  bkm1, bk, bkp1;
+  vec3 Xbot( psi[0], psi[1], psi[2]  );
   vec3 FF;
   getub(&bk, &uk, 0, psi);
   getub(&bkp1, &ukp1, 1, psi);
@@ -304,10 +256,10 @@ __device__ vec3 Force_SecondPoint( double psi[],
   double aa = (*param).aa ;
   double HH = (*param).HH;
   int bcb = (*param).bcb ;
-  int bct = (*param).bct ;
   vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
   vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
-  double bkm2, bkm1, bk, bkp1;             
+  double bkm2, bkm1, bk, bkp1;
+  vec3 Xbot( psi[0], psi[1], psi[2]  );
   vec3 FF;
   getub(&bkm1, &ukm1, 0, psi);
   getub(&bk, &uk, 1, psi);
@@ -333,25 +285,90 @@ __device__ vec3 Force_SecondPoint( double psi[],
       FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;   // Inextensibility constraint
       break;
   default: // any other boundary conditions.
-      device_exception( bug, "NN=1, bcb not implemented ");
-      break;
+    device_exception( bug, "NN=1, bcb not implemented ");
+    break;
   }
+  return FF;
+}
+/*-----------------------------------------------------------------------------------------------*/
+__device__ vec3 Force_NNm2( double psi[],
+                                  struct MPARAM *param, struct CRASH *bug ){
+  double AA = (*param).AA ;
+  double aa = (*param).aa ;
+  double HH = (*param).HH;
+  int bct = (*param).bct ;
+  vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
+  vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
+  double bkm2, bkm1, bk;             
+  vec3 FF; 
+  getub(&bkm2, &ukm2, NN-4, psi);
+  getub(&bkm1, &ukm1, NN-3, psi);
+  getub(&bk, &uk, NN-2, psi);
+  FF = (     (uk+ukm2)/bkm1 - (ukm1)/bk
+             + (uk/bk)*( dot(uk,ukm1))
+             - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
+             );    
+  FF = FF*(AA/aa);
+  FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint
+  return FF;
+}
+/*-----------------------------------------------------------------------------------------------*/
+__device__ vec3 Force_NNm1( double psi[],
+                                  struct MPARAM *param, struct CRASH *bug ){
+  double AA = (*param).AA ;
+  double aa = (*param).aa ;
+  double HH = (*param).HH;
+  int bct = (*param).bct ;
+  vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
+  vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
+  double bkm2, bkm1;             
+  vec3 FF; 
+  switch( bct ){
+  case 0: // clamped
+    device_exception( bug , "element NN-1, bct=0 not implemented "); 
+  break;
+ case 1: //free 
+   getub(&bkm2, &ukm2, NN-3, psi);
+   getub(&bkm1, &ukm1, NN-2, psi);
+   FF = (     (ukm2)/bkm1
+              - (ukm1/bkm1)*( dot(ukm1,ukm2) )
+              );
+   FF = FF*(AA/aa);
+   FF = FF - (ukm1*(bkm1-aa))*HH/aa;
+   break;
+ default: // any other bct .
+   device_exception( bug, "element NN-1, bct not implemented ");
+   break;
+  }
+  return FF;
+}
+/*-----------------------------------------------------------------------------------------------*/
+__device__ vec3 Force_rest( double* add_kappasqr, int kp, double psi[],
+                                  struct MPARAM *param, struct CRASH *bug ){
+  double AA = (*param).AA ;
+  double aa = (*param).aa ;
+  double HH = (*param).HH;
+  vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
+  vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
+  double bkm2, bkm1, bk, bkp1;             
+  vec3 FF;
+  getub(&bkm2, &ukm2, kp-2, psi);
+  getub(&bkm1, &ukm1, kp-1, psi);
+  getub(&bk, &uk, kp, psi);
+  getub(&bkp1, &ukp1, kp+1, psi);
+  FF = (     (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
+             + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
+             - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
+             );
+  FF = FF*(AA/aa);
+  FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint
+  *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
   return FF;
 }
 /*-----------------------------------------------------------------------------------------------*/
 __device__ void dHdR(int kp, double psi[], vec3* add_FF,
                      double* add_kappasqr,  struct MPARAM *param, struct CRASH *bug ){
      // This function calculates the force at every node which is a function of X, time.
-  vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
-  vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
-  double AA = (*param).AA ;
-  double aa = (*param).aa ;
-  double HH = (*param).HH;
-  int bcb = (*param).bcb ;
-  int bct = (*param).bct ;
-  double bkm2, bkm1, bk, bkp1;             
-  vec3 Xbot( psi[0], psi[1], psi[2]  );
-  vec3 Xtop( psi[NN-3], psi[NN-2], psi[NN-1]  );
   switch(kp){
   case 0: // 0th element of the chain.
     *add_FF = Force_FirstPoint( psi, param, bug );
@@ -362,56 +379,70 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
     *add_kappasqr=0.;
     break;
   case NN-2:
-    getub(&bkm2, &ukm2, kp-2, psi);
-    getub(&bkm1, &ukm1, kp-1, psi);
-    getub(&bk, &uk, kp, psi);
-      FF = (     (uk+ukm2)/bkm1 - (ukm1)/bk
-          + (uk/bk)*( dot(uk,ukm1))
-          - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
-          );    
-      FF = FF*(AA/aa);
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
-      *add_kappasqr=0.;
-      *add_FF = FF;  
-      break;
+    *add_FF = Force_NNm2( psi, param, bug) ; 
+    *add_kappasqr=0.;
+    break;
   case NN-1:
-    switch( bct )
-    case 0: // clamped
-      device_exception( bug , "element NN-1, bct=0 not implemented "); 
-      break;
-    case 1: //free 
-      getub(&bkm2, &ukm2, kp-2, psi);
-      getub(&bkm1, &ukm1, kp-1, psi);
-      FF = (     (ukm2)/bkm1
-                 - (ukm1/bkm1)*( dot(ukm1,ukm2) )
-                 );
-      FF = FF*(AA/aa);
-      FF = FF - (ukm1*(bkm1-aa))*HH/aa;
-      *add_kappasqr=0.;
-      *add_FF = FF;
-      break;
-    default: // any other bct .
-      device_exception( bug, "element NN-1, bct not implemented ");
-      break;
-  }// bct switch closes here 
-  break;
+    *add_FF = Force_NNm1( psi, param, bug );
+    *add_kappasqr=0.;
+    break;
   /* for all other points */
- default:
-   getub(&bkm2, &ukm2, kp-2, psi);
-   getub(&bkm1, &ukm1, kp-1, psi);
-   getub(&bk, &uk, kp, psi);
-   getub(&bkp1, &ukp1, kp+1, psi);
-   FF = (     (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
-              + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
-              - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
-              );
-   FF = FF*(AA/aa);
-   FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
-   *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
-   *add_FF = FF;
-   break;
-}  
+  default:
+    *add_FF = Force_rest( add_kappasqr, kp, psi, param, bug ) ;
+    break;
+  }  
 }
+ /* -----------------------------------------------------------------------------------*/
+__device__ void eval_rhs( double dpsi[], double psi[], int kelement, double tau,
+                          struct MPARAM *param, double *diag, CRASH *bug ){
+  int iext_flow = (*param).iext_flow ;
+  vec3 R, dR, EForce, FF0, Rp1;  // R is the position of the beads.
+  int iext_force = (*param).iext_force ;
+  int floc = (*param).floc ;
+  /* we are calculating two diagnostic quantities at the moment
+ds : d( material coordinate) . 
+kappasqr : square of local curvature. 
+This number is stored in param.qdiag */
+  int qdiag = (*param).qdiag ;
+  double ds, kappasqr ; 
+  R.x= psi[pp*kelement];
+  R.y= psi[pp*kelement + 1];
+  R.z= psi[pp*kelement + 2];
+  if ( kelement == (NN-1) ){
+    ds = 0.;
+  } else {
+    Rp1.x= psi[(pp+1)*kelement];
+    Rp1.y= psi[(pp+1)*kelement + 1];
+    Rp1.z= psi[(pp+1)*kelement + 2];
+    ds = norm( Rp1-R);
+  }
+  dHdR( kelement, psi, &EForce, &kappasqr, param, bug );
+  /* write diagnostic to corresponding array */
+  diag[kelement*qdiag ] = ds ;
+  diag[kelement*qdiag +1]  = kappasqr;
+  /* add external force to the filament */
+  if ( (iext_force) && (kelement == floc) ){
+  EForce = EForce -  ext_force( kelement, R, tau, param ) ;}
+  /* calculate the viscous (possibly non-local ) drag */
+  dR = drag(kelement, psi,  &EForce, param);
+  /* contribution from external flow */
+  if ( iext_flow  ){ 
+    dR = dR + ext_flow( kelement, R, tau, param  ) ; }
+  /*------ put the rhs back to the dpsi array ----- */
+  dpsi[pp*kelement]       = dR.x  ;
+  dpsi[pp*kelement + 1] = dR.y ;
+  dpsi[pp*kelement + 2] = dR.z ;
+}
+/*--------------------------------------------------------------*/
+__device__  void getub(double *bk, vec3 *uk, int kp, double psi[]){
+  vec3 X(psi[pp*kp], psi[pp*kp+1], psi[pp*kp+2]  ) ;
+  vec3 Xp1(psi[(pp+1)*kp], psi[(pp+1)*kp+1], psi[(pp+1)*kp+2]  ) ;
+  vec3 dX = Xp1-X;
+  double bb = norm(dX);
+  *bk = bb;
+  *uk =dX/bb;
+}
+
 /*-------------------------------------------------------------------*/
 __host__ void initial_configuration( double PSI[] ){
   double xx, vv;

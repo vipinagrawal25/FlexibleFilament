@@ -1,5 +1,5 @@
 compile= nvcc
-options = -dc 
+options = -dc -g -G 
 link = -l
 default: chain.o main.o evolve.o model.o cuda.o
 	$(compile) -o chain.exe chain.o evolve.o model.o cuda.o main.o
