@@ -55,13 +55,8 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
 
   dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
   EForce[ip] = EForce_ip;
-  // EForce[ip] = EForce[ip]*aa*aa;
-  // dR[ip]=EForce*OneByGamma;
   CurvSqr[ip]=kappasqr;
-  // cout << CurvSqr[ip] << endl;
   }
-
-  drag(R, dR, EForce);
 
   switch(conf_number){
     case 0:
@@ -69,9 +64,13 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
       FF0.y = 0;
       FF0.z = -FFZ0*sin(omega*time);
       EForce[Np-1] = EForce[Np-1]-FF0;
+      drag(R, dR, EForce);
+
       break;
 
     case 1:
+      drag(R, dR, EForce);
+
       for (int ip = 0; ip < Np; ++ip)
       {
         if (sin(omega*time) >= 0){
@@ -84,6 +83,8 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
       break;
 
       case 2:
+      drag(R, dR, EForce);
+
       for (int ip = 0; ip < Np; ++ip)
       {
         dR[ip].y = dR[ip].y + ShearRate*(R[ip].z);          
