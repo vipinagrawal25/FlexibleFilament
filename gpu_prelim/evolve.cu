@@ -59,9 +59,9 @@ void evolve( double PSI[], double dev_psi[] ){
   printf( "#- We know device properties \n");
   /* Set up parameters for evolution */
   TT.time = 0.;
-  TT.dt = 1.e-2;
+  TT.dt = 1.e-4;
   TT.ndiag = 10;
-  TT.tmax =1.;
+  TT.tmax =1.e-3;
   TT.tdiag = TT.tmax/((double) TT.ndiag) ; 
   /* We launch the thread here: */
   int Nthread, Nblock;
@@ -83,7 +83,7 @@ allowed-per-block then we launch in one way */
   while ( TT.time < TT.tmax){
      // copy time parameters to GPU
     cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice);
-    ALGO<<<Nblock,Nthread>>>( dev_psi, dev_kk, dev_tt, dev_param ,
+  ALGO<<<Nblock,Nthread>>>( dev_psi, dev_kk, dev_tt, dev_param ,
                               dev_diag, dev_bug);
     cudaMemcpy( &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost);
    // set the time for next diagnostic
@@ -130,7 +130,7 @@ __global__ void euler( double psi[], double k0[], EV *tt,
 /*-----------------------------------------------------------------------*/
 __global__ void rnkt4( double psi[], double kk[], EV *tt,
                        MPARAM *dev_param, double *diag, CRASH *crash ){
-  double dpsi[pp];
+  //double dpsi[pp];
   double *temp, *k1, *k2, *k3, *k4;
   temp = &kk[0];
   k1= &kk[ndim];

@@ -13,9 +13,6 @@ const int size_EV = 4*sizeof( double ) + sizeof( int );
 depends on what kind of algorithm I use. For example, for euler
 time stepping dev_kk is allocated to the same size as PSI. For 4th order
 Runge-Kutta it is allocated to 5 times the size of PSI. */
-extern double  *dev_kk;
-extern struct EV TT;
-extern struct EV *dev_tt;
 void pre_evolve( int Nsize, char *algo );
 void evolve( double PSI[], double dev_psi[] );
 #endif /* !EVOLVE_SEEN */

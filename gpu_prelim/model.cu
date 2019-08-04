@@ -7,7 +7,6 @@
 #include "3vec.h"
 #include "2Tens.h"
 using namespace std;
-__host__ void write_param( void );
 __device__ void dHdR(int kp, double psi[], vec3* add_FF,
                      double* add_kappasqr,  struct MPARAM *param,
                      struct CRASH * );
@@ -25,102 +24,114 @@ __device__ vec3 Uflow ( vec3 RR, struct MPARAM *param);
 __device__ void device_exception( struct CRASH *bug, char mesg[] );
 __device__ vec3 psi2R(double psi[], int k);
 __device__ void R2psi(double psi[], int k, vec3 R);
-struct MPARAM host_param ;
-struct MPARAM *dev_param;
-double *DIAG ;
-double *dev_diag ;
-struct CRASH BUG;
-struct CRASH *dev_bug;
-int size_diag;
 /* ========================================= */
-__host__ void set_param( void ){
-  host_param.height = 1.;
-  double height = host_param.height ;
-  host_param.aa = height/(double)(NN-1);
+void alloc_chain(  double **PSI, double **dev_psi ){
+  double *temp;
+  *PSI = (double *) malloc( ndim*sizeof( double ) );
+  cudaMalloc( (void**)&temp, ndim*sizeof( double ) );
+  *dev_psi = temp;
+}
+/* ------------------------------------------------------------------------------*/
+int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM ){
+ // allocate host data for diagnostic
+  int qdiag = PARAM.qdiag ; 
+  int size_diag = NN * qdiag * sizeof(double) ; 
+  *DIAG = (double *) malloc( size_diag ) ;
+  for (int iN=0; iN<NN; iN++ ){
+    for(int iq=0; iq<qdiag; iq++){
+      (*DIAG)[iN*qdiag+iq] = 1. ;
+    }
+  }
+  double *temp;
+  cudaMalloc( (void**)&temp, size_diag );
+  *dev_diag = temp ;
+  cudaMemcpy( *dev_diag,  *DIAG, size_diag,
+              cudaMemcpyHostToDevice);
+  return size_diag;
+}
+/*--------------------------------------------------------*/
+void set_param( MPARAM *PARAM, MPARAM **dev_param ){
+  MPARAM *temp;
+  double height = 1.;
+  (*PARAM).height = height;
+  (*PARAM).aa = height/(double)(NN-1);
   // distance between two nodes.
-  host_param.Dbyell = 0.005 ;
-  host_param.dd = height*host_param.Dbyell ;
+  (*PARAM).Dbyell = 0.005 ;
+  (*PARAM).dd = height*(*PARAM).Dbyell ;
   /* r/l ratio for the rod has been kept constant. It should be noted that 
      the particles would also have same diameter. */
-  host_param.viscosity = 10;	      // Equivalent to kinematic viscosity of glycerin
-  host_param.Z0=0. ;		      // If we want the bottom point of the rod to be fixed.
-  host_param.Famp = 0. ;	      // Different force for different configuration.
+  (*PARAM).viscosity = 10;	      // Equivalent to kinematic viscosity of glycerin
+  (*PARAM).Z0=0. ;		      // If we want the bottom point of the rod to be fixed.
+  (*PARAM).Famp = 0. ;	      // Different force for different configuration.
   // Sigma is a dimensionless number, which is described as frequency parameter.
-  host_param.sigma=1.5;					
-  host_param.ShearRate = 1.;
-  host_param.omega = host_param.ShearRate*host_param.sigma ;
+  (*PARAM).sigma=1.5;					
+  (*PARAM).ShearRate = 1.;
+  (*PARAM).omega = (*PARAM).ShearRate*(*PARAM).sigma ;
   //
-  host_param.factorAA = 0.15 ; 
-  host_param.AA = host_param.factorAA*pow(10,-4) ; // AA is the bending rigidity.
-  host_param.KK = 64.;
-  double asqr = host_param.aa*host_param.aa ;
-  host_param.HH = host_param.KK*host_param.AA/( asqr );
+  (*PARAM).factorAA = 0.15 ; 
+  (*PARAM).AA = (*PARAM).factorAA*pow(10,-4) ; // AA is the bending rigidity.
+  (*PARAM).KK = 64.;
+  double asqr = (*PARAM).aa*(*PARAM).aa ;
+  (*PARAM).HH = (*PARAM).KK*(*PARAM).AA/( asqr );
  // Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
 // double TMAX = ShearRate*10;
 // double tdiag = TMAX/2000;
-  host_param.qdiag = 2 ;
-  int qdiag = host_param.qdiag ;
-  host_param.bcb = 1 ;
-  host_param.bct = 1;
-  host_param.global_drag = 1;
-  host_param.iext_force = 0;
-  host_param.floc = 0 ;
-  host_param.iext_flow = 1;
-  cudaMalloc( (void**)&dev_param, size_MPARAM  );
-  cudaMemcpy( dev_param, &host_param,
+  (*PARAM).qdiag = 2 ;
+  int qdiag = (*PARAM).qdiag ;
+  (*PARAM).bcb = 1 ;
+  (*PARAM).bct = 1;
+  (*PARAM).global_drag = 1;
+  (*PARAM).iext_force = 0;
+  (*PARAM).floc = 0 ;
+  (*PARAM).iext_flow = 1;
+  cudaMalloc( (void**)&temp, size_MPARAM  );
+  *dev_param = temp;
+  cudaMemcpy( *dev_param, PARAM,
                      size_MPARAM, cudaMemcpyHostToDevice ) ;
-  write_param( );
-  // allocate host data for diagnostic
-  size_diag = NN*qdiag*sizeof(double) ; 
-  DIAG = (double *) malloc( size_diag ) ;
-  for (int iN=0; iN<NN; iN++ ){
-    for(int iq=0; iq<qdiag; iq++){
-      DIAG[iN*qdiag+iq] = 0. ;
-    }
-  }
-  cudaMalloc( (void**)&dev_diag, size_diag );
-  cudaMemcpy( dev_diag, &DIAG, size_diag, cudaMemcpyHostToDevice);
+  write_param( PARAM, "wparam.txt" );
+} 
   // allocate space for crashing gracefully.
-  cudaMalloc( (void**)&dev_bug, size_CRASH );
+  /* cudaMalloc( (void**)&dev_bug, size_CRASH );
   BUG.lstop = 0;
   strcpy(BUG.message, " No bug yet" );
-  cudaMemcpy( dev_bug, &BUG, size_CRASH, cudaMemcpyHostToDevice);
-}
-/* ===================================== */
-__host__ void write_param( void ){
+  cudaMemcpy( dev_bug, &BUG, size_CRASH, cudaMemcpyHostToDevice); */
+
+
+/* ------------------------------------------------------------------------------*/
+__host__ void write_param( MPARAM *PARAM, char *fname ){
   FILE *pout ;
-  pout = fopen ( "wparam.txt", "w" );
+  pout = fopen ( fname, "w" );
   printf( "# =========== Model Parameters ==========\n" );
   printf( " #Model : Elastic String \n " ) ;
   printf( "#dimension of ODE:\n pp =  %d \n", pp ) ;
   printf( "#Number of copies:\n  NN = %d\n", NN ) ;
-  printf( " height = %f \n" , host_param.height) ;
+  printf( " height = %f \n" , (*PARAM).height) ;
   printf( " #============================\n" );
   fprintf( pout, "# =========== Model Parameters ==========\n" );
   fprintf( pout, " #Model : Elastic String \n " ) ;
   fprintf( pout, "#dimension of ODE:\n pp =  %d \n", pp ) ;
   fprintf( pout, "#Number of copies:\n  NN = %d\n", NN ) ;
-  fprintf( pout, " height = %f \n" , host_param.height) ;
-  fprintf( pout, " aa= %f \n" , host_param.aa ) ;
-  fprintf( pout, " Dbyell= %f \n" , host_param.Dbyell ) ;
-  fprintf( pout, " dd= %f \n",  host_param.dd ) ;
-  fprintf( pout, " viscosity = %f \n ",  host_param.viscosity) ;
-  fprintf( pout, " Z0 = %f \n ", host_param.Z0) ;
-  fprintf( pout, " Famp = %f \n ", host_param.Famp ) ;
-  fprintf( pout, " sigma = %f \n ", host_param.sigma ) ;
-  fprintf( pout, " ShearRate = %f \n ", host_param.ShearRate ) ;
-  fprintf( pout, " omega = %f \n ", host_param.omega ) ;
-  fprintf( pout, " factorAA = %f \n ", host_param.factorAA ) ;
-  fprintf( pout, " AA = %f \n ", host_param.AA ) ;
-  fprintf( pout, " KK = %f \n ", host_param.KK ) ;
-  fprintf( pout, " HH = %f \n ", host_param.HH ) ;
-  fprintf( pout, " qdiag=%d\n", host_param.qdiag );
-  fprintf( pout, " bcb=%d\n", host_param.bcb );
-  fprintf( pout, " bct=%d\n", host_param.bct );
-  fprintf( pout, " global_drag=%d\n", host_param.global_drag );
-  fprintf( pout, " iext_force=%d\n", host_param.iext_force );
-  fprintf( pout, " floc=%d\n", host_param.floc );
-  fprintf( pout, " iext_flow=%d\n", host_param.iext_flow );
+  fprintf( pout, " height = %f \n" , (*PARAM).height) ;
+  fprintf( pout, " aa= %f \n" , (*PARAM).aa ) ;
+  fprintf( pout, " Dbyell= %f \n" , (*PARAM).Dbyell ) ;
+  fprintf( pout, " dd= %f \n",  (*PARAM).dd ) ;
+  fprintf( pout, " viscosity = %f \n ",  (*PARAM).viscosity) ;
+  fprintf( pout, " Z0 = %f \n ", (*PARAM).Z0) ;
+  fprintf( pout, " Famp = %f \n ", (*PARAM).Famp ) ;
+  fprintf( pout, " sigma = %f \n ", (*PARAM).sigma ) ;
+  fprintf( pout, " ShearRate = %f \n ", (*PARAM).ShearRate ) ;
+  fprintf( pout, " omega = %f \n ", (*PARAM).omega ) ;
+  fprintf( pout, " factorAA = %f \n ", (*PARAM).factorAA ) ;
+  fprintf( pout, " AA = %f \n ", (*PARAM).AA ) ;
+  fprintf( pout, " KK = %f \n ", (*PARAM).KK ) ;
+  fprintf( pout, " HH = %f \n ", (*PARAM).HH ) ;
+  fprintf( pout, " qdiag=%d\n", (*PARAM).qdiag );
+  fprintf( pout, " bcb=%d\n", (*PARAM).bcb );
+  fprintf( pout, " bct=%d\n", (*PARAM).bct );
+  fprintf( pout, " global_drag=%d\n", (*PARAM).global_drag );
+  fprintf( pout, " iext_force=%d\n", (*PARAM).iext_force );
+  fprintf( pout, " floc=%d\n", (*PARAM).floc );
+  fprintf( pout, " iext_flow=%d\n", (*PARAM).iext_flow );
   fprintf( pout, " #============================\n" );
   fclose( pout );
 }
@@ -231,6 +242,15 @@ __device__ void GetRij(double psi[], int i, int j, double *Distance,
   *rij = Rj - Ri;
   double Dis = norm( Rj-Ri ); 
   *Distance = Dis;
+}
+/*--------------------------------------------------------------*/
+__device__  void getub(double *bk, vec3 *uk, int kp, double psi[]){
+  vec3 X = psi2R( psi, kp ) ;
+  vec3 Xp1 = psi2R ( psi, kp+1) ;
+  vec3 dX = Xp1-X;
+  double bb = norm(dX);
+  *bk = bb;
+  *uk =dX/bb;
 }
 /*-----------------------------------------------------------------------------------------------*/
 __device__ vec3 Force_FirstPoint( double psi[],
@@ -449,23 +469,16 @@ This number is stored in param.qdiag */
   /*------ put the rhs back to the dpsi array ----- */
   R2psi( dpsi, kelement, dR);
 }
-/*--------------------------------------------------------------*/
-__device__  void getub(double *bk, vec3 *uk, int kp, double psi[]){
-  vec3 X = psi2R( psi, kp ) ;
-  vec3 Xp1 = psi2R ( psi, kp+1) ;
-  vec3 dX = Xp1-X;
-  double bb = norm(dX);
-  *bk = bb;
-  *uk =dX/bb;
-}
 
 /*-------------------------------------------------------------------*/
-__host__ void initial_configuration( double PSI[] ){
+__host__ void initial_configuration( double PSI[], MPARAM PARAM ){
    // elastic filament is on a straight line 
     for (int iN=0; iN<NN; iN++){
-      PSI[iN*pp] = host_param.aa*(double) iN ;
+      PSI[iN*pp] = PARAM.aa*(double) iN ;
       PSI[iN*pp + 1] =  0.;
       PSI[iN*pp + 2] =  0.; 
   } 
 }
 /*-------------------------------------------------------------------*/
+
+

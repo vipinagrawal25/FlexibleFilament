@@ -1,5 +1,14 @@
 #ifndef FILE_MODEL_SEEN
 #define FILE_MODEL_SEEN
+#include "cuda.h"
+/*--------------------------------------------------*/
+/* We solve for a chain, a one dimensional system. 
+Each node may be connected to every other node. 
+The number of nodes is NN. 
+The number of degrees of freedom at each node is pp */ 
+#define NN 16
+#define pp  3
+#define ndim NN*pp
 /*--------------------------------------------------*/
 struct MPARAM {
   double height ;	// height of the box we are doing simulations in.
@@ -25,7 +34,7 @@ struct MPARAM {
   int iext_force;
   int floc;
   int iext_flow ;
- };
+};
 const int size_MPARAM = 14*sizeof( double ) + 7*sizeof( int );
 /* boundary condition :  
    0 => clamped
@@ -38,17 +47,10 @@ const int size_MPARAM = 14*sizeof( double ) + 7*sizeof( int );
    0 => no external flow.
   1 => time-dependent shear U = ( ShearRate*z, 0, 0 ) * square_wave(omega*time) 
   2 => time-INdependent shear U = ( ShearRate*z, 0, 0 ) 
-*/
-extern struct MPARAM host_param;
-extern struct MPARAM *dev_param;
-extern double *DIAG;
-extern double *dev_diag;
-extern int size_diag;
-/* The two following structures are defined in cuda.h file */
-extern struct CRASH BUG;
-extern struct CRASH *dev_bug;
 /*------------------------------------------------------------------*/
-__host__ void set_param( void ) ;
+void set_param( MPARAM *PARAM, MPARAM **dev_param ) ;
+void write_param( MPARAM *PARAM, char *fname );
+int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM );
 __device__ void eval_rhs( double dpsi[], double psi[], int kelement, double tau,
                           MPARAM *dev_param, double *diag, CRASH *crash  );
 __host__ void initial_configuration( double PSI[] );
