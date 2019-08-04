@@ -69,7 +69,6 @@ void evolve( double PSI[], double dev_psi[],
   int count;
   qdevice( &count, &prop ) ;
   printf( "#- We know device properties \n");
-
   /* We launch the thread here: */
   int Nthread, Nblock;
   /* If the number of elements in the chain, NN,  is smaller the maximum threads
@@ -86,18 +85,17 @@ allowed-per-block then we launch in one way */
   printf( "#-I am launching %d threads in %d blocks\n", Nthread, Nblock );
   /* I evolve till I reach the point where the first diagnostic must
      be calculated.  This evolution is done inside the time-stepper */
- 
   while ( TT.time < TT.tmax){
      // copy time parameters to GPU
     cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice);
-  ALGO<<<Nblock,Nthread>>>( dev_psi, dev_kk, dev_tt, dev_param ,
+    ALGO<<<Nblock,Nthread>>>( dev_psi, dev_kk, dev_tt, dev_param ,
                               dev_diag, dev_bug);
     cudaMemcpy( &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost);
    // set the time for next diagnostic
     TT.tdiag = TT.time+ TT.tmax/(double)TT.ndiag ;
-   printf( "#- tmax=%f\t time=%f\t tdiag=%f \n", TT.tmax, TT.time, TT.tdiag) ;
-   // diagnostic written out here
-    cudaMemcpy( &DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
+    printf( "#- tmax=%f\t time=%f\t tdiag=%f \n", TT.tmax, TT.time, TT.tdiag) ;
+   // diagnostic copied to host out here
+    cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
     cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
     if ( BUG.lstop) { IStop( BUG );}
   }

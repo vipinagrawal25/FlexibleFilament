@@ -1,8 +1,8 @@
 compile= nvcc
 options = -dc -g -G 
 link = -l
-default: chain.o main.o evolve.o model.o cuda.o
-	$(compile) -o chain.exe chain.o evolve.o model.o cuda.o main.o
+default: main.o evolve.o model.o cuda.o
+	$(compile) -o chain.exe evolve.o model.o cuda.o main.o
 tall: test_all.o  evolve.o model.o cuda.o
 	$(compile) test_all.o evolve.o model.o cuda.o
 test_all.o: test_all.cu cuda.h model.h evolve.h 
