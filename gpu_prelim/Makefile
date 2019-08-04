@@ -3,8 +3,8 @@ options = -dc -g -G
 link = -l
 default: chain.o main.o evolve.o model.o cuda.o
 	$(compile) -o chain.exe chain.o evolve.o model.o cuda.o main.o
-test: model.o test4.o 
-	$(compile)   model.o test4.o
+test: test_vec.cu 3vec.h 
+	$(compile)  test_vec.cu 
 main.o: main.cu chain.h evolve.h
 	$(compile) $(options) main.cu
 test4.o: test4.cu chain.h

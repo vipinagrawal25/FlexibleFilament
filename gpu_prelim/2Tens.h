@@ -142,6 +142,7 @@ __device__ Tens2 Tens2::operator/(double param){
   temp.xy=xy/param;
   temp.xz=xz/param;
 
+  
   temp.yx=yx/param;
   temp.yy=yy/param;
   temp.yz=yz/param;

@@ -23,6 +23,8 @@ __device__  void getub(double *bk, vec3 *uk, int kp, double psi[]);
 __device__ int square_wave( double t, double Tby2) ;
 __device__ vec3 Uflow ( vec3 RR, struct MPARAM *param);
 __device__ void device_exception( struct CRASH *bug, char mesg[] );
+__device__ vec3 psi2R(double psi[], int k);
+__device__ void R2psi(double psi[], int k, vec3 R);
 struct MPARAM host_param ;
 struct MPARAM *dev_param;
 double *DIAG ;
@@ -71,9 +73,15 @@ __host__ void set_param( void ){
   // allocate host data for diagnostic
   size_diag = NN*qdiag*sizeof(double) ; 
   DIAG = (double *) malloc( size_diag ) ;
+  for (int iN=0; iN<NN; iN++ ){
+    for(int iq=0; iq<qdiag; iq++){
+      DIAG[iN*qdiag+iq] = 0. ;
+    }
+  }
   cudaMalloc( (void**)&dev_diag, size_diag );
+  cudaMemcpy( dev_diag, &DIAG, size_diag, cudaMemcpyHostToDevice);
   // allocate space for crashing gracefully.
- cudaMalloc( (void**)&dev_bug, size_CRASH );
+  cudaMalloc( (void**)&dev_bug, size_CRASH );
   BUG.lstop = 0;
   strcpy(BUG.message, " No bug yet" );
   cudaMemcpy( dev_bug, &BUG, size_CRASH, cudaMemcpyHostToDevice);
@@ -115,6 +123,20 @@ __host__ void write_param( void ){
   fprintf( pout, " iext_flow=%d\n", host_param.iext_flow );
   fprintf( pout, " #============================\n" );
   fclose( pout );
+}
+/* -----------------------------------------------------------------------------------*/
+__device__ vec3 psi2R(double psi[], int k){
+  vec3 Rt;
+  Rt.x = psi[3*k]; 
+  Rt.y = psi[3*k+1]; 
+  Rt.z = psi[3*k+2];
+  return Rt;
+}
+/* -----------------------------------------------------------------------------------*/
+__device__ void R2psi(double psi[], int k, vec3 R){
+  psi[3*k] = R.x; 
+  psi[3*k+1] = R.y; 
+  psi[3*k+2] = R.z;
 }
 /* -----------------------------------------------------------------------------------*/
 __device__ int square_wave( double t, double Tby2) {
@@ -394,7 +416,7 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
 }
  /* -----------------------------------------------------------------------------------*/
 __device__ void eval_rhs( double dpsi[], double psi[], int kelement, double tau,
-                          struct MPARAM *param, double *diag, CRASH *bug ){
+                          struct MPARAM *param, double diag[], CRASH *bug ){
   int iext_flow = (*param).iext_flow ;
   vec3 R, dR, EForce, FF0, Rp1;  // R is the position of the beads.
   int iext_force = (*param).iext_force ;
@@ -405,15 +427,11 @@ kappasqr : square of local curvature.
 This number is stored in param.qdiag */
   int qdiag = (*param).qdiag ;
   double ds, kappasqr ; 
-  R.x= psi[pp*kelement];
-  R.y= psi[pp*kelement + 1];
-  R.z= psi[pp*kelement + 2];
+  R = psi2R(psi, kelement );
   if ( kelement == (NN-1) ){
     ds = 0.;
   } else {
-    Rp1.x= psi[(pp+1)*kelement];
-    Rp1.y= psi[(pp+1)*kelement + 1];
-    Rp1.z= psi[(pp+1)*kelement + 2];
+    Rp1 = psi2R(psi, kelement+1) ;
     ds = norm( Rp1-R);
   }
   dHdR( kelement, psi, &EForce, &kappasqr, param, bug );
@@ -429,14 +447,12 @@ This number is stored in param.qdiag */
   if ( iext_flow  ){ 
     dR = dR + ext_flow( kelement, R, tau, param  ) ; }
   /*------ put the rhs back to the dpsi array ----- */
-  dpsi[pp*kelement]       = dR.x  ;
-  dpsi[pp*kelement + 1] = dR.y ;
-  dpsi[pp*kelement + 2] = dR.z ;
+  R2psi( dpsi, kelement, dR);
 }
 /*--------------------------------------------------------------*/
 __device__  void getub(double *bk, vec3 *uk, int kp, double psi[]){
-  vec3 X(psi[pp*kp], psi[pp*kp+1], psi[pp*kp+2]  ) ;
-  vec3 Xp1(psi[(pp+1)*kp], psi[(pp+1)*kp+1], psi[(pp+1)*kp+2]  ) ;
+  vec3 X = psi2R( psi, kp ) ;
+  vec3 Xp1 = psi2R ( psi, kp+1) ;
   vec3 dX = Xp1-X;
   double bb = norm(dX);
   *bk = bb;
@@ -445,15 +461,11 @@ __device__  void getub(double *bk, vec3 *uk, int kp, double psi[]){
 
 /*-------------------------------------------------------------------*/
 __host__ void initial_configuration( double PSI[] ){
-  double xx, vv;
-  for( int s=0; s<NN; s++){
-   // A Harmonic Oscillator 
- /* initially all positions are zero */
-    xx = 0.;
- /* and all velocities are unity */
-    vv = 1.;
-    PSI [pp*s ] = xx;
-    PSI[pp*s+1] = vv;
+   // elastic filament is on a straight line 
+    for (int iN=0; iN<NN; iN++){
+      PSI[iN*pp] = host_param.aa*(double) iN ;
+      PSI[iN*pp + 1] =  0.;
+      PSI[iN*pp + 2] =  0.; 
   } 
 }
 /*-------------------------------------------------------------------*/
