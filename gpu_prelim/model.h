@@ -6,7 +6,7 @@
 Each node may be connected to every other node. 
 The number of nodes is NN. 
 The number of degrees of freedom at each node is pp */ 
-#define NN 16
+#define NN  500 
 #define pp  3
 #define ndim NN*pp
 /*--------------------------------------------------*/

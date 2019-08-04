@@ -27,7 +27,7 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt ){
   (*TT).time = 0.;
   (*TT).dt = 1.e-4;
   (*TT).ndiag = 10;
-  (*TT).tmax =1.e-3;
+  (*TT).tmax =1.;
   (*TT).tdiag = (*TT).tmax/((double) (*TT).ndiag) ;
   EV *temp ;
   cudaMalloc(  (void**)&temp, size_EV );
@@ -73,9 +73,9 @@ void evolve( double PSI[], double dev_psi[],
   int Nthread, Nblock;
   /* If the number of elements in the chain, NN,  is smaller the maximum threads
 allowed-per-block then we launch in one way */
-  if ( NN < prop[0].maxThreadsPerBlock ) {
-    Nthread= 32;
-    Nblock = (NN+31)/32 ;
+  if ( NN < 1024 ) {
+    Nthread= 1;
+    Nblock = 1024 ;
   } else{
     // Otherwise: we launch the threads differently:
     Nthread = 128;
