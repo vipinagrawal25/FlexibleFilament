@@ -26,3 +26,19 @@ __device__ void device_exception( struct CRASH *bug, char *mesg ){
         scpy( (*bug).message, mesg ) ;
 }
 /*-----------------------------------------------------------------------------*/
+void IStop( CRASH BUG ){
+  printf( "#-I STOP, something went wrong \n") ;
+  printf( "#-%s \n", BUG.message );
+  exit(1);
+}
+/*-----------------------------------------------------------------------------*/
+void set_crash( CRASH *BUG, CRASH **dev_bug ){
+  (*BUG).lstop = 0;
+  strcpy( (*BUG).message, " No bug yet" );
+  CRASH *temp ;
+  cudaMalloc( (void**)&temp, size_CRASH );
+  *dev_bug = temp;
+  cudaMemcpy( *dev_bug, BUG,
+                     size_CRASH, cudaMemcpyHostToDevice ) ;
+} 
+/*-----------------------------------------------------------------------------*/

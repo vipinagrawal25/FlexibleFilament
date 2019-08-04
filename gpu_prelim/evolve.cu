@@ -1,14 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
-#include "time.h"
 #include "evolve.h"
-#include "model.h"
-#include "cuda.h"
-#include "chain.h"
 double *dev_kk;
-struct EV TT;
-struct EV *dev_tt;
 void (*ALGO)( double [], double [], EV *, MPARAM *, double *, CRASH *);
 __global__ void euler( double psi[], double k0[], EV *tt, MPARAM *,
                        double *, CRASH *);
@@ -16,15 +10,8 @@ __global__ void rnkt4( double psi[], double k0[], EV *tt, MPARAM *,
                        double *, CRASH *);
 void pre_euler( int Nsize );
 void pre_rnkt4( int Nsize );
-void IStop( void ) ;
 /*-----------------------------------------------------------------------*/
-void IStop( void ){
-  printf( "#-I STOP, something went wrong \n") ;
-  printf( "#-%s \n", BUG.message );
-  exit(1);
-}
-/*-----------------------------------------------------------------------*/
-void pre_evolve( int Nsize, char *algo){
+void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt ){
   if ( strcmp( algo , "euler") == 0 ){
     pre_euler( Nsize );
     ALGO = &euler;
@@ -36,33 +23,53 @@ void pre_evolve( int Nsize, char *algo){
     printf( "EXITING \n " );
     exit(1);
   }
+  /* Set up parameters for evolution */
+  (*TT).time = 0.;
+  (*TT).dt = 1.e-4;
+  (*TT).ndiag = 10;
+  (*TT).tmax =1.e-3;
+  (*TT).tdiag = (*TT).tmax/((double) (*TT).ndiag) ;
+  EV *temp ;
+  cudaMalloc(  (void**)&temp, size_EV );
+  *dev_tt = temp;
+  cudaMemcpy( *dev_tt, TT,
+                     size_EV, cudaMemcpyHostToDevice ) ;
+  wevolve( TT, "initial.txt" );
 }
-/*----------------------------------------*/
+/* ------------------------------------------------------------------------------*/
+void wevolve( EV *TT, char *fname ){
+  FILE *pout ;
+  pout = fopen ( fname, "w" );
+  fprintf( pout, "# =========== Evolve Parameters==========\n" );
+  fprintf( pout, " time=%f \n ", (*TT).time ) ;
+  fprintf( pout, "dt = %f \n ", (*TT).dt );
+  fprintf( pout, " ndiag = %d \n ", (*TT).ndiag );
+  fprintf( pout, "tmax = %f \n ", (*TT).tmax );
+  fprintf( pout, "tdiag = %f \n ", (*TT).tdiag );
+}
+  /*----------------------------------------*/
 void pre_euler( int Nsize ){
   printf( " #---time-integration algorithm : EULER --\n " );
   cudaMalloc( (void**)&dev_kk, Nsize*sizeof( double ) );
-  cudaMalloc(  (void**)&dev_tt, size_EV ); 
-  printf( "#--I have set up appropriate storage in the device-- \n " ) ;
+  printf( "#--I have set up auxiliary storage in the device-- \n " ) ;
 }
 /*----------------------------------------*/
 void pre_rnkt4( int Nsize ){
   printf( "#-- time-integration algorithm : RNKT4-- \n " );
   cudaMalloc( (void**)&dev_kk, 5*Nsize*sizeof( double ) );
-  cudaMalloc(  (void**)&dev_tt, size_EV ); 
-  printf( "--I have set up appropriate storage in the device --\n " ) ;
+  printf( "--I have set up auxiliary storage in the device --\n " ) ;
 }
 /*----------------------------------------*/
-void evolve( double PSI[], double dev_psi[] ){
+void evolve( double PSI[], double dev_psi[], 
+             EV TT, EV *dev_tt,
+             MPARAM *dev_param ,
+             double DIAG[], double dev_diag[], int size_diag,
+             CRASH BUG,  CRASH *dev_bug ) {
   cudaDeviceProp *prop;
   int count;
   qdevice( &count, &prop ) ;
   printf( "#- We know device properties \n");
-  /* Set up parameters for evolution */
-  TT.time = 0.;
-  TT.dt = 1.e-4;
-  TT.ndiag = 10;
-  TT.tmax =1.e-3;
-  TT.tdiag = TT.tmax/((double) TT.ndiag) ; 
+
   /* We launch the thread here: */
   int Nthread, Nblock;
   /* If the number of elements in the chain, NN,  is smaller the maximum threads
@@ -92,7 +99,7 @@ allowed-per-block then we launch in one way */
    // diagnostic written out here
     cudaMemcpy( &DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
     cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
-    if ( BUG.lstop) { IStop( );}
+    if ( BUG.lstop) { IStop( BUG );}
   }
   // Once evolution is done, copy the data back to host
   D2H(PSI, dev_psi, ndim);

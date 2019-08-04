@@ -48,6 +48,10 @@ const int size_MPARAM = 14*sizeof( double ) + 7*sizeof( int );
   1 => time-dependent shear U = ( ShearRate*z, 0, 0 ) * square_wave(omega*time) 
   2 => time-INdependent shear U = ( ShearRate*z, 0, 0 ) 
 /*------------------------------------------------------------------*/
+void alloc_chain( double **PSI, double **psi);
+void free_chain( double **PSI, double **psi );
+void H2D(double psi[], double PSI[], int Nsize );
+void D2H(double PSI[], double psi[], int Nsize );
 void set_param( MPARAM *PARAM, MPARAM **dev_param ) ;
 void write_param( MPARAM *PARAM, char *fname );
 int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM );

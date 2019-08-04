@@ -11,4 +11,6 @@ void  qdevice( int *count, cudaDeviceProp **prop ) ;
 void qfree( cudaDeviceProp *prop );
 __device__ void device_exception( struct CRASH *bug, char *mesg );
 __device__ void scpy( char to[], char from[]);
+void set_crash( CRASH *BUG, CRASH **dev_bug ) ;
+void IStop( CRASH BUG );
 #endif /* !CUDA_SEEN */

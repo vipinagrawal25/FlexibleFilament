@@ -2,7 +2,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include "cuda.h"
-#include "chain.h"
 #include "model.h"
 #include "3vec.h"
 #include "2Tens.h"
@@ -480,5 +479,17 @@ __host__ void initial_configuration( double PSI[], MPARAM PARAM ){
   } 
 }
 /*-------------------------------------------------------------------*/
-
+void  free_chain( double **PSI, double **psi  ){
+  free( *PSI );
+  cudaFree( *psi );
+}
+/*-------------------------------------------------------------------*/
+void H2D(double psi[], double PSI[], int Nsize){
+  cudaMemcpy( psi, PSI, Nsize*sizeof(double), cudaMemcpyHostToDevice);
+}
+/*-------------------------------------------------------------------*/
+void D2H(double PSI[], double psi[], int Nsize){
+  cudaMemcpy( PSI, psi, Nsize*sizeof(double), cudaMemcpyDeviceToHost);
+}
+/*-------------------------------------------------------------------*/
 

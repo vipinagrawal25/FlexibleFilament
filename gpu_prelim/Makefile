@@ -3,6 +3,14 @@ options = -dc -g -G
 link = -l
 default: chain.o main.o evolve.o model.o cuda.o
 	$(compile) -o chain.exe chain.o evolve.o model.o cuda.o main.o
+tall: test_all.o  evolve.o model.o cuda.o
+	$(compile) test_all.o evolve.o model.o cuda.o
+test_all.o: test_all.cu cuda.h model.h evolve.h 
+	$(compile) $(options) test_all.cu 
+ttime: test_time.o  evolve.o model.o cuda.o
+	$(compile) test_time.o evolve.o model.o cuda.o
+test_time.o: test_time.cu  
+	$(compile) $(options) test_time.cu 
 td: test_diag.o  model.o 
 	$(compile) test_diag.o model.o 
 test_diag.o: test_diag.cu  
