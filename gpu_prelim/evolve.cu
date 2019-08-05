@@ -26,8 +26,8 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt ){
   /* Set up parameters for evolution */
   (*TT).time = 0.;
   (*TT).dt = 1.e-4;
-  (*TT).ndiag = 10;
-  (*TT).tmax =1.;
+  (*TT).ndiag = 2;
+  (*TT).tmax =2.e-3;
   (*TT).tdiag = (*TT).tmax/((double) (*TT).ndiag) ;
   EV *temp ;
   cudaMalloc(  (void**)&temp, size_EV );
@@ -73,21 +73,21 @@ void evolve( double PSI[], double dev_psi[],
   int Nthread, Nblock;
   /* If the number of elements in the chain, NN,  is smaller the maximum threads
 allowed-per-block then we launch in one way */
-  if ( NN < 1024 ) {
+  if ( NN < 128 ) {
     Nthread= 1;
-    Nblock = 1024 ;
+    Nblock = NN ;
   } else{
     // Otherwise: we launch the threads differently:
     Nthread = 128;
     Nblock = (NN+127)/128;
   }
   printf( "#- tmax=%f\t time=%f\t tdiag=%f \n", TT.tmax, TT.time, TT.tdiag  );
-  printf( "#-I am launching %d threads in %d blocks\n", Nthread, Nblock );
   /* I evolve till I reach the point where the first diagnostic must
      be calculated.  This evolution is done inside the time-stepper */
   while ( TT.time < TT.tmax){
      // copy time parameters to GPU
     cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice);
+    printf( "#-I am launching %d blocks, each with %d threads\n", Nblock, Nthread );
     ALGO<<<Nblock,Nthread>>>( dev_psi, dev_kk, dev_tt, dev_param ,
                               dev_diag, dev_bug);
     cudaMemcpy( &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost);
