@@ -26,7 +26,31 @@ void pre_euler( int Nsize );
 void pre_rnkt4( int Nsize );
 __global__ void reduce_diag( double diag[] );
 __global__ void eustep( double kk[], double psi[], EV *tt );
+/*-------------------------------------------------------------------*/
+void  post_euler( void  ){
+  cudaFree( dev_kk );
+}
+/*-------------------------------------------------------------------*/
+void  post_rnkt4( void  ){
+  cudaFree( dev_psip );
+  cudaFree( dev_k1 );
+  cudaFree( dev_k2 ) ;
+  cudaFree( dev_k3 ) ;
+  cudaFree( dev_k4 );
+}
 /*-----------------------------------------------------------------------*/
+void post_evolve( char *algo  ){
+  if ( strcmp( algo , "euler") == 0 ){
+    post_euler( );
+  } else if ( strcmp( algo, "rnkt4" ) == 0 ){
+    post_rnkt4(  );
+  } else {
+    printf( " algorithm\t%s\t not coded \n", algo);
+    printf( "EXITING \n " );
+    exit(1);
+  }
+}
+/*----------------------------------------------------------------------------------*/
 void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt ){
   if ( strcmp( algo , "euler") == 0 ){
     pre_euler( Nsize );

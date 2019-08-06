@@ -17,6 +17,7 @@ depends on what kind of algorithm I use. For example, for euler
 time stepping dev_kk is allocated to the same size as PSI. For 4th order
 Runge-Kutta it is allocated to 5 times the size of PSI. */
 void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt );
+void post_evolve( char *algo  );
 void wevolve( EV *TT, char *fname ) ;
 void evolve( double PSI[], double dev_psi[], 
              EV TT, EV *dev_tt,
