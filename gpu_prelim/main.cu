@@ -18,10 +18,10 @@ int main( void ){
   pre_evolve(  ndim, "euler" , &TT, &dev_tt  ) ;
   printf( " #starting time evolution ...\n ");
   evolve( PSI, dev_psi, 
-             TT,  dev_tt,
-             dev_param ,
-             DIAG, dev_diag, size_diag,
-             BUG,  dev_bug ) ;
+          TT,  dev_tt,
+          PARAM, dev_param ,
+          DIAG, dev_diag, size_diag,
+          BUG,  dev_bug ) ;
   printf( "#... time evolution finished \n");
   free_chain( &PSI, &dev_psi );
 }

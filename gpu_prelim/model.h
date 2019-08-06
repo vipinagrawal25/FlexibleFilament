@@ -56,7 +56,7 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ) ;
 void write_param( MPARAM *PARAM, char *fname );
 int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM );
 __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau,
-                           MPARAM *dev_param, double *diag, CRASH *crash, int ldiag  );
+                           MPARAM *param, double *diag, CRASH *bug, int ldiag  );
 __host__ void initial_configuration( double PSI[] );
 /*------------------------------------------------------------------*/
 #endif /* !MODEL_SEEN */

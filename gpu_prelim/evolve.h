@@ -6,7 +6,7 @@
 struct EV{
   double tmax;
   double time;
-  double ttemp;
+  double tprime;
   double dt;
   double tdiag;
   int ndiag;
@@ -20,7 +20,7 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt );
 void wevolve( EV *TT, char *fname ) ;
 void evolve( double PSI[], double dev_psi[], 
              EV TT, EV *dev_tt,
-             MPARAM *dev_param ,
+             MPARAM PARAM, MPARAM *dev_param ,
              double DIAG[], double dev_diag[], int size_diag,
              CRASH BUG,  CRASH *dev_bug ) ;
- #endif /* !EVOLVE_SEEN */
+#endif /* !EVOLVE_SEEN */

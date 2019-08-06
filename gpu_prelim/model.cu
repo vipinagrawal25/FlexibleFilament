@@ -434,8 +434,8 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
   }  
 }
  /* -----------------------------------------------------------------------------------*/
-__device__ void eval_rhs( double dpsi[], double psi[], int kelement, double tau,
-                          struct MPARAM *param, double diag[], CRASH *bug ){
+__device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau,
+                           struct MPARAM *param, double diag[], CRASH *bug, int ldiag ){
   int iext_flow = (*param).iext_flow ;
   vec3 R, dR, EForce, FF0, Rp1;  // R is the position of the beads.
   int iext_force = (*param).iext_force ;
@@ -455,8 +455,10 @@ This number is stored in param.qdiag */
   }
   dHdR( kelement, psi, &EForce, &kappasqr, param, bug );
   /* write diagnostic to corresponding array */
+  if (ldiag ){
   diag[kelement*qdiag ] = ds ;
   diag[kelement*qdiag +1]  = kappasqr;
+  }
   /* add external force to the filament */
   if ( (iext_force) && (kelement == floc) ){
   EForce = EForce -  ext_force( kelement, R, tau, param ) ;}
