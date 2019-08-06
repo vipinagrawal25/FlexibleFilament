@@ -252,7 +252,7 @@ __global__ void rk4final( double psi[],
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
       psi[ip+pp*tid] = psi[ip+pp*tid] +
-        (k1[ip+pp*tid]/6.+ k2[ip+pp*tid]/3 + k3[ip+pp*tid]/3  + k4[ip+pp*tid]/6 )*(*tt).dt/2 ;
+        (k1[ip+pp*tid]/6.+ k2[ip+pp*tid]/3. + k3[ip+pp*tid]/3. + k4[ip+pp*tid]/6. )*(*tt).dt ;
       if (tid == 0) { // only 0th thread updates time
         (*tt).time = (*tt).time  + (*tt).dt ;
         (*tt).tprime = (*tt).time  ;
