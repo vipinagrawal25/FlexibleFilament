@@ -472,7 +472,7 @@ This number is stored in param.qdiag */
 }
 
 /*-------------------------------------------------------------------*/
-__host__ void initial_configuration( double PSI[], MPARAM PARAM ){
+void initial_configuration( double PSI[], MPARAM PARAM ){
    // elastic filament is on a straight line 
     for (int iN=0; iN<NN; iN++){
       PSI[iN*pp] = PARAM.aa*(double) iN ;
@@ -494,4 +494,24 @@ void D2H(double PSI[], double psi[], int Nsize){
   cudaMemcpy( PSI, psi, Nsize*sizeof(double), cudaMemcpyDeviceToHost);
 }
 /*-------------------------------------------------------------------*/
-
+void wPSI ( double PSI[], double tau ){
+  FILE *fp = fopen( "data/PSI", "a" );
+  fprintf( fp, "%f\t", tau ) ;
+  for ( int ichain = 0; ichain< ndim; ichain++ ){ 
+    fprintf( fp, "%f\t", PSI[ichain] ) ; 
+  }
+  fprintf( fp, "\n " );
+  fclose( fp );
+}
+/*-------------------------------------------------------------------*/
+void wDIAG( double DIAG[], double tau, MPARAM PARAM ){
+  int size_diag = NN * PARAM.qdiag * sizeof(double) ;
+  FILE *fp = fopen( "data/DIAG", "a" );
+  for (int idiag = 0; idiag < PARAM.qdiag ; idiag++){
+    fprintf( fp, "%f\t", tau );
+    for ( int iN = 0; iN< NN; iN++ ){ 
+      fprintf( fp, "%f\t", DIAG[iN + NN*idiag] ) ; 
+    }
+    fprintf( fp, "\n " );
+  }
+}

@@ -7,19 +7,19 @@ double *dev_psip, *dev_k1, *dev_k2, *dev_k3, *dev_k4;
 void (*ALGO)( double [], double [],
               EV , EV *,
               MPARAM ,   MPARAM *,
-              double [], double [], int,
+              double [], double [], int,  
               CRASH , CRASH *,
               int , int  );
 void euler( double PSI[], double dev_psi[],
             EV TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
-            double DIAG[], double dev_diag[], int size_diag,
+            double DIAG[], double dev_diag[], int ldiag,  
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread );
 void rnkt4( double PSI[], double dev_psi[],
             EV TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
-            double DIAG[], double dev_diag[], int size_diag,
+            double DIAG[], double dev_diag[], int ldiag,
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread );
 void pre_euler( int Nsize );
@@ -69,7 +69,7 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt ){
   (*TT).dt = 1.e-4;
   (*TT).ndiag = 2;
   (*TT).tmax =2.e-3;
-  (*TT).tdiag = (*TT).tmax/((double) (*TT).ndiag) ;
+  (*TT).tdiag = 0. ;
   EV *temp ;
   cudaMalloc(  (void**)&temp, size_EV );
   *dev_tt = temp;
@@ -83,6 +83,7 @@ void wevolve( EV *TT, char *fname ){
   pout = fopen ( fname, "w" );
   fprintf( pout, "# =========== Evolve Parameters==========\n" );
   fprintf( pout, " time=%f \n ", (*TT).time ) ;
+  fprintf( pout, " tprime=%f \n ", (*TT).tprime ) ;
   fprintf( pout, "dt = %f \n ", (*TT).dt );
   fprintf( pout, " ndiag = %d \n ", (*TT).ndiag );
   fprintf( pout, "tmax = %f \n ", (*TT).tmax );
@@ -127,14 +128,24 @@ allowed-per-block then we launch in one way */
     Nblock = (NN+127)/128;
   }
   printf( "#-I shall launch %d blocks, each with %d threads\n", Nblock, Nthread );
-  ALGO( PSI, dev_psi,
-        TT, dev_tt,
-        PARAM, dev_param ,
-        DIAG, dev_diag, size_diag,
-        BUG, dev_bug,
-        Nblock, Nthread );
-  // Once evolution is done, copy the data back to host
-  D2H(PSI, dev_psi, ndim);
+  while ( TT.time < TT.tmax){
+    printf( "#- tmax=%f\t time=%f\t tdiag=%f \n", TT.tmax, TT.time, TT.tdiag) ;
+    int ldiag = 0 ;
+    if( TT.time >= TT.tdiag ) {
+      ldiag = 1;
+      TT.tdiag = TT.time +  TT.tmax/((double) TT.ndiag) ;
+      printf( "tdiag=%f, time=%f, dtdiag=%f \n", TT.tdiag, TT.time,
+              TT.tmax/((double) TT.ndiag)  ) ; 
+    }
+    cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice);
+    ALGO( PSI, dev_psi,
+          TT, dev_tt,
+          PARAM, dev_param ,
+          DIAG, dev_diag, ldiag, 
+          BUG, dev_bug,
+          Nblock, Nthread );
+    cudaMemcpy( &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost);
+  } // while time loop ends here
 }
 /*----------------------------------------------------------------*/
 __global__ void eval_rhs(double kk[], double psi[],
@@ -150,30 +161,26 @@ __global__ void eval_rhs(double kk[], double psi[],
 void euler( double PSI[], double dev_psi[],
             EV TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
-            double DIAG[], double dev_diag[], int size_diag,
+            double DIAG[], double dev_diag[], int ldiag,  
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread ){
   /* I do time-marching */
   // copy time parameters to GPU
-  cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice);
-  while ( TT.time < TT.tmax){
-    printf( "#- tmax=%f\t time=%f\t tdiag=%f \n", TT.tmax, TT.time, TT.tdiag) ;
-    int ldiag = 1;
-    eval_rhs<<<Nblock,Nthread >>>( dev_kk, dev_psi,  dev_tt ,
-                                   dev_param, dev_diag, dev_bug, ldiag  );
+  eval_rhs<<<Nblock,Nthread >>>( dev_kk, dev_psi,  dev_tt ,
+                                 dev_param, dev_diag, dev_bug, ldiag  );
     // check if there were any bugs from rhs evaluation
-    cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
-    if ( BUG.lstop) { IStop( BUG );}
-    // reduce diagnostic
-    if ( ldiag ) {
-      reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
-      // diagnostic copied to host out here
-      cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
-    }
-    // take the Euler step
-    eustep<<< Nblock, Nthread >>>( dev_psi, dev_kk, dev_tt ) ;
-    cudaMemcpy( &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost);
-  } // while time loop ends here
+  cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
+  if ( BUG.lstop) { IStop( BUG );}
+  // reduce diagnostic
+  if ( ldiag ) {
+    //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
+    // diagnostic copied to host out here
+    int size_diag = NN * PARAM.qdiag * sizeof(double) ;
+    cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
+    wDIAG( DIAG, TT.time, PARAM );
+  }
+  // take the Euler step
+  eustep<<< Nblock, Nthread >>>( dev_psi, dev_kk, dev_tt ) ;
 }
   /*----------------------------------------------------------------*/
 __global__ void reduce_diag( double diag[] ){
@@ -258,26 +265,26 @@ __global__ void rk4final( double psi[],
 void rnkt4( double PSI[], double dev_psi[],
             EV TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
-            double DIAG[], double dev_diag[], int size_diag,
+            double DIAG[], double dev_diag[], int ldiag, 
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread ){
   /* I do time-marching */
-  // copy time parameters to GPU
-  cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice);
-  while ( TT.time < TT.tmax){
-    printf( "#- tmax=%f\t time=%f\t tdiag=%f \n", TT.tmax, TT.time, TT.tdiag) ;
-    // 1st evaluation of rhs, diagnostic is calculated in this step
-    int ldiag = 1;
-    eval_rhs<<<Nblock,Nthread >>>( dev_k1, dev_psi,  dev_tt ,
+  // 1st evaluation of rhs, diagnostic is calculated in this step
+  eval_rhs<<<Nblock,Nthread >>>( dev_k1, dev_psi,  dev_tt ,
                                    dev_param, dev_diag, dev_bug, ldiag  );
     // check if there were any bugs from rhs evaluation
     cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
     if ( BUG.lstop) { IStop( BUG );}
-    if ( ldiag ){
-    reduce_diag<<< Nblock, Nthread >>> ( dev_diag );
-    cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
+ // reduce diagnostic
+    if ( ldiag ) {
+      //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
+      // diagnostic copied to host out here
+      printf( "calculating diagnostics \n " );
+      int size_diag = NN * PARAM.qdiag * sizeof(double) ;
+      cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
+      wDIAG( DIAG, TT.time, PARAM );
     }
-    // take the first substep
+  // take the first substep
     rk4one<<<Nblock,Nthread>>>( dev_psip,  dev_k1, dev_psi, dev_tt ) ;
     // 2nd evaluation of rhs, no diagnostic calculated
     eval_rhs<<<Nblock,Nthread >>>( dev_k2, dev_psip,  dev_tt ,
@@ -305,6 +312,4 @@ void rnkt4( double PSI[], double dev_psi[],
     // final step
     rk4final<<<Nblock, Nthread >>>( dev_psi,
                                     dev_k1, dev_k2, dev_k3, dev_k4, dev_tt );
-    cudaMemcpy( &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost);
-  } // while loop over time ends here
 }

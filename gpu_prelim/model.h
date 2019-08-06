@@ -6,7 +6,7 @@
 Each node may be connected to every other node. 
 The number of nodes is NN. 
 The number of degrees of freedom at each node is pp */ 
-#define NN  512
+#define NN  8
 #define pp  3
 #define ndim NN*pp
 /*--------------------------------------------------*/
@@ -57,6 +57,8 @@ void write_param( MPARAM *PARAM, char *fname );
 int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM );
 __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau,
                            MPARAM *param, double *diag, CRASH *bug, int ldiag  );
-__host__ void initial_configuration( double PSI[] );
+void initial_configuration( double PSI[], MPARAM PARAM );
+void wPSI ( double PSI[], double tau ); 
+void wDIAG( double DIAG[], double tau, MPARAM PARAM );
 /*------------------------------------------------------------------*/
 #endif /* !MODEL_SEEN */
