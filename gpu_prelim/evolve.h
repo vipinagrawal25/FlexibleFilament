@@ -6,6 +6,7 @@
 struct EV{
   double tmax;
   double time;
+  double ttemp;
   double dt;
   double tdiag;
   int ndiag;
