@@ -32,7 +32,7 @@ int main()
   
   double dt_min = 10;
 
-  double gamma = 8*M_PI*viscosity*aa*aa*aa*ShearRate*height/AA ;
+  double gamma = 8*M_PI*viscosity*ShearRate*pow(height,4)/(AA*10) ;
   double MSElen = 0;
   // This gamma is non-dimensional number which describes the competition between viscous forces and elastic forces.
   
@@ -98,13 +98,6 @@ int main()
         return 0;
       }
     }
-
-    // Just freeing the memory so that I can open the files in append mode again.
-    // delete [] &outfile_time;
-    // delete [] &outfile_MSD;
-    // delete [] &outfile_curvature;
-    // delete [] &outfile_SS;
-    // Free memory done
 
     // Closing all the files which we have opened.
     outfile_time.close();

@@ -305,3 +305,77 @@ void rnkt4( double PSI[], double dev_psi[],
                                     dev_k1, dev_k2, dev_k3, dev_k4, dev_tt );
     rk4_time_step( TT, dev_tt ) ;
 }
+
+/*----------------------------------------------------------------*/
+__global__ void rkf45_psi_substep( double psip[], double kin[], double psi[], EV *tt ){
+  int tid = threadIdx.x + blockIdx.x * blockDim.x;
+  double rk4a[4] ;
+  rk4a[0] = 1./2. ;
+  rk4a[1] = 1./2. ;
+  rk4a[2] = 1. ;
+  rk4a[3] = 0. ;
+  int j = (*tt).substep ;
+  while (tid < NN ){
+    for ( int ip=0; ip<pp; ip++){
+      psip[ip+pp*tid] = psi[ip+pp*tid] + kin[ip+pp*tid]*(*tt).dt*rk4a[ j ] ;
+    }
+    tid += blockDim.x * gridDim.x ;
+  } // loop over threads ends here
+}
+/*-----------------------------------------------------------------------*/
+void rnkf45( double PSI[], double dev_psi[],
+            EV TT, EV *dev_tt,
+            MPARAM PARAM,   MPARAM *dev_param,
+            double DIAG[], double dev_diag[], int ldiag, 
+            CRASH BUG, CRASH *dev_bug,
+            int Nblock, int Nthread ){
+  /* I do time-marching */
+  // 1st evaluation of rhs, diagnostic is calculated in this step
+  eval_rhs<<<Nblock,Nthread >>>( dev_k1, dev_psi,  dev_tt ,
+                                 dev_param, dev_diag, dev_bug, ldiag  );
+    // check if there were any bugs from rhs evaluation
+  cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
+  if ( BUG.lstop) { IStop( BUG );}
+ // reduce diagnostic
+  if ( ldiag ) {
+    //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
+    // diagnostic copied to host out here
+    printf( "calculating diagnostics \n " );
+    int size_diag = NN * PARAM.qdiag * sizeof(double) ;
+    cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
+    wDIAG( DIAG, TT.time, PARAM );
+  }
+  // take the first substep
+  rk4_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_k1, dev_psi, dev_tt ) ;
+  rk4_time_substep( TT, dev_tt , 0 ) ;
+  // 2nd evaluation of rhs, no diagnostic calculated
+  eval_rhs<<<Nblock,Nthread >>>( dev_k2, dev_psip,  dev_tt ,
+                                 dev_param, dev_diag, dev_bug, 0  );
+  // check if there were any bugs from rhs evaluation
+  cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
+  if ( BUG.lstop) { IStop( BUG );}
+  // take the second substep
+  rk4_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_k2, dev_psi, dev_tt ) ;
+  rk4_time_substep( TT, dev_tt , 1 ) ;
+  // 3rd evaluation of rhs, no diagnostic calculated
+  eval_rhs<<<Nblock,Nthread >>>( dev_k3, dev_psip,  dev_tt ,
+                                 dev_param, dev_diag, dev_bug, 0  );
+  // check if there were any bugs from rhs evaluation
+  cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
+  if ( BUG.lstop) { IStop( BUG );}
+  // take the third substep
+  rk4_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_k3, dev_psi, dev_tt ) ;
+  rk4_time_substep( TT, dev_tt , 2 ) ;
+  // 4th evaluation of rhs, no diagnostic calculated
+  eval_rhs<<<Nblock,Nthread >>>( dev_k4, dev_psip,  dev_tt ,
+                                 dev_param, dev_diag, dev_bug, 0  );
+  // check if there were any bugs from rhs evaluation
+  cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
+  if ( BUG.lstop) { IStop( BUG );}
+  // final step
+    rk4_psi_step<<<Nblock, Nthread >>>( dev_psi,
+                                    dev_k1, dev_k2, dev_k3, dev_k4, dev_tt );
+    rk4_time_step( TT, dev_tt ) ;
+}
+
+
