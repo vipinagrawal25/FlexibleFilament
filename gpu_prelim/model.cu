@@ -505,7 +505,6 @@ void wPSI ( double PSI[], double tau ){
 }
 /*-------------------------------------------------------------------*/
 void wDIAG( double DIAG[], double tau, MPARAM PARAM ){
-  int size_diag = NN * PARAM.qdiag * sizeof(double) ;
   FILE *fp = fopen( "data/DIAG", "a" );
   for (int idiag = 0; idiag < PARAM.qdiag ; idiag++){
     fprintf( fp, "%f\t", tau );

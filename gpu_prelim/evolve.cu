@@ -70,6 +70,7 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt ){
   (*TT).ndiag = 2;
   (*TT).tmax =2.e-3;
   (*TT).tdiag = 0. ;
+  (*TT).substep = 0 ;
   EV *temp ;
   cudaMalloc(  (void**)&temp, size_EV );
   *dev_tt = temp;
@@ -134,8 +135,6 @@ allowed-per-block then we launch in one way */
     if( TT.time >= TT.tdiag ) {
       ldiag = 1;
       TT.tdiag = TT.time +  TT.tmax/((double) TT.ndiag) ;
-      printf( "tdiag=%f, time=%f, dtdiag=%f \n", TT.tdiag, TT.time,
-              TT.tmax/((double) TT.ndiag)  ) ; 
     }
     cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice);
     ALGO( PSI, dev_psi,
@@ -203,48 +202,42 @@ __global__ void eustep( double kk[], double psi[], EV *tt ){
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
 }
-
+/*-----------------------------------------------------------------------*/
+void rk4_time_substep( EV TT, EV *dev_tt, int j ){
+  double rk4a[4] ;
+  rk4a[0] = 1./2. ;
+  rk4a[1] = 1./2. ;
+  rk4a[2] = 1. ;
+  rk4a[3] = 0. ;
+  TT.tprime = TT.time + (TT.dt)*rk4a[ j ] ;
+  TT.substep = j + 1;
+  cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice ) ;
+}
 /*----------------------------------------------------------------*/
-__global__ void rk4one( double psip[], double k1[], double psi[], EV *tt ){
+__global__ void rk4_psi_substep( double psip[], double kin[], double psi[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
+  double rk4a[4] ;
+  rk4a[0] = 1./2. ;
+  rk4a[1] = 1./2. ;
+  rk4a[2] = 1. ;
+  rk4a[3] = 0. ;
+  int j = (*tt).substep ;
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
-      psip[ip+pp*tid] = psi[ip+pp*tid] + k1[ip+pp*tid]*(*tt).dt/2 ;
-      if (tid == 0) { // only 0th thread updates time
-        (*tt).tprime = (*tt).time + (*tt).dt/2 ;
-      }
+      psip[ip+pp*tid] = psi[ip+pp*tid] + kin[ip+pp*tid]*(*tt).dt*rk4a[ j ] ;
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
 }
-/*----------------------------------------------------------------*/
-__global__ void rk4two( double psip[], double k2[], double psi[], EV *tt ){
-  int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  while (tid < NN ){
-    for ( int ip=0; ip<pp; ip++){
-      psip[ip+pp*tid] = psi[ip+pp*tid] + k2[ip+pp*tid]*(*tt).dt/2 ;
-      if (tid == 0) { // only 0th thread updates time
-        (*tt).tprime = (*tt).time + (*tt).dt/2 ;
-      }
-    }
-    tid += blockDim.x * gridDim.x ;
-  } // loop over threads ends here
+/*-----------------------------------------------------------------------*/
+void rk4_time_step( EV TT, EV *dev_tt ){
+  TT.time = TT.time + TT.dt ;
+  TT.tprime = TT.time ;
+  TT.substep = 0;
+  cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice ) ;
 }
 /*----------------------------------------------------------------*/
-__global__ void rk4three( double psip[], double k3[], double psi[], EV *tt ){
-  int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  while (tid < NN ){
-    for ( int ip=0; ip<pp; ip++){
-      psip[ip+pp*tid] = psi[ip+pp*tid] + k3[ip+pp*tid]*(*tt).dt ;
-      if (tid == 0) { // only 0th thread updates time
-        (*tt).tprime = (*tt).time + (*tt).dt ;
-      }
-    }
-    tid += blockDim.x * gridDim.x ;
-  } // loop over threads ends here
-}
-/*----------------------------------------------------------------*/
-__global__ void rk4final( double psi[],
+__global__ void rk4_psi_step( double psi[],
                           double k1[], double k2[],
                           double k3[], double k4[],
                           EV *tt ){
@@ -253,10 +246,6 @@ __global__ void rk4final( double psi[],
     for ( int ip=0; ip<pp; ip++){
       psi[ip+pp*tid] = psi[ip+pp*tid] +
         (k1[ip+pp*tid]/6.+ k2[ip+pp*tid]/3. + k3[ip+pp*tid]/3. + k4[ip+pp*tid]/6. )*(*tt).dt ;
-      if (tid == 0) { // only 0th thread updates time
-        (*tt).time = (*tt).time  + (*tt).dt ;
-        (*tt).tprime = (*tt).time  ;
-      }
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
@@ -271,45 +260,48 @@ void rnkt4( double PSI[], double dev_psi[],
   /* I do time-marching */
   // 1st evaluation of rhs, diagnostic is calculated in this step
   eval_rhs<<<Nblock,Nthread >>>( dev_k1, dev_psi,  dev_tt ,
-                                   dev_param, dev_diag, dev_bug, ldiag  );
+                                 dev_param, dev_diag, dev_bug, ldiag  );
     // check if there were any bugs from rhs evaluation
-    cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
-    if ( BUG.lstop) { IStop( BUG );}
+  cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
+  if ( BUG.lstop) { IStop( BUG );}
  // reduce diagnostic
-    if ( ldiag ) {
-      //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
-      // diagnostic copied to host out here
-      printf( "calculating diagnostics \n " );
-      int size_diag = NN * PARAM.qdiag * sizeof(double) ;
-      cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
-      wDIAG( DIAG, TT.time, PARAM );
-    }
+  if ( ldiag ) {
+    //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
+    // diagnostic copied to host out here
+    printf( "calculating diagnostics \n " );
+    int size_diag = NN * PARAM.qdiag * sizeof(double) ;
+    cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
+    wDIAG( DIAG, TT.time, PARAM );
+  }
   // take the first substep
-    rk4one<<<Nblock,Nthread>>>( dev_psip,  dev_k1, dev_psi, dev_tt ) ;
-    // 2nd evaluation of rhs, no diagnostic calculated
-    eval_rhs<<<Nblock,Nthread >>>( dev_k2, dev_psip,  dev_tt ,
-                                   dev_param, dev_diag, dev_bug, 0  );
-    // check if there were any bugs from rhs evaluation
-    cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
-    if ( BUG.lstop) { IStop( BUG );}
-    // take the second substep
-    rk4two<<<Nblock,Nthread>>>( dev_psip,  dev_k2, dev_psi, dev_tt ) ;
-    // 3rd evaluation of rhs, no diagnostic calculated
-    eval_rhs<<<Nblock,Nthread >>>( dev_k3, dev_psip,  dev_tt ,
-                                   dev_param, dev_diag, dev_bug, 0  );
-    // check if there were any bugs from rhs evaluation
-    cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
-    if ( BUG.lstop) { IStop( BUG );}
-    // calculate diagnostic and update time
-    // take the third substep
-    rk4three<<<Nblock,Nthread>>>( dev_psip,  dev_k3, dev_psi, dev_tt ) ;
-    // 4th evaluation of rhs, no diagnostic calculated
-    eval_rhs<<<Nblock,Nthread >>>( dev_k4, dev_psip,  dev_tt ,
-                                   dev_param, dev_diag, dev_bug, 0  );
-    // check if there were any bugs from rhs evaluation
-    cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
-    if ( BUG.lstop) { IStop( BUG );}
-    // final step
-    rk4final<<<Nblock, Nthread >>>( dev_psi,
+  rk4_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_k1, dev_psi, dev_tt ) ;
+  rk4_time_substep( TT, dev_tt , 0 ) ;
+  // 2nd evaluation of rhs, no diagnostic calculated
+  eval_rhs<<<Nblock,Nthread >>>( dev_k2, dev_psip,  dev_tt ,
+                                 dev_param, dev_diag, dev_bug, 0  );
+  // check if there were any bugs from rhs evaluation
+  cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
+  if ( BUG.lstop) { IStop( BUG );}
+  // take the second substep
+  rk4_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_k2, dev_psi, dev_tt ) ;
+  rk4_time_substep( TT, dev_tt , 1 ) ;
+  // 3rd evaluation of rhs, no diagnostic calculated
+  eval_rhs<<<Nblock,Nthread >>>( dev_k3, dev_psip,  dev_tt ,
+                                 dev_param, dev_diag, dev_bug, 0  );
+  // check if there were any bugs from rhs evaluation
+  cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
+  if ( BUG.lstop) { IStop( BUG );}
+  // take the third substep
+  rk4_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_k3, dev_psi, dev_tt ) ;
+  rk4_time_substep( TT, dev_tt , 2 ) ;
+  // 4th evaluation of rhs, no diagnostic calculated
+  eval_rhs<<<Nblock,Nthread >>>( dev_k4, dev_psip,  dev_tt ,
+                                 dev_param, dev_diag, dev_bug, 0  );
+  // check if there were any bugs from rhs evaluation
+  cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
+  if ( BUG.lstop) { IStop( BUG );}
+  // final step
+    rk4_psi_step<<<Nblock, Nthread >>>( dev_psi,
                                     dev_k1, dev_k2, dev_k3, dev_k4, dev_tt );
+    rk4_time_step( TT, dev_tt ) ;
 }

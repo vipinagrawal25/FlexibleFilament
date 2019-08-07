@@ -10,6 +10,7 @@ struct EV{
   double dt;
   double tdiag;
   int ndiag;
+  int substep ;
 };
 const int size_EV = 4*sizeof( double ) + sizeof( int );
 /* These are device pointers I need for the time-stepping code. Their size
