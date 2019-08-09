@@ -1,6 +1,7 @@
 compile= nvcc
 debug = -dc -g -G 
-options = -dc -O3 
+options = $(debug)
+# options = -dc -O3 
 link = -l
 default: main.o evolve.o model.o cuda.o model.h evolve.h
 	$(compile) -o chain.exe evolve.o model.o cuda.o main.o

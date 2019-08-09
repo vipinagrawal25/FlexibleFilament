@@ -27,15 +27,16 @@ int main( void ){
   alloc_chain( &PSI, &dev_psi );
   set_param( &PARAM, &dev_param ) ;
   int size_diag = pre_diag( &DIAG , &dev_diag, PARAM );
-  // pre_evolve(  ndim, "euler" , &TT, &dev_tt  ) ;
-  pre_evolve(  ndim, "rnkt4" , &TT, &dev_tt, Nblock, Nthread  ) ;
+   // pre_evolve(  ndim, "euler" , &TT, &dev_tt, Nblock, Nthread  ) ;
+  // pre_evolve(  ndim, "rnkt4" , &TT, &dev_tt, Nblock, Nthread  ) ;
+  pre_evolve(  ndim, "rnkf45" , &TT, &dev_tt, Nblock, Nthread  ) ;
   // setup initial configuration 
   initial_configuration( PSI, PARAM ) ;
   wPSI( PSI, TT.time ) ; 
   H2D( dev_psi, PSI, ndim );
   printf( " #starting time evolution ...\n ");
   evolve( PSI, dev_psi, 
-          TT,  dev_tt,
+          &TT,  dev_tt,
           PARAM, dev_param ,
           DIAG, dev_diag, size_diag,
           BUG,  dev_bug, 
