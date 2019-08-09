@@ -13,25 +13,25 @@ int size_redux;
 void (*ALGO)( double [], double [],
               EV* , EV *,
               MPARAM ,   MPARAM *,
-              double [], double [], int,  
+              double [], double [],  
               CRASH , CRASH *,
               int , int  );
 void euler( double PSI[], double dev_psi[],
             EV* TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
-            double DIAG[], double dev_diag[], int ldiag,  
+            double DIAG[], double dev_diag[],  
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread );
 void rnkt4( double PSI[], double dev_psi[],
             EV* TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
-            double DIAG[], double dev_diag[], int ldiag,
+            double DIAG[], double dev_diag[],
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread );
 void rnkf45( double PSI[], double dev_psi[],
             EV* TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
-            double DIAG[], double dev_diag[], int ldiag,
+            double DIAG[], double dev_diag[],
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread );
 
@@ -168,15 +168,15 @@ allowed-per-block then we launch in one way */
   cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice);
   while ( (*TT).time < (*TT).tmax){
     printf( "#- tmax=%f\t time=%f\t tdiag=%f \n", (*TT).tmax, (*TT).time, (*TT).tdiag) ;
-    int ldiag = 0 ;
+      (*TT).ldiag = 0 ;
     if( (*TT).time >= (*TT).tdiag ) {
-      ldiag = 1;
+      (*TT).ldiag = 1;
       (*TT).tdiag = (*TT).time +  (*TT).tmax/((double) (*TT).ndiag) ;
     }
     ALGO( PSI, dev_psi,
           TT, dev_tt,
           PARAM, dev_param ,
-          DIAG, dev_diag, ldiag, 
+          DIAG, dev_diag,
           BUG, dev_bug,
           Nblock, Nthread );
   } // while time loop ends here
@@ -184,10 +184,10 @@ allowed-per-block then we launch in one way */
 /*----------------------------------------------------------------*/
 __global__ void eval_rhs(double kk[], double psi[],
                          EV *tt, MPARAM *param, double diag[],
-                         CRASH *bug,  int ldiag ){
+                         CRASH *bug ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   while (tid < NN ){
-    model_rhs( kk, psi, tid, (*tt).tprime, param, diag, bug, ldiag  );
+    model_rhs( kk, psi, tid, (*tt).tprime, param, diag, bug, (*tt).ldiag  );
     tid += blockDim.x * gridDim.x ;
   }// while loop over threads finishes here.
 }
@@ -195,18 +195,18 @@ __global__ void eval_rhs(double kk[], double psi[],
 void euler( double PSI[], double dev_psi[],
             EV *TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
-            double DIAG[], double dev_diag[], int ldiag,  
+            double DIAG[], double dev_diag[],  
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread ){
   /* I do time-marching */
   // copy time parameters to GPU
   eval_rhs<<<Nblock,Nthread >>>( dev_kk, dev_psi,  dev_tt ,
-                                 dev_param, dev_diag, dev_bug, ldiag  );
+                                 dev_param, dev_diag, dev_bug );
     // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
   // reduce diagnostic
-  if ( ldiag ) {
+  if ( (*TT).ldiag ) {
     //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
     // diagnostic copied to host out here
     int size_diag = NN * PARAM.qdiag * sizeof(double) ;
@@ -294,18 +294,18 @@ __global__ void rk4_psi_step( double psi[],
 void rnkt4( double PSI[], double dev_psi[],
             EV* TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
-            double DIAG[], double dev_diag[], int ldiag, 
+            double DIAG[], double dev_diag[], 
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread ){
   /* I do time-marching */
   // 1st evaluation of rhs, diagnostic is calculated in this step
   eval_rhs<<<Nblock,Nthread >>>( dev_k1, dev_psi,  dev_tt ,
-                                 dev_param, dev_diag, dev_bug, ldiag  );
+                                 dev_param, dev_diag, dev_bug );
     // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
  // reduce diagnostic
-  if ( ldiag ) {
+  if ( (*TT).ldiag ) {
     //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
     // diagnostic copied to host out here
     printf( "calculating diagnostics \n " );
@@ -318,7 +318,7 @@ void rnkt4( double PSI[], double dev_psi[],
   rk4_time_substep( TT, dev_tt , 0 ) ;
   // 2nd evaluation of rhs, no diagnostic calculated
   eval_rhs<<<Nblock,Nthread >>>( dev_k2, dev_psip,  dev_tt ,
-                                 dev_param, dev_diag, dev_bug, 0  );
+                                 dev_param, dev_diag, dev_bug);
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
@@ -327,7 +327,7 @@ void rnkt4( double PSI[], double dev_psi[],
   rk4_time_substep( TT, dev_tt , 1 ) ;
   // 3rd evaluation of rhs, no diagnostic calculated
   eval_rhs<<<Nblock,Nthread >>>( dev_k3, dev_psip,  dev_tt ,
-                                 dev_param, dev_diag, dev_bug, 0  );
+                                 dev_param, dev_diag, dev_bug);
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
@@ -336,7 +336,7 @@ void rnkt4( double PSI[], double dev_psi[],
   rk4_time_substep( TT, dev_tt , 2 ) ;
   // 4th evaluation of rhs, no diagnostic calculated
   eval_rhs<<<Nblock,Nthread >>>( dev_k4, dev_psip,  dev_tt ,
-                                 dev_param, dev_diag, dev_bug, 0  );
+                                 dev_param, dev_diag, dev_bug );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
@@ -379,10 +379,10 @@ void rnkf45_time_substep( EV* TT, EV *dev_tt, int j ){
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_psi_step( double psi[], double psip[], double error[], double *kptr[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  
+  //
   double rnkf45c[2][6] = { {37./378,0,250./621,125./594,0,512./1771},
                           {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25} };
-
+  //
   error[tid]=0;                        
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
@@ -427,108 +427,117 @@ bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
   cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice );
   return laccept;
 }
-
-/*-----------------------------------------------------------------------*/
-__global__ void thread_maxima( double array[], double redux[]){
- // This is to calculate maxima of the operations going on in a thread. After this the maxima should be compared among all the blocks as well.  
-  // extern __shared__ double cache[];  // Just to create a shared variable
-
-  // int tid = threadIdx.x+blockIdx.x*blockDim.x;
-
-  // int i=blockDim.x/2;
-  // int cacheIndex=threadIdx.x;
-
-  // double temp=0.;
-  // while(tid<NN){
-  //   temp = max(temp,array[tid]);
-  //   tid += blockDim.x*gridDim.x;
-  // }
-
-  // cache[cacheIndex]=temp;
-  // __syncthreads();
-
-  // while(i!=0){
-  //   if (cacheIndex<i){
-  //     cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
-  //   }
-  //   i=i/2;
-  //   __syncthreads();
-  // }
-
-  // if (cacheIndex==0){
-  //   redux[blockIdx.x] = cache[0];
-  // }
-
-  extern __shared__ double cache[];  // Just to create a shared variable
-
-  int tid = threadIdx.x+blockIdx.x*blockDim.x;
-
-  int i=blockDim.x/2;
-  int cacheIndex=threadIdx.x;
-
-  // cache[cacheIndex] = array[tid];
-  // __syncthreads();
-
-  double temp=0.;
-  while(tid<NN){
-    temp = max(temp,array[tid]);
-    tid += blockDim.x*gridDim.x;
-  }
-
-  cache[cacheIndex]=temp;
-  __syncthreads();
-
-  while(i!=0){
-    if (cacheIndex<i){
-      cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
-      // cache[cacheIndex]=i;
-    }
-    i/=2;
-    __syncthreads();
-  }
-
-  if (cacheIndex==0){
-      redux[blockIdx.x] = cache[0];
-  }
-
-}
+// /*-----------------------------------------------------------------------*/
+// __global__ void thread_maxima( double array[], double redux[]){
+//  // This is to calculate maxima of the operations going on in a thread. After this the maxima should be compared among all the blocks as well.
+//   extern __shared__ double cache[];  // Just to create a shared variable
+//   int tid = threadIdx.x+blockIdx.x*blockDim.x;
+//   int i=blockDim.x/2;
+//   int cacheIndex=threadIdx.x;
+//   // cache[cacheIndex] = array[tid];
+//   // __syncthreads();
+//   double temp=0.;
+//   while(tid<NN){
+//     temp = max(temp,array[tid]);
+//     tid += blockDim.x*gridDim.x;
+//   }
+//   cache[cacheIndex]=temp;
+//   __syncthreads();
+//   while(i!=0){
+//     if (cacheIndex<i){
+//       cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
+//       // cache[cacheIndex]=i;
+//     }
+//     i/=2;
+//     __syncthreads();
+//   }
+//   if (cacheIndex==0){
+//     redux[blockIdx.x] = cache[0];
+//   }
+// }
 /*----------------------------------------------------------------*/
 double MaxDevArray(double dev_array[], int Nblock, int Nthread){
   double maxA=0.;
-
+  // cout << dev_array[5] << endl;
   thread_maxima <<<Nblock, Nthread, Nthread*sizeof(double) >>>(dev_array,dev_redux);
   cudaMemcpy(REDUX,dev_redux,size_redux,cudaMemcpyDeviceToHost);
   // Copied the thread maxima output back to host.
-
   // Compare the maximum across the blocks. This operation is done in CPU for the time being.
-
   // Calculate maxima using STL
   // This could be done better by launching a kernel 
   for (int iblock = 0; iblock < Nblock; ++iblock){
     maxA = max(maxA,REDUX[iblock]);
+    // cout << REDUX[iblock] << "\t" ;
   }
-
+  // cout << maxA << endl;
   return maxA;
-
 }
+
+// /*-----------------------------------------------------------------------*/
+// __global__ void thread_maxima( double array[], double redux[]){
+//  // This is to calculate maxima of the operations going on in a thread. After this the maxima should be compared among all the blocks as well.  
+//   extern __shared__ double cache[];  // Just to create a shared variable
+//   int tid = threadIdx.x+blockIdx.x*blockDim.x;
+//   int i=(blockDim.x)/2;
+//   int cacheIndex=(threadIdx.x) ;
+//   // cache[cacheIndex] = array[tid];
+//   // __syncthreads();
+//   double temp=0.;
+//   while(tid<NN){
+//     temp = max(temp,array[tid]);
+//     tid += blockDim.x*gridDim.x;
+//   }
+//   //
+//   cache[cacheIndex]=temp;
+//   __syncthreads();
+//   //
+//   while(i!=0){
+//     if (cacheIndex<i){
+//       cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
+//       // cache[cacheIndex]=i;
+//     }
+//     i/=2;
+//     __syncthreads();
+//   }
+// //
+//   if (cacheIndex==0){
+//       redux[blockIdx.x] = cache[0];
+//   } 
+// }
+// /*----------------------------------------------------------------*/
+// double MaxDevArray(double dev_array[], int Nblock, int Nthread){
+//   double maxA=0.;
+//   //
+//   thread_maxima <<<Nblock, Nthread, Nthread*sizeof(double) >>>(dev_array,dev_redux);
+//   cudaMemcpy(REDUX,dev_redux,size_redux,cudaMemcpyDeviceToHost);
+//   // Copied the thread maxima output back to host.
+//   // Compare the maximum across the blocks. This operation is done in CPU for the time being.
+//   // Calculate maxima using STL
+//   // This could be done better by launching a kernel 
+//   for (int iblock = 0; iblock < Nblock; ++iblock){
+//     maxA = max(maxA,REDUX[iblock]);
+//   }
+//   // printf("%lf\n", maxA);
+//   return maxA;
+// }
 
 /*-----------------------------------------------------------------------*/
 void rnkf45( double PSI[], double dev_psi[],
             EV* TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
-            double DIAG[], double dev_diag[], int ldiag, 
+            double DIAG[], double dev_diag[], 
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread ){
 
   /* I do time-marching */
   // 1st evaluation of rhs, diagnostic is calculated in this step
   eval_rhs<<<Nblock,Nthread >>>( dev_k1, dev_psi,  dev_tt ,
-                                 dev_param, dev_diag, dev_bug, ldiag  );
+                                 dev_param, dev_diag, dev_bug  );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
   // reduce diagnostic
-  if ( ldiag ) {
+  if ( (*TT).ldiag ) {
     //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
     // diagnostic copied to host out here
     printf( "calculating diagnostics \n " );
@@ -542,7 +551,7 @@ void rnkf45( double PSI[], double dev_psi[],
   rnkf45_time_substep( TT, dev_tt , 0 ) ;
   // 2nd evaluation of rhs, no diagnostic calculated
   eval_rhs<<<Nblock,Nthread >>>( dev_k2, dev_psip,  dev_tt ,
-                                 dev_param, dev_diag, dev_bug, 0  );
+                                 dev_param, dev_diag, dev_bug  );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
@@ -551,7 +560,7 @@ void rnkf45( double PSI[], double dev_psi[],
   rnkf45_time_substep( TT, dev_tt , 1 ) ;
   // 3rd evaluation of rhs, no diagnostic calculated
   eval_rhs<<<Nblock,Nthread >>>( dev_k3, dev_psip,  dev_tt ,
-                                 dev_param, dev_diag, dev_bug, 0  );
+                                 dev_param, dev_diag, dev_bug );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
@@ -560,7 +569,7 @@ void rnkf45( double PSI[], double dev_psi[],
   rnkf45_time_substep( TT, dev_tt , 2 ) ;
   // 4th evaluation of rhs, no diagnostic calculated
   eval_rhs<<<Nblock,Nthread >>>( dev_k4, dev_psip,  dev_tt ,
-                                 dev_param, dev_diag, dev_bug, 0  );
+                                 dev_param, dev_diag, dev_bug);
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
@@ -570,7 +579,7 @@ void rnkf45( double PSI[], double dev_psi[],
   rnkf45_time_substep( TT, dev_tt , 3 ) ;
   // 5th evaluation of rhs, no diagnostic calculated
   eval_rhs<<<Nblock,Nthread >>>( dev_k5, dev_psip,  dev_tt ,
-                                 dev_param, dev_diag, dev_bug, 0  );
+                                 dev_param, dev_diag, dev_bug );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
@@ -580,7 +589,7 @@ void rnkf45( double PSI[], double dev_psi[],
   rnkf45_time_substep( TT, dev_tt , 4 ) ;
   // 5th evaluation of rhs, no diagnostic calculated
   eval_rhs<<<Nblock,Nthread >>>( dev_k6, dev_psip,  dev_tt ,
-                                 dev_param, dev_diag, dev_bug, 0  );
+                                 dev_param, dev_diag, dev_bug );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
@@ -599,7 +608,7 @@ void rnkf45( double PSI[], double dev_psi[],
     rnkf45( PSI, dev_psi,
           TT, dev_tt,
           PARAM, dev_param ,
-          DIAG, dev_diag, ldiag, 
+          DIAG, dev_diag,
           BUG, dev_bug,
           Nblock, Nthread );
   }

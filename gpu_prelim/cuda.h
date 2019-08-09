@@ -13,4 +13,5 @@ __device__ void device_exception( struct CRASH *bug, char *mesg );
 __device__ void scpy( char to[], char from[]);
 void set_crash( CRASH *BUG, CRASH **dev_bug ) ;
 void IStop( CRASH BUG );
+__global__ void thread_maxima( double array[], double redux[]);
 #endif /* !CUDA_SEEN */

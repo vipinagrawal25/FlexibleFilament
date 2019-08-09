@@ -34,6 +34,10 @@ test4.o: test4.cu chain.h
 	$(compile) $(options) test4.cu
 chain.o: chain.cu chain.h param.h
 	$(compile) $(options) chain.cu
+tmax: cuda.o test_max.o
+	$(compile) test_max.o cuda.o
+test_max.o: test_max.cu  
+	$(compile) $(options) test_max.cu 
 #----------------------------------#
 clean:
 	rm -f *.o *.exe a.out 
