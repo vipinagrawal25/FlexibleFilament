@@ -14,6 +14,12 @@ model.o: model.cu model.h 3vec.h 2Tens.h cuda.h
 cuda.o: cuda.h cuda.cu
 	$(compile) $(options) cuda.cu
 #------------------------------------------#
+tsub: test_sub.o ev.o sub.h   
+	$(compile) test_sub.o ev.o 
+test_sub.o: test_sub.cu sub.h 
+	$(compile) $(options) test_sub.cu 
+ev.o: ev.cu sub.h 
+	$(compile) $(options) ev.cu 
 tall: test_all.o  evolve.o model.o cuda.o
 	$(compile) test_all.o evolve.o model.o cuda.o
 test_all.o: test_all.cu cuda.h model.h evolve.h 
