@@ -18,7 +18,7 @@ __device__ vec3 ext_force( int kelement, vec3 R, double tau,
 __device__ void GetRij(double psi[], int i, int j, double *Distance,
                        vec3 *rij);
 __device__  void getub(double *bk, vec3 *uk, int kp, double psi[]);
-__device__ int square_wave( double t, double Tby2) ;
+__device__ int square_wave(double t, double Tby2) ;
 __device__ vec3 Uflow ( vec3 RR, struct MPARAM *param);
 __device__ void device_exception( struct CRASH *bug, char mesg[] );
 __device__ vec3 psi2R(double psi[], int k);
@@ -77,12 +77,13 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
 // double tdiag = TMAX/2000;
   (*PARAM).qdiag = 2 ;
   int qdiag = (*PARAM).qdiag ;
-  (*PARAM).bcb = 1 ;
-  (*PARAM).bct = 1;
-  (*PARAM).global_drag = 1;
-  (*PARAM).iext_force = 0;
-  (*PARAM).floc = 0 ;
-  (*PARAM).iext_flow = 1;
+  (*PARAM).bcb = 1 ;      // Boundary condition at bottom
+  (*PARAM).bct = 1;       // Boundary condition at top
+  (*PARAM).global_drag = 1; 
+  (*PARAM).iext_force = 0; // Whether to apply the external force or not
+  (*PARAM).floc = 0 ;       // External force location 
+  (*PARAM).iext_flow = 1;   // External flow: Yes/No
+  (*PARAM).iniconf = 1;     // Configuration of the system at t = 0.
   cudaMalloc( (void**)&temp, size_MPARAM  );
   *dev_param = temp;
   cudaMemcpy( *dev_param, PARAM,
@@ -131,6 +132,7 @@ __host__ void write_param( MPARAM *PARAM, char *fname ){
   fprintf( pout, " iext_force=%d\n", (*PARAM).iext_force );
   fprintf( pout, " floc=%d\n", (*PARAM).floc );
   fprintf( pout, " iext_flow=%d\n", (*PARAM).iext_flow );
+  fprintf( pout, " iniconf=%d\n", (*PARAM).iniconf );
   fprintf( pout, " #============================\n" );
   fclose( pout );
 }
@@ -466,18 +468,26 @@ This number is stored in param.qdiag */
   dR = drag(kelement, psi,  &EForce, param);
   /* contribution from external flow */
   if ( iext_flow  ){ 
-    dR = dR + ext_flow( kelement, R, tau, param  ) ; }
+    dR = dR + ext_flow( kelement, R, tau, param ) ; }
   /*------ put the rhs back to the dpsi array ----- */
   R2psi( dpsi, kelement, dR);
 }
 /*-------------------------------------------------------------------*/
 void initial_configuration( double PSI[], MPARAM PARAM ){
-   // elastic filament is on a straight line 
-    for (int iN=0; iN<NN; iN++){
-      PSI[iN*pp] = 0.;
-      PSI[iN*pp + 1] =  PARAM.aa*(double) iN ;
-      PSI[iN*pp + 2] =  0.; 
-  } 
+  int iniconf = PARAM.iniconf;
+  switch(iniconf){
+    case -1:
+      // Here the thing goes if you want to start the code from middle.
+      // In this case, one more parameter is needed though, the last file.
+    case 1:
+      /* elastic filament is on a straight line perpendicular to the flow
+         with no perturbation.*/
+      for (int iN=0; iN<NN; iN++){
+        PSI[iN*pp] = 0.;
+        PSI[iN*pp + 1] = 0.;
+        PSI[iN*pp + 2] = (PARAM.aa)*(double) iN ; 
+      }     
+  }  
 }
 /*-------------------------------------------------------------------*/
 void  free_chain( double **PSI, double **psi  ){

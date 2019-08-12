@@ -34,8 +34,9 @@ struct MPARAM {
   int iext_force;
   int floc;
   int iext_flow ;
+  int iniconf;
 };
-const int size_MPARAM = 14*sizeof( double ) + 7*sizeof( int );
+const int size_MPARAM = 14*sizeof( double ) + 8*sizeof( int );
 /* boundary condition :  
    0 => clamped
    1=> free
