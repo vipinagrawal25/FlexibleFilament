@@ -72,7 +72,7 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).KK = 64.;
   double asqr = (*PARAM).aa*(*PARAM).aa ;
   (*PARAM).HH = (*PARAM).KK*(*PARAM).AA/( asqr );
- // Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
+// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
 // double TMAX = ShearRate*10;
 // double tdiag = TMAX/2000;
   (*PARAM).qdiag = 2 ;
@@ -95,8 +95,6 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   BUG.lstop = 0;
   strcpy(BUG.message, " No bug yet" );
   cudaMemcpy( dev_bug, &BUG, size_CRASH, cudaMemcpyHostToDevice); */
-
-
 /* ------------------------------------------------------------------------------*/
 __host__ void write_param( MPARAM *PARAM, char *fname ){
   FILE *pout ;
@@ -458,7 +456,7 @@ This number is stored in param.qdiag */
   dHdR( kelement, psi, &EForce, &kappasqr, param, bug );
   /* write diagnostic to corresponding array */
   if (ldiag ){
-  diag[kelement*qdiag ] = ds ;
+  diag[ kelement*qdiag ] = ds ;
   diag[kelement*qdiag +1]  = kappasqr;
   }
   /* add external force to the filament */
@@ -523,4 +521,5 @@ void wDIAG( double DIAG[], double tau, MPARAM PARAM ){
     }
     fprintf( fp, "\n " );
   }
+  fclose(fp);
 }

@@ -423,34 +423,34 @@ bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
   cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice );
   return laccept;
 }
-// /*-----------------------------------------------------------------------*/
-// __global__ void thread_maxima( double array[], double redux[]){
-//  // This is to calculate maxima of the operations going on in a thread. After this the maxima should be compared among all the blocks as well.
-//   extern __shared__ double cache[];  // Just to create a shared variable
-//   int tid = threadIdx.x+blockIdx.x*blockDim.x;
-//   int i=blockDim.x/2;
-//   int cacheIndex=threadIdx.x;
-//   // cache[cacheIndex] = array[tid];
-//   // __syncthreads();
-//   double temp=0.;
-//   while(tid<NN){
-//     temp = max(temp,array[tid]);
-//     tid += blockDim.x*gridDim.x;
-//   }
-//   cache[cacheIndex]=temp;
-//   __syncthreads();
-//   while(i!=0){
-//     if (cacheIndex<i){
-//       cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
-//       // cache[cacheIndex]=i;
-//     }
-//     i/=2;
-//     __syncthreads();
-//   }
-//   if (cacheIndex==0){
-//     redux[blockIdx.x] = cache[0];
-//   }
-// }
+/*-----------------------------------------------------------------------*/
+__global__ void thread_maxima( double array[], double redux[]){
+ // This is to calculate maxima of the operations going on in a thread. After this the maxima should be compared among all the blocks as well.
+  extern __shared__ double cache[];  // Just to create a shared variable
+  int tid = threadIdx.x+blockIdx.x*blockDim.x;
+  int i=blockDim.x/2;
+  int cacheIndex=threadIdx.x;
+  // cache[cacheIndex] = array[tid];
+  // __syncthreads();
+  double temp=0.;
+  while(tid<NN){
+    temp = max(temp,array[tid]);
+    tid += blockDim.x*gridDim.x;
+  }
+  cache[cacheIndex]=temp;
+  __syncthreads();
+  while(i!=0){
+    if (cacheIndex<i){
+      cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
+      // cache[cacheIndex]=i;
+    }
+    i/=2;
+    __syncthreads();
+  }
+  if (cacheIndex==0){
+    redux[blockIdx.x] = cache[0];
+  }
+}
 /*----------------------------------------------------------------*/
 double MaxDevArray(double dev_array[], int Nblock, int Nthread){
   double maxA=0.;
@@ -468,53 +468,6 @@ double MaxDevArray(double dev_array[], int Nblock, int Nthread){
   // cout << maxA << endl;
   return maxA;
 }
-// /*-----------------------------------------------------------------------*/
-// __global__ void thread_maxima( double array[], double redux[]){
-//  // This is to calculate maxima of the operations going on in a thread. After this the maxima should be compared among all the blocks as well.  
-//   extern __shared__ double cache[];  // Just to create a shared variable
-//   int tid = threadIdx.x+blockIdx.x*blockDim.x;
-//   int i=(blockDim.x)/2;
-//   int cacheIndex=(threadIdx.x) ;
-//   // cache[cacheIndex] = array[tid];
-//   // __syncthreads();
-//   double temp=0.;
-//   while(tid<NN){
-//     temp = max(temp,array[tid]);
-//     tid += blockDim.x*gridDim.x;
-//   }
-//   //
-//   cache[cacheIndex]=temp;
-//   __syncthreads();
-//   //
-//   while(i!=0){
-//     if (cacheIndex<i){
-//       cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
-//       // cache[cacheIndex]=i;
-//     }
-//     i/=2;
-//     __syncthreads();
-//   }
-// //
-//   if (cacheIndex==0){
-//       redux[blockIdx.x] = cache[0];
-//   } 
-// }
-// /*----------------------------------------------------------------*/
-// double MaxDevArray(double dev_array[], int Nblock, int Nthread){
-//   double maxA=0.;
-//   //
-//   thread_maxima <<<Nblock, Nthread, Nthread*sizeof(double) >>>(dev_array,dev_redux);
-//   cudaMemcpy(REDUX,dev_redux,size_redux,cudaMemcpyDeviceToHost);
-//   // Copied the thread maxima output back to host.
-//   // Compare the maximum across the blocks. This operation is done in CPU for the time being.
-//   // Calculate maxima using STL
-//   // This could be done better by launching a kernel 
-//   for (int iblock = 0; iblock < Nblock; ++iblock){
-//     maxA = max(maxA,REDUX[iblock]);
-//   }
-//   // printf("%lf\n", maxA);
-//   return maxA;
-// }
 /*-----------------------------------------------------------------------*/
 void rnkf45( double PSI[], double dev_psi[],
             EV* TT, EV *dev_tt,
