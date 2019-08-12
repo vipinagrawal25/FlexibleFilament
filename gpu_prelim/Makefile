@@ -48,4 +48,4 @@ test_max.o: test_max.cu
 clean:
 	rm -f *.o *.exe a.out 
 cleann:
-	rm -f *.o *.exe a.out core *~
+	rm -f *.o *.exe a.out core *~ data/*

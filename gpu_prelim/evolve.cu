@@ -34,13 +34,12 @@ void rnkf45( double PSI[], double dev_psi[],
             double DIAG[], double dev_diag[],
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread );
-
 void pre_euler( int Nsize);
 void pre_rnkt4( int Nsize);
 void pre_rnkf45( int Nsize, int Nblock, int Nthread );
 void eu_time_step( EV* TT, EV *dev_tt );
 __global__ void reduce_diag( double diag[] );
-__global__ void eu_psi_step( double kk[], double psi[], EV *tt );
+__global__ void eu_psi_step( double psi[], double kk[], EV *tt );
 /*-------------------------------------------------------------------*/
 void  post_euler( void  ){
   cudaFree( dev_kk );
@@ -87,7 +86,7 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   (*TT).tprime = (*TT).time;
   (*TT).dt = 1.e-4;
   (*TT).ndiag = 2;
-  (*TT).tmax =2.e-1;
+  (*TT).tmax =2.e-4;
   (*TT).tdiag = 0. ;
   (*TT).substep = 0 ;
   EV *temp ;
@@ -162,10 +161,8 @@ void evolve( double PSI[], double dev_psi[],
   int count;
   qdevice( &count, &prop ) ;
   printf( "#- We know device properties \n");
-  /* We set the number threads here: */
-  /* If the number of elements in the chain, NN,  is smaller the maximum threads
-allowed-per-block then we launch in one way */
-  cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice);
+// copy the time data to device. 
+  cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice);
   while ( (*TT).time < (*TT).tmax){
     printf( "#- tmax=%f\t time=%f\t tdiag=%f \n", (*TT).tmax, (*TT).time, (*TT).tdiag) ;
       (*TT).ldiag = 0 ;
@@ -198,8 +195,7 @@ void euler( double PSI[], double dev_psi[],
             double DIAG[], double dev_diag[],  
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread ){
-  /* I do time-marching */
-  // copy time parameters to GPU
+// evaluate the right hand side in a kernel 
   eval_rhs<<<Nblock,Nthread >>>( dev_kk, dev_psi,  dev_tt ,
                                  dev_param, dev_diag, dev_bug );
     // check if there were any bugs from rhs evaluation
@@ -225,7 +221,7 @@ __global__ void reduce_diag( double diag[] ){
   }
 }
 /*----------------------------------------------------------------*/
-__global__ void eu_psi_step( double kk[], double psi[], EV *tt ){
+__global__ void eu_psi_step( double psi[], double kk[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
@@ -240,7 +236,7 @@ void eu_time_step( EV *TT, EV *dev_tt ){
   (*TT).time = (*TT).time + (*TT).dt ;
   (*TT).tprime = (*TT).time ;
   (*TT).substep = 0;
-  cudaMemcpy( dev_tt, &TT, size_EV, cudaMemcpyHostToDevice ) ;
+  cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice ) ;
 }
 /*-----------------------------------------------------------------------*/
 void rk4_time_substep( EV *TT, EV *dev_tt, int j ){
@@ -472,7 +468,6 @@ double MaxDevArray(double dev_array[], int Nblock, int Nthread){
   // cout << maxA << endl;
   return maxA;
 }
-
 // /*-----------------------------------------------------------------------*/
 // __global__ void thread_maxima( double array[], double redux[]){
 //  // This is to calculate maxima of the operations going on in a thread. After this the maxima should be compared among all the blocks as well.  
@@ -520,7 +515,6 @@ double MaxDevArray(double dev_array[], int Nblock, int Nthread){
 //   // printf("%lf\n", maxA);
 //   return maxA;
 // }
-
 /*-----------------------------------------------------------------------*/
 void rnkf45( double PSI[], double dev_psi[],
             EV* TT, EV *dev_tt,
@@ -545,8 +539,7 @@ void rnkf45( double PSI[], double dev_psi[],
     cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
     wDIAG( DIAG, (*TT).time, PARAM );
   }
-
-  // take the first substep
+// take the first substep
   rnkf45_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_kin, dev_psi, dev_tt ) ;
   rnkf45_time_substep( TT, dev_tt , 0 ) ;
   // 2nd evaluation of rhs, no diagnostic calculated
@@ -593,17 +586,14 @@ void rnkf45( double PSI[], double dev_psi[],
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
-
   // final step
   rnkf45_psi_step<<<Nblock, Nthread >>>( dev_psi, dev_psip, dev_err, dev_kin, dev_tt);
   // psip will store the 4th order rnkt4 solution. 
   // rnkf45_psi_step<<<Nblock, Nthread >>>( dev_psip, dev_kin, dev_tt, 1 );
-
   // rnkf45_error<<Nblock,Nthread>>> (dev_err,dev_psi,dev_psip);
   double maxErr = sqrt(MaxDevArray( dev_err, Nblock, Nthread));
   // printf("%lf\n",maxErr);
   bool laccept = rnkf45_time_step(TT,dev_tt,maxErr);
-  
   if (!laccept){
     rnkf45( PSI, dev_psi,
           TT, dev_tt,

@@ -191,7 +191,7 @@ __device__ vec3 ext_flow( int kelement, vec3 R, double tau,
     break;
   case 2:
     UU.x = R.z*ShearRate ;
-    break; 
+    break;
   }
   return UU;
 }
@@ -470,13 +470,12 @@ This number is stored in param.qdiag */
   /*------ put the rhs back to the dpsi array ----- */
   R2psi( dpsi, kelement, dR);
 }
-
 /*-------------------------------------------------------------------*/
 void initial_configuration( double PSI[], MPARAM PARAM ){
    // elastic filament is on a straight line 
     for (int iN=0; iN<NN; iN++){
-      PSI[iN*pp] = PARAM.aa*(double) iN ;
-      PSI[iN*pp + 1] =  0.;
+      PSI[iN*pp] = 0.;
+      PSI[iN*pp + 1] =  PARAM.aa*(double) iN ;
       PSI[iN*pp + 2] =  0.; 
   } 
 }
@@ -501,6 +500,7 @@ void wPSI ( double PSI[], double tau ){
     fprintf( fp, "%f\t", PSI[ichain] ) ; 
   }
   fprintf( fp, "\n " );
+  fprintf(fp, "#--------------------------------------#\n");
   fclose( fp );
 }
 /*-------------------------------------------------------------------*/

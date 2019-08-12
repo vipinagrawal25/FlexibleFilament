@@ -42,7 +42,7 @@ int main( void ){
           BUG,  dev_bug, 
           Nblock, Nthread ) ;
   printf( "#... time evolution finished \n");
-  H2D( dev_psi, PSI, ndim );
+  D2H( PSI, dev_psi, ndim );
   wPSI( PSI, TT.time ) ; 
   free_chain( &PSI, &dev_psi );
 }
