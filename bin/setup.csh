@@ -14,5 +14,8 @@ ln -s $ES/PythonCodes/*.py PythonCodes/
 ln -s $ES/PythonCodes/*.ipynb PythonCodes/
 mkdir -p hosts
 ln -s $ES/hosts/* hosts/
-echo "copied Makefile and input.h.."
+mkdir -p gpu_prelim
+ln -s $ES/gpu_prelim/*.cu gpu_prelim/
+
+echo "copied Makefile, input.h.. and GPU code"
 echo " Now modify them accroding to your problem."

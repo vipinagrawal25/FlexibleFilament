@@ -85,10 +85,10 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   (*TT).time = 0.;
   (*TT).tprime = (*TT).time;
   (*TT).dt = 1.e-4;
-  (*TT).ndiag = 2;
-  (*TT).tmax =2.e-4;
-  (*TT).tdiag = 0. ;
-  (*TT).substep = 0 ;
+  (*TT).ndiag = 10;
+  (*TT).tmax =1.e-3;
+  (*TT).tdiag = 0.;
+  (*TT).substep = 0.;
   EV *temp ;
   cudaMalloc(  (void**)&temp, size_EV );
   *dev_tt = temp;
@@ -424,33 +424,33 @@ bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
   return laccept;
 }
 /*-----------------------------------------------------------------------*/
-__global__ void thread_maxima( double array[], double redux[]){
- // This is to calculate maxima of the operations going on in a thread. After this the maxima should be compared among all the blocks as well.
-  extern __shared__ double cache[];  // Just to create a shared variable
-  int tid = threadIdx.x+blockIdx.x*blockDim.x;
-  int i=blockDim.x/2;
-  int cacheIndex=threadIdx.x;
-  // cache[cacheIndex] = array[tid];
-  // __syncthreads();
-  double temp=0.;
-  while(tid<NN){
-    temp = max(temp,array[tid]);
-    tid += blockDim.x*gridDim.x;
-  }
-  cache[cacheIndex]=temp;
-  __syncthreads();
-  while(i!=0){
-    if (cacheIndex<i){
-      cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
-      // cache[cacheIndex]=i;
-    }
-    i/=2;
-    __syncthreads();
-  }
-  if (cacheIndex==0){
-    redux[blockIdx.x] = cache[0];
-  }
-}
+// __global__ void thread_maxima( double array[], double redux[]){
+//  // This is to calculate maxima of the operations going on in a thread. After this the maxima should be compared among all the blocks as well.
+//   extern __shared__ double cache[];  // Just to create a shared variable
+//   int tid = threadIdx.x+blockIdx.x*blockDim.x;
+//   int i=blockDim.x/2;
+//   int cacheIndex=threadIdx.x;
+//   // cache[cacheIndex] = array[tid];
+//   // __syncthreads();
+//   double temp=0.;
+//   while(tid<NN){
+//     temp = max(temp,array[tid]);
+//     tid += blockDim.x*gridDim.x;
+//   }
+//   cache[cacheIndex]=temp;
+//   __syncthreads();
+//   while(i!=0){
+//     if (cacheIndex<i){
+//       cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
+//       // cache[cacheIndex]=i;
+//     }
+//     i/=2;
+//     __syncthreads();
+//   }
+//   if (cacheIndex==0){
+//     redux[blockIdx.x] = cache[0];
+//   }
+// }
 /*----------------------------------------------------------------*/
 double MaxDevArray(double dev_array[], int Nblock, int Nthread){
   double maxA=0.;
