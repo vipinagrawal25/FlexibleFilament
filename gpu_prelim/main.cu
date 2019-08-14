@@ -27,9 +27,9 @@ int main( void ){
   alloc_chain( &PSI, &dev_psi );
   set_param( &PARAM, &dev_param ) ;
   int size_diag = pre_diag( &DIAG , &dev_diag, PARAM );
-  pre_evolve(  ndim, "rnkt4" , &TT, &dev_tt, Nblock, Nthread  ) ;
   // pre_evolve(  ndim, "rnkt4" , &TT, &dev_tt, Nblock, Nthread  ) ;
-  // pre_evolve(  ndim, "rnkf45" , &TT, &dev_tt, Nblock, Nthread  ) ;
+  // pre_evolve(  ndim, "rnkt4" , &TT, &dev_tt, Nblock, Nthread  ) ;
+  pre_evolve(  ndim, TimeScheme , &TT, &dev_tt, Nblock, Nthread  ) ;
   // setup initial configuration 
   initial_configuration( PSI, PARAM ) ;
   system("exec rm -f data/*");

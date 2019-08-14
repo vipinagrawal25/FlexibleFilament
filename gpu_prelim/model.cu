@@ -185,7 +185,7 @@ __device__ vec3 ext_flow( int kelement, vec3 R, double tau,
   switch( iext_flow ){
   case 1:
     //time-dependent shear U = ( ShearRate*z, 0, 0 ) * square_wave(omega*time) 
-    UU.x = (height - R.z)*ShearRate*square_wave( tau, M_PI/omega ) ;
+    UU.x = (height - R.z)*ShearRate*(double)square_wave( tau, M_PI/omega ) ;
     UU.y = 0. ;
     UU.z = 0;
     break;
@@ -465,8 +465,9 @@ This number is stored in param.qdiag */
   /* calculate the viscous (possibly non-local ) drag */
   dR = drag(kelement, psi,  &EForce, param);
   /* contribution from external flow */
-  if ( iext_flow  ){ 
-    dR = dR + ext_flow( kelement, R, tau, param ) ; }
+  // if ( iext_flow  ){ 
+  //   // dR = dR + ext_flow( kelement, R, tau, param ) ; 
+  // }
   /*------ put the rhs back to the dpsi array ----- */
   R2psi( dpsi, kelement, dR);
 }

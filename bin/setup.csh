@@ -16,6 +16,7 @@ mkdir -p hosts
 ln -s $ES/hosts/* hosts/
 mkdir -p gpu_prelim
 ln -s $ES/gpu_prelim/*.cu gpu_prelim/
-
+ln -s $ES/gpu_prelim/*.h gpu_prelim/
+ln -s $ES/gpu_prelim/Makefile gpu_prelim/
 echo "copied Makefile, input.h.. and GPU code"
 echo " Now modify them accroding to your problem."

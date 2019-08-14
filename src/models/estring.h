@@ -4,7 +4,7 @@
 /**************************/
 using namespace std;
 /* ----------------------------------------*/
-unsigned int const Np=101;			// total number of points on the rod.
+unsigned int const Np=16;			// total number of points on the rod.
 unsigned int const pdim=3*Np;
 double const height = 1;					// height of the box we are doing simulations in.
 double const aa = height/(double)(Np-1); 	// distance between two nodes.
@@ -39,7 +39,7 @@ char const UseRP = 'Y';					// Y is for the new one, O is for old one and N is f
 										// Rotne Pragor tensor. 
 
 // This sets up the initial configuration of the system. For more information go through the Readme file.
-int const conf_number = 2;	
+int const conf_number = 1;	
 int const lastfile=0;
 
 char const SaveInfo = 'Y';	// This decides whether the simulation is important enough to save the information.

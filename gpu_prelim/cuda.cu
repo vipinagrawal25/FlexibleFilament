@@ -45,7 +45,8 @@ void set_crash( CRASH *BUG, CRASH **dev_bug ){
 } 
 /*-----------------------------------------------------------------------*/
 __global__ void thread_maxima( double array[], double redux[]){
- // This is to calculate maxima of the operations going on in a thread. After this the maxima should be compared among all the blocks as well.
+  // This is to calculate maxima of the operations going on in a thread.
+  //After this the maxima should be compared among all the blocks as well.
   extern __shared__ double cache[];  // Just to create a shared variable
   int tid = threadIdx.x+blockIdx.x*blockDim.x;
   int i=blockDim.x/2;
