@@ -465,9 +465,9 @@ This number is stored in param.qdiag */
   /* calculate the viscous (possibly non-local ) drag */
   dR = drag(kelement, psi,  &EForce, param);
   /* contribution from external flow */
-  if ( iext_flow  ){ 
-    dR = dR+ext_flow( kelement, R, tau, param ) ; 
-  }
+  // if ( iext_flow  ){ 
+  //   dR = dR+ext_flow( kelement, R, tau, param ) ; 
+  // }
   /*------ put the rhs back to the dpsi array ----- */
   R2psi( dpsi, kelement, dR);
 }
@@ -494,12 +494,12 @@ void  free_chain( double **PSI, double **psi  ){
   cudaFree( *psi );
 }
 /*-------------------------------------------------------------------*/
-void H2D(double psi[], double PSI[], int Nsize){
-  cudaMemcpy( psi, PSI, Nsize*sizeof(double), cudaMemcpyHostToDevice);
+void H2D(double dev_arr[], double ARR[], int Nsize){
+  cudaMemcpy( dev_arr, ARR, Nsize*sizeof(double), cudaMemcpyHostToDevice);
 }
 /*-------------------------------------------------------------------*/
-void D2H(double PSI[], double psi[], int Nsize){
-  cudaMemcpy( PSI, psi, Nsize*sizeof(double), cudaMemcpyDeviceToHost);
+void D2H(double ARR[], double dev_arr[], int Nsize){
+  cudaMemcpy( ARR, dev_arr, Nsize*sizeof(double), cudaMemcpyDeviceToHost);
 }
 /*-------------------------------------------------------------------*/
 void wPSI ( double PSI[], double tau ){

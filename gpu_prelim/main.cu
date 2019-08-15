@@ -45,7 +45,7 @@ int main( void ){
           Nblock, Nthread ) ;
   printf( "#... time evolution finished \n");
   D2H( PSI, dev_psi, ndim );
-  cudaMemcpy( PSI, dev_psi, size_psi , cudaMemcpyDeviceToHost);
+  // cudaMemcpy( PSI, dev_psi, size_psi , cudaMemcpyDeviceToHost);
   wPSI( PSI, TT.time ) ;
   free_chain( &PSI, &dev_psi );
 }

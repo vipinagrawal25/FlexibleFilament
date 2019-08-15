@@ -158,8 +158,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
  	}
   // cout << error << endl;
   error = sqrt(error);
-  if (error<tiny)
-  {
+  if (error<tiny){
       Delta = 10;
   }
   else
@@ -176,8 +175,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
           s=truncationmax;
       }
       *add_dt = s*dt;
-  }
-  else
+  }else
   { 
       if (s<truncationmin)
       {

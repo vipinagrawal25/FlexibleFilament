@@ -62,7 +62,10 @@ __global__ void thread_maxima( double array[], double redux[]){
   __syncthreads();
   while(i!=0){
     if (cacheIndex<i){
-      cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
+      if (cache[cacheIndex+i]>cache[cacheIndex]){
+        cache[cacheIndex]=cache[cacheIndex+i];
+      }
+      // cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
       // cache[cacheIndex]=i;
     }
     i/=2;

@@ -38,7 +38,7 @@ struct MPARAM {
   int iniconf;
 };
 const int size_MPARAM = 14*sizeof( double ) + 8*sizeof( int );
-const int size_psi = NN*sizeof(double);
+const int size_psi = ndim*sizeof(double);
 /* boundary condition :  
    0 => clamped
    1=> free
