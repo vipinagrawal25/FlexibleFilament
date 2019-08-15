@@ -53,13 +53,29 @@ void  post_rnkt4( void  ){
   cudaFree( dev_k3 ) ;
   cudaFree( dev_k4 );
 }
+/*-------------------------------------------------------------------*/
+void  post_rnkf45( void  ){
+  cudaFree( dev_psip );
+  cudaFree( dev_k1 );
+  cudaFree( dev_k2 ) ;
+  cudaFree( dev_k3 ) ;
+  cudaFree( dev_k4 );
+  cudaFree( dev_k5 );
+  cudaFree( dev_k6 );
+  cudaFree( dev_kin);
+  cudaFree( dev_redux );
+  cudaFree( dev_err );
+}
 /*-----------------------------------------------------------------------*/
 void post_evolve( char *algo  ){
   if ( strcmp( algo , "euler") == 0 ){
     post_euler( );
   } else if ( strcmp( algo, "rnkt4" ) == 0 ){
     post_rnkt4( );
-  } else {
+  } else if ( strcmp( algo, "rnkf45" ) == 0){
+    post_rnkf45( );
+  }
+  else {
     printf( " algorithm\t%s\t not coded \n", algo);
     printf( "EXITING \n " );
     exit(1);
@@ -87,8 +103,8 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   (*TT).time = 0.;
   (*TT).tprime = (*TT).time;
   (*TT).dt = 1.e-4;
-  (*TT).ndiag = 2;
-  (*TT).tmax =5.e-2;
+  (*TT).ndiag = 100;
+  (*TT).tmax =1.e-1;  
   (*TT).tdiag = 0.;
   (*TT).substep = 0.;
   EV *temp ;
@@ -210,7 +226,8 @@ void euler( double PSI[], double dev_psi[],
     int size_diag = NN * PARAM.qdiag * sizeof(double) ;
     cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
     wDIAG( DIAG, (*TT).time, PARAM );
-    wPSI( PSI, (*TT).time ) ;
+    cudaMemcpy( PSI, dev_psi, size_psi , cudaMemcpyDeviceToHost);
+    wPSI( PSI, (*TT).time ) ; 
   }
   // take the Euler step
   eu_psi_step<<< Nblock, Nthread >>>( dev_psi, dev_kk, dev_tt ) ;
@@ -312,6 +329,7 @@ void rnkt4( double PSI[], double dev_psi[],
     int size_diag = NN * PARAM.qdiag * sizeof(double) ;
     cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
     wDIAG( DIAG, (*TT).time, PARAM );
+    cudaMemcpy( PSI, dev_psi, size_psi , cudaMemcpyDeviceToHost);
     wPSI( PSI, (*TT).time ) ; 
   }
   // take the first substep
@@ -349,14 +367,19 @@ void rnkt4( double PSI[], double dev_psi[],
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  double rnkf45b[5][5] = {{0.2,0.,0.,0.,0.},
-                        {3./40,9./40,0.,0.,0.},
-                        {0.3,-0.9,1.2,0.,0.},
-                        {-11./54,2.5,-70./27,35./27,0},
-                        {1631./55296,175./512,575./13824,44275./110592,253./4096} };
+  // double rnkf45b[5][5] = {{0.2,0.,0.,0.,0.},
+  //                       {3./40,9./40,0.,0.,0.},
+  //                       {0.3,-0.9,1.2,0.,0.},
+  //                       {-11./54,2.5,-70./27,35./27,0},
+  //                       {1631./55296,175./512,575./13824,44275./110592,253./4096} };
+
+  double rnkf45b[5][5]= {{0.25,0,0,0,0},
+                        {3./32.,9./32.,0,0,0},
+                        {1932./2197.,-7200./2197.,7296./2197.,0,0},
+                        {439./216.,-8.,3680./513.,-845./4104.,0},
+                        {-8./27.,2.,-3544./2565.,1859./4104.,-11./40.}};
 
   int j = (*tt).substep ;
-
   // double *kk = {&kin[0],&kin[ndim],&kin[2*ndim],&kin[3*ndim],&kin[4*ndim],&kin[5*ndim]}
 
   while (tid < NN ){
@@ -372,37 +395,59 @@ __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], 
 }
 /*-----------------------------------------------------------------------*/
 void rnkf45_time_substep( EV* TT, EV *dev_tt, int j ){
-  double rnkf45a[5] = {0.2,0.3,0.6,1.,7./8} ;
+  // double rnkf45a[5] = {0.2,0.3,0.6,1.,7./8} ;
+  double rnkf45a[5] = {0.25,3./8,12./13,1.,1./2}; 
   (*TT).tprime = (*TT).time + ((*TT).dt)*rnkf45a[ j ] ;
   (*TT).substep = j + 1;
   (*TT).ldiag=0;
   cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice ) ;
 }
 /*----------------------------------------------------------------*/
-__global__ void rnkf45_calc_error(  double error[], double psi[], double psip[], double *kptr[], EV *tt ){
-  // int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  // //
+__global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
+  int tid = threadIdx.x + blockIdx.x * blockDim.x;
+  //
   // double rnkf45c[2][6] = { {37./378,0,250./621,125./594,0,512./1771},
-  //                         {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25} };
-  // //
-  // error[tid]=0;                        
-  // while (tid < NN ){
-  //   for ( int ip=0; ip<pp; ip++){
-  //     psip[ip+pp*tid] = psi[ip+pp*tid];
-  //     for (int jp = 0; jp < 6; ++jp){
-  //         psi[ip+pp*tid] += (rnkf45c[0][jp]*kptr[jp][ip+pp*tid])*(*tt).dt;
-  //         psip[ip+pp*tid] += (rnkf45c[1][jp]*kptr[jp][ip+pp*tid])*(*tt).dt;   
-  //     }
-  //     error[tid] = max(error[tid],(psi[ip+pp*tid]-psip[ip+pp*tid])*(psi[ip+pp*tid]-psip[ip+pp*tid]));
-  //   }
-  //   tid += blockDim.x * gridDim.x ;
+                          // {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25} };
+
+  double rnkf45c[2][6] = { {25./216.,0,1408./2565.,2197./4104.,-1./5.,0},
+                          {16./135.,0,6656./12825.,28561./56430.,-9./50.,2./55.} };
+
+  //
+  error[tid]=0;
+  double temp_error;
+  while (tid < NN ){
+    for ( int ip=0; ip<pp; ip++){
+      temp_error=0.;
+      for (int jp = 0; jp < 6; ++jp){
+          temp_error += ((rnkf45c[0][jp]-rnkf45c[1][jp])*kptr[jp][ip+pp*tid])*(*tt).dt;   
+      }
+      error[tid] = max(error[tid],temp_error*temp_error);
+    }
+    tid += blockDim.x * gridDim.x ;
+  } // loop over threads ends here
+}
+/*----------------------------------------------------------------*/
+__global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
+  int tid = threadIdx.x + blockIdx.x * blockDim.x;
+  //
+  // double rnkf45c[6] = {37./378,0,250./621,125./594,0,512./1771};  
+  //
+  double rnkf45c[6] = {25./216.,0,1408./2565.,2197./4104.,-1./5.,0};  
+  while (tid < NN ){
+    for ( int ip=0; ip<pp; ip++){
+      psi[ip+pp*tid]=0;
+      for (int jp = 0; jp < 6; ++jp){
+          psi[ip+pp*tid] += (rnkf45c[jp]*kptr[jp][ip+pp*tid])*(*tt).dt;   
+      }
+    }
+    tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
 }
 /*-----------------------------------------------------------------------*/
 bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
   // cudaMemcpy(  &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost ) ;
-  double tol = 0.001;
-  double truncationmax=5;  // Maximum multiplication in time step
+  double tol = 0.0001;
+  double truncationmax=2;  // Maximum multiplication in time step
   double truncationmin=0.2; // Minimum multiplication in time step
   bool laccept;
   double s;
@@ -424,9 +469,7 @@ bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
     (*TT).dt = s*((*TT).dt);
     (*TT).ldiag = 0;
     printf( "## Rejected- tmax=%f\t time=%f\t dt=%f \n", (*TT).tmax, (*TT).time, (*TT).dt ) ;
-    std::cout << "tol = "<< tol << "maxErr= " << maxErr << "tprime= "<< (*TT).tprime << "s= " << s << endl;  
   }
-
   cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice );
   return laccept;
 }
@@ -448,6 +491,10 @@ double MaxDevArray(double dev_array[], int Nblock, int Nthread){
     // cout << REDUX[iblock] << "\t" ;
   }
   // std::cout << maxA << std::endl;
+  if (maxA<tiny*tiny){
+    maxA=tiny*tiny;
+  }
+  std::cout << maxA << std::endl;
   return maxA;
 }
 /*-----------------------------------------------------------------------*/
@@ -473,6 +520,7 @@ void rnkf45( double PSI[], double dev_psi[],
     printf( "calculating diagnostics \n " );
     cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
     wDIAG( DIAG, (*TT).time, PARAM );
+    cudaMemcpy( PSI, dev_psi, size_psi , cudaMemcpyDeviceToHost);
     wPSI( PSI, (*TT).time ) ; 
   }
 // take the first substep
@@ -523,7 +571,7 @@ void rnkf45( double PSI[], double dev_psi[],
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
   // final step
-  rnkf45_calc_error<<<Nblock, Nthread >>>( dev_err, dev_psi, dev_psip, dev_kin, dev_tt);
+  rnkf45_calc_error<<<Nblock, Nthread >>>( dev_err, dev_kin, dev_tt);
   // psip will store the 4th order rnkt4 solution. 
   // rnkf45_psi_step<<<Nblock, Nthread >>>( dev_psip, dev_kin, dev_tt, 1 );
   // rnkf45_error<<Nblock,Nthread>>> (dev_err,dev_psi,dev_psip);
@@ -532,15 +580,15 @@ void rnkf45( double PSI[], double dev_psi[],
   bool laccept = rnkf45_time_step(TT,dev_tt,maxErr);
 
   if (laccept){
-    // Psi=Psip
-    // rnkf45_psi_step -- launch a kernel to calculate psi
+    // If the step is accepted -> this function calculates the PSI at next time step.
+    rnkf45_psi_step<<<Nblock, Nthread >>>( dev_psi, dev_kin, dev_tt );
   }
   else{
-  rnkf45( PSI, dev_psi,
+    rnkf45( PSI, dev_psi,
           TT, dev_tt,
           PARAM, dev_param ,
           DIAG, dev_diag,
           BUG, dev_bug,
           Nblock, Nthread );
-  } 
+  }
 }

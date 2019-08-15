@@ -27,13 +27,14 @@ int main( void ){
   alloc_chain( &PSI, &dev_psi );
   set_param( &PARAM, &dev_param ) ;
   int size_diag = pre_diag( &DIAG , &dev_diag, PARAM );
+  int size_psi = NN*sizeof(double);
   // pre_evolve(  ndim, "rnkt4" , &TT, &dev_tt, Nblock, Nthread  ) ;
   // pre_evolve(  ndim, "rnkt4" , &TT, &dev_tt, Nblock, Nthread  ) ;
   pre_evolve(  ndim, TimeScheme , &TT, &dev_tt, Nblock, Nthread  ) ;
   // setup initial configuration 
   initial_configuration( PSI, PARAM ) ;
   system("exec rm -f data/*");
-  wPSI( PSI, TT.time ) ; 
+  // wPSI( PSI, TT.time ) ; 
   H2D( dev_psi, PSI, ndim );
   printf( " #starting time evolution ...\n ");
   evolve( PSI, dev_psi, 
@@ -44,6 +45,7 @@ int main( void ){
           Nblock, Nthread ) ;
   printf( "#... time evolution finished \n");
   D2H( PSI, dev_psi, ndim );
-  wPSI( PSI, TT.time ) ; 
+  cudaMemcpy( PSI, dev_psi, size_psi , cudaMemcpyDeviceToHost);
+  wPSI( PSI, TT.time ) ;
   free_chain( &PSI, &dev_psi );
 }

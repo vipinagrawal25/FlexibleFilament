@@ -465,9 +465,9 @@ This number is stored in param.qdiag */
   /* calculate the viscous (possibly non-local ) drag */
   dR = drag(kelement, psi,  &EForce, param);
   /* contribution from external flow */
-  // if ( iext_flow  ){ 
-  //   // dR = dR + ext_flow( kelement, R, tau, param ) ; 
-  // }
+  if ( iext_flow  ){ 
+    dR = dR+ext_flow( kelement, R, tau, param ) ; 
+  }
   /*------ put the rhs back to the dpsi array ----- */
   R2psi( dpsi, kelement, dR);
 }

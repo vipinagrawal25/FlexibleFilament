@@ -161,7 +161,6 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   if (error<tiny)
   {
       Delta = 10;
-      // cout << "Kya error itna chota hai " << endl;
   }
   else
   {
@@ -170,10 +169,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
   s = epsilon*pow(Delta,0.25);
   
-  // cout << dt << endl;
-
-  if (Delta>=0.5)
-  {
+  if (Delta>=0.5){
       *add_time = time + dt;
       if (s>truncationmax)
       {

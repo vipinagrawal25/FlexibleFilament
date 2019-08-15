@@ -6,7 +6,7 @@
 Each node may be connected to every other node. 
 The number of nodes is NN. 
 The number of degrees of freedom at each node is pp */ 
-#define NN 16
+#define NN 32
 #define pp  3
 #define ndim NN*pp
 #define TimeScheme "rnkf45"
@@ -38,6 +38,7 @@ struct MPARAM {
   int iniconf;
 };
 const int size_MPARAM = 14*sizeof( double ) + 8*sizeof( int );
+const int size_psi = NN*sizeof(double);
 /* boundary condition :  
    0 => clamped
    1=> free
