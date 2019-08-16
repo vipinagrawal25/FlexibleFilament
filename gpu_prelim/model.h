@@ -6,10 +6,10 @@
 Each node may be connected to every other node. 
 The number of nodes is NN. 
 The number of degrees of freedom at each node is pp */ 
-#define NN 32
+#define NN 128
 #define pp  3
 #define ndim NN*pp
-#define TimeScheme "rnkf45"
+#define TimeScheme "euler"
 /*--------------------------------------------------*/
 struct MPARAM {
   double height ;	// height of the box we are doing simulations in.

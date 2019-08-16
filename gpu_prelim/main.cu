@@ -33,8 +33,9 @@ int main( void ){
   pre_evolve(  ndim, TimeScheme , &TT, &dev_tt, Nblock, Nthread  ) ;
   // setup initial configuration 
   initial_configuration( PSI, PARAM ) ;
-  system("exec rm -f data/*");
-  // wPSI( PSI, TT.time ) ; 
+  system("exec rm -rf data");
+  system("exec mkdir data");
+  // wPSI( PSI, TT.time ) ;   
   H2D( dev_psi, PSI, ndim );
   printf( " #starting time evolution ...\n ");
   evolve( PSI, dev_psi, 
