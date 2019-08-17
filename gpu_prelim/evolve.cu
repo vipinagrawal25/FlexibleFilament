@@ -201,11 +201,11 @@ __global__ void eval_rhs(double kk[], double psi[],
                          CRASH *bug ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   while (tid < NN ){
-    model_rhs( kk, psi, tid, (*tt).tprime, param, diag, bug, (*tt).ldiag  );
+    model_rhs( kk, psi, tid, (*tt).tprime, param, diag, bug, (*tt).ldiag );
     tid += blockDim.x * gridDim.x ;
   }// while loop over threads finishes here.
 }
-/*--------------------------- --------------------------------- */
+/*------------------------------------------------------------ */
 void euler( double PSI[], double dev_psi[],
             EV *TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,

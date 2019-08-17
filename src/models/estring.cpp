@@ -248,7 +248,6 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
           FF = FF*(AA/aa);
           // cout << FF.z << endl;
           FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;   // Inextensibility constraint
-          // cout << "Good for you " << endl;
           *add_FF = FF;
 
       }

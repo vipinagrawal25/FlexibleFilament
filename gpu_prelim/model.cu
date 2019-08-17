@@ -67,7 +67,8 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).ShearRate = 1.;
   (*PARAM).omega = (*PARAM).ShearRate*(*PARAM).sigma ;
   //
-  (*PARAM).factorAA = 0.15 ; 
+  (*PARAM).factorAA = 0.15 ;
+  // (*PARAM).factorAA = 0. ;
   (*PARAM).AA = (*PARAM).factorAA*pow(10,-4) ; // AA is the bending rigidity.
   (*PARAM).KK = 64.;
   double asqr = (*PARAM).aa*(*PARAM).aa ;
@@ -201,8 +202,9 @@ __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
   vec3 dR(0., 0., 0.) ;
   double viscosity = (*param).viscosity ;
   double dd = (*param).dd;
-  double onebythree = 1./3.;
+  double onebythree = 1./3;
   double mu0 = onebythree/(M_PI*viscosity*dd);
+  double c1, dsqr1;
   if ( (*param).global_drag ){
     /* mu_ij represents the one element of mobility matrix (Size: NXN). 
        Every element of the matrix itself is a 2nd rank tensor with dimension 3x3.*/
@@ -219,8 +221,8 @@ __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
         dR =  dR + dot(mu_ii, *EForce );
       }else{
         GetRij(psi, ip, jp, &d_rij, &rij);
-        double c1 = 1/(8*M_PI*viscosity*d_rij);
-        double dsqr1 = 1./(d_rij*d_rij);
+        c1 = 1./(d_rij*8*M_PI*viscosity);
+        dsqr1 = 1./(d_rij*d_rij);
         mu_ij = c1*(dab + (rij*rij)*dsqr1 +
                     dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
         dR =  dR + dot(mu_ij, *EForce );
@@ -235,11 +237,17 @@ __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
 /*----------------------------------------------------------------------------------------------*/
 __device__ void GetRij(double psi[], int i, int j, double *Distance,
                        vec3 *rij){
-  vec3 Rj (psi[pp*j], psi[pp*j+1], psi[pp*j+2] );
-  vec3 Ri (psi[pp*i], psi[pp*i+1], psi[pp*i+2] );
+
+  vec3 Rj =  psi2R( psi,  j);
+  vec3 Ri =  psi2R( psi,  i);
+
+// __device__ void R2psi(double psi[], int k, vec3 R);
+
+//   vec3 Rj (psi[pp*j], psi[pp*j+1], psi[pp*j+2] );
+//   vec3 Ri (psi[pp*i], psi[pp*i+1], psi[pp*i+2] );
   /*This calculate the distance at two index i and j on the elastic string*/
   *rij = Rj - Ri;
-  double Dis = norm( Rj-Ri ); 
+  double Dis = norm(Rj-Ri); 
   *Distance = Dis;
 }
 /*--------------------------------------------------------------*/
@@ -257,7 +265,7 @@ __device__ vec3 Force_FirstPoint( double psi[],
   double AA = (*param).AA ;
   double aa = (*param).aa ;
   double HH = (*param).HH;
-  int bcb = (*param).bcb ;
+  int bcb = (*param).bcb ;    
   vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.);
   vec3 Xzero(0.,0.,0.), dX(0.,0.,0.);
   double  bkm1, bk, bkp1;
@@ -278,7 +286,7 @@ __device__ vec3 Force_FirstPoint( double psi[],
           // Add an extra term for inextensibility constraint
           FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa; 
           break;
-      case 1: // free
+    case 1: // free
         FF = ( (uk/bk)*( dot(uk,ukp1) )  - (ukp1)/bk );
         FF = FF*AA/aa;
         // Add an extra term for inextensibility constraint
@@ -451,7 +459,7 @@ This number is stored in param.qdiag */
     ds = 0.;
   } else {
     Rp1 = psi2R(psi, kelement+1) ;
-    ds = norm( Rp1-R);
+    ds = norm( Rp1-R );
   }
   dHdR( kelement, psi, &EForce, &kappasqr, param, bug );
   /* write diagnostic to corresponding array */
