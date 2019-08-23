@@ -103,9 +103,9 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   /* Should we save them somewhere else? */
   (*TT).time = 0.;
   (*TT).tprime = (*TT).time;
-  (*TT).dt = 1.e-4;
+  (*TT).dt = 1.e-5;
   (*TT).ndiag = 10;
-  (*TT).tmax =1.e-2;  
+  (*TT).tmax =1.; 
   (*TT).tdiag = 0.;
   (*TT).substep = 0.;
   EV *temp ;
@@ -181,12 +181,13 @@ void evolve( double PSI[], double dev_psi[],
 // copy the time data to device. 
   cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice);
   while ( (*TT).time < (*TT).tmax){
-    printf( "#- tmax=%f\t time=%f\t dt=%f \n", (*TT).tmax, (*TT).time, (*TT).dt ) ;
+    printf( "#- dt=%f\t time=%f\t tmax=%f \n", (*TT).dt, (*TT).time,  (*TT).tmax ) ;
       (*TT).ldiag = 0 ;
     if( (*TT).time >= (*TT).tdiag ) {
       (*TT).ldiag = 1;
       (*TT).tdiag = (*TT).time +  (*TT).tmax/((double) (*TT).ndiag) ;
     }
+    cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice ) ;
     ALGO( PSI, dev_psi,
           TT, dev_tt,
           PARAM, dev_param ,
@@ -203,6 +204,9 @@ __global__ void eval_rhs(double kk[], double psi[],
   while (tid < NN ){
     model_rhs( kk, psi, tid, (*tt).tprime, param, diag, bug, (*tt).ldiag );
     tid += blockDim.x * gridDim.x ;
+
+    // For debugging stuff
+    // printf("%lf\n", kk[3*tid+2]);
   }// while loop over threads finishes here.
 }
 /*------------------------------------------------------------ */
@@ -416,11 +420,12 @@ __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
     for ( int ip=0; ip<pp; ip++){
       temp_error=0.;
       for (int jp = 0; jp < 6; ++jp){
-          temp_error += ((rnkf45c[0][jp]-rnkf45c[1][jp])*kptr[jp][ip+pp*tid]);   
-          temp_error *= temp_error;
+          temp_error += ((rnkf45c[0][jp]-rnkf45c[1][jp])*kptr[jp][ip+pp*tid])*((*tt).dt)*
+                        ((rnkf45c[0][jp]-rnkf45c[1][jp])*kptr[jp][ip+pp*tid])*((*tt).dt);   
       }
-      // error[tid] = max(error[tid],temp_error*temp_error);
-      error[tid]=temp_error;     
+      error[tid] = max(error[tid],temp_error);
+      // printf("%lf\n", error[tid]);
+      // error[tid]=temp_error;     
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
@@ -446,14 +451,14 @@ __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
 /*-----------------------------------------------------------------------*/
 bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
   // cudaMemcpy(  &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost ) ;
-  double tol = 0.001;
-  double truncationmax=1;  // Maximum multiplication in time step
+  double tol = 0.0001;
+  double truncationmax=5;  // Maximum multiplication in time step
   double truncationmin=0.2; // Minimum multiplication in time step
   bool laccept;
   double s;
   double eps=0.84;        // Safety factor to avoid the infinite loop.
   maxErr=maxErr+tiny;     // in case maxErr is too small to be almost zero.
-  std::cout << maxErr << std::endl;
+  // std::cout << maxErr << std::endl;
   if (maxErr<tol){
     laccept=1;
     (*TT).time = (*TT).time + (*TT).dt;
@@ -471,7 +476,7 @@ bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
     if (s<truncationmin){s=truncationmin;}
     (*TT).dt = s*((*TT).dt);
     (*TT).ldiag = 0;
-    printf( "## Rejected- tmax=%f\t time=%f\t dt=%f \n", (*TT).tmax, (*TT).time, (*TT).dt ) ;
+    // printf( "## Rejected- tmax=%f\t time=%f\t dt=%f \n", (*TT).tmax, (*TT).time, (*TT).dt ) ;
   }
   cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice );
   return laccept;
@@ -491,7 +496,7 @@ double MaxDevArray(double dev_array[], int Nblock, int Nthread){
   // This could be done better by launching a kernel 
   for (int iblock = 0; iblock < Nblock; ++iblock){
     // maxA = max(maxA,REDUX[iblock]);
-    if (maxA>REDUX[iblock]){ 
+    if (maxA<REDUX[iblock]){ 
       maxA=REDUX[iblock];
     }
     // cout << REDUX[iblock] << "\t" ;
@@ -587,8 +592,11 @@ void rnkf45( double PSI[], double dev_psi[],
   // psip will store the 4th order rnkt4 solution. 
   // rnkf45_psi_step<<<Nblock, Nthread >>>( dev_psip, dev_kin, dev_tt, 1 );
   // rnkf45_error<<Nblock,Nthread>>> (dev_err,dev_psi,dev_psip);
-  double maxErr = sqrt(MaxDevArray( dev_err, Nblock, Nthread))*(*TT).dt;
+  double maxErr = sqrt(MaxDevArray( dev_err, Nblock, Nthread));
+
+  // For debugging stuff
   // printf("%lf\n",maxErr);
+
   bool laccept = rnkf45_time_step(TT,dev_tt,maxErr);
   if (laccept){
     // If the step is accepted -> this function calculates the PSI at next time step.

@@ -127,8 +127,6 @@ int main()
     system("exec mv output/material_point_new.txt output/material_point.txt");
     // fstream outfile_SS("output/material_point.txt", ios::app);    // Now opening file again in append mode.      
     // -----------------------------------------------------------------------------------------------------------
-
-
     /*Code to remove the contents of the output folder after the last file mentioned. The code would have already returned and error message
     if lastfile is more than the total number of files present*/
     // The idea is that I check whether the file exists or not, if not come out of loop immediately else remove the file if it has index more than
@@ -235,13 +233,12 @@ int main()
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim,&y[irb],time-dt,dt);
+    // rnkt4(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);          
 
   	// timer = clock();
 
     // cout << dt << endl;
-    rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);           
-     // cout << "Segmentation fault isse pahle hai ya baad mein" << endl;
-
+    rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
     // timer = clock() - timer;
     // timer_global = timer_global + timer;
     // cout << timer << endl;

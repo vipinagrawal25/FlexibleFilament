@@ -9,7 +9,7 @@ The number of degrees of freedom at each node is pp */
 #define NN 128
 #define pp  3
 #define ndim NN*pp
-#define TimeScheme "euler"
+#define TimeScheme "rnkf45"
 /*--------------------------------------------------*/
 struct MPARAM {
   double height ;	// height of the box we are doing simulations in.
@@ -20,7 +20,7 @@ struct MPARAM {
   double viscosity ;				
   double  Z0;	  // If we want the bottom point of the rod to be fixed.
   double Famp ; // Force Value on the ends
-// Sigma is a dimensionless number, which is described as frequency parameter.
+  // Sigma is a dimensionless number, which is described as frequency parameter.
   double sigma ;					
   double ShearRate ;
   double omega ; // frequency of external force.
@@ -63,5 +63,6 @@ __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau
 void initial_configuration( double PSI[], MPARAM PARAM );
 void wPSI ( double PSI[], double tau ); 
 void wDIAG( double DIAG[], double tau, MPARAM PARAM );
+bool check_param(MPARAM PARAM);
 /*------------------------------------------------------------------*/
 #endif /* !MODEL_SEEN */

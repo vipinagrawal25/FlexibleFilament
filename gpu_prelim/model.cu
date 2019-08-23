@@ -5,10 +5,11 @@
 #include "model.h"
 #include "3vec.h"
 #include "2Tens.h"
+#include <string.h>
 using namespace std;
 __device__ void dHdR(int kp, double psi[], vec3* add_FF,
                      double* add_kappasqr,  struct MPARAM *param,
-                     struct CRASH * );
+                     struct CRASH *, int ldiag );
 __device__ vec3 drag(int ip,  double psi[], vec3 EForce[],
                      struct MPARAM *param);
 __device__ vec3 ext_flow( int kelement, vec3 R, double tau,
@@ -38,7 +39,7 @@ int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM ){
   *DIAG = (double *) malloc( size_diag ) ;
   for (int iN=0; iN<NN; iN++ ){
     for(int iq=0; iq<qdiag; iq++){
-      (*DIAG)[iN*qdiag+iq] = 1. ;
+      (*DIAG)[iN*qdiag+iq] = 0. ;
     }
   }
   double *temp;
@@ -55,7 +56,7 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).height = height;
   (*PARAM).aa = height/(double)(NN-1);
   // distance between two nodes.
-  (*PARAM).Dbyell = 0.005 ;
+  (*PARAM).Dbyell = 0.001;
   (*PARAM).dd = height*(*PARAM).Dbyell ;
   /* r/l ratio for the rod has been kept constant. It should be noted that 
      the particles would also have same diameter. */
@@ -66,17 +67,20 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).sigma=1.5;					
   (*PARAM).ShearRate = 1.;
   (*PARAM).omega = (*PARAM).ShearRate*(*PARAM).sigma ;
-  //
   (*PARAM).factorAA = 0.15 ;
   // (*PARAM).factorAA = 0. ;
   (*PARAM).AA = (*PARAM).factorAA*pow(10,-4) ; // AA is the bending rigidity.
-  (*PARAM).KK = 64.;
+  (*PARAM).KK = 60.;
   double asqr = (*PARAM).aa*(*PARAM).aa ;
-  (*PARAM).HH = (*PARAM).KK*(*PARAM).AA/( asqr );
-// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
-// double TMAX = ShearRate*10;
-// double tdiag = TMAX/2000;
-  (*PARAM).qdiag = 2 ;
+  (*PARAM).HH = (*PARAM).KK*(*PARAM).AA/( asqr );  
+  // Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
+  // double TMAX = ShearRate*10;
+  // double tdiag = TMAX/2000;
+
+  /* qdiag is the number of diagnostics that you want to calculate.
+      If you change this number, keep in mind to make changes in wdiag function as well.*/
+  (*PARAM).qdiag = 2 ;      
+  //
   int qdiag = (*PARAM).qdiag ;
   (*PARAM).bcb = 1 ;      // Boundary condition at bottom
   (*PARAM).bct = 1;       // Boundary condition at top
@@ -134,6 +138,17 @@ __host__ void write_param( MPARAM *PARAM, char *fname ){
   fprintf( pout, " iniconf=%d\n", (*PARAM).iniconf );
   fprintf( pout, " #============================\n" );
   fclose( pout );
+}
+/*-------------------------------------------------------------------*/
+bool check_param( MPARAM PARAM ){
+  double dd = PARAM.dd;
+  double aa = PARAM.aa;
+  if (dd>aa){
+    printf("ERROR: diameter of the particle should be less than the distance between beads.\n");
+    printf("Distance=%lf\tdiameter=%lf\n", aa,dd);
+    return 1;
+  }
+  return 0;
 }
 /* -----------------------------------------------------------------------------------*/
 __device__ vec3 psi2R(double psi[], int k){
@@ -199,7 +214,7 @@ __device__ vec3 ext_flow( int kelement, vec3 R, double tau,
 /*--------------------------------------------------------------------------------------*/
 __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
   Tens2 dab(1.,0.,0.,0.,1.,0.,0.,0.,1.);
-  vec3 dR(0., 0., 0.) ;
+  vec3 dR(0., 0., 0.) ; 
   double viscosity = (*param).viscosity ;
   double dd = (*param).dd;
   double onebythree = 1./3;
@@ -223,15 +238,25 @@ __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
         GetRij(psi, ip, jp, &d_rij, &rij);
         c1 = 1./(d_rij*8*M_PI*viscosity);
         dsqr1 = 1./(d_rij*d_rij);
+
         mu_ij = c1*(dab + (rij*rij)*dsqr1 +
-                    dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
+                    dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1)); 
         dR =  dR + dot(mu_ij, *EForce );
+
+        /*Debugging stuff */
+        // printf("%lf\n", dd);
+        // if (ip==23){
+        //   printf("Distance between %d th, and %d th particle is %lf\n", ip,jp,d_rij );
+        // }
       }
     }
   } else{
     /* if we use local drag */
     dR = (*EForce)*mu0;
   } 
+
+  /*Caution: Only for debugging*/
+  // printf("%lf\t%lf\t%lf\t", dR.x,dR.y,dR.z);
   return dR;
 }
 /*----------------------------------------------------------------------------------------------*/
@@ -296,9 +321,12 @@ __device__ vec3 Force_FirstPoint( double psi[],
     device_exception( bug, "NN=0,  bcb not implemented " );
     break;
   }
+
+  // printf("%lf\n", FF);
+
   return FF;
 }
-/*-----------------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------*/
 __device__ vec3 Force_SecondPoint( double psi[],
                                   struct MPARAM *param, struct CRASH *bug ){
   double AA = (*param).AA ;
@@ -337,6 +365,9 @@ __device__ vec3 Force_SecondPoint( double psi[],
     device_exception( bug, "NN=1, bcb not implemented ");
     break;
   }
+
+  // printf("%lf\n", FF);
+
   return FF;
 }
 /*-----------------------------------------------------------------------------------------------*/
@@ -359,6 +390,8 @@ __device__ vec3 Force_NNm2( double psi[],
              );    
   FF = FF*(AA/aa);
   FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint
+  // printf("%lf\n", FF);
+
   return FF;
 }
 /*-----------------------------------------------------------------------------------------------*/
@@ -389,11 +422,13 @@ __device__ vec3 Force_NNm1( double psi[],
    device_exception( bug, "element NN-1, bct not implemented ");
    break;
   }
+  // printf("%lf\n", FF);
+
   return FF;
 }
 /*-----------------------------------------------------------------------------------------------*/
 __device__ vec3 Force_rest( double* add_kappasqr, int kp, double psi[],
-                                  struct MPARAM *param, struct CRASH *bug ){
+                                  struct MPARAM *param, struct CRASH *bug, int ldiag ){
   double AA = (*param).AA ;
   double aa = (*param).aa ;
   double HH = (*param).HH;
@@ -411,13 +446,22 @@ __device__ vec3 Force_rest( double* add_kappasqr, int kp, double psi[],
              );
   FF = FF*(AA/aa);
   FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint
-  *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
+  *add_kappasqr=0.;
+  if (ldiag){
+    *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
+    // printf("%lf\n", dot(uk,ukm1));
+  }
+ 
+  /* For debugging stuff */
+  // printf("%lf\t%lf\t%lf\t", FF.x,FF.y,FF.z);
+  // printf("%lf\n", FF);
+
   return FF;
 }
 /*-----------------------------------------------------------------------------------------------*/
 __device__ void dHdR(int kp, double psi[], vec3* add_FF,
-                     double* add_kappasqr,  struct MPARAM *param, struct CRASH *bug ){
-     // This function calculates the force at every node which is a function of X, time.
+                     double* add_kappasqr,  struct MPARAM *param, struct CRASH *bug, int ldiag ){
+  // This function calculates the force at every node which is a function of X, time.
   switch(kp){
   case 0: // 0th element of the chain.
     *add_FF = Force_FirstPoint( psi, param, bug );
@@ -437,7 +481,7 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
     break;
   /* for all other points */
   default:
-    *add_FF = Force_rest( add_kappasqr, kp, psi, param, bug ) ;
+    *add_FF = Force_rest( add_kappasqr, kp, psi, param, bug, ldiag ) ;
     break;
   }  
 }
@@ -445,39 +489,64 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
 __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau,
                            struct MPARAM *param, double diag[], CRASH *bug, int ldiag ){
   int iext_flow = (*param).iext_flow ;
-  vec3 R, dR, EForce, FF0, Rp1;  // R is the position of the beads.
-  int iext_force = (*param).iext_force ;
+  vec3 R, dR, EForce, FF0, Rm1;  // R is the position of the beads.
+  int iext_force = (*param).iext_force ; 
   int floc = (*param).floc ;
+  int qdiag = (*param).qdiag;
   /* we are calculating two diagnostic quantities at the moment
-ds : d( material coordinate) . 
-kappasqr : square of local curvature. 
-This number is stored in param.qdiag */
-  int qdiag = (*param).qdiag ;
+  ds : d( material coordinate) . 
+  kappasqr : square of local curvature. 
+  This number is stored in param.qdiag */
   double ds, kappasqr ; 
   R = psi2R(psi, kelement );
-  if ( kelement == (NN-1) ){
-    ds = 0.;
-  } else {
-    Rp1 = psi2R(psi, kelement+1) ;
-    ds = norm( Rp1-R );
+
+  // Calculate diagnostics only when it is needed.
+  // if ( kelement == (NN-1) ){
+  //   ds = 0.;
+  // } else {
+  //   Rp1 = psi2R(psi, kelement+1) ;
+  //   ds = norm( Rp1-R );
+  //   // printf("%lf\n", ds);
+  // }
+  // dHdR( kelement, psi, &EForce, &kappasqr, param, bug );
+  // /* write diagnostic to corresponding array */
+  // if (ldiag ){
+  //   diag[ kelement ] = diag[kelement-1]+ds;
+  //   diag[ kelement + NN*1]  = kappasqr;
+  // }
+
+  dHdR( kelement, psi, &EForce, &kappasqr, param, bug, ldiag );
+  if (ldiag){
+    if (kelement==0){
+      diag[0]=0;
+      diag[0+NN]=kappasqr;
+    }
+    else{
+      Rm1 = psi2R(psi,kelement-1);
+      ds = norm(R-Rm1);
+      // printf("%f\n", diag[kelement-1+NN*0]);
+      diag[kelement+NN*0]=ds;
+      diag[kelement+NN*1]=kappasqr;
+    }
   }
-  dHdR( kelement, psi, &EForce, &kappasqr, param, bug );
-  /* write diagnostic to corresponding array */
-  if (ldiag ){
-  diag[ kelement*qdiag ] = ds ;
-  diag[kelement*qdiag +1]  = kappasqr;
-  }
+
   /* add external force to the filament */
   if ( (iext_force) && (kelement == floc) ){
-  EForce = EForce -  ext_force( kelement, R, tau, param ) ;}
+  EForce = EForce -  ext_force( kelement, R, tau, param ); }
   /* calculate the viscous (possibly non-local ) drag */
   dR = drag(kelement, psi,  &EForce, param);
   /* contribution from external flow */
-  // if ( iext_flow  ){ 
-  //   dR = dR+ext_flow( kelement, R, tau, param ) ; 
-  // }
+  if ( iext_flow  ){ 
+    dR = dR+ext_flow( kelement, R, tau, param ) ; 
+  }
   /*------ put the rhs back to the dpsi array ----- */
-  R2psi( dpsi, kelement, dR);
+
+  /*For Debugging */
+  // printf("%lf\t%lf\t%lf\t", dR.x,dR.y,dR.z);
+
+  R2psi(dpsi, kelement, dR);
+  
+  // printf("%lf\n", dpsi[kelement]);
 }
 /*-------------------------------------------------------------------*/
 void initial_configuration( double PSI[], MPARAM PARAM ){
@@ -522,13 +591,32 @@ void wPSI ( double PSI[], double tau ){
 }
 /*-------------------------------------------------------------------*/
 void wDIAG( double DIAG[], double tau, MPARAM PARAM ){
-  FILE *fp = fopen( "data/DIAG", "a" );
-  for (int idiag = 0; idiag < PARAM.qdiag ; idiag++){
-    fprintf( fp, "%f\t", tau );
+  int qdiag=PARAM.qdiag;
+  string file_DIAG[2];
+  // for every diag there would be a file name.
+  // Need to enter it manually when changing the number of diagnostics.
+  file_DIAG[0]="data/material_point.txt";
+  file_DIAG[1]="data/curvature.txt";
+  //
+  for (int idiag = 0; idiag < qdiag; ++idiag){
+    FILE *fp = fopen( file_DIAG[idiag].c_str(), "a" );
+    fprintf( fp, "%lf\t", tau );
     for ( int iN = 0; iN< NN; iN++ ){ 
-      fprintf( fp, "%f\t", DIAG[iN + NN*idiag] ) ; 
+      fprintf( fp, "%lf\t", DIAG[iN + NN*idiag] ) ; 
     }
     fprintf( fp, "\n " );
+    fclose(fp);
   }
-  fclose(fp);
 }
+/*-------------------------------------------------------------------*/
+// void wDIAG( double DIAG[], double tau, MPARAM PARAM ){
+//   FILE *fp = fopen( "data/DIAG", "a" );
+//   for (int idiag = 0; idiag < PARAM.qdiag ; idiag++){
+//     fprintf( fp, "%f\t", tau );
+//     for ( int iN = 0; iN< NN; iN++ ){
+//       fprintf( fp, "%f\t", DIAG[iN + NN*idiag] ) ; 
+//     }
+//     fprintf( fp, "\n " );
+//   }
+//   fclose(fp);
+// }

@@ -80,9 +80,9 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   double tol_dt = pow(10,-6);
   bool flag_kappa;
   double time = *add_time;
-  double Delta = 0; 
+  double Delta = 0.; 
   double epsilon = 0.84;
-  double truncationmax=5;
+  double truncationmax=5.;
   double truncationmin=0.2;
 
   double ci[6] = {0,0.25,3./8,12./13,1.,1./2} ;
@@ -156,10 +156,9 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
     // cout << temp[idim] << endl;
  		error = error + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
  	}
-  // cout << error << endl;
   error = sqrt(error);
   if (error<tiny){
-      Delta = 10;
+      Delta = 10000;
   }
   else
   {
@@ -167,7 +166,9 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   }
 
   s = epsilon*pow(Delta,0.25);
+  // cout << error << '\t' << s << '\t' << *add_dt<< endl;
   
+
   if (Delta>=0.5){
       *add_time = time + dt;
       if (s>truncationmax)
@@ -175,9 +176,8 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
           s=truncationmax;
       }
       *add_dt = s*dt;
-  }else
-  { 
-      if (s<truncationmin)
+  }else{ 
+      if (s<=truncationmin)
       {
           s = truncationmin;
       }
@@ -185,7 +185,6 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
       rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
 
-  // cout << error << '\t' << s << '\t' << dt<< endl;
 
   // if (s>10)
   // {
