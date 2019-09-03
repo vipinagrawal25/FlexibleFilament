@@ -77,7 +77,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 	double error = 0;
 	double dt = *add_dt;
 	// double tol_dt = pow(10,-9)*dt;
-  double tol_dt = pow(10,-6);
+  double tol_dt = pow(10,-9);
   bool flag_kappa;
   double time = *add_time;
   double Delta = 0.; 

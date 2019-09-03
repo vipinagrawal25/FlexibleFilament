@@ -182,30 +182,23 @@ int main()
   }
   else
   {
+    filenumber = 1;
+    time = 0;
+    // Deleting contents of the folder and creating folder again.
+    system("exec rm -rf output");
+    system("exec mkdir output");
+    system("exec rm -f MSD.txt");
+    iniconf(y0, conf_number);
+    ofstream outfile;
+    outfile.open("output/position0.txt"); 
 
-      filenumber = 1;
-      time = 0;
-
-      // Deleting contents of the folder and creating folder again.
-      system("exec rm -rf output");
-      system("exec mkdir output");
-      system("exec rm -f MSD.txt");
-
-      iniconf(y0, conf_number);
-
-      ofstream outfile;
-      outfile.open("output/position0.txt"); 
-
-      for (int ip = 0; ip < Np; ++ip)
-      {
-          outfile << y0[3*ip] << '\t' << y0[3*ip+1] << '\t' << y0[3*ip+2] << endl ; 
-      }
-
-      for (int ip = 0; ip < Np; ++ip)
-      {
-        CurvSqr[ip] = 0;
-        SS[ip] = 0;
-      }
+    for (int ip = 0; ip < Np; ++ip){
+      outfile << y0[3*ip] << '\t' << y0[3*ip+1] << '\t' << y0[3*ip+2] << endl ; 
+    }
+    for (int ip = 0; ip < Np; ++ip){
+      CurvSqr[ip] = 0;
+      SS[ip] = 0;
+    }
   }
 
   /*Opening every file again in append mode. This thing does not depend on configuration number and that's why it is outside the loop*/
@@ -233,7 +226,7 @@ int main()
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim,&y[irb],time-dt,dt);
-    // rnkt4(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);          
+    // rnkt4(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);  
 
   	// timer = clock();
 
@@ -267,7 +260,7 @@ int main()
     // cout << "Yaar ye code chal kyu nahi raha hai " << endl;
     if (time<=tdiag*filenumber && time+dt>=tdiag*filenumber) 
     {
-       // cout << time << '\t' << y[0] << '\t' << (sin(2*time+10*sin(0.1*time)))/sqrt(6+3*cos(0.1*time)) << '\t' << 1/sqrt(6+3 *cos(0.1*time))<<endl;
+      // cout << time << '\t' << y[0] << '\t' << (sin(2*time+10*sin(0.1*time)))/sqrt(6+3*cos(0.1*time)) << '\t' << 1/sqrt(6+3 *cos(0.1*time))<<endl;
       // cout << dt << endl;
 
       ofstream outfile;
@@ -344,7 +337,7 @@ int main()
     << gamma << "," << HH*aa*aa/AA << endl;
     outfile_information.close();
 
-    outfile_information.open("info.txt", ios::out);
+    outfile_information.open("info.txt", ios::out | ios::app);
     outfile_information << itn << '\t' <<  timer_global << '\t' << TMAX << '\t' << dt_min << '\t' << viscosity << '\t'
     << ShearRate << '\t' <<  omega << '\t' << Np << '\t' << AA << '\t' << HH << '\t' << dd << '\t' << height << '\t' << sigma << '\t' 
     << gamma << '\t' << HH*aa*aa/AA << endl;

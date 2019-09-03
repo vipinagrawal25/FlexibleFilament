@@ -42,11 +42,11 @@ void eu_time_step( EV* TT, EV *dev_tt );
 __global__ void reduce_diag( double diag[] );
 __global__ void eu_psi_step( double psi[], double kk[], EV *tt );
 __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt );
-/*-------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------*/
 void  post_euler( void  ){
   cudaFree( dev_kk );
 }
-/*-------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------*/
 void  post_rnkt4( void  ){
   cudaFree( dev_psip );
   cudaFree( dev_k1 );
@@ -54,7 +54,7 @@ void  post_rnkt4( void  ){
   cudaFree( dev_k3 ) ;
   cudaFree( dev_k4 );
 }
-/*-------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------*/
 void  post_rnkf45( void  ){
   cudaFree( dev_psip );
   cudaFree( dev_k1 );
@@ -67,7 +67,7 @@ void  post_rnkf45( void  ){
   cudaFree( dev_redux );
   cudaFree( dev_err );
 }
-/*-----------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------*/
 void post_evolve( char *algo  ){
   if ( strcmp( algo , "euler") == 0 ){
     post_euler( );
@@ -99,13 +99,14 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
     printf( "EXITING \n " );
     exit(1);
   }
-  /* Set up parameters for evolution */
+  /* Set up parameters for evolustion */
   /* Should we save them somewhere else? */
+  /*Yes we should save them somewhere else.--vipin*/
   (*TT).time = 0.;
   (*TT).tprime = (*TT).time;
-  (*TT).dt = 1.e-5;
-  (*TT).ndiag = 10;
-  (*TT).tmax =1.; 
+  (*TT).dt = 1.e-6;
+  (*TT).ndiag = 100;
+  (*TT).tmax =2.e-4; 
   (*TT).tdiag = 0.;
   (*TT).substep = 0.;
   EV *temp ;
@@ -113,7 +114,7 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   *dev_tt = temp;
   cudaMemcpy( *dev_tt, TT,
                      size_EV, cudaMemcpyHostToDevice ) ;
-  wevolve( *TT, "initial.txt" );
+  wevolve( *TT, "initial.txt");
 }
 /* ------------------------------------------------------------------------------*/
 void wevolve( EV TT, char *fname ){
@@ -167,7 +168,7 @@ void pre_rnkf45( int Nsize, int Nblock, int Nthread ){
   cudaMemcpy(dev_redux,REDUX,size_redux,cudaMemcpyHostToDevice);
   printf( "--I have set up auxiliary storage in the device --\n " ) ;
 }
-/*----------------------------------------*/
+/*---------------------------------------------------------------------*/
 void evolve( double PSI[], double dev_psi[], 
              EV *TT, EV *dev_tt,
              MPARAM PARAM, MPARAM *dev_param ,
@@ -176,16 +177,18 @@ void evolve( double PSI[], double dev_psi[],
              int Nblock, int Nthread ) {
   cudaDeviceProp *prop;
   int count;
+  double Maxlen=0; double Minlen=PARAM.height; double stringLen;
   qdevice( &count, &prop ) ;
   printf( "#- We know device properties \n");
 // copy the time data to device. 
   cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice);
   while ( (*TT).time < (*TT).tmax){
-    printf( "#- dt=%f\t time=%f\t tmax=%f \n", (*TT).dt, (*TT).time,  (*TT).tmax ) ;
       (*TT).ldiag = 0 ;
+      // printf( "time=%f\t #- dt=%f\t tmax=%f \n", (*TT).time, (*TT).dt, (*TT).tmax ) ;
     if( (*TT).time >= (*TT).tdiag ) {
       (*TT).ldiag = 1;
       (*TT).tdiag = (*TT).time +  (*TT).tmax/((double) (*TT).ndiag) ;
+      printf( "time=%f\t #- dt=%f\t tmax=%f \n", (*TT).time, (*TT).dt, (*TT).tmax ) ;
     }
     cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice ) ;
     ALGO( PSI, dev_psi,
@@ -193,10 +196,18 @@ void evolve( double PSI[], double dev_psi[],
           PARAM, dev_param ,
           DIAG, dev_diag,
           BUG, dev_bug,
-          Nblock, Nthread );
+          Nblock, Nthread );  
+    
+    StringLen=LenDevArray(dev_psi,Nblock,Nthread);
+    if (StringLen>Maxlen){
+      Maxlen=StringLen;
+    }
+    else if(StringLen<Minlen){
+      Minlen=StringLen;
+    }
   } // while time loop ends here
 }
-/*----------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
 __global__ void eval_rhs(double kk[], double psi[],
                          EV *tt, MPARAM *param, double diag[],
                          CRASH *bug ){
@@ -328,7 +339,7 @@ void rnkt4( double PSI[], double dev_psi[],
   if ( (*TT).ldiag ) {
     //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
     // diagnostic copied to host out here
-    printf( "calculating diagnostics \n " );
+    // printf( "calculating diagnostics \n " );
     int size_diag = NN * PARAM.qdiag * sizeof(double) ;
     cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
     wDIAG( DIAG, (*TT).time, PARAM );
@@ -370,17 +381,17 @@ void rnkt4( double PSI[], double dev_psi[],
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  double rnkf45b[5][5] = {{0.2,0.,0.,0.,0.},
-                        {3./40,9./40,0.,0.,0.},
-                        {0.3,-0.9,1.2,0.,0.},
-                        {-11./54,2.5,-70./27,35./27,0},
-                        {1631./55296,175./512,575./13824,44275./110592,253./4096} };
+  // double rnkf45b[5][5] = {{0.2,0.,0.,0.,0.},
+  //                       {3./40,9./40,0.,0.,0.},
+  //                       {0.3,-0.9,1.2,0.,0.},
+  //                       {-11./54,2.5,-70./27,35./27,0},
+  //                       {1631./55296,175./512,575./13824,44275./110592,253./4096} };
 
-  /*double rnkf45b[5][5]= {{0.25,0,0,0,0},
+  double rnkf45b[5][5]= {{0.25,0,0,0,0},
                         {3./32.,9./32.,0,0,0},
                         {1932./2197.,-7200./2197.,7296./2197.,0,0},
                         {439./216.,-8.,3680./513.,-845./4104.,0},
-                        {-8./27.,2.,-3544./2565.,1859./4104.,-11./40.}};*/
+                        {-8./27.,2.,-3544./2565.,1859./4104.,-11./40.}};
 
   int j = (*tt).substep ;
   // double *kk = {&kin[0],&kin[ndim],&kin[2*ndim],&kin[3*ndim],&kin[4*ndim],&kin[5*ndim]}
@@ -398,8 +409,8 @@ __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], 
 }
 /*-----------------------------------------------------------------------*/
 void rnkf45_time_substep( EV* TT, EV *dev_tt, int j ){
-  double rnkf45a[5] = {0.2,0.3,0.6,1.,7./8} ;
-  // double rnkf45a[5] = {0.25,3./8,12./13,1.,1./2}; 
+  // double rnkf45a[5] = {0.2,0.3,0.6,1.,7./8} ;
+  double rnkf45a[5] = {0.25,3./8,12./13,1.,1./2}; 
   (*TT).tprime = (*TT).time + ((*TT).dt)*rnkf45a[ j ] ;
   (*TT).substep = j + 1;
   (*TT).ldiag=0;
@@ -408,11 +419,11 @@ void rnkf45_time_substep( EV* TT, EV *dev_tt, int j ){
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  //
-  double rnkf45c[2][6] = { {37./378,0.,250./621,125./594,0.,512./1771},
-                          {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25} };
-  // double rnkf45c[2][6] = { {25./216.,0,1408./2565.,2197./4104.,-1./5.,0},
-  //                         {16./135.,0,6656./12825.,28561./56430.,-9./50.,2./55.} };
+  // //
+  // double rnkf45c[2][6] = { {37./378,0.,250./621,125./594,0.,512./1771},
+  //                         {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25} };
+  double rnkf45c[2][6] = { {25./216.,0,1408./2565.,2197./4104.,-1./5.,0},
+                          {16./135.,0,6656./12825.,28561./56430.,-9./50.,2./55.} };
   //
   error[tid]=0;
   double temp_error;
@@ -436,8 +447,8 @@ __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
   //
   // double rnkf45c[6] = {37./378,0,250./621,125./594,0,512./1771};  
   // 
-  // double rnkf45c[6] = {16./135.,0.,6656./12825.,28561./56430.,-9./50.,2./55.};  
-  double rnkf45c[6]={2825./27648,0.,18575./48384,13525./55296,277./14336,0.25};
+  double rnkf45c[6] = {16./135.,0.,6656./12825.,28561./56430.,-9./50.,2./55.};  
+  // double rnkf45c[6]={2825./27648,0.,18575./48384,13525./55296,277./14336,0.25};
 
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
@@ -451,7 +462,7 @@ __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
 /*-----------------------------------------------------------------------*/
 bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
   // cudaMemcpy(  &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost ) ;
-  double tol = 0.0001;
+  double tol = 1.e-4;
   double truncationmax=5;  // Maximum multiplication in time step
   double truncationmin=0.2; // Minimum multiplication in time step
   bool laccept;
@@ -524,7 +535,7 @@ void rnkf45( double PSI[], double dev_psi[],
   if ( (*TT).ldiag ) {
     //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
     // diagnostic copied to host out here
-    printf( "calculating diagnostics \n " );
+    // printf( "calculating diagnostics \n " );
     cudaMemcpy( DIAG, dev_diag, size_diag,cudaMemcpyDeviceToHost );
     wDIAG( DIAG, (*TT).time, PARAM );
     D2H( PSI, dev_psi, ndim );
@@ -539,7 +550,7 @@ void rnkf45( double PSI[], double dev_psi[],
   eval_rhs<<<Nblock,Nthread >>>( dev_k2, dev_psip,  dev_tt ,
                                  dev_param, dev_diag, dev_bug );
   // check if there were any bugs from rhs evaluation
-  cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
+  cudaMemcpy(&BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
   // take the second substep
   rnkf45_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_kin, dev_psi, dev_tt ) ;
@@ -592,7 +603,7 @@ void rnkf45( double PSI[], double dev_psi[],
   // psip will store the 4th order rnkt4 solution. 
   // rnkf45_psi_step<<<Nblock, Nthread >>>( dev_psip, dev_kin, dev_tt, 1 );
   // rnkf45_error<<Nblock,Nthread>>> (dev_err,dev_psi,dev_psip);
-  double maxErr = sqrt(MaxDevArray( dev_err, Nblock, Nthread));
+  double maxErr = sqrt(MaxDevArray( dev_err, Nblock, Nthread ));
 
   // For debugging stuff
   // printf("%lf\n",maxErr);

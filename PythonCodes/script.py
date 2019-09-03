@@ -1,5 +1,6 @@
 from functions import *
 import matplotlib.pyplot as plt
+import moviewriter as movie
 
 frequency = 1.5;
 Np = 101;
@@ -8,7 +9,7 @@ Totalfiles=4000;
 file = 'MSD.txt';
 
 
-curvatureplot(omega=frequency, Np=Np)
+# curvatureplot(omega=frequency, Np=Np)
 # figure=MSD_plot(step=1)
 # # show(figure)
 # plt.savefig('MSD_complete.png', dpi=400)
@@ -21,4 +22,8 @@ curvatureplot(omega=frequency, Np=Np)
 # show(figure)
 	# plt.savefig('MSD_cycle.png', dpi=400)
 	# close()
-	
+
+movie.SingleFileMovie()
+# movie.MultifileMovie()
+
+

@@ -166,10 +166,9 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
 
   //vec3 FF;
   
-  if (conf_number==0 || conf_number ==2)
-  {
+  if (conf_number==0 || conf_number ==2){
     // cout << "ise yaha aana chahiye kyuki 2 number hai " << endl;
-      Xzero.x=0.; Xzero.y=0.; Xzero.z=Z0;      
+    Xzero.x=0.; Xzero.y=0.; Xzero.z=Z0;      
   }
 
   /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be fixed in general.
@@ -220,7 +219,6 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       break;     
 
     case 1:
-
       getub(&bkm1, &ukm1, kp-1, X);
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
@@ -335,17 +333,12 @@ void iniconf(double *y, int configuration)
     double k = 1;      // determines the frequency for initial configuration
     double CurvLength = 0;  // determines the total length of the curve
 
-    if (lastfile)
-    {
+    if (lastfile){
         string l = "output/position";
         l.append(to_string(lastfile));
         l.append(".txt");
-
         ifstream myfile(l,ios::in); 
         double num = 0.0;           
-        
-        // cout << "Yaha aane ka matlab file khula hai" << endl;
-        
         int ip = 0;
         while(myfile >> num)
         {
@@ -353,10 +346,8 @@ void iniconf(double *y, int configuration)
           ip = ip+1;
           //keep storing values from the text file so long as data exists:
         }
-
         myfile.close();   
     }
-
     else{
       switch(configuration)
       {

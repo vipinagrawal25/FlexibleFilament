@@ -30,8 +30,6 @@ int main( void ){
   if (Exit){return 0;}
   int size_diag = pre_diag( &DIAG , &dev_diag, PARAM );
   // int size_psi = NN*sizeof(double);
-  // pre_evolve(  ndim, "rnkt4" , &TT, &dev_tt, Nblock, Nthread  ) ;
-  // pre_evolve(  ndim, "rnkt4" , &TT, &dev_tt, Nblock, Nthread  ) ;
   pre_evolve(  ndim, TimeScheme , &TT, &dev_tt, Nblock, Nthread  ) ;
   // setup initial configuration 
   initial_configuration( PSI, PARAM ) ;
