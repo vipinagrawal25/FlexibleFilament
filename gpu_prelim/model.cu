@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include "cuda.h"
 #include "model.h"
 #include "3vec.h"
 #include "2Tens.h"
@@ -24,7 +23,6 @@ __device__ vec3 Uflow ( vec3 RR, struct MPARAM *param);
 __device__ void device_exception( struct CRASH *bug, char mesg[] );
 __device__ vec3 psi2R(double psi[], int k);
 __device__ void R2psi(double psi[], int k, vec3 R);
-double LenDevArray(double dev_array[], int Nblock, int Nthread)
 /* ========================================= */
 void alloc_chain(  double **PSI, double **dev_psi ){
   double *temp;
@@ -57,7 +55,7 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).height = height;
   (*PARAM).aa = height/(double)(NN-1);
   // distance between two nodes.
-  (*PARAM).Dbyell = 0.0002;
+  (*PARAM).Dbyell = 1./(double)(NN-1);
   (*PARAM).dd = height*(*PARAM).Dbyell ;
   /* r/l ratio for the rod has been kept constant. It should be noted that 
      the particles would also have same diameter. */
@@ -66,9 +64,9 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).Famp = 0. ;	      // Different force for different configuration.
   // Sigma is a dimensionless number, which is described as frequency parameter.
   (*PARAM).sigma=1.5;
-  (*PARAM).ShearRate = 2*1;
+  (*PARAM).ShearRate = 2*0.1;
   (*PARAM).omega = (*PARAM).ShearRate*(*PARAM).sigma ;
-  (*PARAM).factorAA = 0.5 ;
+  (*PARAM).factorAA = 1.5 ;
   // (*PARAM).factorAA = 0. ;
   (*PARAM).AAbyaa = (*PARAM).factorAA*pow(10,-4)*(*PARAM).ShearRate/((*PARAM).aa); // AA is the bending rigidity.
   double factorHH = 40.;
@@ -82,7 +80,6 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   // Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
   // double TMAX = ShearRate*10;
   // double tdiag = TMAX/2000;
-
   /* qdiag is the number of diagnostics that you want to calculate.
       If you change this number, keep in mind to make changes in wdiag function as well.*/
   (*PARAM).qdiag = 2 ;      
@@ -650,25 +647,4 @@ void wDIAG( double DIAG[], double tau, MPARAM PARAM ){
     fprintf( fp, "\n " );
     fclose(fp);
   }
-}
-/*-------------------------------------------------------------------*/
-double LenDevArray(double dev_array[], int Nblock, int Nthread){
-  double LenA=0.;
-  // cout << dev_array[5] << endl;
-  for (int iblock = 0; iblock < Nblock; ++iblock){
-    REDUX[iblock]=0.;
-  }
-  thread_length <<<Nblock, Nthread, Nthread*sizeof(double) >>>(dev_array,dev_redux);
-  cudaMemcpy(REDUX,dev_redux,size_redux,cudaMemcpyDeviceToHost);
-  // Copied the thread maxima output back to host.
-  // Compare the maximum across the blocks. This operation is done in CPU for the time being.
-  // Calculate maxima using STL
-  // This could be done better by launching a kernel 
-  for (int iblock = 0; iblock < Nblock; ++iblock){
-    // maxA = max(maxA,REDUX[iblock]);
-    LenA+=REDUX[iblock];
-    // cout << REDUX[iblock] << "\t" ;
-  }
-  // std::cout << maxA << std::endl;
-  return LenA;
 }

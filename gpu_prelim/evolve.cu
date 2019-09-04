@@ -10,7 +10,7 @@ double *dev_psip, *dev_k1, *dev_k2, *dev_k3, *dev_k4, *dev_k5, *dev_k6, **dev_ki
 double *dev_err;
 double *dev_redux, *REDUX; 
 int size_redux;
-
+/*--------------------------------------------------*/
 void (*ALGO)( double [], double [],
               EV* , EV *,
               MPARAM ,   MPARAM *,
@@ -177,7 +177,6 @@ void evolve( double PSI[], double dev_psi[],
              int Nblock, int Nthread ) {
   cudaDeviceProp *prop;
   int count;
-  double Maxlen=0; double Minlen=PARAM.height; double stringLen;
   qdevice( &count, &prop ) ;
   printf( "#- We know device properties \n");
 // copy the time data to device. 
@@ -197,14 +196,6 @@ void evolve( double PSI[], double dev_psi[],
           DIAG, dev_diag,
           BUG, dev_bug,
           Nblock, Nthread );  
-    
-    StringLen=LenDevArray(dev_psi,Nblock,Nthread);
-    if (StringLen>Maxlen){
-      Maxlen=StringLen;
-    }
-    else if(StringLen<Minlen){
-      Minlen=StringLen;
-    }
   } // while time loop ends here
 }
 /*-------------------------------------------------------------------------*/
