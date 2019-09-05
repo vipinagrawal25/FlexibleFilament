@@ -10,6 +10,7 @@ double *dev_psip, *dev_k1, *dev_k2, *dev_k3, *dev_k4, *dev_k5, *dev_k6, **dev_ki
 double *dev_err;
 double *dev_redux, *REDUX; 
 int size_redux;
+double MaxLen, MinLen;
 /*--------------------------------------------------*/
 void (*ALGO)( double [], double [],
               EV* , EV *,
@@ -42,6 +43,7 @@ void eu_time_step( EV* TT, EV *dev_tt );
 __global__ void reduce_diag( double diag[] );
 __global__ void eu_psi_step( double psi[], double kk[], EV *tt );
 __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt );
+double SumDevArray(double dev_array[], int Nblock, int Nthread);
 /*-----------------------------------------------------------------------------*/
 void  post_euler( void  ){
   cudaFree( dev_kk );
@@ -175,6 +177,8 @@ void evolve( double PSI[], double dev_psi[],
              double DIAG[], double dev_diag[], int size_diag,
              CRASH BUG,  CRASH *dev_bug,
              int Nblock, int Nthread ) {
+  MaxLen=1.;
+  MinLen=1.;
   cudaDeviceProp *prop;
   int count;
   qdevice( &count, &prop ) ;
@@ -196,7 +200,9 @@ void evolve( double PSI[], double dev_psi[],
           DIAG, dev_diag,
           BUG, dev_bug,
           Nblock, Nthread );  
-  } // while time loop ends here
+  } 
+  printf("Maximum length of the rod: %f \t Minimum length of the rod: %f \n", MaxLen,MinLen);
+  // while time loop ends here
 }
 /*-------------------------------------------------------------------------*/
 __global__ void eval_rhs(double kk[], double psi[],
@@ -515,6 +521,7 @@ void rnkf45( double PSI[], double dev_psi[],
             int Nblock, int Nthread ){
 
   int size_diag = NN * PARAM.qdiag * sizeof(double) ;
+  double StringLen;
   /* I do time-marching */
   // 1st evaluation of rhs, diagnostic is calculated in this step
   eval_rhs<<<Nblock,Nthread >>>( dev_k1, dev_psi,  dev_tt ,
@@ -612,4 +619,32 @@ void rnkf45( double PSI[], double dev_psi[],
           BUG, dev_bug,
           Nblock, Nthread );
   }
+  StringLen=SumDevArray(dev_diag,Nblock,Nthread);
+  if (StringLen>MaxLen){
+    MaxLen=StringLen;
+  }
+  else if (StringLen<MinLen){
+    MinLen=StringLen;
+  }
+}
+/*-----------------------------------------------------------------------*/
+double SumDevArray(double dev_array[], int Nblock, int Nthread){
+  double sumA=0.;
+  // cout << dev_array[5] << endl;
+  for (int iblock = 0; iblock < Nblock; ++iblock){
+    REDUX[iblock]=0.;
+  }
+  thread_sum <<<Nblock, Nthread, Nthread*sizeof(double) >>>(dev_array,dev_redux);
+  cudaMemcpy(REDUX,dev_redux,size_redux,cudaMemcpyDeviceToHost);
+  // Copied the thread maxima output back to host.
+  // Compare the maximum across the blocks. This operation is done in CPU for the time being.
+  // Calculate maxima using STL
+  // This could be done better by launching a kernel 
+  for (int iblock = 0; iblock < Nblock; ++iblock){
+    // maxA = max(maxA,REDUX[iblock]);
+    sumA+=REDUX[iblock];
+    // cout << REDUX[iblock] << "\t" ;
+  }
+  // std::cout << maxA << std::endl;
+  return sumA;
 }

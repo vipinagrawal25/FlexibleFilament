@@ -559,17 +559,19 @@ __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau
   // }
 
   dHdR( kelement, psi, &EForce, &kappasqr, param, bug, ldiag );
-  if (ldiag){
-    if (kelement==0){
-      diag[0]=0;
+ 
+  if (kelement==0){
+    diag[0]=0;
+    if (ldiag){
       diag[0+NN]=kappasqr;
     }
-    else{
-      Rm1 = psi2R(psi,kelement-1);
-      ds = norm(R-Rm1);
-      // printf("%f\n", diag[kelement-1+NN*0]);
-      diag[kelement+NN*0]=ds;
-      diag[kelement+NN*1]=kappasqr;
+  }
+  else{
+    Rm1 = psi2R(psi,kelement-1);
+    ds = norm(R-Rm1);
+    diag[kelement+NN*0]=ds;
+    if (ldiag){
+     diag[kelement+NN*1]=kappasqr;
     }
   }
 
