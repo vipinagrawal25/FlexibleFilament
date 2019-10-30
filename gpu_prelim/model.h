@@ -6,7 +6,7 @@
 Each node may be connected to every other node. 
 The number of nodes is NN. 
 The number of degrees of freedom at each node is pp */ 
-#define NN 256
+#define NN 100
 #define pp  3
 #define ndim NN*pp
 #define TimeScheme "rnkf45"
@@ -25,8 +25,8 @@ struct MPARAM {
   double ShearRate ;
   double omega ; // frequency of external force.
   double  factorAA ; 
-  double AAbyaa ;
-  double HHbyaa ;	// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
+  double AA ;
+  double HH ;	// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
   double KK;
   int qdiag;
   int bcb;

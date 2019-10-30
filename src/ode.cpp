@@ -71,13 +71,12 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 {
 	// Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
   // add_time is the address of time and the same goes for dt as well.
-
 	double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, yold[ndim];
 	int idim ;
 	double error = 0;
 	double dt = *add_dt;
 	// double tol_dt = pow(10,-9)*dt;
-  double tol_dt = pow(10,-9);
+  double tol_dt = pow(10,-10);
   bool flag_kappa;
   double time = *add_time;
   double Delta = 0.; 
@@ -156,7 +155,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
     // cout << temp[idim] << endl;
  		error = error + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
  	}
-  error = sqrt(error);
+  error = sqrt(error)/ndim;
   if (error<tiny){
       Delta = 10000;
   }

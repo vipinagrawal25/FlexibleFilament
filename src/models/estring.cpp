@@ -407,7 +407,7 @@ void iniconf(double *y, int configuration)
           for (int ip = 0; ip < Np; ++ip)
           {
               R[ip].x = 0;
-              R[ip].y = aa*(double(ip+1)-height);
+              R[ip].y = aa*(double(ip+1))-height*0.5;
               R[ip].z = aa*sin(M_PI*k*aa*double(ip+1)/height);
 
               if (ip>0)

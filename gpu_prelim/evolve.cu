@@ -11,6 +11,7 @@ double *dev_err;
 double *dev_redux, *REDUX; 
 int size_redux;
 double MaxLen, MinLen;
+using namespace std;
 /*--------------------------------------------------*/
 void (*ALGO)( double [], double [],
               EV* , EV *,
@@ -106,9 +107,9 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   /*Yes we should save them somewhere else.--vipin*/
   (*TT).time = 0.;
   (*TT).tprime = (*TT).time;
-  (*TT).dt = 1.e-6;
-  (*TT).ndiag = 100;
-  (*TT).tmax =2.e-4; 
+  (*TT).dt = 1.e-5;
+  (*TT).ndiag = 2000;
+  (*TT).tmax = 2;
   (*TT).tdiag = 0.;
   (*TT).substep = 0.;
   EV *temp ;
@@ -123,12 +124,12 @@ void wevolve( EV TT, char *fname ){
   FILE *pout ;
   pout = fopen ( fname, "w" );
   fprintf( pout, "# =========== Evolve Parameters==========\n" );
-  fprintf( pout, " time=%f \n ", TT.time ) ;
-  fprintf( pout, " tprime=%f \n ", TT.tprime ) ;
-  fprintf( pout, "dt = %f \n ", TT.dt );
+  fprintf( pout, " time=%lf \n ", TT.time ) ;
+  fprintf( pout, " tprime=%lf \n ", TT.tprime ) ;
+  fprintf( pout, "dt = %lf \n ", TT.dt );
   fprintf( pout, " ndiag = %d \n ", TT.ndiag );
-  fprintf( pout, "tmax = %f \n ", TT.tmax );
-  fprintf( pout, "tdiag = %f \n ", TT.tdiag );
+  fprintf( pout, "tmax = %lf \n ", TT.tmax );
+  fprintf( pout, "tdiag = %lf \n ", TT.tdiag );
 }
   /*----------------------------------------*/
 void pre_euler( int Nsize ){
@@ -187,11 +188,11 @@ void evolve( double PSI[], double dev_psi[],
   cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice);
   while ( (*TT).time < (*TT).tmax){
       (*TT).ldiag = 0 ;
-      // printf( "time=%f\t #- dt=%f\t tmax=%f \n", (*TT).time, (*TT).dt, (*TT).tmax ) ;
+      // printf( "time=%lf\t #- dt*10^6=%lf\t tmax=%lf \n", (*TT).time, ((*TT).dt)*pow(10,6), (*TT).tmax ) ;
     if( (*TT).time >= (*TT).tdiag ) {
       (*TT).ldiag = 1;
       (*TT).tdiag = (*TT).time +  (*TT).tmax/((double) (*TT).ndiag) ;
-      printf( "time=%f\t #- dt=%f\t tmax=%f \n", (*TT).time, (*TT).dt, (*TT).tmax ) ;
+      cout << "time=" << (*TT).time << "\tdt=" << (*TT).dt << "\t tmax="<< (*TT).tmax << endl;
     }
     cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice ) ;
     ALGO( PSI, dev_psi,
@@ -201,7 +202,7 @@ void evolve( double PSI[], double dev_psi[],
           BUG, dev_bug,
           Nblock, Nthread );  
   } 
-  printf("Maximum length of the rod: %f \t Minimum length of the rod: %f \n", MaxLen,MinLen);
+  cout << "Maximum length: " << MaxLen << "\t Minimum length: " << MinLen << endl; 
   // while time loop ends here
 }
 /*-------------------------------------------------------------------------*/
@@ -383,16 +384,13 @@ __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], 
   //                       {0.3,-0.9,1.2,0.,0.},
   //                       {-11./54,2.5,-70./27,35./27,0},
   //                       {1631./55296,175./512,575./13824,44275./110592,253./4096} };
-
   double rnkf45b[5][5]= {{0.25,0,0,0,0},
                         {3./32.,9./32.,0,0,0},
                         {1932./2197.,-7200./2197.,7296./2197.,0,0},
                         {439./216.,-8.,3680./513.,-845./4104.,0},
                         {-8./27.,2.,-3544./2565.,1859./4104.,-11./40.}};
-
   int j = (*tt).substep ;
   // double *kk = {&kin[0],&kin[ndim],&kin[2*ndim],&kin[3*ndim],&kin[4*ndim],&kin[5*ndim]}
-
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
         psip[ip+pp*tid] = psi[ip+pp*tid];
@@ -433,7 +431,7 @@ __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
       }
       error[tid] = max(error[tid],temp_error);
       // printf("%lf\n", error[tid]);
-      // error[tid]=temp_error;     
+      // error[tid]=temp_error;    
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
@@ -509,7 +507,7 @@ double MaxDevArray(double dev_array[], int Nblock, int Nthread){
     }
     // cout << REDUX[iblock] << "\t" ;
   }
-  // std::cout << maxA << std::endl;
+  // cout << maxA << endl; 
   return maxA;
 }
 /*-----------------------------------------------------------------------*/
@@ -619,13 +617,13 @@ void rnkf45( double PSI[], double dev_psi[],
           BUG, dev_bug,
           Nblock, Nthread );
   }
-  StringLen=SumDevArray(dev_diag,Nblock,Nthread);
-  if (StringLen>MaxLen){
-    MaxLen=StringLen;
-  }
-  else if (StringLen<MinLen){
-    MinLen=StringLen;
-  }
+  // StringLen=SumDevArray(dev_diag,Nblock,Nthread);
+  // if (StringLen>MaxLen){
+  //   MaxLen=StringLen;
+  // }
+  // else if (StringLen<MinLen){
+  //   MinLen=StringLen;
+  // }
 }
 /*-----------------------------------------------------------------------*/
 double SumDevArray(double dev_array[], int Nblock, int Nthread){

@@ -9,7 +9,7 @@ import sys
 FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Movie Test', artist='Matplotlib',
                 comment='Movie support!')
-writer = FFMpegWriter(fps=10, metadata=metadata)
+writer = FFMpegWriter(fps=20, metadata=metadata)
 fig=plt.figure()
 height=1
 
@@ -18,8 +18,8 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap):
 	# ax = fig.add_subplot(2,1,1, projection='3d')
 	ax.plot(Xaxis,Yaxis,Zaxis,'.-')
 	ax.set_xlim(-1, 1)
-	ax.set_ylim(-0.5, 0.5)
-	ax.set_zlim(0,height)
+	ax.set_ylim(-1, 1)
+	# ax.set_zlim(0,height)
 	plt.title(str(tsnap))
 #####################################################
 def MakePlot2D(ax,Xaxis,Yaxis,tsnap):	
@@ -58,7 +58,7 @@ def MultifileMovie(FILE='output',nsnap=1000,dim=3):
 	 		print('plot = ' + str(isnap)+ 'Done')
 
 #####################################################
-def SingleFileMovie(FILE='data/PSI',dim=3):
+def SingleFileMovie(FILE='data/PSI',dim=3, output="data/movie.mp4"):
 	dd=loadtxt(FILE)
 	nrowcol=dd.shape
 	nrows=nrowcol[0]
@@ -73,7 +73,7 @@ def SingleFileMovie(FILE='data/PSI',dim=3):
 	else:
 		sys.exit('The dimension does not exist.')
 	#
-	with writer.saving(fig,"movie.mp4",100):
+	with writer.saving(fig,output,100):
 		for irow in range(0,nrows):
 			xx=zeros(NN)
 			yy=zeros(NN)

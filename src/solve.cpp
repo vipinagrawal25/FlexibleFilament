@@ -226,12 +226,12 @@ int main()
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim,&y[irb],time-dt,dt);
-    // rnkt4(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);  
+    rnkt4(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);  
 
   	// timer = clock();
 
     // cout << dt << endl;
-    rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
+    // rnkf45(pdim, &y[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
     // timer = clock() - timer;
     // timer_global = timer_global + timer;
     // cout << timer << endl;
@@ -268,9 +268,7 @@ int main()
       l.append(to_string(filenumber));
       l.append(".txt");
       outfile.open(l, ios::out);
-
-      outfile_curvature << time/ShearRate << '\t' ;
-
+      outfile_curvature << time << '\t' ;
       for (int ip = 0; ip < Np; ++ip)
       {
         outfile << y[3*ip] << '\t' << y[3*ip+1] << '\t' << y[3*ip+2] << endl ; 
@@ -311,9 +309,7 @@ int main()
       // }
       // outfile << endl;     
       filenumber = filenumber+1;
-
-      outfile_time << time/ShearRate;
-
+      outfile_time << time;
       cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<TMAX<<"\n";
       tdiagnos =1;
     }

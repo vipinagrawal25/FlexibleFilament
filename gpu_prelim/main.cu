@@ -4,6 +4,8 @@
 #include "evolve.h"
 #include "model.h"
 #include <time.h>
+#include<iostream>
+using namespace std;
 /*==============================================*/
 int main( void ){
   CRASH BUG, *dev_bug ; 
@@ -13,13 +15,14 @@ int main( void ){
   EV TT, *dev_tt;
   int Nblock, Nthread;
   /*------------------------------------------------*/
-  if ( NN < 128 ) {
+  double MaxThread=128;
+  if ( NN <= MaxThread ) {
     Nthread= 1;
     Nblock = NN ;
     } else{
     // Otherwise: we launch the threads differently:
-    Nthread = 128;
-    Nblock = (NN+127)/128;
+    Nthread = MaxThread;
+    Nblock = (NN+MaxThread-1)/MaxThread;
   }
   printf( "#-I shall launch %d blocks, each with %d threads\n", Nblock, Nthread );
   /*------------------------------------------------*/
@@ -48,7 +51,7 @@ int main( void ){
           Nblock, Nthread ) ;
   printf( "#... time evolution finished \n");
   ttimer = clock()/CLOCKS_PER_SEC-ttimer;
-  printf("Total time taken %fs\n", ttimer);
+  cout << "Total time taken: " << ttimer << "s"<< endl;
   D2H( PSI, dev_psi, ndim );
   // cudaMemcpy( PSI, dev_psi, size_psi , cudaMemcpyDeviceToHost);
   wPSI( PSI, TT.time ) ;
