@@ -6,32 +6,37 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
 import sys
 
+
 FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Movie Test', artist='Matplotlib',
                 comment='Movie support!')
-writer = FFMpegWriter(fps=20, metadata=metadata)
+writer = FFMpegWriter(fps=30, metadata=metadata)
 fig=plt.figure()
 height=1
 
 #####################################################
 def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap):
 	# ax = fig.add_subplot(2,1,1, projection='3d')
-	ax.plot(Xaxis,Yaxis,Zaxis,'.-')
+	ax.plot(Yaxis,Xaxis,Zaxis,'o-')
 	ax.set_xlim(-1, 1)
 	ax.set_ylim(-1, 1)
-	# ax.set_zlim(0,height)
+	ax.set_zlim(0,height)
 	plt.title(str(tsnap))
+	ax.set_xlabel('Y direction',fontsize=12)
+	ax.set_ylabel('X direction',fontsize=12)
+	ax.set_zlabel('Z direction',fontsize=12)
+	ax.grid(True)
 #####################################################
-def MakePlot2D(ax,Xaxis,Yaxis,tsnap):	
+def MakePlot2D(ax,Xaxis,Yaxis,tsnap):
 	# ax.subplot(2,1,2)
-	ax.set_xlim(-1,1.3)
-	ax.set_ylim(-1,1.3)
+	ax.set_xlim(-1.5,2)
+	ax.set_ylim(-1,1)
 	ax.plot(Xaxis,Yaxis,'o-')
 	plt.title(str(tsnap))
 	# plt.hold(False)
 	ax.grid(True)
 #####################################################
-def MultifileMovie(FILE='output',nsnap=1000,dim=3):
+def MultifileMovie(FILE='output',dim=3):
 	if dim==2:
 		ax=fig.add_subplot(1,1,1)
 	elif dim==3:
@@ -40,6 +45,9 @@ def MultifileMovie(FILE='output',nsnap=1000,dim=3):
 		sys.exit('The dimension does not exist.')
 
 	time = loadtxt(FILE+'/time.txt')
+	nrowcol=time.shape
+	nsnap=nrowcol[0]
+	# nsnap=600
 
 	with writer.saving(fig,"movie.mp4", 100):
 		for isnap in range(1,nsnap,1):
@@ -62,12 +70,13 @@ def SingleFileMovie(FILE='data/PSI',dim=3, output="data/movie.mp4"):
 	dd=loadtxt(FILE)
 	nrowcol=dd.shape
 	nrows=nrowcol[0]
+	# nrows=400
 	ncols=nrowcol[1]
 	# print(ncols)
 	NN=int((ncols-1)/3)
 	#
 	if dim==2:
-		ax=fig.add_subplot(1,1,1,)
+		ax=fig.add_subplot(1,1,1)
 	elif dim==3:
 		ax=fig.add_subplot(1,1,1,projection='3d')
 	else:

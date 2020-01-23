@@ -14,24 +14,28 @@ double MaxLen, MinLen;
 using namespace std;
 /*--------------------------------------------------*/
 void (*ALGO)( double [], double [],
+              double [], double [],
               EV* , EV *,
               MPARAM ,   MPARAM *,
               double [], double [],  
               CRASH , CRASH *,
               int , int  );
 void euler( double PSI[], double dev_psi[],
+            double VEL[], double dev_vel[],
             EV* TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
             double DIAG[], double dev_diag[],  
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread );
 void rnkt4( double PSI[], double dev_psi[],
+            double VEL[], double dev_vel[],
             EV* TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
             double DIAG[], double dev_diag[],
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread );
 void rnkf45( double PSI[], double dev_psi[],
+             double VEL[], double dev_vel[],
             EV* TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
             double DIAG[], double dev_diag[],
@@ -41,7 +45,7 @@ void pre_euler( int Nsize);
 void pre_rnkt4( int Nsize);
 void pre_rnkf45( int Nsize, int Nblock, int Nthread );
 void eu_time_step( EV* TT, EV *dev_tt );
-__global__ void reduce_diag( double diag[] );
+// __global__ void reduce_diag( double diag[] );
 __global__ void eu_psi_step( double psi[], double kk[], EV *tt );
 __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt );
 double SumDevArray(double dev_array[], int Nblock, int Nthread);
@@ -102,14 +106,14 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
     printf( "EXITING \n " );
     exit(1);
   }
-  /* Set up parameters for evolustion */
+  /* Set up parameters for evolution */
   /* Should we save them somewhere else? */
   /*Yes we should save them somewhere else.--vipin*/
   (*TT).time = 0.;
   (*TT).tprime = (*TT).time;
-  (*TT).dt = 1.e-5;
+  (*TT).dt = 9.e-7;
   (*TT).ndiag = 2000;
-  (*TT).tmax = 2;
+  (*TT).tmax = 20 ;
   (*TT).tdiag = 0.;
   (*TT).substep = 0.;
   EV *temp ;
@@ -173,6 +177,7 @@ void pre_rnkf45( int Nsize, int Nblock, int Nthread ){
 }
 /*---------------------------------------------------------------------*/
 void evolve( double PSI[], double dev_psi[], 
+             double VEL[], double dev_vel[],
              EV *TT, EV *dev_tt,
              MPARAM PARAM, MPARAM *dev_param ,
              double DIAG[], double dev_diag[], int size_diag,
@@ -188,7 +193,7 @@ void evolve( double PSI[], double dev_psi[],
   cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice);
   while ( (*TT).time < (*TT).tmax){
       (*TT).ldiag = 0 ;
-      // printf( "time=%lf\t #- dt*10^6=%lf\t tmax=%lf \n", (*TT).time, ((*TT).dt)*pow(10,6), (*TT).tmax ) ;
+      // printf( "time=%lf\t #- dt=%lf\t tmax=%lf \n", (*TT).time, ((*TT).dt), (*TT).tmax ) ;
     if( (*TT).time >= (*TT).tdiag ) {
       (*TT).ldiag = 1;
       (*TT).tdiag = (*TT).time +  (*TT).tmax/((double) (*TT).ndiag) ;
@@ -196,6 +201,7 @@ void evolve( double PSI[], double dev_psi[],
     }
     cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice ) ;
     ALGO( PSI, dev_psi,
+          VEL, dev_vel,
           TT, dev_tt,
           PARAM, dev_param ,
           DIAG, dev_diag,
@@ -213,13 +219,14 @@ __global__ void eval_rhs(double kk[], double psi[],
   while (tid < NN ){
     model_rhs( kk, psi, tid, (*tt).tprime, param, diag, bug, (*tt).ldiag );
     tid += blockDim.x * gridDim.x ;
-
     // For debugging stuff
     // printf("%lf\n", kk[3*tid+2]);
   }// while loop over threads finishes here.
+
 }
 /*------------------------------------------------------------ */
 void euler( double PSI[], double dev_psi[],
+            double VEL[], double dev_vel[],
             EV *TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
             double DIAG[], double dev_diag[],  
@@ -228,9 +235,11 @@ void euler( double PSI[], double dev_psi[],
 // evaluate the right hand side in a kernel 
   eval_rhs<<<Nblock,Nthread >>>( dev_kk, dev_psi,  dev_tt ,
                                  dev_param, dev_diag, dev_bug );
+  // Sync threads
     // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
+  dev_vel = dev_kk;
   // reduce diagnostic
   if ( (*TT).ldiag ) {
     //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
@@ -239,19 +248,20 @@ void euler( double PSI[], double dev_psi[],
     cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
     wDIAG( DIAG, (*TT).time, PARAM );
     D2H( PSI, dev_psi, ndim);
-    wPSI( PSI, (*TT).time ) ; 
+    D2H(VEL, dev_vel, ndim);
+    wPSI( PSI, VEL, (*TT).time ) ; 
   }
   // take the Euler step
   eu_psi_step<<< Nblock, Nthread >>>( dev_psi, dev_kk, dev_tt ) ;
   eu_time_step(TT, dev_tt);
-}
+ }
   /*----------------------------------------------------------------*/
-__global__ void reduce_diag( double diag[] ){
-  int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  while (tid < NN ){
-    tid += blockDim.x * gridDim.x ;
-  }
-}
+// __global__ void reduce_diag( double diag[] ){
+//   int tid = threadIdx.x + blockIdx.x * blockDim.x;
+//   while (tid < NN ){
+//     tid += blockDim.x * gridDim.x ;
+//   }
+// }
 /*----------------------------------------------------------------*/
 __global__ void eu_psi_step( double psi[], double kk[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -260,8 +270,8 @@ __global__ void eu_psi_step( double psi[], double kk[], EV *tt ){
       psi[ip+pp*tid] += kk[ip+pp*tid]*(*tt).dt ;
     }
     tid += blockDim.x * gridDim.x ;
-
   } // loop over threads ends here
+  
 }
 /*-----------------------------------------------------------------------*/
 void eu_time_step( EV *TT, EV *dev_tt ){
@@ -297,6 +307,7 @@ __global__ void rk4_psi_substep( double psip[], double kin[], double psi[], EV *
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
+  
 }
 /*-----------------------------------------------------------------------*/
 void rk4_time_step( EV *TT, EV *dev_tt ){
@@ -318,9 +329,11 @@ __global__ void rk4_psi_step( double psi[],
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
+  
 }
 /*-----------------------------------------------------------------------*/
 void rnkt4( double PSI[], double dev_psi[],
+            double VEL[], double dev_vel[],
             EV* TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
             double DIAG[], double dev_diag[], 
@@ -333,6 +346,7 @@ void rnkt4( double PSI[], double dev_psi[],
     // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
+  dev_vel = dev_k1;
  // reduce diagnostic
   if ( (*TT).ldiag ) {
     //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
@@ -342,7 +356,8 @@ void rnkt4( double PSI[], double dev_psi[],
     cudaMemcpy( DIAG, dev_diag, size_diag, cudaMemcpyDeviceToHost);
     wDIAG( DIAG, (*TT).time, PARAM );
     D2H( PSI, dev_psi, ndim);
-    wPSI( PSI, (*TT).time ) ; 
+    D2H(VEL,dev_vel,ndim);
+    wPSI( PSI, VEL, (*TT).time ) ; 
   }
   // take the first substep
   rk4_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_k1, dev_psi, dev_tt ) ;
@@ -365,17 +380,17 @@ void rnkt4( double PSI[], double dev_psi[],
   // take the third substep
   rk4_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_k3, dev_psi, dev_tt ) ;
   rk4_time_substep( TT, dev_tt , 2 ) ;
-  // 4th evaluation of rhs, no diagnostic calculated
+   // 4th evaluation of rhs, no diagnostic calculated
   eval_rhs<<<Nblock,Nthread >>>( dev_k4, dev_psip,  dev_tt ,
                                  dev_param, dev_diag, dev_bug );
-  // check if there were any bugs from rhs evaluation
+   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
   // final step
     rk4_psi_step<<<Nblock, Nthread >>>( dev_psi,
                                     dev_k1, dev_k2, dev_k3, dev_k4, dev_tt );
     rk4_time_step( TT, dev_tt ) ;
-}
+   }
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -401,6 +416,7 @@ __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], 
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
+  
 }
 /*-----------------------------------------------------------------------*/
 void rnkf45_time_substep( EV* TT, EV *dev_tt, int j ){
@@ -414,7 +430,7 @@ void rnkf45_time_substep( EV* TT, EV *dev_tt, int j ){
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  // //
+  //
   // double rnkf45c[2][6] = { {37./378,0.,250./621,125./594,0.,512./1771},
   //                         {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25} };
   double rnkf45c[2][6] = { {25./216.,0,1408./2565.,2197./4104.,-1./5.,0},
@@ -435,6 +451,7 @@ __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
+  
 }
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
@@ -453,6 +470,7 @@ __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
+  
 }
 /*-----------------------------------------------------------------------*/
 bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
@@ -464,7 +482,7 @@ bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
   double s;
   double eps=0.84;        // Safety factor to avoid the infinite loop.
   maxErr=maxErr+tiny;     // in case maxErr is too small to be almost zero.
-  // std::cout << maxErr << std::endl;
+  // cout << maxErr << endl;
   if (maxErr<tol){
     laccept=1;
     (*TT).time = (*TT).time + (*TT).dt;
@@ -512,6 +530,7 @@ double MaxDevArray(double dev_array[], int Nblock, int Nthread){
 }
 /*-----------------------------------------------------------------------*/
 void rnkf45( double PSI[], double dev_psi[],
+             double VEL[], double dev_vel[],
             EV* TT, EV *dev_tt,
             MPARAM PARAM,   MPARAM *dev_param,
             double DIAG[], double dev_diag[], 
@@ -527,6 +546,7 @@ void rnkf45( double PSI[], double dev_psi[],
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
+  dev_vel = dev_k1;
   // reduce diagnostic
   if ( (*TT).ldiag ) {
     //reduce_diag<<<Nblock, Nthread >>> ( dev_diag ) ;  
@@ -535,7 +555,8 @@ void rnkf45( double PSI[], double dev_psi[],
     cudaMemcpy( DIAG, dev_diag, size_diag,cudaMemcpyDeviceToHost );
     wDIAG( DIAG, (*TT).time, PARAM );
     D2H( PSI, dev_psi, ndim );
-    wPSI( PSI, (*TT).time ) ; 
+    D2H(VEL,dev_vel,ndim);
+    wPSI( PSI, VEL, (*TT).time ) ; 
   }
 // take the first substep
   rnkf45_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_kin, dev_psi, dev_tt ) ;
@@ -600,10 +621,8 @@ void rnkf45( double PSI[], double dev_psi[],
   // rnkf45_psi_step<<<Nblock, Nthread >>>( dev_psip, dev_kin, dev_tt, 1 );
   // rnkf45_error<<Nblock,Nthread>>> (dev_err,dev_psi,dev_psip);
   double maxErr = sqrt(MaxDevArray( dev_err, Nblock, Nthread ));
-
   // For debugging stuff
   // printf("%lf\n",maxErr);
-
   bool laccept = rnkf45_time_step(TT,dev_tt,maxErr);
   if (laccept){
     // If the step is accepted -> this function calculates the PSI at next time step.
@@ -611,6 +630,7 @@ void rnkf45( double PSI[], double dev_psi[],
   }
   else{
     rnkf45( PSI, dev_psi,
+            VEL, dev_vel,
           TT, dev_tt,
           PARAM, dev_param ,
           DIAG, dev_diag,

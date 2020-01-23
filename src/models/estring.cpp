@@ -6,8 +6,8 @@
 #include "model.h"
 #include<string>
 #include<vector>
-// #include <cmath>
-
+#include <math.h>
+using namespace std;
 /**************************/
 void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa);
 void getub(double *bk, vec3 *uk, int kp, vec3 X[]);
@@ -15,120 +15,98 @@ int MatrixtoVector(int i, int j, int N);
 void GetRij(vec3 X[], int i, int j, double *Distance, vec3 *rij);
 void drag(vec3 X[], vec3 dX[], vec3 EForce[]);
 /**************************/
-
-using namespace std;
-
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
-  vec3 R[Np],dR[Np], EForce[Np], EForce_ip, FF0;  // R is the position of the beads.
-  // double CurvSqr[Np];
-  double kappasqr;
-  double onebythree = 1./3.;
-
-  double Curvlength = 0;
-
-  SS[0] = 0;    // Initializing the material co-ordinate
-
-  for (int ip=0;ip<Np;ip++){
-    R[ip].x=y[3*ip];
-    R[ip].y=y[3*ip+1];
-    R[ip].z=y[3*ip+2];
-  }
-
-  for (int ip = 0; ip < Np-1; ++ip)
-  {
-    if (flag_kappa)
-    {
-      Curvlength = Curvlength+norm(R[ip+1]-R[ip]);
-    }  
-  }
-
-  for (int ip=0;ip<Np;ip++){
-  kappasqr=CurvSqr[ip];
-
-  if (flag_kappa)
-  {
-    if (ip<Np-1)
-    {
-      SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip])/Curvlength;
-    }
-  }    
-
-  dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
-  EForce[ip] = EForce_ip;
-  // EForce[ip] = EForce[ip]*aa*aa;
-  // dR[ip]=EForce*OneByGamma;
-  CurvSqr[ip]=kappasqr;
-  // cout << CurvSqr[ip] << endl;
-  }
-
-  drag(R, dR, EForce);
-
-  switch(conf_number){
-    case 0:
-      FF0.x = 0;
-      FF0.y = 0;
-      FF0.z = -FFZ0*sin(omega*time);
-      EForce[Np-1] = EForce[Np-1]-FF0;
-      break;
-
-    case 1:
-      for (int ip = 0; ip < Np; ++ip)
-      {
-        if (sin(omega*time) >= 0){
-          dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*ceil(sin(omega*time));    
-        }
-        else{
-          dR[ip].y = dR[ip].y + ShearRate*(height - R[ip].z)*floor(sin(omega*time));
-        }
-      }
-      break;
-
-      case 2:
-      for (int ip = 0; ip < Np; ++ip)
-      {
-        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z);          
-      }
-      break; 
-  }
-  
-  // External force applied on the end point.
-  // cout << FF0.z <<endl;
-  // dR[Np-1] = dR[Np-1]-FF0*; 
-  //dR[Np-1].y = 0;                     // Constraint that last point should always remain on z axis. 
-  
-  for (int ip=0;ip<Np;ip++){
-    rhs[3*ip]=dR[ip].x;
-    rhs[3*ip+1]=dR[ip].y;
-    rhs[3*ip+2]=dR[ip].z;
-    }
+vec3 R[Np],dR[Np], EForce[Np], EForce_ip, FF0;  // R is the position of the beads.
+// double CurvSqr[Np];
+double kappasqr;
+double onebythree = 1./3.;
+double Curvlength = 0;
+SS[0] = 0;    // Initializing the material co-ordinate
+for (int ip=0;ip<Np;ip++){
+  R[ip].x=y[3*ip];
+  R[ip].y=y[3*ip+1];
+  R[ip].z=y[3*ip+2];
 }
-
+for (int ip = 0; ip < Np-1; ++ip){
+  if (flag_kappa){
+    Curvlength = Curvlength+norm(R[ip+1]-R[ip]);
+  }  
+}
+for (int ip=0;ip<Np;ip++){
+kappasqr=CurvSqr[ip];
+if (flag_kappa){
+  if (ip<Np-1){
+    SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip])/Curvlength;
+  }
+}
+dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
+EForce[ip] = EForce_ip;
+// EForce[ip] = EForce[ip]*aa*aa;
+// dR[ip]=EForce*OneByGamma;
+CurvSqr[ip]=kappasqr;
+// cout << CurvSqr[ip] << endl;
+}
+drag(R, dR, EForce);
+switch(conf_number){
+  case 0:
+    FF0.x = 0;
+    FF0.y = 0;
+    FF0.z = -FFZ0*sin(omega*time);
+    EForce[Np-1] = EForce[Np-1]-FF0;
+    break;
+  case 1:
+    for(int ip=0; ip<Np;ip++){
+      dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*sin(omega*time);
+    }
+    // if (sin(omega*time)>=0){
+    //   for (int ip = 0; ip < Np; ++ip){
+    //     dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*ceil(sin(omega*time));  
+    //   }
+    // }
+    // else{
+    //    for (int ip = 0; ip < Np; ++ip){
+    //     dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*floor(sin(omega*time));  
+    //   }
+    // }
+    break;
+    case 2:
+    for (int ip = 0; ip < Np; ++ip)
+    {
+      dR[ip].y = dR[ip].y + ShearRate*(R[ip].z);          
+    }
+    break; 
+    case 3:
+    break;
+}
+// External force applied on the end point.
+// cout << FF0.z <<endl;
+// dR[Np-1] = dR[Np-1]-FF0*; 
+//dR[Np-1].y = 0;                     // Constraint that last point should always remain on z axis.   
+for (int ip=0;ip<Np;ip++){
+  rhs[3*ip]=dR[ip].x;
+  rhs[3*ip+1]=dR[ip].y;
+  rhs[3*ip+2]=dR[ip].z;
+  }
+}
 /**************************/
 void drag(vec3 X[], vec3 dX[], vec3 EForce[]){
   double onebythree = 1./3.;
   double mu0 = onebythree/(M_PI*viscosity*dd);
-  if (UseRP == 'Y')
-  {
+  if (UseRP == 'Y'){
     // mu_ij represents the one element of mobility matrix (Size: NXN). 
     // Every element of the matrix itself is a 2nd rank tensor and the dimension of that should 3x3.
-
     Tens2 mu_ij, mu_ii;
     double d_rij;
     vec3 rij;
-
     mu_ii = dab*mu0;    // dab is the unit 2 dimensional tensor. It is defined in module/2Tens file.
     // PTens2(mu_ii);
     // rij = R[j]-R[i] and d_rij is just the norm of this value.
 
-    for (int ip = 0; ip < Np; ++ip)
-    {
+    for (int ip = 0; ip < Np; ++ip){
         // The mu_ij in the next line represents the mobility tensor when j is equal to i and in 
         // response to that the "for loop" is started from ip+1 .
-
         dX[ip] = dX[ip] + dot(mu_ii, EForce[ip]);
-        
-        for (int jp = ip+1; jp < Np; ++jp)
-        {
+        for (int jp = ip+1; jp < Np; ++jp){
             GetRij(X, ip, jp, &d_rij, &rij);
             double c1 = 1/(8*M_PI*viscosity*d_rij);
             double dsqr1 = 1./(d_rij*d_rij);
@@ -138,11 +116,8 @@ void drag(vec3 X[], vec3 dX[], vec3 EForce[]){
         }
     }
   }
-
-  else
-  {
-    for (int ip = 0; ip < Np; ++ip)
-    {
+  else{
+    for (int ip = 0; ip < Np; ++ip){
         dX[ip] = EForce[ip]*mu0;
     }
   } 
@@ -222,7 +197,6 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       getub(&bkm1, &ukm1, kp-1, X);
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
-      
       if (conf_number==0)
       {
           dX = X[kp-2+1]-Xzero;
@@ -247,18 +221,14 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
           // cout << FF.z << endl;
           FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;   // Inextensibility constraint
           *add_FF = FF;
-
       }
-
       *add_kappasqr=0.;
       // *add_SS = (kp+1)*bkm1;      
       break;
-
     case Np-2:
       getub(&bkm2, &ukm2, kp-2, X);
       getub(&bkm1, &ukm1, kp-1, X);
       getub(&bk, &uk, kp, X);
-
       FF = (     (uk+ukm2)/bkm1 - (ukm1)/bk
           + (uk/bk)*( dot(uk,ukm1))
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
@@ -332,7 +302,6 @@ void iniconf(double *y, int configuration)
     vec3 R[Np];  // R is the position of the beads.
     double k = 1;      // determines the frequency for initial configuration
     double CurvLength = 0;  // determines the total length of the curve
-
     if (lastfile){
         string l = "output/position";
         l.append(to_string(lastfile));
@@ -348,7 +317,8 @@ void iniconf(double *y, int configuration)
         }
         myfile.close();   
     }
-    else{
+    else
+    {
       switch(configuration)
       {
         case 0:
@@ -377,6 +347,7 @@ void iniconf(double *y, int configuration)
           // for (int ip = 0; ip < Np; ++ip)
           // {
           //     R[ip].y = R[ip].y/CurvLength; 
+              // y[3*ip+1]=R[ip].y;
           // }
 
           break;
@@ -390,9 +361,7 @@ void iniconf(double *y, int configuration)
               R[ip].x = 0;
               R[ip].y = 0;
               R[ip].z = aa*double(ip);
-
               // cout << R[ip].z << endl ;
-
               y[3*ip] = R[ip].x;
               y[3*ip+1] = R[ip].y;
               y[3*ip+2] = R[ip].z;
@@ -409,34 +378,39 @@ void iniconf(double *y, int configuration)
               R[ip].x = 0;
               R[ip].y = aa*(double(ip+1))-height*0.5;
               R[ip].z = aa*sin(M_PI*k*aa*double(ip+1)/height);
-
-              if (ip>0)
-              {
-                  CurvLength = CurvLength + norm(R[ip] - R[ip-1]);
+              if (ip>0){
+                CurvLength = CurvLength + norm(R[ip] - R[ip-1]);
                   // cout << CurvLength << endl;
               }
-              else
-              {
-                  CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
+              else{
+                CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
               }
-
-              // cout << "ab hopefully sab kuch sahi ho jaana chahiye" << endl;
-
-              // cout << R[ip].z << endl ;
 
               y[3*ip] = R[ip].x;
               y[3*ip+1] = R[ip].y;
               y[3*ip+2] = R[ip].z;
           }
-
+          for (int ip = 0; ip < Np; ++ip){
+              R[ip].z= R[ip].z/CurvLength;
+              y[3*ip+2] = R[ip].z;
+          }
+          break;
+         
+        case 3:
+          double theta;
           for (int ip = 0; ip < Np; ++ip)
           {
-              R[ip].z = R[ip].z/CurvLength; 
+            theta=(double) M_PI *ip/Np;
+            R[ip].x=0;
+            R[ip].y=cos(theta);
+            R[ip].z=sin(theta);
+          
+            y[3*ip] = R[ip].x;
+            y[3*ip+1] = R[ip].y;
+            y[3*ip+2] = R[ip].z;
           }
-
           break;
         }
-        // cout << "Aakhir ye code aisa kyu karta hai" << endl;
     }
 
 }

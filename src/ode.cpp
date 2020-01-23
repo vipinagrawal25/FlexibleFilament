@@ -29,7 +29,7 @@ using namespace std;
 //   }
 // }
 // /*********************************/
-void rnkt4(unsigned int ndim, double *y, double *add_time, double *add_dt, double* CurvSqr, double* SS, double ldiagnos)
+void rnkt4(unsigned int ndim, double *y, double *vel, double *add_time, double *add_dt, double* CurvSqr, double* SS, double ldiagnos)
 {
   double temp[ndim],k1[ndim],k2[ndim],k3[ndim],k4[ndim];
   int idim;
@@ -37,12 +37,10 @@ void rnkt4(unsigned int ndim, double *y, double *add_time, double *add_dt, doubl
   double time = *add_time;
   bool flag_kappa;
 
-  if (ldiagnos)
-  {
+  if (ldiagnos){
       flag_kappa = false;
   }
-  else
-  {
+  else{
       flag_kappa = true;
   }
 
@@ -62,12 +60,12 @@ void rnkt4(unsigned int ndim, double *y, double *add_time, double *add_dt, doubl
   eval_rhs(time+dt,temp,k4,flag_kappa,CurvSqr,SS);
   for(idim=0;idim<ndim;idim++){
     y[idim]=y[idim]+dt*(  (k1[idim]/6.) + (k2[idim]/3.) + (k3[idim]/3.) + (k4[idim]/6.) );
+    vel[idim]=k1[idim];
   }
-
   *add_time = time + dt;
 }
 
-void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, double* CurvSqr, double* SS, double ldiagnos)
+void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, double* SS, double ldiagnos)
 {
 	// Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
   // add_time is the address of time and the same goes for dt as well.
@@ -76,7 +74,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 	double error = 0;
 	double dt = *add_dt;
 	// double tol_dt = pow(10,-9)*dt;
-  double tol_dt = pow(10,-10);
+  double tol_dt = pow(10,-8);
   bool flag_kappa;
   double time = *add_time;
   double Delta = 0.; 
@@ -107,7 +105,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   }
 
 	eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
-
+  vel=k1;
   // CurvSqr_Store = CurvSqr;
 
 	for(idim=0;idim<ndim;idim++)
@@ -120,8 +118,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
 
   // cout << y[34] << '\t' << k2[34] << '\t' << dt << '\t' << temp[34] << endl;
 
-  for(idim=0;idim<ndim;idim++)
-  {
+  for(idim=0;idim<ndim;idim++){
     temp[idim]=y[idim]+(aij[2][0]*k1[idim]+aij[2][1]*k2[idim])*dt;
  	}
  	eval_rhs(time+ci[2]*dt,temp,k3, flag_kappa, CurvSqr, SS);
@@ -144,12 +141,10 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
  	}
  	eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
 
- 	for (int idim = 0; idim < ndim; ++idim)
- 	{
+ 	for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim] + bi[0]*k1[idim]*dt + bi[2]*k3[idim]*dt + bi[3]*k4[idim]*dt + bi[4]*k5[idim]*dt;
     // cout << temp[idim] << endl;
  		// cout << temp[idim] << endl;
-    
     yold[idim] = y[idim];
     y[idim] = y[idim]+ bistar[0]*k1[idim]*dt + bistar[2]*k3[idim]*dt + bistar[3]*k4[idim]*dt + bistar[4]*k5[idim]*dt + bistar[5]*k6[idim]*dt;
     // cout << temp[idim] << endl;
@@ -159,19 +154,14 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
   if (error<tiny){
       Delta = 10000;
   }
-  else
-  {
+  else{
       Delta = tol_dt/error;
   }
-
   s = epsilon*pow(Delta,0.25);
   // cout << error << '\t' << s << '\t' << *add_dt<< endl;
-  
-
   if (Delta>=0.5){
       *add_time = time + dt;
-      if (s>truncationmax)
-      {
+      if (s>truncationmax){
           s=truncationmax;
       }
       *add_dt = s*dt;
@@ -181,7 +171,7 @@ void rnkf45(unsigned int ndim, double *y, double *add_time, double* add_dt, doub
           s = truncationmin;
       }
       *add_dt = s*dt;
-      rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
+      rnkf45(pdim, &yold[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
 
 

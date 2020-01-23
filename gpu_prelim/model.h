@@ -9,7 +9,7 @@ The number of degrees of freedom at each node is pp */
 #define NN 100
 #define pp  3
 #define ndim NN*pp
-#define TimeScheme "rnkf45"
+#define TimeScheme "rnkt4"
 /*--------------------------------------------------*/
 struct MPARAM {
   double height ;	// height of the box we are doing simulations in.
@@ -61,7 +61,7 @@ int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM );
 __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau,
                            MPARAM *param, double *diag, CRASH *bug, int ldiag  );
 void initial_configuration( double PSI[], MPARAM PARAM );
-void wPSI ( double PSI[], double tau ); 
+void wPSI ( double PSI[], double VEL[], double tau ); 
 void wDIAG( double DIAG[], double tau, MPARAM PARAM );
 bool check_param(MPARAM PARAM);
 /*------------------------------------------------------------------*/

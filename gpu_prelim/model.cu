@@ -5,6 +5,7 @@
 #include "3vec.h"
 #include "2Tens.h"
 #include <string.h>
+#include <fstream>
 using namespace std;
 __device__ void dHdR(int kp, double psi[], vec3* add_FF,
                      double* add_kappasqr,  struct MPARAM *param,
@@ -24,11 +25,11 @@ __device__ void device_exception( struct CRASH *bug, char mesg[] );
 __device__ vec3 psi2R(double psi[], int k);
 __device__ void R2psi(double psi[], int k, vec3 R);
 /* ========================================= */
-void alloc_chain(  double **PSI, double **dev_psi ){
+void alloc_chain( double **ARR, double **dev_arr ){
   double *temp;
-  *PSI = (double *) malloc( ndim*sizeof( double ) );
+  *ARR = (double *) malloc( ndim*sizeof( double ) );
   cudaMalloc( (void**)&temp, ndim*sizeof( double ) );
-  *dev_psi = temp;
+  *dev_arr = temp;
 }
 /* ------------------------------------------------------------------------------*/
 int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM ){
@@ -51,11 +52,11 @@ int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM ){
 /*--------------------------------------------------------*/
 void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   MPARAM *temp;
-  double height = 1.;
+  double height = 1;  
   (*PARAM).height = height;
   (*PARAM).aa = height/(double)(NN-1);
   // distance between two nodes.
-  (*PARAM).Dbyell = height/(double)(NN-1);
+  (*PARAM).Dbyell = 0.005*height;
   (*PARAM).dd = height*(*PARAM).Dbyell ;
   /* r/l ratio for the rod has been kept constant. It should be noted that 
      the particles would also have same diameter. */
@@ -64,17 +65,18 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).Famp = 0. ;	      // Different force for different configuration.
   // Sigma is a dimensionless number, which is described as frequency parameter.
   (*PARAM).sigma=1.5;
-  (*PARAM).ShearRate = 1;
+  (*PARAM).ShearRate = 2;
   (*PARAM).omega = (*PARAM).ShearRate*(*PARAM).sigma ;
-  (*PARAM).factorAA = 0.1;
+  (*PARAM).factorAA = 1.5*100;
   // (*PARAM).factorAA = 0. ;
-  (*PARAM).AA= (*PARAM).factorAA; //AA is the bending rigidity.
+  (*PARAM).AA= (*PARAM).factorAA*pow(10,-5); //AA is the bending rigidity.
   //
   double AA = (*PARAM).AA;
-  double factorHH = 64.;
+  // double factorHH = 40.;
   double asqr = (*PARAM).aa*(*PARAM).aa;
-  // (*PARAM).HHbyaa = (*PARAM).KK*(*PARAM).AAbyaa/( asqr );  
-  (*PARAM).HH = factorHH*AA/asqr;
+  // (*PARAM).HHbyaa = (*PARAM).KK*(*PARAM).AAbyaa/( asqr );
+  double KK = 64;
+  (*PARAM).HH = KK*AA/asqr;
   //
   // double AA=(*PARAM).AAbyaa*(*PARAM).aa;
   // double HH=(*PARAM).HHbyaa*(*PARAM).aa;
@@ -89,11 +91,11 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   // int qdiag = (*PARAM).qdiag ;
   (*PARAM).bcb = 1 ;      // Boundary condition at bottom
   (*PARAM).bct = 1;       // Boundary condition at top
-  (*PARAM).global_drag = 1; 
+  (*PARAM).global_drag = 1; // 0 means no global drag, 1 means global drag  
   (*PARAM).iext_force = 0; // Whether to apply the external force or not
   (*PARAM).floc = 0 ;       // External force location 
-  (*PARAM).iext_flow = 1;   // External flow: Yes/No
-  (*PARAM).iniconf = 2;     // Configuration of the system at t = 0.
+  (*PARAM).iext_flow = 3;   // External flow: case no. whether time dependent or not etc
+  (*PARAM).iniconf = 1;     // Configuration of the system at t = 0.
   cudaMalloc( (void**)&temp, size_MPARAM  );
   *dev_param = temp;
   cudaMemcpy( *dev_param, PARAM,
@@ -132,7 +134,6 @@ __host__ void write_param( MPARAM *PARAM, char *fname ){
   fprintf( pout, " omega = %f \n ", (*PARAM).omega ) ;
   fprintf( pout, " factorAA = %f \n ", (*PARAM).factorAA ) ;
   fprintf( pout, " AA = %f \n ", (*PARAM).AA ) ;
-  fprintf( pout, " KK = %f \n ", (*PARAM).KK ) ;
   fprintf( pout, " HH = %f \n ", (*PARAM).HH ) ;
   fprintf( pout, " qdiag=%d\n", (*PARAM).qdiag );
   fprintf( pout, " bcb=%d\n", (*PARAM).bcb );
@@ -142,6 +143,11 @@ __host__ void write_param( MPARAM *PARAM, char *fname ){
   fprintf( pout, " floc=%d\n", (*PARAM).floc );
   fprintf( pout, " iext_flow=%d\n", (*PARAM).iext_flow );
   fprintf( pout, " iniconf=%d\n", (*PARAM).iniconf );
+  //
+  fprintf( pout, " KK = %f \n ", (*PARAM).KK ) ;
+  double gamma = 8*M_PI*((*PARAM).viscosity)*((*PARAM).ShearRate)*((*PARAM).height)*pow((*PARAM).aa,3)/((*PARAM).AA);
+  cout << gamma << endl;
+  fprintf( pout, " Gamma=%lf\n",  gamma);  
   fprintf( pout, " #============================\n" );
   fclose( pout );
 }
@@ -212,7 +218,7 @@ __device__ void R2psi(double psi[], int k, vec3 R){
 /* -----------------------------------------------------------------------------------*/
 __device__ int square_wave( double t, double Tby2) {
   int s = t/Tby2 ;
-  int sw = -2*(s % 2 ) + 1;
+  int sw = -2*(s % 2) + 1;
   return sw;
 }
 /* -----------------------------------------------------------------------------------*/  
@@ -246,12 +252,18 @@ __device__ vec3 ext_flow( int kelement, vec3 R, double tau,
   switch( iext_flow ){
   case 1:
     //time-dependent shear U = ( ShearRate*z, 0, 0 ) * square_wave(omega*time)
-    UU.x = (height - R.z)*ShearRate*(double)square_wave( tau, M_PI/omega ) ;
+    UU.x = (height - R.z)*ShearRate*(double)square_wave(tau, M_PI/omega);
     UU.y = 0. ;
     UU.z = 0;
     break;
   case 2:
     UU.x = R.z*ShearRate ;
+    break;
+  case 3:
+    // Time dependent shear but the rate changes as sine function.
+    UU.x = (height - R.z)*ShearRate*(double)sin(omega*tau);
+    UU.y = 0. ;
+    UU.z = 0;
     break;
   }
   return UU;
@@ -284,10 +296,8 @@ __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
         c1 = 1./(d_rij*8*M_PI*viscosity);
         dsqr1 = 1./(d_rij*d_rij);
         
-        mu_ij = c1*(dab + (rij*rij)*dsqr1 +
-                    dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1)); 
+        mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1)); 
         dR =  dR + dot(mu_ij, *EForce );
-
         /*Debugging stuff */
         // printf("%lf\n", dd);
         // if (ip==23){
@@ -299,7 +309,6 @@ __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
     /* if we use local drag */
     dR = (*EForce)*mu0;
   } 
-
   /*Caution: Only for debugging*/
   // printf("%lf\t%lf\t%lf\t", dR.x,dR.y,dR.z);
   return dR;
@@ -310,9 +319,7 @@ __device__ void GetRij(double psi[], int i, int j, double *Distance,
 
   vec3 Rj =  psi2R( psi,  j);
   vec3 Ri =  psi2R( psi,  i);
-
 // __device__ void R2psi(double psi[], int k, vec3 R);
-
 //   vec3 Rj (psi[pp*j], psi[pp*j+1], psi[pp*j+2] );
 //   vec3 Ri (psi[pp*i], psi[pp*i+1], psi[pp*i+2] );
   /*This calculate the distance at two index i and j on the elastic string*/
@@ -577,7 +584,7 @@ __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau
   dR = drag(kelement, psi,  &EForce, param);
   /* contribution from external flow */
   if ( iext_flow  ){ 
-    dR = dR+ext_flow( kelement, R, tau, param ) ; 
+    dR = dR+ext_flow( kelement, R, tau, param ) ;
   }
   /*------ put the rhs back to the dpsi array ----- */
   /*For Debugging */
@@ -598,15 +605,28 @@ void initial_configuration( double PSI[], MPARAM PARAM ){
       for (int iN=0; iN<NN; iN++){
         PSI[iN*pp] = 0.;
         PSI[iN*pp + 1] = 0.;
-        PSI[iN*pp + 2] = aa*(double) iN ;
+        PSI[iN*pp + 2] = aa*(double) iN;
       }
+      break;
     case 2:
+    /* Elastic filament is in the direction of shear flow with perturbation like sine.*/
       for (int iN = 0; iN < NN; ++iN){
         PSI[iN*pp] = 0.;
-        PSI[iN*pp + 1] = aa*(double) iN - height*0.5 ;
-        PSI[iN*pp + 2] = aa*sin(M_PI*k*aa*double(iN)/height) ; 
+        PSI[iN*pp + 1] = aa*(double) iN - height*0.5;
+        PSI[iN*pp + 2] = aa*sin(M_PI*k*aa*double(iN)/height); 
       }
-  }  
+      break;
+    case 3:
+    /* Elastic filament is formed as circular ring*/
+      double theta;
+      for (int iN = 0; iN < NN; ++iN){
+        theta = (double) M_PI *iN/NN; 
+        PSI[iN*pp] = 0.;
+        PSI[iN*pp + 1] = cos(theta) ;
+        PSI[iN*pp + 2] = sin(theta) ; 
+      }
+      break;
+  }
 }
 /*-------------------------------------------------------------------*/
 void  free_chain( double **PSI, double **psi  ){
@@ -622,15 +642,28 @@ void D2H(double ARR[], double dev_arr[], int Nsize){
   cudaMemcpy( ARR, dev_arr, Nsize*sizeof(double), cudaMemcpyDeviceToHost);
 }
 /*-------------------------------------------------------------------*/
-void wPSI ( double PSI[], double tau ){
-  FILE *fp = fopen( "data/PSI", "a" );
-  fprintf( fp, "%lf\t", tau ) ;
+void wPSI ( double PSI[], double VEL[] ,double tau){
+  // FILE *fp = fopen( "data/PSI", "a" );
+  // fprintf( fp, "%lf\t", tau ) ;
+  ofstream fp;
+  fp.open("data/PSI", ios::app);
+  ofstream fp_vel;
+  fp_vel.open("data/VEL",ios::app);
+
+  fp << tau << "\t" ;
+  fp_vel << tau << "\t";
   for ( int ichain = 0; ichain< ndim; ichain++ ){ 
-    fprintf( fp, "%lf\t", PSI[ichain] );
+    // fprintf( fp, "%lf\t", PSI[ichain] );
+    fp << PSI[ichain] << "\t" ;
+    fp_vel << VEL[ichain] << "\t";
   }
-  fprintf(fp, "\n");
-  fprintf(fp, "#--------------------------------------#\n");
-  fclose( fp );
+  fp <<  "\n";
+  fp << "#------------------------------------------------#\n";
+  fp.close();
+
+  fp_vel <<  "\n";
+  fp_vel << "#------------------------------------------------#\n";
+  fp_vel.close();
 }
 /*-------------------------------------------------------------------*/
 void wDIAG( double DIAG[], double tau, MPARAM PARAM ){
@@ -642,12 +675,17 @@ void wDIAG( double DIAG[], double tau, MPARAM PARAM ){
   file_DIAG[1]="data/curvature.txt";
   //
   for (int idiag = 0; idiag < qdiag; ++idiag){
-    FILE *fp = fopen( file_DIAG[idiag].c_str(), "a" );
-    fprintf( fp, "%lf\t", tau );
+    // FILE *fp = fopen( file_DIAG[idiag].c_str(), "a");
+    // fprintf( fp, "%lf\t", tau );
+    ofstream fp;
+    fp.open(file_DIAG[idiag].c_str(),ios::app);
+    fp << tau << "\t" ;
     for ( int iN = 0; iN< NN; iN++ ){ 
-      fprintf( fp, "%lf\t", DIAG[iN + NN*idiag] ) ; 
+      // fprintf( fp, "%lf\t", DIAG[iN + NN*idiag] ) ; 
+      fp << DIAG[iN+NN*idiag] << "\t" ;
     }
-    fprintf( fp, "\n " );
-    fclose(fp);
+    fp << endl;
+    // fp << "#------------------------------------------------#" << endl;s
+    fp.close();
   }
 }
