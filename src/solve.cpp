@@ -116,7 +116,7 @@ int main()
     // lastfile mentioned in '.h' file.
     ifile = lastfile+1;
 
-    string filename = "output/position";
+    string filename = "output/var";
     filename.append(to_string(ifile));
     filename.append(".txt");
 
@@ -129,12 +129,12 @@ int main()
       system(removefile.c_str());
       
       ifile = ifile+1;
-      string filename = "output/position";
+      string filename = "output/var";
       filename.append(to_string(ifile));
       filename.append(".txt");
     }
     // ---------------------------------------------------------------------------------------------------------
-    ifstream initialfile("output/position0.txt", ios::in);
+    ifstream initialfile("output/var0.txt", ios::in);
     //keep storing values from the text file so long as data exists:
     int idim = 0;
     while (initialfile >> num){
@@ -151,7 +151,7 @@ int main()
     system("exec rm -f MSD.txt");
     iniconf(y0, conf_number);
     ofstream outfile;
-    outfile.open("output/position0.txt"); 
+    outfile.open("output/var0.txt"); 
 
     for (int ip = 0; ip < Np; ++ip){
       outfile << y0[3*ip] << '\t' << y0[3*ip+1] << '\t' << y0[3*ip+2] << '\t' << 0 << '\t' << 0  << '\t' << 0 << endl ; 
@@ -182,8 +182,8 @@ int main()
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim,&y[irb],time-dt,dt);
-    rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
-  	// rnkf45(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
+    // rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
+  	rnkf45(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
     // timer = clock();
     // cout << dt << endl;
     // timer = clock() - timer;

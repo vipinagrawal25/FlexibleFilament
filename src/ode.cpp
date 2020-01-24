@@ -65,16 +65,17 @@ void rnkt4(unsigned int ndim, double *y, double *vel, double *add_time, double *
   *add_time = time + dt;
 }
 
-void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, double* SS, double ldiagnos)
+void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, 
+            double* SS, double ldiagnos)
 {
 	// Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
   // add_time is the address of time and the same goes for dt as well.
-	double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, yold[ndim];
+	double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, ynew[ndim];
 	int idim ;
 	double error = 0;
 	double dt = *add_dt;
 	// double tol_dt = pow(10,-9)*dt;
-  double tol_dt = pow(10,-8);
+  double tol_dt = pow(10,-4);
   bool flag_kappa;
   double time = *add_time;
   double Delta = 0.; 
@@ -91,7 +92,7 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
     {439./216.,-8.,3680./513.,-845./4104.,0},
     {-8./27.,2.,-3544./2565.,1859./4104.,-11./40.}
   };
-  double bistar[6] = {16./135.,0,6656./12825.,28561./56430.,-9./50.,2./55.};
+  double bistar[6] = {16./135.,0,6656./12825,28561./56430,-9./50,2./55};
   double bi[6] = {25./216.,0,1408./2565.,2197./4104.,-1./5.,0};
 
   if (ldiagnos)
@@ -131,48 +132,68 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
 
  	for (int idim = 0; idim < ndim; ++idim)
  	{
- 		temp[idim] = y[idim] + aij[4][0]*dt*k1[idim] + aij[4][1]*k2[idim]*dt + aij[4][2]*k3[idim]*dt + aij[4][3]*k4[idim]*dt ;
+ 		temp[idim] = y[idim] + aij[4][0]*dt*k1[idim] + aij[4][1]*k2[idim]*dt + aij[4][2]*k3[idim]*dt + 
+                  aij[4][3]*k4[idim]*dt ;
  	}
  	eval_rhs(time+ci[4]*dt, temp, k5, flag_kappa, CurvSqr, SS);
 
- 	for (int idim = 0; idim < ndim; ++idim)
- 	{
+ 	for (int idim = 0; idim < ndim; ++idim){
  		temp[idim] = y[idim] + aij[5][0]*k1[idim]*dt + aij[5][1]*k2[idim]*dt + aij[5][2]*k3[idim]*dt + aij[5][3]*k4[idim]*dt + aij[5][4]*k5[idim]*dt ;
  	}
- 	eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
 
+ 	eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
+  error=0;
+  double temp_error=0;
  	for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim] + bi[0]*k1[idim]*dt + bi[2]*k3[idim]*dt + bi[3]*k4[idim]*dt + bi[4]*k5[idim]*dt;
     // cout << temp[idim] << endl;
  		// cout << temp[idim] << endl;
-    yold[idim] = y[idim];
-    y[idim] = y[idim]+ bistar[0]*k1[idim]*dt + bistar[2]*k3[idim]*dt + bistar[3]*k4[idim]*dt + bistar[4]*k5[idim]*dt + bistar[5]*k6[idim]*dt;
+    ynew[idim]=y[idim];
+    ynew[idim] = ynew[idim]+ bistar[0]*k1[idim]*dt + bistar[2]*k3[idim]*dt + bistar[3]*k4[idim]*dt + bistar[4]*k5[idim]*dt + bistar[5]*k6[idim]*dt;
     // cout << temp[idim] << endl;
- 		error = error + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
+ 		temp_error = temp_error + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
+    error=max(temp_error,error);
  	}
-  error = sqrt(error)/ndim;
-  if (error<tiny){
-      Delta = 10000;
+  error = sqrt(error);
+  error=error+tiny;
+  if (error<tol_dt){
+    *add_time=time+dt;
+    s = epsilon*pow(tol_dt/error,0.25);
+    if (s>truncationmax){s=truncationmax;}
+    *add_dt = s*dt;
+    for (int idim = 0; idim < ndim; ++idim){
+      y[idim]=ynew[idim];   // Accept the step
+    }
+    // cout << "Is it coming here?" <<endl;
+  }else{
+    s = epsilon*pow((tol_dt/error),0.2);
+    if (s<truncationmin){s=truncationmin;}
+    *add_dt = s*dt;
+    // cout << "So you mean to say that the segmentation fault is here?" << endl;
+    rnkf45(pdim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
-  else{
-      Delta = tol_dt/error;
-  }
-  s = epsilon*pow(Delta,0.25);
-  // cout << error << '\t' << s << '\t' << *add_dt<< endl;
-  if (Delta>=0.5){
-      *add_time = time + dt;
-      if (s>truncationmax){
-          s=truncationmax;
-      }
-      *add_dt = s*dt;
-  }else{ 
-      if (s<=truncationmin)
-      {
-          s = truncationmin;
-      }
-      *add_dt = s*dt;
-      rnkf45(pdim, &yold[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
-  }
+
+  // if (error<tiny){
+  //     Delta = 10000;
+  // }
+  // else{
+  //     Delta = tol_dt/error;
+  // }
+  // // cout << error << '\t' << s << '\t' << *add_dt<< endl;
+  // if (Delta>=0.5){
+  //     *add_time = time + dt;
+  //     if (s>truncationmax){
+  //         s=truncationmax;
+  //     }
+  //     *add_dt = s*dt;
+  // }else{ 
+  //     if (s<=truncationmin)
+  //     {
+  //         s = truncationmin;
+  //     }
+  //     *add_dt = s*dt;
+  //     rnkf45(pdim, &yold[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
+  // }
 
 
   // if (s>10)
