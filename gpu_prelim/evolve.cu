@@ -111,9 +111,9 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   /*Yes we should save them somewhere else.--vipin*/
   (*TT).time = 0.;
   (*TT).tprime = (*TT).time;
-  (*TT).dt = 1.e-8;
-  (*TT).ndiag = 4;
-  (*TT).tmax = 2.e-6 ;
+  (*TT).dt = 1.e-6;
+  (*TT).ndiag = 10000;
+  (*TT).tmax = 1.e-2;
   (*TT).tdiag = 0.;
   (*TT).substep = 0.;
   EV *temp ;

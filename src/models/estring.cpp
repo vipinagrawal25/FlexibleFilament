@@ -111,7 +111,7 @@ void drag(vec3 X[], vec3 dX[], vec3 EForce[]){
             double c1 = 1/(8*M_PI*viscosity*d_rij);
             double dsqr1 = 1./(d_rij*d_rij);
             mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
-            dX[ip] = dX[ip] + dot(mu_ij, EForce[ip]);
+            dX[ip] = dX[ip] + dot(mu_ij, EForce[jp]);
             dX[jp] = dX[jp] + dot(mu_ij, EForce[ip]);
         }
     }
@@ -121,7 +121,6 @@ void drag(vec3 X[], vec3 dX[], vec3 EForce[]){
         dX[ip] = EForce[ip]*mu0;
     }
   } 
- 
 }
 
 /**************************/

@@ -106,7 +106,6 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   }
 
 	eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
-  vel=k1;
   // CurvSqr_Store = CurvSqr;
 
 	for(idim=0;idim<ndim;idim++)
@@ -163,6 +162,7 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
     *add_dt = s*dt;
     for (int idim = 0; idim < ndim; ++idim){
       y[idim]=ynew[idim];   // Accept the step
+      vel[idim]=k1[idim];
     }
     // cout << "Is it coming here?" <<endl;
   }else{

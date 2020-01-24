@@ -290,14 +290,14 @@ __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
     // rij = R[j]-R[i] and d_rij is just the norm of this value.
     for (int jp = 0; jp < NN; ++jp){
       if (jp == ip){
-        dR =  dR + dot(mu_ii, *EForce );
+        dR =  dR + dot(mu_ii, *EForce);
       }else{
         GetRij(psi, ip, jp, &d_rij, &rij);
         c1 = 1./(d_rij*8*M_PI*viscosity);
         dsqr1 = 1./(d_rij*d_rij);
-        
+
         mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1)); 
-        dR =  dR + dot(mu_ij, *EForce );
+        dR =  dR + dot(mu_ij, *EForce);
         /*Debugging stuff */
         // printf("%lf\n", dd);
         // if (ip==23){
@@ -547,7 +547,7 @@ __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau
   kappasqr : square of local curvature. 
   This number is stored in param.qdiag */
   double ds, kappasqr ; 
-  R = psi2R(psi, kelement );
+  R = psi2R(psi, kelement);
   // Calculate diagnostics only when it is needed.
   // if ( kelement == (NN-1) ){
   //   ds = 0.;

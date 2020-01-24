@@ -182,8 +182,8 @@ int main()
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim,&y[irb],time-dt,dt);
-    // rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
-  	rnkf45(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
+    rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
+  	// rnkf45(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
     // timer = clock();
     // cout << dt << endl;
     // timer = clock() - timer;
@@ -203,7 +203,7 @@ int main()
 
     tdiagnos = 0;
     // cout << "Yaar ye code chal kyu nahi raha hai " << endl;
-    if (time<=tdiag*filenumber && time+dt>=tdiag*filenumber) 
+    if (time>=tdiag*filenumber) 
     {
       // cout << time << '\t' << y[0] << '\t' << (sin(2*time+10*sin(0.1*time)))/sqrt(6+3*cos(0.1*time)) << '\t' << 1/sqrt(6+3 *cos(0.1*time))<<endl;
       // cout << dt << endl;
