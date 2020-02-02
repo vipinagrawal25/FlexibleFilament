@@ -20,23 +20,17 @@ vec3 R[Np],dR[Np], EForce[Np], EForce_ip, FF0;  // R is the position of the bead
 // double CurvSqr[Np];
 double kappasqr;
 double onebythree = 1./3.;
-double Curvlength = 0;
 SS[0] = 0;    // Initializing the material co-ordinate
 for (int ip=0;ip<Np;ip++){
   R[ip].x=y[3*ip];
   R[ip].y=y[3*ip+1];
   R[ip].z=y[3*ip+2];
 }
-for (int ip = 0; ip < Np-1; ++ip){
-  if (flag_kappa){
-    Curvlength = Curvlength+norm(R[ip+1]-R[ip]);
-  }  
-}
 for (int ip=0;ip<Np;ip++){
 kappasqr=CurvSqr[ip];
 if (flag_kappa){
   if (ip<Np-1){
-    SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip])/Curvlength;
+    SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip]);
   }
 }
 dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
@@ -60,19 +54,19 @@ switch(conf_number){
     }
     // if (sin(omega*time)>=0){
     //   for (int ip = 0; ip < Np; ++ip){
-    //     dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*ceil(sin(omega*time));  
+    //     dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*ceil(sin(omega*time)); 
     //   }
     // }
     // else{
     //    for (int ip = 0; ip < Np; ++ip){
-    //     dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*floor(sin(omega*time));  
+    //     dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*floor(sin(omega*time));
     //   }
     // }
     break;
     case 2:
     for (int ip = 0; ip < Np; ++ip)
     {
-      dR[ip].y = dR[ip].y + ShearRate*(R[ip].z);          
+      dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*sin(omega*time);          
     }
     break; 
     case 3:
@@ -140,7 +134,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
 
   //vec3 FF;
   
-  if (conf_number==0 || conf_number ==2){
+  if (conf_number==0){
     // cout << "ise yaha aana chahiye kyuki 2 number hai " << endl;
     Xzero.x=0.; Xzero.y=0.; Xzero.z=Z0;      
   }
@@ -286,15 +280,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       break;
   }  
 
-  //   if (flag_kappa)
-  //   {
-  //     *add_kappasqr=2.*(1.-dot(uk,ukm1));
-  //     // cout << kappasqr << endl;
-  //   }
-  //   *add_FF = FF;
-  // }
-  // *add_SS = (kp+1)*bkm1;
- }
+}
 /**************************/
 void iniconf(double *y, int configuration)
 {
@@ -326,28 +312,19 @@ void iniconf(double *y, int configuration)
             R[ip].y=aa*sin(M_PI*k*aa*double(ip+1)/height);
             R[ip].z=aa*double(ip+1);  
             // R[ip].y = 0;    
-            if (ip>0)
-            {
+            if (ip>0){
                 CurvLength = CurvLength + norm(R[ip]-R[ip-1]);
                 // cout << CurvLength << endl;
             }
-            else
-            {
+            else{
                 CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
             }
             // cout << CurvLength << endl;
             // cout << M_PI << endl;
-
             y[3*ip]=R[ip].x;
             y[3*ip+1]=R[ip].y;
             y[3*ip+2]=R[ip].z;
           }
-
-          // for (int ip = 0; ip < Np; ++ip)
-          // {
-          //     R[ip].y = R[ip].y/CurvLength; 
-              // y[3*ip+1]=R[ip].y;
-          // }
 
           break;
 
@@ -384,7 +361,6 @@ void iniconf(double *y, int configuration)
               else{
                 CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
               }
-
               y[3*ip] = R[ip].x;
               y[3*ip+1] = R[ip].y;
               y[3*ip+2] = R[ip].z;
@@ -394,7 +370,7 @@ void iniconf(double *y, int configuration)
               y[3*ip+2] = R[ip].z;
           }
           break;
-         
+      
         case 3:
           double theta;
           for (int ip = 0; ip < Np; ++ip)

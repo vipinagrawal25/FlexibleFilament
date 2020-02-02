@@ -87,7 +87,7 @@ __global__ void thread_sum( double array[], double redux[] ){
   double temp=0.;
   while(tid<NN){
     temp+=array[tid];
-    tid += blockDim.x*gridDim.x;
+    tid+=blockDim.x*gridDim.x;
   }
   cache[cacheIndex]=temp;
   __syncthreads();

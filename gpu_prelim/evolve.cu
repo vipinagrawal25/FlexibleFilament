@@ -11,6 +11,7 @@ double *dev_err;
 double *dev_redux, *REDUX; 
 int size_redux;
 double MaxLen, MinLen;
+double *dev_EForce;
 using namespace std;
 /*--------------------------------------------------*/
 void (*ALGO)( double [], double [],
@@ -120,7 +121,7 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   cudaMalloc(  (void**)&temp, size_EV );
   *dev_tt = temp;
   cudaMemcpy( *dev_tt, TT,
-                     size_EV, cudaMemcpyHostToDevice ) ;
+                     size_EV, cudaMemcpyHostToDevice);
   wevolve( *TT, "initial.txt");
 }
 /* ------------------------------------------------------------------------------*/
@@ -139,6 +140,7 @@ void wevolve( EV TT, char *fname ){
 void pre_euler( int Nsize ){
   printf( " #---time-integration algorithm : EULER --\n " );
   cudaMalloc( (void**)&dev_kk, Nsize*sizeof( double ) );
+  cudaMalloc( (void**)&dev_EForce, NN*sizeof( double ) );
   printf( "#--I have set up auxiliary storage in the device-- \n " ) ;
 }
 /*----------------------------------------*/
@@ -149,9 +151,10 @@ void pre_rnkt4( int Nsize ){
   cudaMalloc( (void**)&dev_k2, Nsize*sizeof( double ) );
   cudaMalloc( (void**)&dev_k3, Nsize*sizeof( double ) );
   cudaMalloc( (void**)&dev_k4, Nsize*sizeof( double ) );
+  cudaMalloc( (void**)&dev_EForce, NN*sizeof(double) );
   printf( "--I have set up auxiliary storage in the device --\n " ) ;
 }
-/*----------------------------------------*/
+/*--------------------------------------------------------------------*/
 void pre_rnkf45( int Nsize, int Nblock, int Nthread ){
   printf( "#-- time-integration algorithm : RNKF45-- \n " );
   cudaMalloc( (void**)&dev_psip, Nsize*sizeof( double ) );
@@ -163,6 +166,7 @@ void pre_rnkf45( int Nsize, int Nblock, int Nthread ){
   cudaMalloc( (void**)&dev_k6, Nsize*sizeof( double ) );
   cudaMalloc( (void**)&dev_err, NN*sizeof(double));
   cudaMalloc( (void**)&dev_kin, 6*sizeof(double*));
+  cudaMalloc((void**)&dev_EForce, NN*sizeof(double))
   // Defining array of all k pointers.
   double *KIN[6] = {dev_k1,dev_k2,dev_k3,dev_k4,dev_k5,dev_k6};
   cudaMemcpy(dev_kin,KIN,6*sizeof(double*),cudaMemcpyHostToDevice); 
@@ -263,7 +267,7 @@ void euler( double PSI[], double dev_psi[],
 //   }
 // }
 /*----------------------------------------------------------------*/
-__global__ void eu_psi_step( double psi[], double kk[], EV *tt ){
+__global__ void eu_psi_step( double psi[], double double kk[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
@@ -314,7 +318,7 @@ void rk4_time_step( EV *TT, EV *dev_tt ){
   (*TT).time = (*TT).time + (*TT).dt ;
   (*TT).tprime = (*TT).time ;
   (*TT).substep = 0;
-  cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice ) ;
+  cudaMemcpy( dev_tt, TT, size_EV, cudaMemcpyHostToDevice );
 }
 /*----------------------------------------------------------------*/
 __global__ void rk4_psi_step( double psi[],
@@ -329,7 +333,6 @@ __global__ void rk4_psi_step( double psi[],
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
-  
 }
 /*-----------------------------------------------------------------------*/
 void rnkt4( double PSI[], double dev_psi[],
@@ -451,7 +454,6 @@ __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
-  
 }
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
@@ -512,7 +514,7 @@ double MaxDevArray(double dev_array[], int Nblock, int Nthread){
   for (int iblock = 0; iblock < Nblock; ++iblock){
     REDUX[iblock]=0.;
   }
-  thread_maxima <<<Nblock, Nthread, Nthread*sizeof(double) >>>(dev_array,dev_redux);
+  thread_maxima <<<Nblock, Nthread, Nthread*sizeof(double) >>> (dev_array,dev_redux);
   cudaMemcpy(REDUX,dev_redux,size_redux,cudaMemcpyDeviceToHost);
   // Copied the thread maxima output back to host.
   // Compare the maximum across the blocks. This operation is done in CPU for the time being.
