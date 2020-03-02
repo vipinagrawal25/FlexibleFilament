@@ -29,7 +29,7 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap):
 #####################################################
 def MakePlot2D(ax,Xaxis,Yaxis,tsnap):
 	# ax.subplot(2,1,2)
-	ax.set_xlim(-1.5,2)
+	ax.set_xlim(-1,1)
 	ax.set_ylim(-1,1)
 	ax.plot(Xaxis,Yaxis,'o-')
 	plt.title(str(tsnap))
@@ -51,7 +51,7 @@ def MultifileMovie(FILE='output',dim=3):
 
 	with writer.saving(fig,"movie.mp4", 100):
 		for isnap in range(1,nsnap,1):
-	 		dd=loadtxt(FILE+'/position'+str(isnap)+'.txt')
+	 		dd=loadtxt(FILE+'/var'+str(isnap)+'.txt')
 	 		xx=dd[:,0]
 	 		yy=dd[:,1]
 	 		zz=dd[:,2]
@@ -106,7 +106,7 @@ def SingleFileMovie(FILE='data/PSI',dim=3, output="data/movie.mp4"):
 # with writer.saving(fig, FILE+"/movie.mp4", 100):
 #     for isnap in range(1,itn,1):
 #     	# start = time.time()
-#     	dd = loadtxt(FILE+'/position'+str(isnap)+'.txt')
+#     	dd = loadtxt(FILE+'/var'+str(isnap)+'.txt')
 #     	zz = dd[:,2]
 #     	yy = dd[:,1]
 #     	xx = dd[:,0]

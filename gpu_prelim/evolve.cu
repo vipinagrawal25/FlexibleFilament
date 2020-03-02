@@ -218,17 +218,16 @@ void evolve( double PSI[], double dev_psi[],
 /*-------------------------------------------------------------------------*/
 __global__ void eval_rhs(double kk[], double psi[],
                          EV *tt, MPARAM *param, double diag[],
-                         CRASH *bug ){
+                         CRASH *bug, int tid ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  while (tid < NN ){
-    model_rhs( kk, psi, tid, (*tt).tprime, param, diag, bug, (*tt).ldiag );
+  while (tid < NN){
+    model_rhs(kk, psi, tid, (*tt).tprime, param, diag, bug, (*tt).ldiag);
     tid += blockDim.x * gridDim.x ;
     // For debugging stuff
     // printf("%lf\n", kk[3*tid+2]);
   }// while loop over threads finishes here.
-
 }
-/*------------------------------------------------------------ */
+/*--------------------------------------------------------------------------- */
 void euler( double PSI[], double dev_psi[],
             double VEL[], double dev_vel[],
             EV *TT, EV *dev_tt,
@@ -259,13 +258,6 @@ void euler( double PSI[], double dev_psi[],
   eu_psi_step<<< Nblock, Nthread >>>( dev_psi, dev_kk, dev_tt ) ;
   eu_time_step(TT, dev_tt);
  }
-  /*----------------------------------------------------------------*/
-// __global__ void reduce_diag( double diag[] ){
-//   int tid = threadIdx.x + blockIdx.x * blockDim.x;
-//   while (tid < NN ){
-//     tid += blockDim.x * gridDim.x ;
-//   }
-// }
 /*----------------------------------------------------------------*/
 __global__ void eu_psi_step( double psi[], double double kk[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -514,7 +506,7 @@ double MaxDevArray(double dev_array[], int Nblock, int Nthread){
   for (int iblock = 0; iblock < Nblock; ++iblock){
     REDUX[iblock]=0.;
   }
-  thread_maxima <<<Nblock, Nthread, Nthread*sizeof(double) >>> (dev_array,dev_redux);
+  thread_maxima <<< Nblock, Nthread, Nthread*sizeof(double) >>> (dev_array,dev_redux);
   cudaMemcpy(REDUX,dev_redux,size_redux,cudaMemcpyDeviceToHost);
   // Copied the thread maxima output back to host.
   // Compare the maximum across the blocks. This operation is done in CPU for the time being.
@@ -543,7 +535,7 @@ void rnkf45( double PSI[], double dev_psi[],
   double StringLen;
   /* I do time-marching */
   // 1st evaluation of rhs, diagnostic is calculated in this step
-  eval_rhs<<<Nblock,Nthread >>>( dev_k1, dev_psi,  dev_tt ,
+  eval_rhs<<< Nblock,Nthread >>>( dev_k1, dev_psi,  dev_tt ,
                                  dev_param, dev_diag, dev_bug  );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);

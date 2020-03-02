@@ -9,7 +9,7 @@ The number of degrees of freedom at each node is pp */
 #define NN 100
 #define pp  3
 #define ndim NN*pp
-#define TimeScheme "rnkt4"
+#define TimeScheme "rnkf45"
 /*--------------------------------------------------*/
 struct MPARAM {
   double height ;	// height of the box we are doing simulations in.

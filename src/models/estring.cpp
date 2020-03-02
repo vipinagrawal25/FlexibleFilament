@@ -63,13 +63,18 @@ switch(conf_number){
     //   }
     // }
     break;
-    case 2:
+  case 2:
     for (int ip = 0; ip < Np; ++ip)
     {
-      dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*sin(omega*time);          
+      // NOT SO GOOD WAY TO WRITE LIKE THIS
+      if (time<30*(1/ShearRate)){
+        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z);
+      }else{
+        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*sin(omega*time);
+      }
     }
     break; 
-    case 3:
+  case 3:
     break;
 }
 // External force applied on the end point.
@@ -130,8 +135,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
   vec3 ukm2(0.,0.,0.), ukm1(0.,0.,0.), uk(0.,0.,0.), ukp1(0.,0.,0.), Xzero(0.,0.,0.), dX(0.,0.,0.);
   double bkm2, bkm1, bk, bkp1;
   vec3 FF = *add_FF;             
-    // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
-
+  // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
   //vec3 FF;
   
   if (conf_number==0){
@@ -315,8 +319,7 @@ void iniconf(double *y, int configuration)
             if (ip>0){
                 CurvLength = CurvLength + norm(R[ip]-R[ip-1]);
                 // cout << CurvLength << endl;
-            }
-            else{
+            }else{
                 CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
             }
             // cout << CurvLength << endl;
@@ -347,6 +350,7 @@ void iniconf(double *y, int configuration)
           break;
 
         case 2:
+        // Santillian's experiment
         // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. The rod
         // should be deviated a little bit from origin in starting.           
           for (int ip = 0; ip < Np; ++ip)

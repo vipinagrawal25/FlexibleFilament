@@ -72,7 +72,6 @@ def GPUcurvatureplot(FILE='data',omega=3):
 	plt.savefig('curvatureplot.eps')
 	close()
 
-
 def SineCurvature(FILE='output',aspect_ratio=1):
 	dd = loadtxt(FILE+'/curvature.txt')
 	dd_SS = loadtxt(FILE+'/material_point.txt')
@@ -186,7 +185,7 @@ def Energy(AA,HH,FILE='output'):
 	# plt.show()
 	return time,BE,SE
 
-def LeebyL(Folder='output'):
+def LeebyL(Np,Folder='output'):
 	ddMP = loadtxt(Folder+'/material_point.txt')
 	time = loadtxt(Folder+'/time.txt')
 	nrowcol = ddMP.shape
@@ -194,22 +193,22 @@ def LeebyL(Folder='output'):
 
 	LeebyL = zeros(nsnap)
 	for isnap in range(0,nsnap,1):
-		dd = loadtxt(Folder+'/position'+str(isnap)+'.txt')
+		dd = loadtxt(Folder+'/var'+str(isnap)+'.txt')
 		Lee = (dd[0,0]-dd[-1,0])**2 + (dd[0,1]-dd[-1,1])**2 + (dd[0,2]-dd[-1,2])**2
 		Lee = sqrt(Lee)
 		#
-		L = ddMP[isnap,-1]
+		L = 0
+		for ip in range(0,Np-1):
+			L = L+(dd[ip+1,0]-dd[ip,0])**2 + (dd[ip+1,1]-dd[ip,1])**2 + (dd[ip,2]-dd[ip+1,2])**2
 		LeebyL[isnap] = Lee/L
 
-	plt.plot(time,LeebyL,'-')
+	plt.plot(time,LeebyL,'o-')
+	plt.plot(time,Lee,'o-')
 	# plt.ylim((0, 0.1))
 	plt.savefig('LeebyL.eps')
 	plt.show()
 
 	return LeebyL
-
-
-	
 
 # 	for idip in range(0,ndip-1):
 # 		dd = loadtxt(FILE+'output/position'+str(dips(idip))+'.txt')

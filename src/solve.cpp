@@ -28,7 +28,7 @@ int main()
   double lengthmin=height;
   double lengthmax=height;
   double dt_min = 10;
-  double gamma = 8*M_PI*viscosity*ShearRate*pow(aa,3)/(AA) ;
+  double gamma = 8*M_PI*viscosity*ShearRate*pow(dd,3)/(AA) ;
   double MSElen = 0;
   // This gamma is non-dimensional number which describes the competition between viscous forces and elastic forces.
   // cout << HH << endl;
@@ -160,7 +160,6 @@ int main()
       SS[ip] = 0;
     }
   }
-
   /*Opening every file again in append mode. This thing does not depend on configuration number and that's why it is outside the loop*/
   fstream outfile_MSD("MSD.txt", ios::app);
   fstream outfile_time("output/time.txt", ios::app);
@@ -170,8 +169,7 @@ int main()
   iniconf(y, conf_number);
   timer = clock();
   timer_global = timer/CLOCKS_PER_SEC;
-  while(time < TMAX)
-  {
+  while(time < TMAX){
     // cout << time << endl;
     // ldiagnos=itn%idiag;
     // tdiagnos=time%tdiag;
@@ -180,14 +178,8 @@ int main()
     // int irb=pdim*ibody;
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
-    // rnkt4(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
   	rnkf45(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
-    // timer = clock();
-    // cout << dt << endl;
-    // timer = clock() - timer;
-    // timer_global = timer_global + timer;
-    // cout << timer << endl;
     if (dt<dt_min){
       dt_min = dt;
     }
@@ -201,15 +193,9 @@ int main()
     }
     tdiagnos = 0;
     // cout << "Yaar ye code chal kyu nahi raha hai " << endl;
-    if (time>=tdiag*filenumber) 
-    {
+    if (time>=tdiag*filenumber) {
       // cout << time << '\t' << y[0] << '\t' << (sin(2*time+10*sin(0.1*time)))/sqrt(6+3*cos(0.1*time)) << '\t' << 1/sqrt(6+3 *cos(0.1*time))<<endl;
       // cout << dt << endl;
-      for (int ip = 0; ip < Np-1; ++ip){
-        if (flag_kappa){
-          Curvlength = Curvlength+norm(R[ip+1]-R[ip]);
-        }  
-      }
       ofstream outfile;
       string l = "output/var";
       l.append(to_string(filenumber));
@@ -222,7 +208,7 @@ int main()
         
         outfile_curvature << CurvSqr[ip]*aa*aa << '\t' ;  /*Square of curvature is non-dimensionalized with the multiplication of square of 
                                                              bead distance */   
-        outfile_SS << SS[ip]/Curvlength << '\t';        
+        outfile_SS << SS[ip]/SS[Np-1] << '\t';        
         // MeanSqDis = MeanSqDis+(y[3*idim]-y0[idim])*(y[idim]-y0[idim])
         // outfile_MSD << MeanSqDis << ';' ; 
         // cout << CurvSqr[ip] << endl;
@@ -259,8 +245,6 @@ int main()
   outfile_time.close();
   outfile_curvature.close();
   outfile_SS.close();
-
-
   // outfile_MSD << endl;
   outfile_MSD.close();
 

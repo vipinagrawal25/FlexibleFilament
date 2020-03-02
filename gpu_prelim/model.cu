@@ -269,7 +269,7 @@ __device__ vec3 ext_flow( int kelement, vec3 R, double tau,
   return UU;
 }
 /*--------------------------------------------------------------------------------------*/
-__device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
+__device__ vec3 drag(int ip,  double psi[], vec3 EForce[], struct MPARAM *param){
   Tens2 dab(1.,0.,0.,0.,1.,0.,0.,0.,1.);
   vec3 dR(0., 0., 0.) ; 
   double viscosity = (*param).viscosity ;
@@ -290,14 +290,14 @@ __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
     // rij = R[j]-R[i] and d_rij is just the norm of this value.
     for (int jp = 0; jp < NN; ++jp){
       if (jp == ip){
-        dR =  dR + dot(mu_ii, *EForce);
+        dR =  dR + dot(mu_ii, EForce[ip]);
       }else{
         GetRij(psi, ip, jp, &d_rij, &rij);
         c1 = 1./(d_rij*8*M_PI*viscosity);
         dsqr1 = 1./(d_rij*d_rij);
 
         mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1)); 
-        dR =  dR + dot(mu_ij, *EForce);
+        dR =  dR + dot(mu_ij, EForce[jp]);
         /*Debugging stuff */
         // printf("%lf\n", dd);
         // if (ip==23){
@@ -307,7 +307,7 @@ __device__ vec3 drag(int ip,  double psi[], vec3 *EForce, struct MPARAM *param){
     }
   } else{
     /* if we use local drag */
-    dR = (*EForce)*mu0;
+    dR = EForce[ip]*mu0;
   } 
   /*Caution: Only for debugging*/
   // printf("%lf\t%lf\t%lf\t", dR.x,dR.y,dR.z);
@@ -538,7 +538,7 @@ __device__ void dHdR(int kp, double psi[], vec3* add_FF,
 __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau,
                            struct MPARAM *param, double diag[], CRASH *bug, int ldiag ){
   int iext_flow = (*param).iext_flow ;
-  vec3 R, dR, EForce, FF0, Rm1;  // R is the position of the beads.
+  vec3 R, dR, EForce[NN], FF0, Rm1, EForce_kp;  // R is the position of the beads.
   int iext_force = (*param).iext_force ; 
   int floc = (*param).floc ;
   // int qdiag = (*param).qdiag;
@@ -562,26 +562,32 @@ __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau
   //   diag[ kelement ] = diag[kelement-1]+ds;
   //   diag[ kelement + NN*1]  = kappasqr;
   // }
-  dHdR( kelement, psi, &EForce, &kappasqr, param, bug, ldiag );
+  /* The idea is to calculate Elastic force on all points only for the first thread and just use it later. */
   if (kelement==0){
-    diag[0]=0;
-    if (ldiag){
-      diag[0+NN]=kappasqr;
+    for (int kp = 0; kp < NN; ++kp){
+      dHdR( kelement, psi, &EForce_kp, &kappasqr, param, bug, ldiag );
+      EForce[kp] = EForce_kp;
+      /* add external force to the filament */
+      if ( (iext_force) && (kelement == floc) ){
+      EForce = EForce -  ext_force( kelement, R, tau, param ); }
+      
+      /* Save the diagnostics*/
+      if(ldiag){
+        if(kp==0){
+          diag[0]=0;
+          diag[0+NN]=kappasqr;
+        }else{
+          Rm1 = psi2R(psi,kelement-1);
+          ds = norm(R-Rm1);
+          diag[kelement+NN*0]=ds;
+          diag[kelement+NN*1]=kappasqr;
+        }
+      }
+
     }
   }
-  else{
-    Rm1 = psi2R(psi,kelement-1);
-    ds = norm(R-Rm1);
-    diag[kelement+NN*0]=ds;
-    if (ldiag){
-     diag[kelement+NN*1]=kappasqr;
-    }
-  }
-  /* add external force to the filament */
-  if ( (iext_force) && (kelement == floc) ){
-  EForce = EForce -  ext_force( kelement, R, tau, param ); }
   /* calculate the viscous (possibly non-local ) drag */
-  dR = drag(kelement, psi,  &EForce, param);
+  dR = drag(kelement, psi, EForce, param);
   /* contribution from external flow */
   if ( iext_flow  ){ 
     dR = dR+ext_flow( kelement, R, tau, param ) ;

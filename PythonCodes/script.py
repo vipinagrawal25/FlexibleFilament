@@ -2,12 +2,11 @@ from functions import *
 import matplotlib.pyplot as plt
 import moviewriter as MOVIE
 
-AA = 1.5*0.0001*5
-HH = 64*AA*(10**4)
+AA = 1.5*0.00001*1
+frequency = 0;
 
-frequency = 3;
+HH = 64*AA*(40**2)
 Np = 100;
-
 aspect_ratio=1
 # TMAX= 15;
 # Totalfiles=2000;
@@ -29,12 +28,12 @@ Things = [Thing1]
 # close()
 for i in range(0,len(Things)):
 	if Things[i] == "movie" or Things[i] == "Movie":
-		MOVIE.MultifileMovie(dim=3)
+		MOVIE.MultifileMovie(dim=2)
 	elif Things[i] == "MSD":
 		MSD_plot()
 		close()
 	elif Things[i] == "Curvature" or Things[i] == "curvatureplot" or Things[i] == "curvature":
-		GPUcurvatureplot(omega=frequency)
+		curvatureplot(omega=frequency)
 	elif Things[i] == "Energy":
 		time,BE,SE = Energy(AA,HH)
 		plt.plot(time[0:-1],BE[0:-1])
@@ -43,7 +42,7 @@ for i in range(0,len(Things)):
 		plt.savefig('Energy.eps')
 		close()
 	elif Things[i] == "LeebyL":
-		LeebyL()
+		LeebyL(Np=100)
 	elif Things[i]=="SineCurvature" :
 		SineCurvature(aspect_ratio=aspect_ratio)
 		close()
