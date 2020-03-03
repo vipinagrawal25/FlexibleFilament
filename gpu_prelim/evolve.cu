@@ -114,7 +114,7 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   (*TT).tprime = (*TT).time;
   (*TT).dt = 1.e-6;
   (*TT).ndiag = 10000;
-  (*TT).tmax = 1.e-2;
+  (*TT).tmax = 1.e-3;
   (*TT).tdiag = 0.;
   (*TT).substep = 0.;
   EV *temp ;
@@ -166,7 +166,7 @@ void pre_rnkf45( int Nsize, int Nblock, int Nthread ){
   cudaMalloc( (void**)&dev_k6, Nsize*sizeof( double ) );
   cudaMalloc( (void**)&dev_err, NN*sizeof(double));
   cudaMalloc( (void**)&dev_kin, 6*sizeof(double*));
-  cudaMalloc((void**)&dev_EForce, NN*sizeof(double))
+  cudaMalloc((void**)&dev_EForce, NN*sizeof(double));
   // Defining array of all k pointers.
   double *KIN[6] = {dev_k1,dev_k2,dev_k3,dev_k4,dev_k5,dev_k6};
   cudaMemcpy(dev_kin,KIN,6*sizeof(double*),cudaMemcpyHostToDevice); 
@@ -218,7 +218,7 @@ void evolve( double PSI[], double dev_psi[],
 /*-------------------------------------------------------------------------*/
 __global__ void eval_rhs(double kk[], double psi[],
                          EV *tt, MPARAM *param, double diag[],
-                         CRASH *bug, int tid ){
+                         CRASH *bug ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   while (tid < NN){
     model_rhs(kk, psi, tid, (*tt).tprime, param, diag, bug, (*tt).ldiag);
@@ -259,7 +259,7 @@ void euler( double PSI[], double dev_psi[],
   eu_time_step(TT, dev_tt);
  }
 /*----------------------------------------------------------------*/
-__global__ void eu_psi_step( double psi[], double double kk[], EV *tt ){
+__global__ void eu_psi_step( double psi[], double kk[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
@@ -267,7 +267,6 @@ __global__ void eu_psi_step( double psi[], double double kk[], EV *tt ){
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
-  
 }
 /*-----------------------------------------------------------------------*/
 void eu_time_step( EV *TT, EV *dev_tt ){
@@ -469,7 +468,7 @@ __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
 /*-----------------------------------------------------------------------*/
 bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
   // cudaMemcpy(  &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost ) ;
-  double tol = 1.e-4;
+  double tol = 2.e-4;
   double truncationmax=5;  // Maximum multiplication in time step
   double truncationmin=0.2; // Minimum multiplication in time step
   bool laccept;
@@ -514,7 +513,7 @@ double MaxDevArray(double dev_array[], int Nblock, int Nthread){
   // This could be done better by launching a kernel 
   for (int iblock = 0; iblock < Nblock; ++iblock){
     // maxA = max(maxA,REDUX[iblock]);
-    if (maxA<REDUX[iblock]){ 
+    if (maxA<REDUX[iblock]){
       maxA=REDUX[iblock];
     }
     // cout << REDUX[iblock] << "\t" ;

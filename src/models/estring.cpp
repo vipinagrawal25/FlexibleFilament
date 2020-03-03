@@ -70,7 +70,7 @@ switch(conf_number){
       if (time<30*(1/ShearRate)){
         dR[ip].y = dR[ip].y + ShearRate*(R[ip].z);
       }else{
-        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*sin(omega*time);
+        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*sin(omega*(time-30*(1/ShearRate)));
       }
     }
     break; 

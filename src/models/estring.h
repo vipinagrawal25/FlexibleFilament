@@ -10,7 +10,7 @@ double const height = 1;					// height of the box we are doing simulations in.
 double const aa = height/(double)(Np-1); 	// distance between two nodes.
 // AA = AA/aa ;							// See the equation number 35 in DOI: 10.1063/1.1848511
 // double const YY = pow(10,6);			// unit -> Pa; it is the Young modulus of the the particular material.
-double const dd = height/(double)(Np-1); 	// r/l ratio for the rod has been kept constant. It should be noted that the particles would also have same diameter. 
+double const dd = 0.005*(double)height; 	// r/l ratio for the rod has been kept constant. It should be noted that the particles would also have same diameter. 
 double const viscosity = 10;				// Equivalent to kinematic viscosity of glycerin
 // double const AA = 3*pow(10,-4);		 	// AA is bending rigidity constant (AA = EI), unit -> Pa.m^4, 3.14/(16*4) = 0.05
 // The below line is commented because of some error. So I included it in last formulae itself.
@@ -22,7 +22,7 @@ double const FFZ0 = 0*height*height;					// Different force for different config
 double const sigma=1.5;					
 double const ShearRate = 2;
 double const omega = ShearRate*sigma;
-double const AA = 1.5*pow(10,-4)*0.1;
+double const AA = 1.5*pow(10,-5)*100;
 double const HH = 64*AA/(aa*aa);		// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
 // double TMAX = ShearRate*10;
 // double tdiag = TMAX/2000;

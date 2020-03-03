@@ -61,8 +61,8 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   /* r/l ratio for the rod has been kept constant. It should be noted that 
      the particles would also have same diameter. */
   (*PARAM).viscosity = 10;	      // Equivalent to kinematic viscosity of glycerin
-  (*PARAM).Z0=0. ;		      // If we want the bottom point of the rod to be fixed.
-  (*PARAM).Famp = 0. ;	      // Different force for different configuration.
+  (*PARAM).Z0=0.;		      // If we want the bottom point of the rod to be fixed.
+  (*PARAM).Famp = 0.;	      // Different force for different configuration.
   // Sigma is a dimensionless number, which is described as frequency parameter.
   (*PARAM).sigma=1.5;
   (*PARAM).ShearRate = 2;
@@ -563,29 +563,28 @@ __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau
   //   diag[ kelement + NN*1]  = kappasqr;
   // }
   /* The idea is to calculate Elastic force on all points only for the first thread and just use it later. */
-  if (kelement==0){
-    for (int kp = 0; kp < NN; ++kp){
-      dHdR( kelement, psi, &EForce_kp, &kappasqr, param, bug, ldiag );
-      EForce[kp] = EForce_kp;
-      /* add external force to the filament */
-      if ( (iext_force) && (kelement == floc) ){
-      EForce = EForce -  ext_force( kelement, R, tau, param ); }
-      
-      /* Save the diagnostics*/
-      if(ldiag){
-        if(kp==0){
-          diag[0]=0;
-          diag[0+NN]=kappasqr;
-        }else{
-          Rm1 = psi2R(psi,kelement-1);
-          ds = norm(R-Rm1);
-          diag[kelement+NN*0]=ds;
-          diag[kelement+NN*1]=kappasqr;
-        }
-      }
+  
 
+  dHdR( kelement, psi, &EForce_kp, &kappasqr, param, bug, ldiag );
+  /* add external force to the filament */
+  if ( (iext_force) && (kelement == floc) ){
+  EForce_kp = EForce_kp -  ext_force( kelement, R, tau, param ); 
+  }
+  EForce[kelement] = EForce_kp;
+  /* Save the diagnostics*/
+  if(ldiag){
+    if(kelement==0){
+      diag[0]=0;
+      diag[0+NN]=kappasqr;
+    }else{
+      Rm1 = psi2R(psi,kelement-1);
+      ds = norm(R-Rm1);
+      diag[kelement+NN*0]=ds;
+      diag[kelement+NN*1]=kappasqr;
     }
   }
+  __syncthreads();        // Syncing threads here, would make sure that all the calculation has been done till now.
+
   /* calculate the viscous (possibly non-local ) drag */
   dR = drag(kelement, psi, EForce, param);
   /* contribution from external flow */
