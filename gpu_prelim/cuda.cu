@@ -41,7 +41,7 @@ void set_crash( CRASH *BUG, CRASH **dev_bug ){
   *dev_bug = temp;
   cudaMemcpy( *dev_bug, BUG,
                      size_CRASH, cudaMemcpyHostToDevice ) ;
-} 
+}
 /*-----------------------------------------------------------------------*/
 __global__ void thread_maxima( double array[], double redux[] ){
   // This is to calculate maxima of the operations going on in a thread.
@@ -58,49 +58,20 @@ __global__ void thread_maxima( double array[], double redux[] ){
     tid += blockDim.x*gridDim.x;
   }
   cache[cacheIndex]=temp;
+  // printf("%lf\n",cache[cacheIndex]);
   __syncthreads();
   while(i!=0){
     if (cacheIndex<i){
-      if (cache[cacheIndex+i]>cache[cacheIndex]){
-        cache[cacheIndex]=cache[cacheIndex+i];
+      cache[cacheIndex] = max(cache[cacheIndex],cache[cacheIndex+i]);
       }
+      i/=2;
       // cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
       // cache[cacheIndex]=i;
-    }
-    i/=2;
     __syncthreads();
   }
   if (cacheIndex==0){
     redux[blockIdx.x] = cache[0];
   }
+  // printf("\n");
 }
 /*-----------------------------------------------------------------------*/
-__global__ void thread_sum( double array[], double redux[] ){
-  // This is to calculate maxima of the operations going on in a thread.
-  //After this the maxima should be compared among all the blocks as well.
-  extern __shared__ double cache[];  // Just to create a shared variable
-  int tid = threadIdx.x+blockIdx.x*blockDim.x;
-  int i=blockDim.x/2;
-  int cacheIndex=threadIdx.x;
-  // cache[cacheIndex] = array[tid];
-  // __syncthreads();
-  double temp=0.;
-  while(tid<NN){
-    temp+=array[tid];
-    tid+=blockDim.x*gridDim.x;
-  }
-  cache[cacheIndex]=temp;
-  __syncthreads();
-  while(i!=0){
-    if (cacheIndex<i){
-      cache[cacheIndex]+=cache[cacheIndex+i];
-      // cache[cacheIndex]=max(cache[cacheIndex],cache[cacheIndex+i]);
-      // cache[cacheIndex]=i;
-    }
-    i/=2;
-    __syncthreads();
-  }
-  if (cacheIndex==0){
-    redux[blockIdx.x] = cache[0];
-  }
-}

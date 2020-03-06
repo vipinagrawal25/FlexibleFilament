@@ -50,7 +50,7 @@ switch(conf_number){
     break;
   case 1:
     for(int ip=0; ip<Np;ip++){
-      dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*sin(omega*time);
+      dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*(double)sin(omega*time);
     }
     // if (sin(omega*time)>=0){
     //   for (int ip = 0; ip < Np; ++ip){

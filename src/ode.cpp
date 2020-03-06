@@ -66,8 +66,7 @@ void rnkt4(unsigned int ndim, double *y, double *vel, double *add_time, double *
 }
 
 void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, 
-            double* SS, double ldiagnos)
-{
+            double* SS, double ldiagnos){
 	// Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
   // add_time is the address of time and the same goes for dt as well.
 	double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, ynew[ndim];
@@ -75,49 +74,55 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
 	double error = 0;
 	double dt = *add_dt;
 	// double tol_dt = pow(10,-9)*dt;
-  double tol_dt = 2*pow(10,-4);
+  double tol_dt = 1.e-5;
   bool flag_kappa;
   double time = *add_time;
-  double Delta = 0.; 
   double epsilon = 0.84;
-  double truncationmax=5.;
+  double truncationmax=5.0;
   double truncationmin=0.2;
 
-  double ci[6] = {0,0.25,3./8,12./13,1.,1./2} ;
+  // double ci[6] = {0,0.25,3./8,12./13,1.,1./2} ;
+  // double aij[6][5] = {
+  //   {0,0,0,0,0},
+  //   {0.25,0,0,0,0},
+  //   {3./32.,9./32.,0,0,0},
+  //   {1932./2197.,-7200./2197.,7296./2197.,0,0},
+  //   {439./216.,-8.,3680./513.,-845./4104.,0},
+  //   {-8./27.,2.,-3544./2565.,1859./4104.,-11./40.}
+  // };
+  // double bistar[6] = {16./135.,0,6656./12825,28561./56430,-9./50,2./55};
+  // double bi[6] = {25./216.,0,1408./2565.,2197./4104.,-1./5.,0};
+
+  //Cash-Karp Parameters for evolution
+  double ci[6] = {0,0.2,0.3,0.6,1.,7./8} ;
   double aij[6][5] = {
     {0,0,0,0,0},
-    {0.25,0,0,0,0},
-    {3./32.,9./32.,0,0,0},
-    {1932./2197.,-7200./2197.,7296./2197.,0,0},
-    {439./216.,-8.,3680./513.,-845./4104.,0},
-    {-8./27.,2.,-3544./2565.,1859./4104.,-11./40.}
+    {0.2,0,0,0,0},
+    {3./40.,9./40.,0,0,0},
+    {3./10.,-9./10.,6./5.,0,0},
+    {-11./54.,5/2.,-70./27.,35./27.,0},
+    {1631./55296,175./512.,575./13824.,44275./110592,253./4096}
   };
-  double bistar[6] = {16./135.,0,6656./12825,28561./56430,-9./50,2./55};
-  double bi[6] = {25./216.,0,1408./2565.,2197./4104.,-1./5.,0};
+  double bistar[6] = {37./378,0,250./621,125./594,0,512./1771};
+  double bi[6] = {2825./27648.,0,18575./48384,13525./55296.,277./14336.,0.25};
 
-  if (ldiagnos)
-  {
+  if (ldiagnos){
       flag_kappa = true;
       // cout<< "This is a high level shit" << endl;
   }
-  else
-  {
+  else{
       flag_kappa = false;
   }
-
 	eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
   // CurvSqr_Store = CurvSqr;
 
-	for(idim=0;idim<ndim;idim++)
-	{
+	for(idim=0;idim<ndim;idim++){
       temp[idim]=y[idim]+k1[idim]*dt*aij[1][0];
   }
 
   flag_kappa = false;
   eval_rhs(time+dt*ci[1],temp,k2, flag_kappa, CurvSqr, SS);
-
-  // cout << y[34] << '\t' << k2[34] << '\t' << dt << '\t' << temp[34] << endl;
-
+  
   for(idim=0;idim<ndim;idim++){
     temp[idim]=y[idim]+(aij[2][0]*k1[idim]+aij[2][1]*k2[idim])*dt;
  	}
@@ -139,32 +144,27 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
  	for (int idim = 0; idim < ndim; ++idim){
  		temp[idim] = y[idim] + aij[5][0]*k1[idim]*dt + aij[5][1]*k2[idim]*dt + aij[5][2]*k3[idim]*dt + aij[5][3]*k4[idim]*dt + aij[5][4]*k5[idim]*dt ;
  	}
-
  	eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
   error=0;
   double temp_error=0;
  	for (int idim = 0; idim < ndim; ++idim){
-    temp[idim] = y[idim] + bi[0]*k1[idim]*dt + bi[2]*k3[idim]*dt + bi[3]*k4[idim]*dt + bi[4]*k5[idim]*dt;
-    // cout << temp[idim] << endl;
+    temp[idim] = y[idim] + dt*(bi[0]*k1[idim] + bi[1]*k2[idim] + bi[2]*k3[idim] + bi[3]*k4[idim] + bi[4]*k5[idim] +  bi[5]*k6[idim]);
  		// cout << temp[idim] << endl;
-    ynew[idim]=y[idim];
-    ynew[idim] = ynew[idim]+ bistar[0]*k1[idim]*dt + bistar[2]*k3[idim]*dt + bistar[3]*k4[idim]*dt + bistar[4]*k5[idim]*dt + bistar[5]*k6[idim]*dt;
-    // cout << temp[idim] << endl;
- 		temp_error = temp_error + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
+    ynew[idim] = y[idim]+ dt*(bistar[0]*k1[idim] + bistar[1]*k2[idim] + bistar[2]*k3[idim] + bistar[3]*k4[idim] + bistar[4]*k5[idim] 
+                        +  bistar[5]*k6[idim]);
+ 		temp_error = abs(temp[idim]-ynew[idim]);
     error=max(temp_error,error);
  	}
-  error = sqrt(error);
   error=error+tiny;
   if (error<tol_dt){
     *add_time=time+dt;
-    s = epsilon*pow(tol_dt/error,0.25);
-    if (s>truncationmax){s=truncationmax;}
-    *add_dt = s*dt;
     for (int idim = 0; idim < ndim; ++idim){
       y[idim]=ynew[idim];   // Accept the step
       vel[idim]=k1[idim];
     }
-    // cout << "Is it coming here?" <<endl;
+    s = epsilon*pow((tol_dt/error),0.25);
+    if (s>truncationmax){s=truncationmax;}
+    *add_dt = s*dt;
   }else{
     s = epsilon*pow((tol_dt/error),0.2);
     if (s<truncationmin){s=truncationmin;}
@@ -172,71 +172,6 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
     // cout << "So you mean to say that the segmentation fault is here?" << endl;
     rnkf45(pdim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
-
-  // if (error<tiny){
-  //     Delta = 10000;
-  // }
-  // else{
-  //     Delta = tol_dt/error;
-  // }
-  // // cout << error << '\t' << s << '\t' << *add_dt<< endl;
-  // if (Delta>=0.5){
-  //     *add_time = time + dt;
-  //     if (s>truncationmax){
-  //         s=truncationmax;
-  //     }
-  //     *add_dt = s*dt;
-  // }else{ 
-  //     if (s<=truncationmin)
-  //     {
-  //         s = truncationmin;
-  //     }
-  //     *add_dt = s*dt;
-  //     rnkf45(pdim, &yold[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
-  // }
-
-
-  // if (s>10)
-  // {
-  // // cout << s << endl;
-  //   if (isinf(s))
-  //   {
-  //       s=1;
-  //   }
-  //   else
-  //   {
-  //       s=10;
-  //   }    
-  //   *add_time = time + dt;
-  //   *add_dt = s*dt;
-  // }
-  // else if (s < 0.5)
-  // {
-  //   if (s<0.2)
-  //   {
-  //      s = 0.2; 
-  //   }
-  //   *add_dt = s*dt;
-  //   rnkf45(pdim, &yold[0], add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
-  //   // cout << s << endl;
-  // // cout << error << endl;
-  // }
-  // else
-  // {
-  //   *add_time = time + dt;
-  //   *add_dt = s*dt;
-  // }
-
-
-
-  // *add_time = time + dt;
-  // *add_dt = s*dt;
-
- // cout << error << endl;
- // cout << s << endl;
-  // CurvSqr = CurvSqr_Store;
-
-  // cout << error << endl;
 }	
 
 
@@ -320,8 +255,7 @@ void DP54(unsigned int ndim, double *y, double *add_time, double* add_dt, double
   eval_rhs(time+dt,y,k7,flag_kappa,CurvSqr,SS);
 
   err = 0;
-  for (int idim = 0; idim < ndim; ++idim)
-  {
+  for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = yold[idim] +  bistar[0]*k1[idim]*dt + bistar[2]*k3[idim]*dt + bistar[3]*k4[idim]*dt + bistar[4]*k5[idim]*dt + bistar[5]*k6[idim]*dt + bistar[6]*k7[idim]*dt;
     err = err + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
   }

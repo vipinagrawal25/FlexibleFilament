@@ -113,8 +113,8 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   (*TT).time = 0.;
   (*TT).tprime = (*TT).time;
   (*TT).dt = 1.e-6;
-  (*TT).ndiag = 10000;
-  (*TT).tmax = 1.e-3;
+  (*TT).ndiag = 1000;
+  (*TT).tmax = 1.e-5;
   (*TT).tdiag = 0.;
   (*TT).substep = 0.;
   EV *temp ;
@@ -389,10 +389,10 @@ void rnkt4( double PSI[], double dev_psi[],
 __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   // double rnkf45b[5][5] = {{0.2,0.,0.,0.,0.},
-  //                       {3./40,9./40,0.,0.,0.},
-  //                       {0.3,-0.9,1.2,0.,0.},
-  //                       {-11./54,2.5,-70./27,35./27,0},
-  //                       {1631./55296,175./512,575./13824,44275./110592,253./4096} };
+                        // {3./40,9./40,0.,0.,0.},
+                        // {0.3,-0.9,1.2,0.,0.},
+                        // {-11./54,2.5,-70./27,35./27,0},
+                        // {1631./55296,175./512,575./13824,44275./110592,253./4096} };
   double rnkf45b[5][5]= {{0.25,0,0,0,0},
                         {3./32.,9./32.,0,0,0},
                         {1932./2197.,-7200./2197.,7296./2197.,0,0},
@@ -414,8 +414,8 @@ __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], 
 }
 /*-----------------------------------------------------------------------*/
 void rnkf45_time_substep( EV* TT, EV *dev_tt, int j ){
-  // double rnkf45a[5] = {0.2,0.3,0.6,1.,7./8} ;
-  double rnkf45a[5] = {0.25,3./8,12./13,1.,1./2}; 
+  double rnkf45a[5] = {0.2,0.3,0.6,1.,7./8} ;
+  // double rnkf45a[5] = {0.25,3./8,12./13,1.,1./2}; 
   (*TT).tprime = (*TT).time + ((*TT).dt)*rnkf45a[ j ] ;
   (*TT).substep = j + 1;
   (*TT).ldiag=0;
@@ -426,7 +426,7 @@ __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   //
   // double rnkf45c[2][6] = { {37./378,0.,250./621,125./594,0.,512./1771},
-  //                         {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25} };
+                          // {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25} };
   double rnkf45c[2][6] = { {25./216.,0,1408./2565.,2197./4104.,-1./5.,0},
                           {16./135.,0,6656./12825.,28561./56430.,-9./50.,2./55.} };
   //
@@ -436,15 +436,16 @@ __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
     for ( int ip=0; ip<pp; ip++){
       temp_error=0.;
       for (int jp = 0; jp < 6; ++jp){
-          temp_error += ((rnkf45c[0][jp]-rnkf45c[1][jp])*kptr[jp][ip+pp*tid])*((*tt).dt)*
-                        ((rnkf45c[0][jp]-rnkf45c[1][jp])*kptr[jp][ip+pp*tid])*((*tt).dt);   
+          temp_error += ((rnkf45c[0][jp]-rnkf45c[1][jp])*kptr[jp][ip+pp*tid])*((*tt).dt);
+        // temp_error += tid;
       }
+      temp_error = abs(temp_error);
       error[tid] = max(error[tid],temp_error);
-      // printf("%lf\n", error[tid]);
-      // error[tid]=temp_error;    
+      // error[tid]=temp_error; 
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
+  __syncthreads();
 }
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
@@ -454,7 +455,6 @@ __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
   // 
   double rnkf45c[6] = {16./135.,0.,6656./12825.,28561./56430.,-9./50.,2./55.};  
   // double rnkf45c[6]={2825./27648,0.,18575./48384,13525./55296,277./14336,0.25};
-
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
       for (int jp = 0; jp < 6; ++jp){
@@ -463,29 +463,28 @@ __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
-  
 }
 /*-----------------------------------------------------------------------*/
 bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
   // cudaMemcpy(  &TT, dev_tt, size_EV, cudaMemcpyDeviceToHost ) ;
-  double tol = 2.e-4;
-  double truncationmax=5;  // Maximum multiplication in time step
+  double tol = 1.e-5;
+  double truncationmax=5;   // Maximum multiplication in time step
   double truncationmin=0.2; // Minimum multiplication in time step
   bool laccept;
   double s;
   double eps=0.84;        // Safety factor to avoid the infinite loop.
   maxErr=maxErr+tiny;     // in case maxErr is too small to be almost zero.
-  // cout << maxErr << endl;
   if (maxErr<tol){
     laccept=1;
     (*TT).time = (*TT).time + (*TT).dt;
     (*TT).tprime = (*TT).time ;
     (*TT).substep = 0;
     s = eps*pow((tol/maxErr),0.25);
-    if (s>truncationmax){ s=truncationmax; }
+    // cout << s << endl;
+    if (s>truncationmax){ s=truncationmax;}
     (*TT).dt=s*((*TT).dt);
   }
-  else {
+  else{
     laccept=0;  
     (*TT).tprime = (*TT).time ;
     (*TT).substep = 0;
@@ -501,7 +500,6 @@ bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
 /*----------------------------------------------------------------*/
 double MaxDevArray(double dev_array[], int Nblock, int Nthread){
   double maxA=0.;
-  // cout << dev_array[5] << endl;
   for (int iblock = 0; iblock < Nblock; ++iblock){
     REDUX[iblock]=0.;
   }
@@ -513,12 +511,9 @@ double MaxDevArray(double dev_array[], int Nblock, int Nthread){
   // This could be done better by launching a kernel 
   for (int iblock = 0; iblock < Nblock; ++iblock){
     // maxA = max(maxA,REDUX[iblock]);
-    if (maxA<REDUX[iblock]){
-      maxA=REDUX[iblock];
-    }
+    maxA = max(maxA,REDUX[iblock]); 
     // cout << REDUX[iblock] << "\t" ;
-  }
-  // cout << maxA << endl; 
+  } 
   return maxA;
 }
 /*-----------------------------------------------------------------------*/
@@ -549,7 +544,7 @@ void rnkf45( double PSI[], double dev_psi[],
     wDIAG( DIAG, (*TT).time, PARAM );
     D2H( PSI, dev_psi, ndim );
     D2H(VEL,dev_vel,ndim);
-    wPSI( PSI, VEL, (*TT).time ) ; 
+    wPSI( PSI, VEL, (*TT).time ) ;
   }
 // take the first substep
   rnkf45_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_kin, dev_psi, dev_tt ) ;
@@ -589,7 +584,7 @@ void rnkf45( double PSI[], double dev_psi[],
   rnkf45_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_kin, dev_psi, dev_tt ) ;
   // D2H(PSI, dev_psi, ndim);
   // wPSI( PSI, (*TT).time ) ; 
-  rnkf45_time_substep( TT, dev_tt , 3 ) ;
+  rnkf45_time_substep( TT, dev_tt , 3) ;
   // 5th evaluation of rhs, no diagnostic calculated
   eval_rhs<<<Nblock,Nthread >>>( dev_k5, dev_psip,  dev_tt ,
                                  dev_param, dev_diag, dev_bug );
@@ -601,7 +596,7 @@ void rnkf45( double PSI[], double dev_psi[],
   rnkf45_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_kin, dev_psi, dev_tt ) ;
   // D2H(PSI, dev_psi, ndim);
   // wPSI( PSI, (*TT).time ) ;  
-  rnkf45_time_substep( TT, dev_tt , 4 ) ;
+  rnkf45_time_substep( TT, dev_tt , 4) ;
   // 5th evaluation of rhs, no diagnostic calculated
   eval_rhs<<<Nblock,Nthread >>>( dev_k6, dev_psip,  dev_tt ,
                                  dev_param, dev_diag, dev_bug );
@@ -613,7 +608,8 @@ void rnkf45( double PSI[], double dev_psi[],
   // psip will store the 4th order rnkt4 solution. 
   // rnkf45_psi_step<<<Nblock, Nthread >>>( dev_psip, dev_kin, dev_tt, 1 );
   // rnkf45_error<<Nblock,Nthread>>> (dev_err,dev_psi,dev_psip);
-  double maxErr = sqrt(MaxDevArray( dev_err, Nblock, Nthread ));
+  double maxErr = MaxDevArray( dev_err, Nblock, Nthread );
+  // cout << maxErr << endl;
   // For debugging stuff
   // printf("%lf\n",maxErr);
   bool laccept = rnkf45_time_step(TT,dev_tt,maxErr);
@@ -637,25 +633,4 @@ void rnkf45( double PSI[], double dev_psi[],
   // else if (StringLen<MinLen){
   //   MinLen=StringLen;
   // }
-}
-/*-----------------------------------------------------------------------*/
-double SumDevArray(double dev_array[], int Nblock, int Nthread){
-  double sumA=0.;
-  // cout << dev_array[5] << endl;
-  for (int iblock = 0; iblock < Nblock; ++iblock){
-    REDUX[iblock]=0.;
-  }
-  thread_sum <<<Nblock, Nthread, Nthread*sizeof(double) >>>(dev_array,dev_redux);
-  cudaMemcpy(REDUX,dev_redux,size_redux,cudaMemcpyDeviceToHost);
-  // Copied the thread maxima output back to host.
-  // Compare the maximum across the blocks. This operation is done in CPU for the time being.
-  // Calculate maxima using STL
-  // This could be done better by launching a kernel 
-  for (int iblock = 0; iblock < Nblock; ++iblock){
-    // maxA = max(maxA,REDUX[iblock]);
-    sumA+=REDUX[iblock];
-    // cout << REDUX[iblock] << "\t" ;
-  }
-  // std::cout << maxA << std::endl;
-  return sumA;
 }

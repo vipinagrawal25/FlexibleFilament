@@ -49,14 +49,14 @@ int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM ){
               cudaMemcpyHostToDevice);
   return size_diag;
 }
-/*--------------------------------------------------------*/
+/*---------------------------------------------------------------------------------*/
 void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   MPARAM *temp;
   double height = 1;  
   (*PARAM).height = height;
   (*PARAM).aa = height/(double)(NN-1);
   // distance between two nodes.
-  (*PARAM).Dbyell = 0.005*height;
+  (*PARAM).Dbyell = 0.005*(double)height;
   (*PARAM).dd = height*(*PARAM).Dbyell ;
   /* r/l ratio for the rod has been kept constant. It should be noted that 
      the particles would also have same diameter. */
@@ -67,7 +67,7 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).sigma=1.5;
   (*PARAM).ShearRate = 2;
   (*PARAM).omega = (*PARAM).ShearRate*(*PARAM).sigma ;
-  (*PARAM).factorAA = 1.5*100;
+  (*PARAM).factorAA = 7.5;
   // (*PARAM).factorAA = 0. ;
   (*PARAM).AA= (*PARAM).factorAA*pow(10,-5); //AA is the bending rigidity.
   //
@@ -80,7 +80,7 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   //
   // double AA=(*PARAM).AAbyaa*(*PARAM).aa;
   // double HH=(*PARAM).HHbyaa*(*PARAM).aa;
-  (*PARAM).KK = (*PARAM).HH*asqr/(*PARAM).AA;
+  (*PARAM).KK = (*PARAM).HH*asqr/AA;
   // Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
   // double TMAX = ShearRate*10;
   // double tdiag = TMAX/2000;
@@ -151,45 +151,6 @@ __host__ void write_param( MPARAM *PARAM, char *fname ){
   fprintf( pout, " #============================\n" );
   fclose( pout );
 }
-/*-------------------------------------------------------------------*/
-// __host__ void read_param( MPARAM *PARAM, char *fname ){
-//   FILE *pout ;
-//   pout = fopen ( fname, "w" );
-//   printf( "# =========== Model Parameters ==========\n" );
-//   printf( " #Model : Elastic String \n " ) ;
-//   printf( "#dimension of ODE:\n pp =  %d \n", pp ) ;
-//   printf( "#Number of copies:\n  NN = %d\n", NN ) ;
-//   printf( " height = %f \n" , (*PARAM).height) ;
-//   printf( " #============================\n" );
-//   fprintf( pout, "# =========== Model Parameters ==========\n" );
-//   fprintf( pout, " #Model : Elastic String \n " ) ;
-//   fprintf( pout, "#dimension of ODE:\n pp =  %d \n", pp ) ;
-//   fprintf( pout, "#Number of copies:\n  NN = %d\n", NN ) ;
-//   fprintf( pout, " height = %f \n" , (*PARAM).height) ;
-//   fprintf( pout, " aa= %f \n" , (*PARAM).aa ) ;
-//   fprintf( pout, " Dbyell= %f \n" , (*PARAM).Dbyell ) ;
-//   fprintf( pout, " dd= %f \n",  (*PARAM).dd ) ;
-//   fprintf( pout, " viscosity = %f \n ",  (*PARAM).viscosity) ;
-//   fprintf( pout, " Z0 = %f \n ", (*PARAM).Z0) ;
-//   fprintf( pout, " Famp = %f \n ", (*PARAM).Famp ) ;
-//   fprintf( pout, " sigma = %f \n ", (*PARAM).sigma ) ;
-//   fprintf( pout, " ShearRate = %f \n ", (*PARAM).ShearRate ) ;
-//   fprintf( pout, " omega = %f \n ", (*PARAM).omega ) ;
-//   fprintf( pout, " factorAA = %f \n ", (*PARAM).factorAA ) ;
-//   fprintf( pout, " AA = %f \n ", (*PARAM).AA ) ;
-//   fprintf( pout, " KK = %f \n ", (*PARAM).KK ) ;
-//   fprintf( pout, " HH = %f \n ", (*PARAM).HH ) ;
-//   fprintf( pout, " qdiag=%d\n", (*PARAM).qdiag );
-//   fprintf( pout, " bcb=%d\n", (*PARAM).bcb );
-//   fprintf( pout, " bct=%d\n", (*PARAM).bct );
-//   fprintf( pout, " global_drag=%d\n", (*PARAM).global_drag );
-//   fprintf( pout, " iext_force=%d\n", (*PARAM).iext_force );
-//   fprintf( pout, " floc=%d\n", (*PARAM).floc );
-//   fprintf( pout, " iext_flow=%d\n", (*PARAM).iext_flow );
-//   fprintf( pout, " iniconf=%d\n", (*PARAM).iniconf );
-//   fprintf( pout, " #============================\n" );
-//   fclose( pout );
-// }
 /*-------------------------------------------------------------------*/
 bool check_param( MPARAM PARAM ){
   double dd = PARAM.dd;
@@ -294,23 +255,23 @@ __device__ vec3 drag(int ip,  double psi[], vec3 EForce[], struct MPARAM *param)
       }else{
         GetRij(psi, ip, jp, &d_rij, &rij);
         c1 = 1./(d_rij*8*M_PI*viscosity);
+        // printf("%lf\n", c1);
         dsqr1 = 1./(d_rij*d_rij);
 
         mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1)); 
         dR =  dR + dot(mu_ij, EForce[jp]);
         /*Debugging stuff */
-        // printf("%lf\n", dd);
-        // if (ip==23){
-        //   printf("Distance between %d th, and %d th particle is %lf\n", ip,jp,d_rij);
-        // }
       }
     }
   } else{
+    Tens2 mu_ii;
+    mu_ii = dab*mu0;
     /* if we use local drag */
-    dR = EForce[ip]*mu0;
+    dR = dot(mu_ii, EForce[ip]);
   } 
   /*Caution: Only for debugging*/
   // printf("%lf\t%lf\t%lf\t", dR.x,dR.y,dR.z);
+  // printf("\n");
   return dR;
 }
 /*----------------------------------------------------------------------------------------------*/
@@ -564,7 +525,6 @@ __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau
   // }
   /* The idea is to calculate Elastic force on all points only for the first thread and just use it later. */
   
-
   dHdR( kelement, psi, &EForce_kp, &kappasqr, param, bug, ldiag );
   /* add external force to the filament */
   if ( (iext_force) && (kelement == floc) ){
@@ -583,8 +543,8 @@ __device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau
       diag[kelement+NN*1]=kappasqr;
     }
   }
-  __syncthreads();        // Syncing threads here, would make sure that all the calculation has been done till now.
-
+  __syncthreads();        // Syncing threads here, would make sure that all the calculation has been done till now. 
+  
   /* calculate the viscous (possibly non-local ) drag */
   dR = drag(kelement, psi, EForce, param);
   /* contribution from external flow */

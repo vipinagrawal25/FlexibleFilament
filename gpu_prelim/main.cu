@@ -15,7 +15,7 @@ int main( void ){
   EV TT, *dev_tt;
   int Nblock, Nthread;
   /*------------------------------------------------*/
-  double MaxThread=100;
+  double MaxThread=128;
   if ( NN <= MaxThread ) {
     Nthread= 1 ;
     Nblock = NN ;
