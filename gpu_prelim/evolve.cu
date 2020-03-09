@@ -42,6 +42,9 @@ void rnkf45( double PSI[], double dev_psi[],
             double DIAG[], double dev_diag[],
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread );
+__global__ void eval_rhs(double kk[], double psi[], double EForce[],
+                         EV *tt, MPARAM *param, double diag[],
+                         CRASH *bug );
 void pre_euler( int Nsize);
 void pre_rnkt4( int Nsize);
 void pre_rnkf45( int Nsize, int Nblock, int Nthread );
@@ -53,6 +56,7 @@ double SumDevArray(double dev_array[], int Nblock, int Nthread);
 /*-----------------------------------------------------------------------------*/
 void  post_euler( void  ){
   cudaFree( dev_kk );
+  cudaFree( dev_EForce);
 }
 /*-----------------------------------------------------------------------------*/
 void  post_rnkt4( void  ){
@@ -61,6 +65,7 @@ void  post_rnkt4( void  ){
   cudaFree( dev_k2 ) ;
   cudaFree( dev_k3 ) ;
   cudaFree( dev_k4 );
+  cudaFree(dev_EForce);
 }
 /*------------------------------------------------------------------------------*/
 void  post_rnkf45( void  ){
@@ -74,6 +79,7 @@ void  post_rnkf45( void  ){
   cudaFree( dev_kin);
   cudaFree( dev_redux );
   cudaFree( dev_err );
+  cudaFree(dev_EForce);
 }
 /*-------------------------------------------------------------------------------*/
 void post_evolve( char *algo  ){
@@ -112,9 +118,9 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   /*Yes we should save them somewhere else.--vipin*/
   (*TT).time = 0.;
   (*TT).tprime = (*TT).time;
-  (*TT).dt = 1.e-6;
-  (*TT).ndiag = 1000;
-  (*TT).tmax = 1.e-5;
+  (*TT).dt = 1.e-5;
+  (*TT).ndiag = 100;
+  (*TT).tmax = 1.;
   (*TT).tdiag = 0.;
   (*TT).substep = 0.;
   EV *temp ;
@@ -140,7 +146,7 @@ void wevolve( EV TT, char *fname ){
 void pre_euler( int Nsize ){
   printf( " #---time-integration algorithm : EULER --\n " );
   cudaMalloc( (void**)&dev_kk, Nsize*sizeof( double ) );
-  cudaMalloc( (void**)&dev_EForce, NN*sizeof( double ) );
+  cudaMalloc( (void**)&dev_EForce, Nsize*sizeof( double ) );
   printf( "#--I have set up auxiliary storage in the device-- \n " ) ;
 }
 /*----------------------------------------*/
@@ -151,7 +157,7 @@ void pre_rnkt4( int Nsize ){
   cudaMalloc( (void**)&dev_k2, Nsize*sizeof( double ) );
   cudaMalloc( (void**)&dev_k3, Nsize*sizeof( double ) );
   cudaMalloc( (void**)&dev_k4, Nsize*sizeof( double ) );
-  cudaMalloc( (void**)&dev_EForce, NN*sizeof(double) );
+  cudaMalloc( (void**)&dev_EForce, Nsize*sizeof(double) );
   printf( "--I have set up auxiliary storage in the device --\n " ) ;
 }
 /*--------------------------------------------------------------------*/
@@ -166,7 +172,7 @@ void pre_rnkf45( int Nsize, int Nblock, int Nthread ){
   cudaMalloc( (void**)&dev_k6, Nsize*sizeof( double ) );
   cudaMalloc( (void**)&dev_err, NN*sizeof(double));
   cudaMalloc( (void**)&dev_kin, 6*sizeof(double*));
-  cudaMalloc((void**)&dev_EForce, NN*sizeof(double));
+  cudaMalloc( (void**)&dev_EForce, Nsize*sizeof(double));
   // Defining array of all k pointers.
   double *KIN[6] = {dev_k1,dev_k2,dev_k3,dev_k4,dev_k5,dev_k6};
   cudaMemcpy(dev_kin,KIN,6*sizeof(double*),cudaMemcpyHostToDevice); 
@@ -216,15 +222,13 @@ void evolve( double PSI[], double dev_psi[],
   // while time loop ends here
 }
 /*-------------------------------------------------------------------------*/
-__global__ void eval_rhs(double kk[], double psi[],
+__global__ void eval_rhs(double kk[], double psi[], double EForce[],
                          EV *tt, MPARAM *param, double diag[],
                          CRASH *bug ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   while (tid < NN){
-    model_rhs(kk, psi, tid, (*tt).tprime, param, diag, bug, (*tt).ldiag);
+    model_rhs(kk, psi, EForce, tid, (*tt).tprime, param, diag, bug, (*tt).ldiag);
     tid += blockDim.x * gridDim.x ;
-    // For debugging stuff
-    // printf("%lf\n", kk[3*tid+2]);
   }// while loop over threads finishes here.
 }
 /*--------------------------------------------------------------------------- */
@@ -236,10 +240,9 @@ void euler( double PSI[], double dev_psi[],
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread ){
 // evaluate the right hand side in a kernel 
-  eval_rhs<<<Nblock,Nthread >>>( dev_kk, dev_psi,  dev_tt ,
+  eval_rhs<<<Nblock,Nthread >>>( dev_kk, dev_psi, dev_EForce, dev_tt ,
                                  dev_param, dev_diag, dev_bug );
-  // Sync threads
-    // check if there were any bugs from rhs evaluation
+  // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
   if ( BUG.lstop) { IStop( BUG );}
   dev_vel = dev_kk;
@@ -302,7 +305,6 @@ __global__ void rk4_psi_substep( double psip[], double kin[], double psi[], EV *
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
-  
 }
 /*-----------------------------------------------------------------------*/
 void rk4_time_step( EV *TT, EV *dev_tt ){
@@ -329,13 +331,13 @@ __global__ void rk4_psi_step( double psi[],
 void rnkt4( double PSI[], double dev_psi[],
             double VEL[], double dev_vel[],
             EV* TT, EV *dev_tt,
-            MPARAM PARAM,   MPARAM *dev_param,
-            double DIAG[], double dev_diag[], 
+            MPARAM PARAM, MPARAM *dev_param,
+            double DIAG[], double dev_diag[],
             CRASH BUG, CRASH *dev_bug,
             int Nblock, int Nthread ){
   /* I do time-marching */
   // 1st evaluation of rhs, diagnostic is calculated in this step
-  eval_rhs<<<Nblock,Nthread >>>( dev_k1, dev_psi,  dev_tt ,
+  eval_rhs<<<Nblock,Nthread >>>( dev_k1, dev_psi, dev_EForce, dev_tt ,
                                  dev_param, dev_diag, dev_bug );
     // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
@@ -357,7 +359,7 @@ void rnkt4( double PSI[], double dev_psi[],
   rk4_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_k1, dev_psi, dev_tt ) ;
   rk4_time_substep( TT, dev_tt , 0 ) ;
   // 2nd evaluation of rhs, no diagnostic calculated
-  eval_rhs<<<Nblock,Nthread >>>( dev_k2, dev_psip,  dev_tt ,
+  eval_rhs<<<Nblock,Nthread >>>( dev_k2, dev_psip, dev_EForce,  dev_tt ,
                                  dev_param, dev_diag, dev_bug);
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
@@ -366,7 +368,7 @@ void rnkt4( double PSI[], double dev_psi[],
   rk4_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_k2, dev_psi, dev_tt ) ;
   rk4_time_substep( TT, dev_tt , 1 ) ;
   // 3rd evaluation of rhs, no diagnostic calculated
-  eval_rhs<<<Nblock,Nthread >>>( dev_k3, dev_psip,  dev_tt ,
+  eval_rhs<<<Nblock,Nthread >>>( dev_k3, dev_psip, dev_EForce,  dev_tt ,
                                  dev_param, dev_diag, dev_bug);
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
@@ -375,7 +377,7 @@ void rnkt4( double PSI[], double dev_psi[],
   rk4_psi_substep<<<Nblock,Nthread>>>( dev_psip,  dev_k3, dev_psi, dev_tt ) ;
   rk4_time_substep( TT, dev_tt , 2 ) ;
    // 4th evaluation of rhs, no diagnostic calculated
-  eval_rhs<<<Nblock,Nthread >>>( dev_k4, dev_psip,  dev_tt ,
+  eval_rhs<<<Nblock,Nthread >>>( dev_k4, dev_psip, dev_EForce,  dev_tt ,
                                  dev_param, dev_diag, dev_bug );
    // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
@@ -389,10 +391,10 @@ void rnkt4( double PSI[], double dev_psi[],
 __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   // double rnkf45b[5][5] = {{0.2,0.,0.,0.,0.},
-                        // {3./40,9./40,0.,0.,0.},
-                        // {0.3,-0.9,1.2,0.,0.},
-                        // {-11./54,2.5,-70./27,35./27,0},
-                        // {1631./55296,175./512,575./13824,44275./110592,253./4096} };
+  //                       {3./40,9./40,0.,0.,0.},
+  //                       {0.3,-0.9,1.2,0.,0.},
+  //                       {-11./54,2.5,-70./27,35./27,0},
+  //                       {1631./55296,175./512,575./13824,44275./110592,253./4096} };
   double rnkf45b[5][5]= {{0.25,0,0,0,0},
                         {3./32.,9./32.,0,0,0},
                         {1932./2197.,-7200./2197.,7296./2197.,0,0},
@@ -403,7 +405,7 @@ __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], 
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
         psip[ip+pp*tid] = psi[ip+pp*tid];
-        for (int jp = 0; jp < j+1; ++jp)
+        for (int jp = 0; jp < 6; ++jp)
         {
           psip[ip+pp*tid] += kin[jp][ip+pp*tid]*rnkf45b[j][jp]*(*tt).dt;
         }
@@ -529,7 +531,7 @@ void rnkf45( double PSI[], double dev_psi[],
   double StringLen;
   /* I do time-marching */
   // 1st evaluation of rhs, diagnostic is calculated in this step
-  eval_rhs<<< Nblock,Nthread >>>( dev_k1, dev_psi,  dev_tt ,
+  eval_rhs<<< Nblock,Nthread >>>( dev_k1, dev_psi, dev_EForce,  dev_tt ,
                                  dev_param, dev_diag, dev_bug  );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
@@ -552,7 +554,7 @@ void rnkf45( double PSI[], double dev_psi[],
   // wPSI( PSI, (*TT).time ) ; 
   rnkf45_time_substep( TT, dev_tt , 0 ) ;
   // 2nd evaluation of rhs, no diagnostic calculated
-  eval_rhs<<<Nblock,Nthread >>>( dev_k2, dev_psip,  dev_tt ,
+  eval_rhs<<<Nblock,Nthread >>>( dev_k2, dev_psip, dev_EForce,  dev_tt ,
                                  dev_param, dev_diag, dev_bug );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy(&BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
@@ -563,7 +565,7 @@ void rnkf45( double PSI[], double dev_psi[],
   // wPSI( PSI, (*TT).time ) ; 
   rnkf45_time_substep( TT, dev_tt , 1 ) ;
   // 3rd evaluation of rhs, no diagnostic calculated
-  eval_rhs<<<Nblock,Nthread >>>( dev_k3, dev_psip,  dev_tt ,
+  eval_rhs<<<Nblock,Nthread >>>( dev_k3, dev_psip, dev_EForce,  dev_tt ,
                                  dev_param, dev_diag, dev_bug );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
@@ -574,7 +576,7 @@ void rnkf45( double PSI[], double dev_psi[],
   // wPSI( PSI, (*TT).time ) ; 
   rnkf45_time_substep( TT, dev_tt , 2 ) ;
   // 4th evaluation of rhs, no diagnostic calculated
-  eval_rhs<<<Nblock,Nthread >>>( dev_k4, dev_psip,  dev_tt ,
+  eval_rhs<<<Nblock,Nthread >>>( dev_k4, dev_psip, dev_EForce,  dev_tt ,
                                  dev_param, dev_diag, dev_bug);
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
@@ -586,7 +588,7 @@ void rnkf45( double PSI[], double dev_psi[],
   // wPSI( PSI, (*TT).time ) ; 
   rnkf45_time_substep( TT, dev_tt , 3) ;
   // 5th evaluation of rhs, no diagnostic calculated
-  eval_rhs<<<Nblock,Nthread >>>( dev_k5, dev_psip,  dev_tt ,
+  eval_rhs<<<Nblock,Nthread >>>( dev_k5, dev_psip, dev_EForce,  dev_tt ,
                                  dev_param, dev_diag, dev_bug );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);
@@ -598,7 +600,7 @@ void rnkf45( double PSI[], double dev_psi[],
   // wPSI( PSI, (*TT).time ) ;  
   rnkf45_time_substep( TT, dev_tt , 4) ;
   // 5th evaluation of rhs, no diagnostic calculated
-  eval_rhs<<<Nblock,Nthread >>>( dev_k6, dev_psip,  dev_tt ,
+  eval_rhs<<<Nblock,Nthread >>>( dev_k6, dev_psip, dev_EForce, dev_tt ,
                                  dev_param, dev_diag, dev_bug );
   // check if there were any bugs from rhs evaluation
   cudaMemcpy( &BUG, dev_bug, size_CRASH, cudaMemcpyDeviceToHost);

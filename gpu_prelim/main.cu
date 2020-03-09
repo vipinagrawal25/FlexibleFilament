@@ -28,7 +28,7 @@ int main( void ){
   /*------------------------------------------------*/
   set_crash(  &BUG, &dev_bug ); 
   alloc_chain( &PSI, &dev_psi );
-  alloc_chain(&VEL, &dev_vel);
+  alloc_chain( &VEL, &dev_vel );
   set_param( &PARAM, &dev_param ) ;
   bool Exit= check_param( PARAM );
   if (Exit){return 0;}
@@ -53,6 +53,7 @@ int main( void ){
           BUG,  dev_bug, 
           Nblock, Nthread ) ;
   printf( "#... time evolution finished \n");
+  post_evolve( TimeScheme  );
   ttimer = clock()/CLOCKS_PER_SEC-ttimer;
   cout << "Total time taken: " << ttimer << "s"<< endl;
   D2H( PSI, dev_psi, ndim );

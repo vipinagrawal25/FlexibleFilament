@@ -26,7 +26,7 @@ double const AA = 7.5*pow(10,-5);
 double const HH = 64*AA/(aa*aa);		// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
 // double TMAX = ShearRate*10;
 // double tdiag = TMAX/2000;
-char const UseRP = 'N';					// Y is for the new one, O is for old one and N is for not using 
+char const UseRP = 'O';					// Y is for the new one, O is for old one and N is for not using 
 										// Rotne Pragor tensor. 
 // This sets up the initial configuration of the system. For more information go through the Readme file.
 int const conf_number = 1;	

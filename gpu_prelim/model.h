@@ -6,7 +6,7 @@
 Each node may be connected to every other node. 
 The number of nodes is NN. 
 The number of degrees of freedom at each node is pp */ 
-#define NN 10
+#define NN 101
 #define pp  3
 #define ndim NN*pp
 #define TimeScheme "rnkf45"
@@ -58,11 +58,11 @@ void D2H(double PSI[], double psi[], int Nsize );
 void set_param( MPARAM *PARAM, MPARAM **dev_param ) ;
 void write_param( MPARAM *PARAM, char *fname );
 int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM );
-__device__ void model_rhs( double dpsi[], double psi[], int kelement, double tau,
-                           MPARAM *param, double *diag, CRASH *bug, int ldiag  );
 void initial_configuration( double PSI[], MPARAM PARAM );
 void wPSI ( double PSI[], double VEL[], double tau ); 
 void wDIAG( double DIAG[], double tau, MPARAM PARAM );
 bool check_param(MPARAM PARAM);
+__device__ void model_rhs( double dpsi[], double psi[], double eforce[], int kelement, double tau,
+                           MPARAM *param, double *diag, CRASH *bug, int ldiag  );
 /*------------------------------------------------------------------*/
 #endif /* !MODEL_SEEN */

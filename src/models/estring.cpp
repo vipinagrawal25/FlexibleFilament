@@ -115,6 +115,26 @@ void drag(vec3 X[], vec3 dX[], vec3 EForce[]){
         }
     }
   }
+  else if (UseRP == 'O'){
+    Tens2 mu_ij, mu_ii;
+    double d_rij;
+    vec3 rij;
+    mu_ii = dab*mu0;
+
+    for (int ip = 0; ip < Np; ++ip){
+      for (int jp = 0; jp < Np; ++jp){
+        if (jp==ip){
+          dX[ip] = dX[ip] + dot(mu_ii, EForce[ip]);
+        }else{
+          GetRij(X, ip, jp, &d_rij, &rij);
+          double c1 = 1/(8*M_PI*viscosity*d_rij);
+          double dsqr1 = 1./(d_rij*d_rij);
+          mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
+          dX[ip] = dX[ip]+dot(mu_ij, EForce[jp]);
+        }
+      }
+    }
+  }
   else{
     for (int ip = 0; ip < Np; ++ip){
         dX[ip] = EForce[ip]*mu0;

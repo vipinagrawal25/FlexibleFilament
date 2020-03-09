@@ -2,7 +2,7 @@
 #define FILE_3vec_SEEN
 /*---------------------------------------*/
 #include <iostream>
-#include<math.h>
+#include <math.h>
 #include "2Tens.h"
 using namespace std;
 /*-------------------------*/
