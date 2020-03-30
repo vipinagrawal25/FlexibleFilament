@@ -67,21 +67,21 @@ void rnkt4(unsigned int ndim, double *y, double *vel, double *add_time, double *
 
 void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, 
             double* SS, double ldiagnos){
-	// Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
+  // Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
   // add_time is the address of time and the same goes for dt as well.
-	double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, ynew[ndim];
-	int idim ;
-	double error = 0;
-	double dt = *add_dt;
-	// double tol_dt = pow(10,-9)*dt;
-  double tol_dt = 1.e-5;
+  double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, ynew[ndim];
+  int idim ;
+  double error,temp_error;
+  double dt = *add_dt;
+  // double tol_dt = pow(10,-9)*dt;
+  double tol_dt = 1.e-8;
   bool flag_kappa;
   double time = *add_time;
   double epsilon = 0.84;
-  double truncationmax=5.0;
-  double truncationmin=0.2;
-
-  // double ci[6] = {0,0.25,3./8,12./13,1.,1./2} ;
+  double truncationmax=2.0;
+  double truncationmin=0.5;
+  // original fehlberg parameters
+  // double ci[6] = {0,0.25,3./8,12./13,1.,1./2};
   // double aij[6][5] = {
   //   {0,0,0,0,0},
   //   {0.25,0,0,0,0},
@@ -113,10 +113,10 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   else{
       flag_kappa = false;
   }
-	eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
+  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
   // CurvSqr_Store = CurvSqr;
 
-	for(idim=0;idim<ndim;idim++){
+  for(idim=0;idim<ndim;idim++){
       temp[idim]=y[idim]+k1[idim]*dt*aij[1][0];
   }
 
@@ -124,105 +124,6 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   eval_rhs(time+dt*ci[1],temp,k2, flag_kappa, CurvSqr, SS);
   
   for(idim=0;idim<ndim;idim++){
-    temp[idim]=y[idim]+(aij[2][0]*k1[idim]+aij[2][1]*k2[idim])*dt;
- 	}
- 	eval_rhs(time+ci[2]*dt,temp,k3, flag_kappa, CurvSqr, SS);
-
- 	for (int idim = 0; idim < ndim; ++idim)
- 	{
- 		temp[idim] = y[idim]+ (aij[3][0]*k1[idim]+aij[3][1]*k2[idim]+aij[3][2]*k3[idim])*dt ;
- 	}
- 	eval_rhs(time+ci[3]*dt, temp, k4, flag_kappa, CurvSqr, SS);
-
- 	for (int idim = 0; idim < ndim; ++idim)
- 	{
- 		temp[idim] = y[idim] + aij[4][0]*dt*k1[idim] + aij[4][1]*k2[idim]*dt + aij[4][2]*k3[idim]*dt + 
-                  aij[4][3]*k4[idim]*dt ;
- 	}
- 	eval_rhs(time+ci[4]*dt, temp, k5, flag_kappa, CurvSqr, SS);
-
- 	for (int idim = 0; idim < ndim; ++idim){
- 		temp[idim] = y[idim] + aij[5][0]*k1[idim]*dt + aij[5][1]*k2[idim]*dt + aij[5][2]*k3[idim]*dt + aij[5][3]*k4[idim]*dt + aij[5][4]*k5[idim]*dt ;
- 	}
- 	eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
-  error=0;
-  double temp_error=0;
- 	for (int idim = 0; idim < ndim; ++idim){
-    temp[idim] = y[idim] + dt*(bi[0]*k1[idim] + bi[1]*k2[idim] + bi[2]*k3[idim] + bi[3]*k4[idim] + bi[4]*k5[idim] +  bi[5]*k6[idim]);
- 		// cout << temp[idim] << endl;
-    ynew[idim] = y[idim]+ dt*(bistar[0]*k1[idim] + bistar[1]*k2[idim] + bistar[2]*k3[idim] + bistar[3]*k4[idim] + bistar[4]*k5[idim] 
-                        +  bistar[5]*k6[idim]);
- 		temp_error = abs(temp[idim]-ynew[idim]);
-    error=max(temp_error,error);
- 	}
-  error=error+tiny;
-  if (error<tol_dt){
-    *add_time=time+dt;
-    for (int idim = 0; idim < ndim; ++idim){
-      y[idim]=ynew[idim];   // Accept the step
-      vel[idim]=k1[idim];
-    }
-    s = epsilon*pow((tol_dt/error),0.25);
-    if (s>truncationmax){s=truncationmax;}
-    *add_dt = s*dt;
-  }else{
-    s = epsilon*pow((tol_dt/error),0.2);
-    if (s<truncationmin){s=truncationmin;}
-    *add_dt = s*dt;
-    // cout << "So you mean to say that the segmentation fault is here?" << endl;
-    rnkf45(pdim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
-  }
-}	
-
-
-void DP54(unsigned int ndim, double *y, double *add_time, double* add_dt, double* CurvSqr, double* SS, double ldiagnos)
-{
-  // In this function I have implemented Dormand-Prince Method which is more suitable than rkf45 for high order integration.
-  // Details could be found in Numerical recipes book and a short description on the link: 
-  // https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method
-  double temp[ndim], s,k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], k7[ndim], yold[ndim];
-  double err;
-  int idim ;
-  double dt = *add_dt;
-  double tol_dt = pow(10,-4)*dt;
-  bool flag_kappa;
-  double time = *add_time;
-
-  double ci[6] = {0,0.2,0.3,0.8,8./9,1} ;
-  double aij[6][6] = {
-    {0,0,0,0,0,0},
-    {0.2,0,0,0,0,0},
-    {3./40,9./40,0,0,0,0},
-    {44./45,-56./15,32./9,0,0,0},
-    {19372/6561,-25360./2187,64448./6561,-212./729,0,0},
-    {9017./3168,-355./33,46732./5247,49./176,-5103./18656,0}
-  };
-  double bi[6] = {35./384,0,500./1113,125./192,-2187./6784,11./84};
-  double bistar[7] = {5179./57600,0,7571./16695,393./640,-92097./339200,187./2100,1./40};
-
-  // eval_rhs(time,y,k1,flag_kappa);
-
-  if (ldiagnos)
-  {
-      flag_kappa = true;
-  }
-  else
-  {
-      flag_kappa = false;
-  }
-
-  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
-  // CurvSqr_Store = CurvSqr;
-
-  for(idim=0;idim<ndim;idim++)
-  {
-      temp[idim]=y[idim]+k1[idim]*dt*aij[1][0];
-  }
-  flag_kappa = false; 
-  eval_rhs(time+dt*ci[1],temp,k2, flag_kappa, CurvSqr, SS);
-
-  for(idim=0;idim<ndim;idim++)
-  {
     temp[idim]=y[idim]+(aij[2][0]*k1[idim]+aij[2][1]*k2[idim])*dt;
   }
   eval_rhs(time+ci[2]*dt,temp,k3, flag_kappa, CurvSqr, SS);
@@ -235,56 +136,144 @@ void DP54(unsigned int ndim, double *y, double *add_time, double* add_dt, double
 
   for (int idim = 0; idim < ndim; ++idim)
   {
+    temp[idim] = y[idim] + aij[4][0]*dt*k1[idim] + aij[4][1]*k2[idim]*dt + aij[4][2]*k3[idim]*dt + 
+                  aij[4][3]*k4[idim]*dt ;
+  }
+  eval_rhs(time+ci[4]*dt, temp, k5, flag_kappa, CurvSqr, SS);
+
+  for (int idim = 0; idim < ndim; ++idim){
+    temp[idim] = y[idim] + aij[5][0]*k1[idim]*dt + aij[5][1]*k2[idim]*dt + aij[5][2]*k3[idim]*dt + aij[5][3]*k4[idim]*dt + aij[5][4]*k5[idim]*dt ;
+  }
+  eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
+  error=0;
+  for (int idim = 0; idim < ndim; ++idim){
+    temp[idim] = y[idim] + dt*(bi[0]*k1[idim] + bi[1]*k2[idim] + bi[2]*k3[idim] + bi[3]*k4[idim] + bi[4]*k5[idim] +  bi[5]*k6[idim]);
+    // cout << temp[idim] << endl;
+    ynew[idim] = y[idim]+ dt*(bistar[0]*k1[idim] + bistar[1]*k2[idim] + bistar[2]*k3[idim] + bistar[3]*k4[idim] + bistar[4]*k5[idim] 
+                        +  bistar[5]*k6[idim]);
+    temp_error = abs(temp[idim]-ynew[idim]);
+    error=max(temp_error,error);
+  }
+  error=error+tiny;
+  // cout << error << endl;
+  if (error<tol_dt){
+    *add_time=time+dt;
+    for (int idim = 0; idim < ndim; ++idim){
+      y[idim]=ynew[idim];   // Accept the step
+      vel[idim]=k1[idim];
+    }
+    s = epsilon*pow((tol_dt/error),0.25);
+    if (s>truncationmax){s=truncationmax;}
+    *add_dt = s*dt;
+    // cout << *add_dt << endl;
+  }else{
+    s = epsilon*pow((tol_dt/error),0.2);
+    if (s<truncationmin){s=truncationmin;}
+    *add_dt = s*dt;
+    // cout << "So you mean to say that the segmentation fault is here?" << endl;
+    rnkf45(pdim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
+  }
+} 
+
+void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, double* SS, double ldiagnos)
+{
+  // In this function I have implemented Dormand-Prince Method which is more suitable than rkf45 for high order integration.
+  // Details could be found in Numerical recipes book and a short description on the link: 
+  // https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method
+  double temp[ndim], s,k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], k7[ndim], ynew[ndim];
+  double error,temp_error;
+  int idim ;
+  double dt = *add_dt;
+  double tol_dt = pow(10,-5);
+  bool flag_kappa;
+  double time = *add_time;
+  double epsilon=0.87;
+  double truncationmax=2;
+  double truncationmin=0.5;
+
+  double ci[7] = {0,0.2,0.3,0.8,8./9,1.,1.} ;
+  double aij[7][6] = {
+    {0,0,0,0,0,0},
+    {0.2,0,0,0,0,0},
+    {3./40,9./40,0,0,0,0},
+    {44./45,-56./15,32./9,0,0,0},
+    {19372/6561,-25360./2187,64448./6561,-212./729,0,0},
+    {9017./3168,-355./33,46732./5247,49./176,-5103./18656,0},
+    {35./384,0,500./1113,125./192,-2187./6784,11./84}
+  };
+  double bi[7] = {5179./57600,0,7571./16695,393./640,-92097./339200,187./2100,1./40};
+
+  // eval_rhs(time,y,k1,flag_kappa);
+
+  if (ldiagnos){
+      flag_kappa = true;
+  }
+  else{
+      flag_kappa = false;
+  }
+
+  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
+  // CurvSqr_Store = CurvSqr;
+
+  for(idim=0;idim<ndim;idim++){
+      temp[idim]=y[idim]+k1[idim]*dt*aij[1][0];
+  }
+  flag_kappa = false; 
+  eval_rhs(time+dt*ci[1],temp,k2, flag_kappa, CurvSqr, SS);
+
+  for(idim=0;idim<ndim;idim++){
+    temp[idim]=y[idim]+(aij[2][0]*k1[idim]+aij[2][1]*k2[idim])*dt;
+  }
+  eval_rhs(time+ci[2]*dt,temp,k3, flag_kappa, CurvSqr, SS);
+
+  for (int idim = 0; idim < ndim; ++idim){
+    temp[idim] = y[idim]+ (aij[3][0]*k1[idim]+aij[3][1]*k2[idim]+aij[3][2]*k3[idim])*dt ;
+  }
+  eval_rhs(time+ci[3]*dt, temp, k4, flag_kappa, CurvSqr, SS);
+
+  for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim] + aij[4][0]*dt*k1[idim] + aij[4][1]*k2[idim]*dt + aij[4][2]*k3[idim]*dt + aij[4][3]*k4[idim]*dt ;
   }
   eval_rhs(time+ci[4]*dt, temp, k5, flag_kappa, CurvSqr, SS);
 
-  for (int idim = 0; idim < ndim; ++idim)
-  {
+  for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim] + aij[5][0]*k1[idim]*dt + aij[5][1]*k2[idim]*dt + aij[5][2]*k3[idim]*dt + aij[5][3]*k4[idim]*dt + aij[5][4]*k5[idim]*dt ;
   }
   eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
 
-  for (int idim = 0; idim < ndim; ++idim)
-  {
-    yold[idim] = y[idim];
-  
-    y[idim] = yold[idim] + bi[0]*k1[idim]*dt + bi[2]*k3[idim]*dt + bi[3]*k4[idim]*dt + bi[4]*k5[idim]*dt + bi[5]*k6[idim]*dt;
-    // cout << temp[idim] << endl;
-  }
-  eval_rhs(time+dt,y,k7,flag_kappa,CurvSqr,SS);
-
-  err = 0;
   for (int idim = 0; idim < ndim; ++idim){
-    temp[idim] = yold[idim] +  bistar[0]*k1[idim]*dt + bistar[2]*k3[idim]*dt + bistar[3]*k4[idim]*dt + bistar[4]*k5[idim]*dt + bistar[5]*k6[idim]*dt + bistar[6]*k7[idim]*dt;
-    err = err + (temp[idim]-y[idim])*(temp[idim]-y[idim]);
+    ynew[idim] = y[idim] + aij[6][0]*k1[idim]*dt + aij[6][1]*k2[idim]*dt + aij[6][2]*k3[idim]*dt + aij[6][3]*k4[idim]*dt 
+                          + aij[6][4]*k5[idim]*dt + aij[6][5]*k6[idim]*dt  ;
   }
+  eval_rhs(time+dt*ci[6], ynew, k7, flag_kappa, CurvSqr, SS);
 
-  err = sqrt(err);
-
-  s = 0.87*pow(tol_dt/err,0.20);
-  // cout << error << endl; 
-  if (s > 10)
-  {
-      s = 10;
+  error= 0;
+  temp_error=0;
+  for (int idim = 0; idim < ndim; ++idim){
+    temp[idim] = y[idim] + bi[0]*k1[idim]*dt + bi[2]*k3[idim]*dt + bi[3]*k4[idim]*dt + bi[4]*k5[idim]*dt 
+                            + bi[5]*k6[idim]*dt + bi[6]*k7[idim]*dt;
+    temp_error =  abs(temp[idim]-y[idim]);
+    error = max(temp_error,error);
   }
-  else if (s<0.2)
-  {
-      s = 0.2;
+  error=error+tiny;
+  // cout << error << endl;
+  if (error<tol_dt){
+    *add_time=time+dt;
+    for (int idim = 0; idim < ndim; ++idim){
+      y[idim]=ynew[idim];   // Accept the step
+      vel[idim]=k1[idim];
+    }
+    s = epsilon*pow((tol_dt/error),0.25);
+    if (s>truncationmax){s=truncationmax;}
+    *add_dt = s*dt;
+    // cout << *add_dt << endl;
+  }else{
+    s = epsilon*pow((tol_dt/error),0.2);
+    if (s<truncationmin){s=truncationmin;}
+    *add_dt = s*dt;
+    // cout << "So you mean to say that the segmentation fault is here?" << endl;
+    DP54(pdim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
-  // cout << s << endl;
-  *add_time = time + dt;
-  *add_dt = s*dt;
-
-  // If the time stepping in next iteration is lesser than half of the current time step then the current step should be 
-  // repeated
-  // if (s<1)
-  // {
-  //   /* code */
-  // }
-
-  // cout << *add_dt << endl;
-
 }
 
 /* call eval_rhs(y,t,k1)

@@ -119,8 +119,8 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   (*TT).time = 0.;
   (*TT).tprime = (*TT).time;
   (*TT).dt = 1.e-5;
-  (*TT).ndiag = 100;
-  (*TT).tmax = 1.;
+  (*TT).ndiag = 4000;
+  (*TT).tmax = 80;
   (*TT).tdiag = 0.;
   (*TT).substep = 0.;
   EV *temp ;
@@ -390,16 +390,20 @@ void rnkt4( double PSI[], double dev_psi[],
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
+  //Cash-Karp parameter
   // double rnkf45b[5][5] = {{0.2,0.,0.,0.,0.},
   //                       {3./40,9./40,0.,0.,0.},
   //                       {0.3,-0.9,1.2,0.,0.},
   //                       {-11./54,2.5,-70./27,35./27,0},
-  //                       {1631./55296,175./512,575./13824,44275./110592,253./4096} };
+  //                       {1631./55296,175./512,575./13824,44275./110592,253./4096}};
+
+  //original fehlberg parameters
   double rnkf45b[5][5]= {{0.25,0,0,0,0},
                         {3./32.,9./32.,0,0,0},
-                        {1932./2197.,-7200./2197.,7296./2197.,0,0},
+                        {1932./2197.,-7200./2197.,7296./2197.,0.,0.},
                         {439./216.,-8.,3680./513.,-845./4104.,0},
                         {-8./27.,2.,-3544./2565.,1859./4104.,-11./40.}};
+
   int j = (*tt).substep ;
   // double *kk = {&kin[0],&kin[ndim],&kin[2*ndim],&kin[3*ndim],&kin[4*ndim],&kin[5*ndim]}
   while (tid < NN ){
@@ -416,8 +420,11 @@ __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], 
 }
 /*-----------------------------------------------------------------------*/
 void rnkf45_time_substep( EV* TT, EV *dev_tt, int j ){
-  double rnkf45a[5] = {0.2,0.3,0.6,1.,7./8} ;
-  // double rnkf45a[5] = {0.25,3./8,12./13,1.,1./2}; 
+  // cash-karp parameter
+  // double rnkf45a[5] = {0.2,0.3,0.6,1.,7./8} ;
+
+  //original fehlberg parameters
+  double rnkf45a[5] = {0.25,3./8,12./13,1.,1./2}; 
   (*TT).tprime = (*TT).time + ((*TT).dt)*rnkf45a[ j ] ;
   (*TT).substep = j + 1;
   (*TT).ldiag=0;
@@ -426,9 +433,11 @@ void rnkf45_time_substep( EV* TT, EV *dev_tt, int j ){
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  //
+  // // cash-karp parameter
   // double rnkf45c[2][6] = { {37./378,0.,250./621,125./594,0.,512./1771},
-                          // {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25} };
+  //                         {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25} };
+
+  //original fehlberg parameters
   double rnkf45c[2][6] = { {25./216.,0,1408./2565.,2197./4104.,-1./5.,0},
                           {16./135.,0,6656./12825.,28561./56430.,-9./50.,2./55.} };
   //
@@ -452,11 +461,12 @@ __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  //
+  // Cash-Karp parameters
   // double rnkf45c[6] = {37./378,0,250./621,125./594,0,512./1771};  
-  // 
-  double rnkf45c[6] = {16./135.,0.,6656./12825.,28561./56430.,-9./50.,2./55.};  
-  // double rnkf45c[6]={2825./27648,0.,18575./48384,13525./55296,277./14336,0.25};
+
+  // original fehlberg parameters
+  double rnkf45c[6] = {16./135.,0.,6656./12825.,28561./56430.,-9./50.,2./55.}; 
+
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
       for (int jp = 0; jp < 6; ++jp){

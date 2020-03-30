@@ -2,12 +2,14 @@ from functions import *
 import matplotlib.pyplot as plt
 import moviewriter as MOVIE
 
-AA = 1.5*0.00001*1
-frequency = 0;
-
-HH = 64*AA*(40**2)
-Np = 100;
+AA = 1.5*0.00001*1*0.4**4
+Np = 41
+HH = 16*AA*(0.005**2)
 aspect_ratio=1
+length=1
+sigma=0.75
+ShearRate=2
+omega = ShearRate*sigma
 # TMAX= 15;
 # Totalfiles=2000;
 
@@ -19,8 +21,9 @@ Thing4 = "Energy"
 Thing5 = "LeebyL"
 Thing6 = "SineCurvature"
 Thing7 = "MSD_no_trans"
+Thing8 = "SqrtCurvature"
 
-Things = [Thing1]
+Things = [Thing1,Thing8,Thing3]
 
 # figure=MSD_plot(step=1)
 # show(figure)
@@ -28,12 +31,12 @@ Things = [Thing1]
 # close()
 for i in range(0,len(Things)):
 	if Things[i] == "movie" or Things[i] == "Movie":
-		MOVIE.MultifileMovie(dim=2)
+		MOVIE.MultiFileMovie(dim=2)
 	elif Things[i] == "MSD":
 		MSD_plot()
 		close()
 	elif Things[i] == "Curvature" or Things[i] == "curvatureplot" or Things[i] == "curvature":
-		curvatureplot(omega=frequency)
+		curvatureplot(omega=omega,length=length)
 	elif Things[i] == "Energy":
 		time,BE,SE = Energy(AA,HH)
 		plt.plot(time[0:-1],BE[0:-1])
@@ -48,6 +51,8 @@ for i in range(0,len(Things)):
 		close()
 	elif Things[i]=="MSD_no_trans":
 		MSD_no_trans()
+	elif Things[i]=="SqrtCurvature":
+		GetCurv()
 # BendE = BendingEnergy(A=0.00006,FILE='data/curvature.txt')
 # plt.plot(BendE)
 # plt.savefig('data/BendE.png',dpi=300)

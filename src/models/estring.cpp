@@ -52,29 +52,30 @@ switch(conf_number){
     for(int ip=0; ip<Np;ip++){
       dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*(double)sin(omega*time);
     }
-    // if (sin(omega*time)>=0){
-    //   for (int ip = 0; ip < Np; ++ip){
-    //     dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*ceil(sin(omega*time)); 
-    //   }
-    // }
-    // else{
-    //    for (int ip = 0; ip < Np; ++ip){
-    //     dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*floor(sin(omega*time));
-    //   }
-    // }
     break;
   case 2:
     for (int ip = 0; ip < Np; ++ip)
     {
+      double Ts = 40;
       // NOT SO GOOD WAY TO WRITE LIKE THIS
-      if (time<30*(1/ShearRate)){
+      if (time<Ts*(1/ShearRate)){
         dR[ip].y = dR[ip].y + ShearRate*(R[ip].z);
       }else{
-        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*sin(omega*(time-30*(1/ShearRate)));
+        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*sin(omega*(time-Ts*(1/ShearRate)));
       }
     }
     break; 
   case 3:
+    if (sin(omega*time)>=0){
+      for (int ip = 0; ip < Np; ++ip){
+        dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*ceil(sin(omega*time)); 
+      }
+    }
+    else{
+       for (int ip = 0; ip < Np; ++ip){
+        dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*floor(sin(omega*time));
+      }
+    }
     break;
 }
 // External force applied on the end point.
@@ -112,6 +113,7 @@ void drag(vec3 X[], vec3 dX[], vec3 EForce[]){
             mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
             dX[ip] = dX[ip] + dot(mu_ij, EForce[jp]);
             dX[jp] = dX[jp] + dot(mu_ij, EForce[ip]);
+            // cout << dot(mu_ij, EForce[jp]).y << "\t" << dot(mu_ij, EForce[jp]).z << endl;
         }
     }
   }
@@ -306,25 +308,27 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
 
 }
 /**************************/
-void iniconf(double *y, int configuration)
+void iniconf(double *y, double *vel, int configuration)
 {
     vec3 R[Np];  // R is the position of the beads.
     double k = 1;      // determines the frequency for initial configuration
     double CurvLength = 0;  // determines the total length of the curve
     if (lastfile){
-        string l = "output/position";
-        l.append(to_string(lastfile));
-        l.append(".txt");
-        ifstream myfile(l,ios::in); 
-        double num = 0.0;           
-        int ip = 0;
-        while(myfile >> num)
-        {
-          y[ip] = num;
-          ip = ip+1;
-          //keep storing values from the text file so long as data exists:
-        }
-        myfile.close();   
+      string l = "output/var";
+      l.append(to_string(lastfile));
+      l.append(".txt");
+      ifstream myfile(l,ios::in); 
+      double num = 0.0;           
+      for (int ip = 0; ip < Np; ++ip){
+        myfile >> y[3*ip];
+        myfile >> y[3*ip+1];
+        myfile >> y[3*ip+2];
+        // Now just throw away next three numbers as they contain values of velocity.
+        myfile >> vel[3*ip];
+        myfile >> vel[3*ip+1];
+        myfile >> vel[3*ip+2];
+      }
+      myfile.close();   
     }
     else
     {
@@ -396,18 +400,21 @@ void iniconf(double *y, int configuration)
           break;
       
         case 3:
-          double theta;
+          // In this case we implement the initial configuration for GI Taylor experiment. 
+          // i.e. a straight rod which is stretched half of the height of the box and free to move from bottom.
+          
           for (int ip = 0; ip < Np; ++ip)
           {
-            theta=(double) M_PI *ip/Np;
-            R[ip].x=0;
-            R[ip].y=cos(theta);
-            R[ip].z=sin(theta);
-          
-            y[3*ip] = R[ip].x;
-            y[3*ip+1] = R[ip].y;
-            y[3*ip+2] = R[ip].z;
+              R[ip].x = 0;
+              R[ip].y = 0;
+              R[ip].z = aa*double(ip);
+              // cout << R[ip].z << endl ;
+              y[3*ip] = R[ip].x;
+              y[3*ip+1] = R[ip].y;
+              y[3*ip+2] = R[ip].z;
           }
+
+          // cout << aa << endl;
           break;
         }
     }

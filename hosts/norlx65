@@ -1,4 +1,3 @@
-compile=g++ -O2
+compile=g++ -O2  -Wno-deprecated -Wno-unused-result 
 #compile=pgc++ -std=c++0x -O3
 #compile=g++ -pg -O2
-#What the hell is going on ?

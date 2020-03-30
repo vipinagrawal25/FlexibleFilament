@@ -52,35 +52,35 @@ int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM ){
 /*---------------------------------------------------------------------------------*/
 void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   MPARAM *temp;
-  double height = 1;  
+  double height = 1.28;  
   (*PARAM).height = height;
   (*PARAM).aa = height/(double)(NN-1);
   // distance between two nodes.
-  (*PARAM).Dbyell = 0.005*(double)height;
-  (*PARAM).dd = height*(*PARAM).Dbyell ;
+  (*PARAM).dd = 0.005 ;
+  (*PARAM).Dbyell = (*PARAM).dd/(double)height;
   /* r/l ratio for the rod has been kept constant. It should be noted that 
      the particles would also have same diameter. */
   (*PARAM).viscosity = 10;	      // Equivalent to kinematic viscosity of glycerin
   (*PARAM).Z0=0.;		      // If we want the bottom point of the rod to be fixed.
   (*PARAM).Famp = 0.;	      // Different force for different configuration.
   // Sigma is a dimensionless number, which is described as frequency parameter.
-  (*PARAM).sigma=1.5;
+  (*PARAM).sigma=0.75;
   (*PARAM).ShearRate = 2;
   (*PARAM).omega = (*PARAM).ShearRate*(*PARAM).sigma ;
-  (*PARAM).factorAA = 7.5;
+  (*PARAM).factorAA = 1.5*pow(height,4)*10;
   // (*PARAM).factorAA = 0. ;
   (*PARAM).AA= (*PARAM).factorAA*pow(10,-5); //AA is the bending rigidity.
   //
   double AA = (*PARAM).AA;
   // double factorHH = 40.;
-  double asqr = (*PARAM).aa*(*PARAM).aa;
+  double dsqr = (*PARAM).dd*(*PARAM).dd;
   // (*PARAM).HHbyaa = (*PARAM).KK*(*PARAM).AAbyaa/( asqr );
-  double KK = 64;
-  (*PARAM).HH = KK*AA/asqr;
+  double KK = 16;
+  (*PARAM).HH = KK*AA/dsqr;
   //
   // double AA=(*PARAM).AAbyaa*(*PARAM).aa;
   // double HH=(*PARAM).HHbyaa*(*PARAM).aa;
-  (*PARAM).KK = (*PARAM).HH*asqr/AA;
+  (*PARAM).KK = KK;
   // Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
   // double TMAX = ShearRate*10;
   // double tdiag = TMAX/2000;
@@ -96,7 +96,7 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).floc = 0 ;       // External force location 
   (*PARAM).iext_flow = 3;   // External flow: case no. whether time dependent or not etc
   (*PARAM).iniconf = 1;     // Configuration of the system at t = 0.
-  cudaMalloc( (void**)&temp, size_MPARAM  );
+  cudaMalloc( (void**)&temp, size_MPARAM );
   *dev_param = temp;
   cudaMemcpy( *dev_param, PARAM,
                      size_MPARAM, cudaMemcpyHostToDevice ) ;
@@ -213,18 +213,23 @@ __device__ vec3 ext_flow( int kelement, vec3 R, double tau,
   switch( iext_flow ){
   case 1:
     //time-dependent shear U = ( ShearRate*z, 0, 0 ) * square_wave(omega*time)
-    UU.x = (height - R.z)*ShearRate*(double)square_wave(tau, M_PI/omega);
-    UU.y = 0. ;
+    UU.x = 0.;
+    UU.y = (height - R.z)*ShearRate*(double)square_wave(tau, M_PI/omega) ;
     UU.z = 0;
     break;
   case 2:
-    UU.x = R.z*ShearRate ;
+      // NOT SO GOOD WAY TO WRITE LIKE THIS
+      if (tau<30*(1/ShearRate)){
+        UU.y = ShearRate*(R.z);
+      }else{
+        UU.y = ShearRate*(R.z)*(double)sin(omega*(tau-30*(1/ShearRate)));
+      }
     break;
   case 3:
     // Time dependent shear but the rate changes as sine function.
     UU.x = (height - R.z)*ShearRate*(double)sin(omega*tau);
-    UU.y = 0. ;
-    UU.z = 0;
+    UU.y = 0.;
+    UU.z = 0.;
     break;
   }
   return UU;

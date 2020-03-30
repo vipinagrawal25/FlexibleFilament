@@ -3,30 +3,31 @@ import ipywidgets as wid
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from scipy.fftpack import dst
+from scipy.interpolate import interp1d
 
-def curvatureplot(FILE='output',omega=3):
-	dd = loadtxt(FILE+'/curvature.txt')
+def curvatureplot(FILE='output',omega=3,length=1,tmin=0,tmax=-1):
+	dd = loadtxt(FILE+'/kappa.txt')
 	dd_SS = loadtxt(FILE+'/material_point.txt')
-	Y = dd_SS
+	Y = dd_SS[tmin:tmax]
 	nrowcol=dd_SS.shape
 	nsnap=nrowcol[0]
 	Np = nrowcol[1]
 	# Now normalize the material point coordinate
 	for isnap in range(0,nsnap-1,1):
-		Y[isnap,:] = Y[isnap,:]/Y[isnap,-1]
+		Y[isnap,:] = Y[isnap,:]*length/Y[isnap,-1]
 
 	timeAxis = loadtxt(FILE+'/time.txt')
+	timeAxis = timeAxis[tmin:tmax]
 	IndexAxis = arange(Np)
-	heightAxis = dd[:,1:Np+1]
-
+	heightAxis = dd[tmin:tmax,1:Np+1]
+	
 	# heightAxis = ndimage.rotate(heightAxis,90)
 	# imshow(heightAxis,cmap=plt.cm.gray)
 	# colorbar()
 	(IndexAxis,X) = meshgrid(IndexAxis, timeAxis)
 	fig = figure()
 	ax = fig.add_subplot(111)
-	# surf = ax.contourf(X,Y,heightAxis,vmin=10**(-5),vmax=10**5,cmap='plasma')
-	surf = ax.contourf(X,Y,heightAxis,cmap='plasma')
+	surf = ax.contourf(X,Y,heightAxis)
 	cbar = colorbar(surf)
 	ax.set_aspect(20)
 	ax.set_xlabel('time')
@@ -34,44 +35,7 @@ def curvatureplot(FILE='output',omega=3):
 	plt.show()
 	plt.savefig('curvatureplot.eps')
 	close()
-
-def GPUcurvatureplot(FILE='data',omega=3):
-	heightAxis = loadtxt(FILE+'/curvature.txt')
-	dd_SS = loadtxt(FILE+'/material_point.txt')
-	nrowcol=dd_SS.shape
-	nsnap=nrowcol[0]
-	Np = nrowcol[1]
-
-	for isnap in range(0,nsnap):
-		for ip in range(1,Np):
-			dd_SS[isnap,ip] = dd_SS[isnap,ip-1]+dd_SS[isnap,ip]
-
-	Y = dd_SS
-	# Now normalize the material point coordinate
-	for isnap in range(0,nsnap):
-		Y[isnap,:] = Y[isnap,:]/Y[isnap,-1]
-
-	PSI = loadtxt(FILE+'/PSI')
-	timeAxis = PSI[:,0]
-
-	IndexAxis = arange(1,Np+1)
-
-	# heightAxis = ndimage.rotate(heightAxis,90)
-	# imshow(heightAxis,cmap=plt.cm.gray)
-	# colorbar()
-	(IndexAxis,X) = meshgrid(IndexAxis, timeAxis)
-	fig = figure()
-	ax = fig.add_subplot(111)
-	# surf = ax.contourf(X,Y,heightAxis,vmin=10**(-5),vmax=10**5,cmap='plasma')
-	surf = ax.contourf(X,Y,heightAxis,cmap='plasma')
-	cbar = colorbar(surf)
-	ax.set_aspect(20)
-	ax.set_xlabel('time')
-	ax.set_ylabel('material_point')
-	plt.show()
-	plt.savefig('curvatureplot.eps')
-	close()
-
+	
 def SineCurvature(FILE='output',aspect_ratio=1):
 	dd = loadtxt(FILE+'/curvature.txt')
 	dd_SS = loadtxt(FILE+'/material_point.txt')
@@ -107,26 +71,33 @@ def SineCurvature(FILE='output',aspect_ratio=1):
 	plt.savefig('sinecurvature.eps')
 	close()
 
-def MSD_plot(FILE='MSD.txt'):
-	file = loadtxt(FILE)
-	dips = np.where((file[1:-1] < file[0:-2]) * (file[1:-1] < file[2:]))[0] + 1
+def MSD_plot(FILE='',omega=1.5):
+	file = loadtxt(FILE+'MSD.txt')
+	tt = loadtxt(FILE+'output/time.txt')
+
+	ttsclf = (tt[2]-tt[1])*omega/(2*pi)
+	icy = int(1/ttsclf)
+
+	cycle_index = arange(0,tt.size,icy)
+	plt.plot(cycle_index,file[cycle_index],'.-') 
 	# plt.plot(file)
-	plt.plot(dips,file[dips],'o')
 	# plt.ylim((0, 0.1))
 	plt.savefig('MSD_cycle.eps')
 	plt.show()
 
 # This function calculates Mean square displacement and substracts the translation of the rod after every cycle if there is any.
 # For this, basically I substract the co-ordinate of middle point.
-def MSD_no_trans(FILE=''):
-	file = loadtxt(FILE+'MSD.txt')
-	dips = np.where((file[1:-1] < file[0:-2]) * (file[1:-1] < file[2:]))[0] + 1		
-
-	dd_ini = loadtxt(FILE+'output/position0.txt')
+def MSD_no_trans(FILE='',omega=3):
+	tt = loadtxt(FILE+'output/time.txt')
+	dd_ini = loadtxt(FILE+'output/var0.txt')
 	nrowcol=dd_ini.shape
 	Np = nrowcol[0]
-	ndips = len(dips)
-	MSDnew=zeros(ndips)
+	
+	ttsclf = (tt[2]-tt[1])*omega/(2*pi)
+	dcy = int(1/sclf)
+	cycle_index = arange(0,tt.size,icy)
+	
+	MSDnew=zeros(floor(tt.size/icy))
 
 	if Np%2==0:
 		MidP=int(Np/2)
@@ -136,7 +107,7 @@ def MSD_no_trans(FILE=''):
 
 	for idip in range(0,ndips):
 		isnap=dips[idip]
-		dd=loadtxt(FILE+'output/position'+str(isnap)+'.txt')
+		dd=loadtxt(FILE+'output/var'+str(isnap)+'.txt')
 		dd[:,0]=dd[:,0]-dd[MidP,0]-dd_ini[:,0]
 		dd[:,1]=dd[:,1]-dd[MidP,1]-dd_ini[:,1]
 		dd[:,2]=dd[:,2]-dd[MidP,2]-dd_ini[:,2]
@@ -210,63 +181,80 @@ def LeebyL(Np,Folder='output'):
 
 	return LeebyL
 
-# 	for idip in range(0,ndip-1):
-# 		dd = loadtxt(FILE+'output/position'+str(dips(idip))+'.txt')
-# 		dd = 
-# 		MSD[idip] = 
-	# plt.plot(file)	
-	# plt.plot(dips,file[dips],'o')
-	# plt.ylim((0, 0.1))
-	# plt.savefig('MSD_cycle.eps')
-	# plt.show()
+def PowerSpec(hh,Delta,deali=True):
+    hh=hh-NP.mean(hh)
+    NN = int(hh.size)
+    NNBy2 = int(NN/2)
+    # Check whether hh is one dimensional, or power of 2
+    ff = (1/(NN*Delta))*arange(0,NNBy2+1,dtype=int)
+    HH = fft.rfft(hh)
+    Pxx = abs(HH)
+    
+    if(deali):
+        ff = ff[0:int(0.65*ff.size)] 		#De-aliasing the data
+        Pxx = Pxx[0:int(0.65*Pxx.size)]
+        HH = HH[0:int(0.65*HH.size)]
+    
+    return ff, HH, Pxx
 
+def FindPeaks(function,facTh=0.1,neighbours=2):
+	if neighbours==2:
+		pks = where((function[2:-2] > function[0:-4]) * (function[2:-2] > function[1:-3]) 
+	              * (function[2:-2] > function[3:-1])  * (function[2:-2] > function[4:]))[0] + 2
+	else:
+		pks = where((function[1:-1] > function[0:-2]) * (function[1:-1] > function[2:]) )[0] + 1
+	
+	MaxFunc = max(function)
+	threshold = facTh*MaxFunc
+	peaks = []
+	if ( (function[1]>function[0])*(function[1]>function[2]) ):
+	    peaks.append(1)
 
-# def BendingEnergy(AA,FILE='output/curvature.txt'):
-# 	dd=loadtxt(FILE)
-# 	nrowcol=dd.shape
-# 	nrows=nrowcol[0]
-# 	ncols=nrowcol[1]
-# 	#
-# 	aa = 1./(ncols-2) 					# aa is the equlibrium distance
-# 	BE=zeros([nrows,1])
-# 	time = zeros([nrows,1])
-# 	#
-# 	for i in range(0,nrows-1):
-# 		time[i] = dd[i,0]
-# 		for j in range(1,ncols):
-# 			BE[i] = BE[i]+AA/aa*dd[i,j]
-# 	#		
-# 	plt.plot(time,BE)
-# 	plt.title('Bending Energy')
-# 	plt.xlabel('time')
-# 	plt.ylabel('Bending Energy')
-# 	plt.show()
-# 	plt.savefig('BendingEnergy.eps')
-# 	return time,BE
+	for ipk in pks:
+	    if (function[ipk]> threshold):
+	        peaks.append(ipk)
+	        
+	return peaks
 
-# def StretchEnergy(HH,FILE='output/material_point.txt'):
-# 	dd = NP.loadtxt(FILE)
-# 	nrowcol=dd.shape
-# 	nrows=nrowcol[0]
-# 	ncols=nrowcol[1]
+def GetCurv(Folder='output/',code='CPU'):
+	# This function will take the square root of curvature. Sign of the final thing would be decided
+	# by double derivative of the position vector. If the function is convex, curvature can be negative
+	# else the curvature would be positive.	
+	dd = loadtxt(Folder+'curvature.txt')
+	dd[dd<0]=0
+	nrowcol = dd.shape
+	NN = nrowcol[1] -1
+	nsnap = nrowcol[0]
+	time=dd[:,0]
+	curvsqr = dd[:,1:NN+1]
+	kappa=sqrt(curvsqr)
 
-# 	aa=1./(ncols-2)
-# 	SE=NP.zeros([nrows,1])
+	znew=zeros(NN)
+	if (code=='CPU'):
+		for isnap in range(1,nsnap):
+			dd = loadtxt(Folder+'var'+str(isnap)+'.txt')
+			zz=dd[:,2]
+			yy=dd[:,1]
+			# First shift everything by the linear line joining the first and last line.
+			yy=yy-(yy[0]-yy[-1])/(zz[0]-zz[-1])*zz
+			# Now interpolate things
+			for iN in range(0,NN):
+				znew[iN] = zz[0]+(zz[-1]-zz[0])*iN/NN
+			ff = interp1d(zz,yy)
+			ynew=ff(znew)
 
-# 	for i in range(0,nrows-1):
-# 		for j in range(1,ncols):
-# 			SE[i] = SE[i] + HH/(2*aa)*((dd[i,j]-aa)**2)
+			# Now we have set of (znew,ynew) values, we just need to calculate sign of double derivative to decide
+			# the sign of curvature.
+			ynewdiff=diff(ynew)
+			ynewdiff2=diff(ynewdiff)
+			# Since we are dealing with signs only, there is no need to divide by delta^2.
+			ynewdiff2[ynewdiff2<0]=-1
+			ynewdiff2[ynewdiff2>0]=1
+			kappa[isnap,2:] = kappa[isnap,2:]*ynewdiff2
 
-# 	plt.plot(SE)
-# 	return SE
-
-# chitra = plt.figure();
-# def MSD_plot(FILE='MSD.txt',step=1, fig=chitra):
-# 	step = int(around(step))
-# 	# MSD = loadtxt(FILE+'/MSD.txt',delimiter=';',usecols=range(2000))
-# 	MSD = loadtxt(FILE)
-# 	# fig = figure()
-# 	plt.plot(1/100*MSD[0::step],'o')
-# 	# index = 0;
-# 	plt.show()
-# 	return fig
+	# We should save everything in the same format
+	kappanew=zeros([nsnap,NN+1])
+	kappanew[:,0]=time
+	kappanew[:,1:NN+1]=kappa
+	# print(kappanew)
+	savetxt(Folder+'kappa.txt',kappanew,fmt='%.5e')

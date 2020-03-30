@@ -29,14 +29,14 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap):
 #####################################################
 def MakePlot2D(ax,Xaxis,Yaxis,tsnap):
 	# ax.subplot(2,1,2)
-	ax.set_xlim(-1,1)
-	ax.set_ylim(-1,1)
+	ax.set_xlim(-0.5,1.5)
+	ax.set_ylim(-0.3,1.3)
 	ax.plot(Xaxis,Yaxis,'o-')
 	plt.title(str(tsnap))
 	# plt.hold(False)
 	ax.grid(True)
 #####################################################
-def MultifileMovie(FILE='output',dim=3):
+def MultiFileMovie(FILE='output',dim=3):
 	if dim==2:
 		ax=fig.add_subplot(1,1,1)
 	elif dim==3:
@@ -66,7 +66,7 @@ def MultifileMovie(FILE='output',dim=3):
 	 		print('plot = ' + str(isnap)+ 'Done')
 
 #####################################################
-def SingleFileMovie(FILE='data/PSI',dim=3, output="data/movie.mp4"):
+def SingleFileMovie(FILE='data/PSI',dim=2, output="data/movie.mp4"):
 	dd=loadtxt(FILE)
 	nrowcol=dd.shape
 	nrows=nrowcol[0]
@@ -95,7 +95,7 @@ def SingleFileMovie(FILE='data/PSI',dim=3, output="data/movie.mp4"):
 				zz[icol]=dd[irow,3*icol+3]
 
 			if dim==2:
-				MakePlot2D(ax,yy,zz,time)
+				MakePlot2D(ax,xx,zz,time)
 			else:
 				MakePlot3D(ax,yy,xx,zz,time)
 

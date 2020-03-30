@@ -28,7 +28,7 @@ int main()
   double lengthmin=height;
   double lengthmax=height;
   double dt_min = 10;
-  double gamma = 8*M_PI*viscosity*ShearRate*pow(dd,3)/(AA) ;
+  double gamma = 8*M_PI*viscosity*ShearRate*pow(dd,3)*height/(AA) ;
   double MSElen = 0;
   // This gamma is non-dimensional number which describes the competition between viscous forces and elastic forces.
   // cout << HH << endl;
@@ -42,8 +42,8 @@ int main()
       cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
       return 0;
   }
-  int lastfile=0;
-  if (lastfile){
+  
+  if(lastfile){
     filenumber = lastfile+1;
     // -----------------------------------------------------------------------------------------------------
     double num = 0.0;
@@ -57,10 +57,9 @@ int main()
     ifstream outfile_SS("output/material_point.txt");
     fstream outfile_SS_new("output/material_point_new.txt",ios::out) ;
     int ifile = 1;
-
     // This loop just make reads data from existing time file and dump it into the new file till it is allowed.
-    while(ifile<=lastfile)
-    { 
+    // This is necessary as you can ask to delete data after a certain iteration.
+    while(ifile<lastfile){
       if (outfile_time >> num){
         time = num;
         outfile_time_new << num << endl;
@@ -75,8 +74,7 @@ int main()
         outfile_SS_new << line << endl;
         ifile = ifile+1;
       }
-      else
-      {
+      else{
         cout << "ERROR: The last code has not been run till the file which has been mentioned. This does not make sense." << endl;
         return 0;
       }
@@ -86,59 +84,55 @@ int main()
     outfile_MSD.close();
     outfile_curvature.close();
     outfile_SS.close();
-
+    // Now close the new files as well
     outfile_time_new.close();
     outfile_MSD_new.close();
     outfile_curvature_new.close();
     outfile_SS_new.close();
     // Closing files done
-
     system("exec rm -f output/time.txt");
     system("exec mv output/time_new.txt output/time.txt");
     // fstream outfile_time("output/time.txt", ios::app);    // Now opening file again in append mode.
-
     system("exec rm -f MSD.txt");
     system("exec mv MSD_new.txt MSD.txt");
     // fstream outfile_time("MSD.txt", ios::app);    // Now opening file again in append mode. 
-
     system("exec rm -f output/curvature.txt");
     system("exec mv output/curvature_new.txt output/curvature.txt");
     // fstream outfile_curvature("output/curvature.txt", ios::app);    // Now opening file again in append mode.
-
     system("exec rm -f output/material_point.txt");
     system("exec mv output/material_point_new.txt output/material_point.txt");
     // fstream outfile_SS("output/material_point.txt", ios::app);    // Now opening file again in append mode.      
     // -----------------------------------------------------------------------------------------------------------
-    /*Code to remove the contents of the output folder after the last file mentioned. The code would have already returned and error message
+    /*Code to remove the contents of the output folder after the last file mentioned. The code would have already returned an error message
     if lastfile is more than the total number of files present*/
-    // The idea is that I check whether the file exists or not, if not come out of loop immediately else remove the file if it has index more than
+    // The idea is that I check whether the file exists or not, if not come out of loop immediately, else remove the file if it has index more than
     // lastfile mentioned in '.h' file.
     ifile = lastfile+1;
-
+    // cout << ifile << endl;
     string filename = "output/var";
     filename.append(to_string(ifile));
     filename.append(".txt");
-
     struct stat buffer;
-    
-    while(!stat(filename.c_str(), &buffer))
-    {
+    while(!stat(filename.c_str(), &buffer)){
       string removefile = "exec rm -f ";
       removefile.append(filename);
       system(removefile.c_str());
-      
-      ifile = ifile+1;
       string filename = "output/var";
       filename.append(to_string(ifile));
       filename.append(".txt");
+      ifile = ifile+1;
     }
-    // ---------------------------------------------------------------------------------------------------------
+    //Store the values of initial file into y0.
     ifstream initialfile("output/var0.txt", ios::in);
     //keep storing values from the text file so long as data exists:
-    int idim = 0;
-    while (initialfile >> num){
-        y0[idim] = num;
-        idim = idim+1;
+    for (int ip = 0; ip < Np; ++ip){
+      initialfile >> y0[3*ip];
+      initialfile >> y0[3*ip+1];
+      initialfile >> y0[3*ip+2];
+   // Now just throw away next three numbers as they contain values of velocity.
+      initialfile >> num;
+      initialfile >> num;
+      initialfile >> num;
     }
   }
   else{
@@ -148,38 +142,34 @@ int main()
     system("exec rm -rf output");
     system("exec mkdir output");
     system("exec rm -f MSD.txt");
-    iniconf(y0, conf_number);
+    iniconf(y0, vel, conf_number);
     ofstream outfile;
     outfile.open("output/var0.txt"); 
-
     for (int ip = 0; ip < Np; ++ip){
-      outfile << y0[3*ip] << '\t' << y0[3*ip+1] << '\t' << y0[3*ip+2] << '\t' << 0 << '\t' << 0  << '\t' << 0 << endl ; 
+      outfile << y0[3*ip] << '\t' << y0[3*ip+1] << '\t' << y0[3*ip+2] << '\t' 
+              << vel[3*ip] << '\t' << vel[3*ip+1]  << '\t' << vel[3*ip+2] << endl ; 
     }
-    for (int ip = 0; ip < Np; ++ip){
-      CurvSqr[ip] = 0;
-      SS[ip] = 0;
-    }
+  } 
+  // Initializing curv square and ss. It won't depend on the configuration number.
+  for (int ip = 0; ip < Np; ++ip){
+    CurvSqr[ip] = 0;
+    SS[ip] = 0;
   }
   /*Opening every file again in append mode. This thing does not depend on configuration number and that's why it is outside the loop*/
   fstream outfile_MSD("MSD.txt", ios::app);
   fstream outfile_time("output/time.txt", ios::app);
   fstream outfile_curvature("output/curvature.txt", ios::app);
   fstream outfile_SS("output/material_point.txt", ios::app);
-
-  iniconf(y, conf_number);
+  iniconf(y, vel, conf_number);
   timer = clock();
   timer_global = timer/CLOCKS_PER_SEC;
   while(time < TMAX){
-    // cout << time << endl;
-    // ldiagnos=itn%idiag;
-    // tdiagnos=time%tdiag;
-    // time = time + dt;
-    // for(int ibody=0;ibody<Nensemble;ibody++){
-    // int irb=pdim*ibody;
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
   	rnkf45(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
+    // DP54(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
+    // cout << time << endl;
     if (dt<dt_min){
       dt_min = dt;
     }
@@ -192,9 +182,8 @@ int main()
         // cout << lengthmin << endl;
     }
     tdiagnos = 0;
-    // cout << "Yaar ye code chal kyu nahi raha hai " << endl;
-    if (time>=tdiag*filenumber) {
-      // cout << time << '\t' << y[0] << '\t' << (sin(2*time+10*sin(0.1*time)))/sqrt(6+3*cos(0.1*time)) << '\t' << 1/sqrt(6+3 *cos(0.1*time))<<endl;
+    // cout << time << endl;
+    if (time>=tdiag*filenumber){
       // cout << dt << endl;
       ofstream outfile;
       string l = "output/var";
@@ -202,39 +191,28 @@ int main()
       l.append(".txt");
       outfile.open(l, ios::out);
       outfile_curvature << time << '\t' ;
+      outfile_time << time;
       for (int ip = 0; ip < Np; ++ip){
-        outfile << y[3*ip] << '\t' << y[3*ip+1] << '\t' << y[3*ip+2] << '\t' << vel[3*ip] << '\t' << vel[3*ip+1] << '\t' << vel[3*ip+2] << endl;
+        outfile << y[3*ip] << '\t' << y[3*ip+1] << '\t' << y[3*ip+2] << '\t' 
+                << vel[3*ip] << '\t' << vel[3*ip+1] << '\t' << vel[3*ip+2] << endl;
         /* Non-dimensionalizing the co-ordinate with respect to the height of the rod*/
-        
-        outfile_curvature << CurvSqr[ip]*aa*aa << '\t' ;  /*Square of curvature is non-dimensionalized with the multiplication of square of 
+        outfile_curvature << CurvSqr[ip]*aa*aa << '\t';  /*Square of curvature is non-dimensionalized with the multiplication of square of 
                                                              bead distance */   
-        outfile_SS << SS[ip]/SS[Np-1] << '\t';        
-        // MeanSqDis = MeanSqDis+(y[3*idim]-y0[idim])*(y[idim]-y0[idim])
-        // outfile_MSD << MeanSqDis << ';' ; 
-        // cout << CurvSqr[ip] << endl;
+        outfile_SS << SS[ip]/SS[Np-1] << '\t';
       }
-
       MeanSqDis = 0;
       for (int idim = 0; idim < ndim; ++idim){
           MeanSqDis = MeanSqDis+(y[idim]-y0[idim])*(y[idim]-y0[idim]);
       }
       MeanSqDis = sqrt(MeanSqDis);
       outfile_MSD << MeanSqDis;
-      
-       
       outfile_curvature << endl;
       outfile_MSD << endl;
       outfile_time << endl;
       outfile_SS << endl;
       outfile.close(); 
 
-      // for (int ip = 0; ip < Np; ++ip)
-      // {
-      //   outfile << y[3*ip+2] << '\t';
-      // }
-      // outfile << endl;     
       filenumber = filenumber+1;
-      outfile_time << time;
       cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<TMAX<<"\n";
       tdiagnos =1;
     }
