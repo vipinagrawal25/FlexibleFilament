@@ -241,6 +241,31 @@ def GetCurv(Folder='output/',code='CPU'):
 			for iN in range(0,NN):
 				znew[iN] = zz[0]+(zz[-1]-zz[0])*iN/NN
 			ff = interp1d(zz,yy)
+			# Assign sign based on the slope in starting. Remember first two points have zero curvature so just go two more points
+			# to make sure slope calculation is right and implement it
+
+			# Now we have set of (znew,ynew) values, we just need to calculate sign of double derivative to decide
+			# the sign of curvature.
+			ynewdiff=diff(ynew)
+			ynewdiff2=diff(ynewdiff)
+			# Since we are dealing with signs only, there is no need to divide by delta^2.
+			ynewdiff2[ynewdiff2<0]=-1
+			ynewdiff2[ynewdiff2>0]=0
+			kappa[isnap,2:] = kappa[isnap,2:]*ynewdiff2
+	elif (code == 'GPU'):
+		dd=loadtxt(Folder+"PSI")
+		zz=zeros(NN)
+		yy=zeros(NN)
+		for isnap in range(1,nsnap):
+			for iN in range(0,NN):
+				yy[iN] = dd[isnap,3*iN+1]
+				zz[iN] = dd[isnap,3*iN+3]
+			# First shift everything by the linear line joining the first and last line.
+			# yy=yy-(yy[0]-yy[-1])/(zz[0]-zz[-1])*zz
+			# Now interpolate things
+			for iN in range(0,NN):
+				znew[iN] = zz[0]+(zz[-1]-zz[0])*iN/NN
+			ff = interp1d(zz,yy)
 			ynew=ff(znew)
 
 			# Now we have set of (znew,ynew) values, we just need to calculate sign of double derivative to decide
@@ -251,7 +276,6 @@ def GetCurv(Folder='output/',code='CPU'):
 			ynewdiff2[ynewdiff2<0]=-1
 			ynewdiff2[ynewdiff2>0]=1
 			kappa[isnap,2:] = kappa[isnap,2:]*ynewdiff2
-
 	# We should save everything in the same format
 	kappanew=zeros([nsnap,NN+1])
 	kappanew[:,0]=time

@@ -23,7 +23,7 @@ Thing6 = "SineCurvature"
 Thing7 = "MSD_no_trans"
 Thing8 = "SqrtCurvature"
 
-Things = [Thing1,Thing8,Thing3]
+Things = [Thing8,Thing3]
 
 # figure=MSD_plot(step=1)
 # show(figure)

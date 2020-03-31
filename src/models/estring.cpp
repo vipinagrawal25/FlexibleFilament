@@ -295,8 +295,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       // cout << FF.x << endl;
       // cout << FF.y << endl;     
 
-      if (flag_kappa==false)
-      {
+      if (flag_kappa==false){
         *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
         // cout << kappasqr << endl;
         // cout << "This is also high level shit" << endl;
