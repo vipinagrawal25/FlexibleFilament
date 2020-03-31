@@ -216,7 +216,45 @@ def FindPeaks(function,facTh=0.1,neighbours=2):
 	        
 	return peaks
 
-def GetCurv(Folder='output/',code='CPU'):
+def CurvatureSign(kappasqr,yy,zz,eps):
+	NN=yy.size
+	sign=zeros(NN)
+	znew=zeros(NN)
+	# First shift everything by the linear line joining the first and last line.
+	yy=yy-(yy[0]-yy[-1])/(zz[0]-zz[-1])*zz
+	# Now interpolate things
+	for iN in range(0,NN):
+		znew[iN] = zz[0]+(zz[-1]-zz[0])*iN/NN
+	ff = interp1d(zz,yy)
+	ynew=ff(znew)
+	# Assign sign based on the slope in starting. Remember first two points have zero curvature so just go two more points
+	# to make sure slope calculation is right and implement it.
+	ynewdiff=diff(ynew)
+	ynewdiff=ynewdiff[0:3]
+	ynewdiff[ynewdiff<0]=-1
+	ynewdiff[ynewdiff>0]=1
+
+	sign[1:4]=ynewdiff
+	# Now initial sign has been defined. we can change the sign whenever double derivative i.e. kappasqr->0
+	dips=where((kappasqr[4:-1] < kappasqr[3:-2]) * (kappasqr[4:-1] < kappasqr[5:]) )[0] + 4
+	# Sign should continue till the first minimum is hit
+	if dips.size>0:
+		sign[4:dips[0]+1]=sign[3]
+	else:
+		sign[4:]=sign[3]
+	# Now let's change the sign alternatively if minimum is below some epsilon value
+	for index in range(1,dips.size):
+		if kappasqr[dips[index]]<eps:
+			sign[dips[index-1]+1:dips[index]+1]=-sign[dips[index-1]]
+		else:
+			sign[dips[index-1]+1:dips[index]+1]=sign[dips[index-1]]
+	# Sign should just continue after the last minimum
+	if dips.size>0:
+		sign[dips[-1]+1:]=-sign[dips[-1]]
+	# Multiply signs to the absolute value of kappasqr
+	return sign
+
+def GetCurv(Folder='output/',code='CPU',eps=0.04):
 	# This function will take the square root of curvature. Sign of the final thing would be decided
 	# by double derivative of the position vector. If the function is convex, curvature can be negative
 	# else the curvature would be positive.	
@@ -227,31 +265,14 @@ def GetCurv(Folder='output/',code='CPU'):
 	nsnap = nrowcol[0]
 	time=dd[:,0]
 	curvsqr = dd[:,1:NN+1]
-	kappa=sqrt(curvsqr)
-
-	znew=zeros(NN)
+	kappa=zeros([nsnap,NN+1])
+	kappa[:,0]=time
 	if (code=='CPU'):
 		for isnap in range(1,nsnap):
 			dd = loadtxt(Folder+'var'+str(isnap)+'.txt')
 			zz=dd[:,2]
 			yy=dd[:,1]
-			# First shift everything by the linear line joining the first and last line.
-			yy=yy-(yy[0]-yy[-1])/(zz[0]-zz[-1])*zz
-			# Now interpolate things
-			for iN in range(0,NN):
-				znew[iN] = zz[0]+(zz[-1]-zz[0])*iN/NN
-			ff = interp1d(zz,yy)
-			# Assign sign based on the slope in starting. Remember first two points have zero curvature so just go two more points
-			# to make sure slope calculation is right and implement it
-
-			# Now we have set of (znew,ynew) values, we just need to calculate sign of double derivative to decide
-			# the sign of curvature.
-			ynewdiff=diff(ynew)
-			ynewdiff2=diff(ynewdiff)
-			# Since we are dealing with signs only, there is no need to divide by delta^2.
-			ynewdiff2[ynewdiff2<0]=-1
-			ynewdiff2[ynewdiff2>0]=0
-			kappa[isnap,2:] = kappa[isnap,2:]*ynewdiff2
+			kappa[isnap,1:NN+1]=sqrt(curvsqr[isnap,:])*CurvatureSign(curvsqr[isnap,:],yy,zz,eps)
 	elif (code == 'GPU'):
 		dd=loadtxt(Folder+"PSI")
 		zz=zeros(NN)
@@ -260,25 +281,6 @@ def GetCurv(Folder='output/',code='CPU'):
 			for iN in range(0,NN):
 				yy[iN] = dd[isnap,3*iN+1]
 				zz[iN] = dd[isnap,3*iN+3]
-			# First shift everything by the linear line joining the first and last line.
-			# yy=yy-(yy[0]-yy[-1])/(zz[0]-zz[-1])*zz
-			# Now interpolate things
-			for iN in range(0,NN):
-				znew[iN] = zz[0]+(zz[-1]-zz[0])*iN/NN
-			ff = interp1d(zz,yy)
-			ynew=ff(znew)
-
-			# Now we have set of (znew,ynew) values, we just need to calculate sign of double derivative to decide
-			# the sign of curvature.
-			ynewdiff=diff(ynew)
-			ynewdiff2=diff(ynewdiff)
-			# Since we are dealing with signs only, there is no need to divide by delta^2.
-			ynewdiff2[ynewdiff2<0]=-1
-			ynewdiff2[ynewdiff2>0]=1
-			kappa[isnap,2:] = kappa[isnap,2:]*ynewdiff2
-	# We should save everything in the same format
-	kappanew=zeros([nsnap,NN+1])
-	kappanew[:,0]=time
-	kappanew[:,1:NN+1]=kappa
-	# print(kappanew)
-	savetxt(Folder+'kappa.txt',kappanew,fmt='%.5e')
+			kappa[isnap,1:NN+1]=sqrt(curvsqr[isnap,:])*CurvatureSign(curvsqr[isnap,:],yy,zz,eps)
+	
+	savetxt(Folder+'kappa.txt',kappa,fmt='%.5e')
