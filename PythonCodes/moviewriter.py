@@ -34,7 +34,7 @@ def MakePlot2D(ax,Xaxis,Yaxis,tsnap):
 	ax.plot(Xaxis,Yaxis,'o-')
 	plt.title(str(tsnap))
 	# plt.hold(False)
-	ax.grid(True)
+	# ax.grid(True)
 #####################################################
 def MultiFileMovie(FILE='output',dim=3):
 	if dim==2:
@@ -102,24 +102,3 @@ def SingleFileMovie(FILE='data/PSI',dim=2, output="data/movie.mp4"):
 			writer.grab_frame()
 			ax.clear()
 			print('plot = ' + str(irow)+ 'Done')
-
-# with writer.saving(fig, FILE+"/movie.mp4", 100):
-#     for isnap in range(1,itn,1):
-#     	# start = time.time()
-#     	dd = loadtxt(FILE+'/var'+str(isnap)+'.txt')
-#     	zz = dd[:,2]
-#     	yy = dd[:,1]
-#     	xx = dd[:,0]
-#     	# plt.text(0.5, 0.5, str(time[isnap]))
-#     	# l.set_data(xx,yy,zz)
-#     	ax.plot(xx,yy,zz,'o-')
-#     	ax.set_xlim(-1, 1)
-#     	ax.set_ylim(-0.5, 0.5)
-#     	ax.set_zlim(0,1.3)
-#     	plt.title(str(time[isnap]))
-#     	# print(time[isnap])
-#     	writer.grab_frame()
-#     	ax.hold(False)
-#     	# end = time.time()
-#     	# print(end-start)
-#     	print('plot = ' + str(isnap)+ ' Done' )

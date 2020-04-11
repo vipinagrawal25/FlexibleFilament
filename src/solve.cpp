@@ -28,7 +28,7 @@ int main()
   double lengthmin=height;
   double lengthmax=height;
   double dt_min = 10;
-  double gamma = 8*M_PI*viscosity*ShearRate*pow(dd,3)*height/(AA) ;
+  double gamma = 8*M_PI*viscosity*ShearRate*pow(height,4)/(AA);
   double MSElen = 0;
   // This gamma is non-dimensional number which describes the competition between viscous forces and elastic forces.
   // cout << HH << endl;

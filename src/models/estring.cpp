@@ -50,7 +50,7 @@ switch(conf_number){
     break;
   case 1:
     for(int ip=0; ip<Np;ip++){
-      dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*(double)sin(omega*time);
+      dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*sin(omega*time);
     }
     break;
   case 2:
@@ -358,8 +358,7 @@ void iniconf(double *y, double *vel, int configuration)
           // In this case we implement the initial configuration for GI Taylor experiment. 
           // i.e. a straight rod which is stretched half of the height of the box and free to move from bottom.
           
-          for (int ip = 0; ip < Np; ++ip)
-          {
+          for (int ip = 0; ip < Np; ++ip){
               R[ip].x = 0;
               R[ip].y = 0;
               R[ip].z = aa*double(ip);

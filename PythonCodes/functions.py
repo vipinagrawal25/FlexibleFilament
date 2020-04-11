@@ -36,7 +36,7 @@ def curvatureplot(FILE='output',omega=3,length=1,tmin=0,tmax=-1):
 	plt.savefig('curvatureplot.eps')
 	close()
 	
-def SineCurvature(FILE='output',aspect_ratio=1):
+def SineCurvature(FILE,aspect_ratio=1):
 	dd = loadtxt(FILE+'/curvature.txt')
 	dd_SS = loadtxt(FILE+'/material_point.txt')
 	Y = dd_SS
@@ -197,82 +197,125 @@ def PowerSpec(hh,Delta,deali=True):
     
     return ff, HH, Pxx
 
-def FindPeaks(function,facTh=0.1,neighbours=2):
-	if neighbours==2:
-		pks = where((function[2:-2] > function[0:-4]) * (function[2:-2] > function[1:-3]) 
-	              * (function[2:-2] > function[3:-1])  * (function[2:-2] > function[4:]))[0] + 2
-	else:
-		pks = where((function[1:-1] > function[0:-2]) * (function[1:-1] > function[2:]) )[0] + 1
+# def FindPeaks(function,facTh=0.1,neighbours=2):
+# 	if neighbours==2:
+# 		pks = where((function[2:-2] > function[0:-4]) * (function[2:-2] > function[1:-3]) 
+# 	              * (function[2:-2] > function[3:-1])  * (function[2:-2] > function[4:]))[0] + 2
+# 	else:
+# 		pks = where((function[1:-1] > function[0:-2]) * (function[1:-1] > function[2:]) )[0] + 1
 	
-	MaxFunc = max(function)
-	threshold = facTh*MaxFunc
-	peaks = []
-	if ( (function[1]>function[0])*(function[1]>function[2]) ):
-	    peaks.append(1)
+# 	MaxFunc = max(function)
+# 	threshold = facTh*MaxFunc
+# 	pks2 = []
+# 	peaks=[]
+# 	# if ( (function[1]>function[0])*(function[1]>function[2]) ):
+# 	#     peaks.append(1)
+# 	for ipk in pks:
+# 	    if (function[ipk]> threshold):
+# 	        pks2.append(ipk)
+# 	pksdiff=diff(pks2)
 
-	for ipk in pks:
-	    if (function[ipk]> threshold):
-	        peaks.append(ipk)
-	        
-	return peaks
+# 	ind=0
+# 	while ind<pksdiff.size:
+# 		if pksdiff[ind]==2:
+# 			while pksdiff[ind]==2:
+				
+# 				ind=ind+1
+# 		ind=ind+1
+
+# 	for ind in range(0,pksdiff.size):
+# 		if pksdiff[ind]==2:
+
+# 		else:
+# 			peaks.append(pks2[ind-1])
+
+
+# 	return peaks
 
 def CurvatureSign(kappasqr,yy,zz,eps):
+	# kappasqr[kappasqr<th*max(kappasqr)]=0
 	NN=yy.size
+	firstIn=2
+	# for iN in range(NN):
+	# 	if kappasqr[iN]>0:
+	# 		firstIn=iN+2
+	# 		break;
+	
 	sign=zeros(NN)
 	znew=zeros(NN)
 	# First shift everything by the linear line joining the first and last line.
-	yy=yy-(yy[0]-yy[-1])/(zz[0]-zz[-1])*zz
+	# yy=yy-yy[0]-(yy[0]-yy[-1])/(zz[0]-zz[-1])*zz
 	# Now interpolate things
 	for iN in range(0,NN):
 		znew[iN] = zz[0]+(zz[-1]-zz[0])*iN/NN
 	ff = interp1d(zz,yy)
 	ynew=ff(znew)
+
+	# MidP=int(NN/2)
+	# ynew=ynew-(ynew[MidP]+(znew-znew[MidP])*(ynew[MidP+1]-ynew[MidP-1])/(znew[MidP+1]-znew[MidP-1]))
+
 	# Assign sign based on the slope in starting. Remember first two points have zero curvature so just go two more points
 	# to make sure slope calculation is right and implement it.
-	ynewdiff=diff(ynew)
-	ynewdiff=ynewdiff[0:3]
-	ynewdiff[ynewdiff<0]=-1
-	ynewdiff[ynewdiff>0]=1
 
-	sign[1:4]=ynewdiff
-	# Now initial sign has been defined. we can change the sign whenever double derivative i.e. kappasqr->0
-	dips=where((kappasqr[4:-1] < kappasqr[3:-2]) * (kappasqr[4:-1] < kappasqr[5:]) )[0] + 4
-	# Sign should continue till the first minimum is hit
-	if dips.size>0:
-		sign[4:dips[0]+1]=sign[3]
-	else:
-		sign[4:]=sign[3]
-	# Now let's change the sign alternatively if minimum is below some epsilon value
-	for index in range(1,dips.size):
-		if kappasqr[dips[index]]<eps:
-			sign[dips[index-1]+1:dips[index]+1]=-sign[dips[index-1]]
-		else:
-			sign[dips[index-1]+1:dips[index]+1]=sign[dips[index-1]]
-	# Sign should just continue after the last minimum
-	if dips.size>0:
-		sign[dips[-1]+1:]=-sign[dips[-1]]
-	# Multiply signs to the absolute value of kappasqr
+	ynewdiff=diff(yy)
+	znewdiff=diff(zz)
+	vectors=zeros([NN-1,2])
+	vectors[:,0]=ynewdiff
+	vectors[:,1]=znewdiff
+	vectors=vectors/sqrt(vectors[:,0]**2+vectors[:,1]**2)
+	cp=cross(vectors[0:-1],vectors[1:])
+
+	cpdiff=diff(cp)
+	cpdiff[cpdiff<0]=-1
+	cpdiff[cpdiff>0]=1
+
+	# while sum(cp[0:firstIn])==0:
+	# 	firstIn=firstIn+1
+	# 	# print(firstIn)
+
+	# sign[0:firstIn]=sum(cp[0:firstIn])/sum(abs(cp[0:firstIn]))
+
+	# # Now initial sign has been defined. we can change the sign whenever double derivative i.e. kappasqr->0
+	# dips=where((kappasqr[firstIn:-1] < kappasqr[firstIn-1:-2]) * (kappasqr[firstIn:-1] < kappasqr[firstIn+1:]) )[0] + firstIn
+	# # Sign should continue till the first minimum is hit
+	# if dips.size>0:
+	# 	sign[firstIn:dips[0]+1]=sign[firstIn-1]
+	# else:
+	# 	sign[firstIn:]=sign[firstIn-1]
+	# # Now let's change the sign alternatively if minimum is below some epsilon value
+	# for index in range(1,dips.size):
+	# 	if kappasqr[dips[index]]<eps:
+	# 		sign[dips[index-1]+1:dips[index]+1]=-sign[dips[index-1]]
+	# 	else:
+	# 		sign[dips[index-1]+1:dips[index]+1]=sign[dips[index-1]]
+	# # Sign should just continue after the last minimum
+	# if dips.size>0:
+	# 	sign[dips[-1]+1:]=-sign[dips[-1]]
+	# # Multiply signs to the absolute value of kappasqr
+	sign[2:NN-1]=cpdiff
 	return sign
 
-def GetCurv(Folder='output/',code='CPU',eps=0.04):
+
+def GetCurv(Folder='output/',code='CPU',dim=2):
 	# This function will take the square root of curvature. Sign of the final thing would be decided
 	# by double derivative of the position vector. If the function is convex, curvature can be negative
 	# else the curvature would be positive.	
-	dd = loadtxt(Folder+'curvature.txt')
-	dd[dd<0]=0
-	nrowcol = dd.shape
-	NN = nrowcol[1] -1
-	nsnap = nrowcol[0]
+	dd=loadtxt(Folder+'curvature.txt')
 	time=dd[:,0]
-	curvsqr = dd[:,1:NN+1]
+	nrowcol=dd.shape
+	nsnap = nrowcol[0]
+	NN=nrowcol[1]-1
 	kappa=zeros([nsnap,NN+1])
 	kappa[:,0]=time
+	tangent=zeros([NN-1,2])
 	if (code=='CPU'):
 		for isnap in range(1,nsnap):
 			dd = loadtxt(Folder+'var'+str(isnap)+'.txt')
-			zz=dd[:,2]
-			yy=dd[:,1]
-			kappa[isnap,1:NN+1]=sqrt(curvsqr[isnap,:])*CurvatureSign(curvsqr[isnap,:],yy,zz,eps)
+			position=dd[:,1:3]
+			tangent=diff(position,axis=0)
+			for iN in range(NN-1):
+				tangent[iN,:]=tangent[iN,:]/sqrt( tangent[iN,0]**2 + tangent[iN,1]**2 )
+			kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])    		
 	elif (code == 'GPU'):
 		dd=loadtxt(Folder+"PSI")
 		zz=zeros(NN)
@@ -281,6 +324,93 @@ def GetCurv(Folder='output/',code='CPU',eps=0.04):
 			for iN in range(0,NN):
 				yy[iN] = dd[isnap,3*iN+1]
 				zz[iN] = dd[isnap,3*iN+3]
-			kappa[isnap,1:NN+1]=sqrt(curvsqr[isnap,:])*CurvatureSign(curvsqr[isnap,:],yy,zz,eps)
+			tangent[:,0]=diff(yy)
+			tangent[:,1]=diff(zz)
+			for iN in range(NN-1):
+				tangent[iN,:]=tangent[iN,:]/sqrt( tangent[iN,0]**2 + tangent[iN,1]**2 )
+			kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])    		
+			# kappa[isnap,1:NN+1]=sqrt(curvsqr[isnap,:])*CurvatureSign(curvsqr[isnap,:],yy,zz,eps)
 	
 	savetxt(Folder+'kappa.txt',kappa,fmt='%.5e')
+
+def SineTransform(dd,length=1.28,dia=0.005):
+    NN=dd.size
+    CurvSine=1/NN*dst(dd,type=1)
+    wavenrs = length/(dia*NN)*linspace(0,NN,NN)
+    return wavenrs,CurvSine
+
+def vel_tracer(dd,vel_abs,time,Xtracer,wave='sine',height=1.28,ShearRate=2,sigma=1.5,dia=0.005):
+    # Instant velocity is accurate upto the order of h^2. We can have different formulae if want more
+    # accurate results
+    NN = dd[:,0].size
+    vel_amb = zeros([NN,3])
+    tracer_amb = zeros(3)
+    omega=ShearRate*sigma
+    
+    if wave=='sine':
+    	for i in range(0,NN):
+        	vel_amb[i,1] = ShearRate*(height-dd[i,2])*sin(omega*time)
+    	tracer_amb[1] = ShearRate*(height-Xtracer[2])*sin(omega*time)
+    else:
+    	print("What type of shear rate is given? Specify that right")
+    	raise ValueError
+    vel_ins = vel_abs - vel_amb
+    
+    dij = [[1,0,0],[0,1,0],[0,0,1]]   # Unit second rank tensor
+    Vtracer = zeros((1,3))
+    GG = zeros((3,3))
+    
+    for i in range(0,NN):
+        Xi = Xtracer-dd[i,:] 
+        XiXj = outer(Xi,Xi)                 # XiXj second order tensor
+        rr = linalg.norm(Xi) 
+        GG = (dij/rr + XiXj/(rr**3))           # Green's function for the current point
+        del2G = (dij/(rr**3) - 3*XiXj/(rr**5)) # Double derivative of Green's function
+        
+        Vtracer =  Vtracer + 3*dia/8*tensordot(vel_ins[i,:],GG,axes=1) + (dia**3)/32*tensordot(vel_ins[i,:],del2G,axes=1)
+        
+    Vtracer = Vtracer
+    return Vtracer
+
+def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
+    time = loadtxt(Folder+'time.txt')
+    ndiag = time.size
+    Tmax = time[-1]
+    flag = 1
+    fnumber=1
+
+    if code=='CPU':
+    	dd= loadtxt(Folder+'var1.txt')
+    	height=max(dd[2,:])
+    	nrowcol=dd.shape
+    	NN=nrowcol[0]
+    	position = zeros([NN,3])
+    	vel_abs = zeros([NN,3])
+    	Vtracer = zeros([ndiag,3])
+    	for fnumber in range(1,ndiag):
+    		# print(fnumber)
+    		file = loadtxt(Folder+'var'+str(fnumber)+'.txt')
+    		position = file[:,0:3]
+    		vel_abs = file[:,0:3]
+    		Vtracer[fnumber-1,:] = vel_tracer(position,vel_abs,time[fnumber],Xtracer,height=height,sigma=sigma)
+    elif code=='GPU':
+    	dd_pos=loadtxt(Folder+'PSI')
+    	dd_vel=loadtxt(Folder+'VEL')
+    	height=max(dd_pos[0,:])
+    	nrowcol=dd_pos.shape
+    	NN=int((nrowcol[1]-1)/3)
+    	position=zeros([NN,3])
+    	vel_abs=zeros([NN,3])
+    	for fnumber in range(1,ndiag):
+    		for iN in range(NN):
+    			position[iN,0]=dd_pos(fnumber,3*iN+1)
+    			position[iN,1]=dd_pos(fnumber,3*iN+2)
+    			position[iN,2]=dd_pos(fnumber,3*iN+3)
+    			vel_abs[iN,0]=dd_pos(fnumber,3*iN+1)
+    			vel_abs[iN,1]=dd_pos(fnumber,3*iN+2)
+    			vel_abs[iN,2]=dd_pos(fnumber,3*iN+3)
+
+    			Vtracer[fnumber-1,:] = vel_tracer(position,vel_abs,time[fnumber],Xtracer,height=height,sigma=sigma)
+
+    print("I am done")
+    return time, Vtracer

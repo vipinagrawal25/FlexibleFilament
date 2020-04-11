@@ -119,8 +119,8 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   (*TT).time = 0.;
   (*TT).tprime = (*TT).time;
   (*TT).dt = 1.e-5;
-  (*TT).ndiag = 4000;
-  (*TT).tmax = 80;
+  (*TT).ndiag = 8000;
+  (*TT).tmax = 160;
   (*TT).tdiag = 0.;
   (*TT).substep = 0.;
   EV *temp ;
