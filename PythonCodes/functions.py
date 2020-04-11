@@ -373,17 +373,14 @@ def vel_tracer(dd,vel_abs,time,Xtracer,wave='sine',height=1.28,ShearRate=2,sigma
     return Vtracer
 
 def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
-    time = loadtxt(Folder+'time.txt')
-    ndiag = time.size
-    Tmax = time[-1]
-    flag = 1
-    fnumber=1
-
     if code=='CPU':
     	dd= loadtxt(Folder+'var1.txt')
     	height=max(dd[2,:])
     	nrowcol=dd.shape
     	NN=nrowcol[0]
+    	time = loadtxt(Folder+'time.txt')
+    	ndiag = time.size
+    	Tmax = time[-1]
     	position = zeros([NN,3])
     	vel_abs = zeros([NN,3])
     	Vtracer = zeros([ndiag,3])
@@ -399,16 +396,20 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
     	height=max(dd_pos[0,:])
     	nrowcol=dd_pos.shape
     	NN=int((nrowcol[1]-1)/3)
+    	time=dd_pos[:,0]
+    	ndiag=time.size
+    	Tmax=time[-1]
     	position=zeros([NN,3])
     	vel_abs=zeros([NN,3])
+    	Vtracer = zeros([ndiag,3])
     	for fnumber in range(1,ndiag):
     		for iN in range(NN):
-    			position[iN,0]=dd_pos(fnumber,3*iN+1)
-    			position[iN,1]=dd_pos(fnumber,3*iN+2)
-    			position[iN,2]=dd_pos(fnumber,3*iN+3)
-    			vel_abs[iN,0]=dd_pos(fnumber,3*iN+1)
-    			vel_abs[iN,1]=dd_pos(fnumber,3*iN+2)
-    			vel_abs[iN,2]=dd_pos(fnumber,3*iN+3)
+    			position[iN,0]=dd_pos[fnumber,3*iN+1]
+    			position[iN,1]=dd_pos[fnumber,3*iN+2]
+    			position[iN,2]=dd_pos[fnumber,3*iN+3]
+    			vel_abs[iN,0]=dd_pos[fnumber,3*iN+1]
+    			vel_abs[iN,1]=dd_pos[fnumber,3*iN+2]
+    			vel_abs[iN,2]=dd_pos[fnumber,3*iN+3]
 
     			Vtracer[fnumber-1,:] = vel_tracer(position,vel_abs,time[fnumber],Xtracer,height=height,sigma=sigma)
 
