@@ -152,12 +152,9 @@ Tens2 Tens2::operator/(double param){
 
   return(temp);
 }
-
 void PTens2(Tens2 a){
   cout<<a.xx<<"\t"<<a.xy<<"\t"<<a.xz<<"\n"<<a.yx<<"\t"<<a.yy<<"\t"<<a.yz<<"\t"<<a.zx<<"\t"<<a.zy<<"\t"<<a.zz<<"\n";
 }
-
-
 // This defines the kronecker delta function or a unit tensor matrix. dab = \delta_{\alpha \beta}
 Tens2 dab(1.,0.,0.,0.,1.,0.,0.,0.,1.);
 

@@ -167,7 +167,7 @@ int main()
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
-  	rnkf45(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
+    rnkf45(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
     // DP54(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
     // cout << time << endl;
     if (dt<dt_min){

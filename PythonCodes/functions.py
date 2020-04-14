@@ -93,20 +93,16 @@ def MSD_no_trans(FILE='',omega=3):
 	nrowcol=dd_ini.shape
 	Np = nrowcol[0]
 	
-	ttsclf = (tt[2]-tt[1])*omega/(2*pi)
+	sclf = (tt[2]-tt[1])*omega/(2*pi)
 	dcy = int(1/sclf)
-	cycle_index = arange(0,tt.size,icy)
+	cycle_index = arange(0,tt.size,dcy)
 	
-	MSDnew=zeros(floor(tt.size/icy))
-
-	if Np%2==0:
-		MidP=int(Np/2)
-	else:
-		MidP=(Np+1)/2
-		MidP=int(MidP)
+	MSDnew=zeros(int(tt.size/dcy))
+	ndips=int(tt.size/dcy)
+	MidP=int(Np/2)
 
 	for idip in range(0,ndips):
-		isnap=dips[idip]
+		isnap=cycle_index[idip]
 		dd=loadtxt(FILE+'output/var'+str(isnap)+'.txt')
 		dd[:,0]=dd[:,0]-dd[MidP,0]-dd_ini[:,0]
 		dd[:,1]=dd[:,1]-dd[MidP,1]-dd_ini[:,1]
@@ -118,8 +114,8 @@ def MSD_no_trans(FILE='',omega=3):
 
 	# plt.plot(dips,file[dips],'o')
 	# plt.legend(['First Line'])
-	plt.plot(dips,MSDnew,'.-')
-	plt.ylim([1.2, 1.4])
+	plt.plot(cycle_index[0:-1],MSDnew,'.-')
+	# plt.ylim([1.2, 1.4])
 	plt.legend(['MSD cycle','MSD after substracting the translation'])
 	plt.savefig('MSD_without_translation.eps')
 	close()
@@ -368,8 +364,6 @@ def vel_tracer(dd,vel_abs,time,Xtracer,wave='sine',height=1.28,ShearRate=2,sigma
         del2G = (dij/(rr**3) - 3*XiXj/(rr**5)) # Double derivative of Green's function
         
         Vtracer =  Vtracer + 3*dia/8*tensordot(vel_ins[i,:],GG,axes=1) + (dia**3)/32*tensordot(vel_ins[i,:],del2G,axes=1)
-        
-    Vtracer = Vtracer
     return Vtracer
 
 def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
@@ -385,11 +379,11 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
     	vel_abs = zeros([NN,3])
     	Vtracer = zeros([ndiag,3])
     	for fnumber in range(1,ndiag):
-    		# print(fnumber)
+    		print(fnumber)
     		file = loadtxt(Folder+'var'+str(fnumber)+'.txt')
-    		position = file[:,0:3]
-    		vel_abs = file[:,0:3]
-    		Vtracer[fnumber-1,:] = vel_tracer(position,vel_abs,time[fnumber],Xtracer,height=height,sigma=sigma)
+    		position=file[:,0:3]
+    		vel_abs=file[:,3:6]
+    		Vtracer[fnumber-1,:]=vel_tracer(position,vel_abs,time[fnumber],Xtracer,height=height,sigma=sigma)
     elif code=='GPU':
     	dd_pos=loadtxt(Folder+'PSI')
     	dd_vel=loadtxt(Folder+'VEL')
@@ -403,15 +397,15 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
     	vel_abs=zeros([NN,3])
     	Vtracer = zeros([ndiag,3])
     	for fnumber in range(1,ndiag):
+    		print(fnumber)
     		for iN in range(NN):
     			position[iN,0]=dd_pos[fnumber,3*iN+1]
     			position[iN,1]=dd_pos[fnumber,3*iN+2]
     			position[iN,2]=dd_pos[fnumber,3*iN+3]
-    			vel_abs[iN,0]=dd_pos[fnumber,3*iN+1]
-    			vel_abs[iN,1]=dd_pos[fnumber,3*iN+2]
-    			vel_abs[iN,2]=dd_pos[fnumber,3*iN+3]
-
-    			Vtracer[fnumber-1,:] = vel_tracer(position,vel_abs,time[fnumber],Xtracer,height=height,sigma=sigma)
+    			vel_abs[iN,0]=dd_vel[fnumber,3*iN+1]
+    			vel_abs[iN,1]=dd_vel[fnumber,3*iN+2]
+    			vel_abs[iN,2]=dd_vel[fnumber,3*iN+3]
+    		Vtracer[fnumber-1,:]=vel_tracer(position,vel_abs,time[fnumber],Xtracer,height=height,sigma=sigma)
 
     print("I am done")
     return time, Vtracer
