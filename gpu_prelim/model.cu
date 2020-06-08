@@ -67,7 +67,7 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).sigma=0.75;
   (*PARAM).ShearRate = 2;
   (*PARAM).omega = (*PARAM).ShearRate*(*PARAM).sigma ;
-  (*PARAM).factorAA = 1.5*pow(height,4)*10;
+  (*PARAM).factorAA = 1.5*pow(height,4)*15;
   // (*PARAM).factorAA = 0. ;
   (*PARAM).AA= (*PARAM).factorAA*pow(10,-5); //AA is the bending rigidity.
   //
@@ -590,6 +590,8 @@ void D2H(double ARR[], double dev_arr[], int Nsize){
 }
 /*-------------------------------------------------------------------*/
 void wPSI ( double PSI[], double VEL[] ,double tau){
+  // This is a very slow way to save file. I am opening some file again and
+  // closing it. Let's just pass the file pointer to reduce the time."
   // FILE *fp = fopen( "data/PSI", "a" );
   // fprintf( fp, "%lf\t", tau ) ;
   ofstream fp;
