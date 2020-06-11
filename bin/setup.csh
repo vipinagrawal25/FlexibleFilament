@@ -13,6 +13,6 @@ mkdir -p PythonCodes
 ln -s $ES/PythonCodes/*.py PythonCodes/
 ln -s $ES/PythonCodes/*.ipynb PythonCodes/
 mkdir -p hosts
-ln -s $ES/hosts/* hosts/
+ln -s $ES/host host
 echo "copied Makefile and input.h.."
 echo " Now modify them accroding to your problem."
