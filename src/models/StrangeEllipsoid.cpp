@@ -4,10 +4,8 @@
 #include<time.h>
 #include<math.h>
 #include "ode.h"
-#include "quaternion.h"
-#include "matrix.h"
-#include "RigidBody.h"
-#include "ellipsoid_in_flow.h"
+#include "quat.h"
+#include "model.h"
 using namespace std;
 /**************************/
 unsigned int const ndim=pdim*Nensemble;
