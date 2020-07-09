@@ -19,7 +19,7 @@ double const ShearRate = 2;
 double const omega = ShearRate*sigma;
 double const AA = 1.5*pow(10,-5)*pow(height,4)*2;
 double const HH = 16*AA/(dd*dd);			// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
-char const UseRP = 'Y';						// Y is for the new one, O is for old one and N is for not using 
+char const UseRP = 'N';						// Y is for the new one, O is for old one and N is for not using 
 											// Rotne Pragor tensor. 
 // This sets up the initial configuration of the system. For more information go through the Readme file.
 bool const bcb = 1 ;      					// Boundary condition at bottom, 0 means fixed, 1 means free.
