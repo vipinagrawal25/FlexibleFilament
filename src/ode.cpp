@@ -74,7 +74,7 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   double error,temp_error;
   double dt = *add_dt;
   // double tol_dt = pow(10,-9)*dt;
-  double tol_dt = 1.e-8;
+  double tol_dt = 1.e-6;
   bool flag_kappa;
   double time = *add_time;
   double epsilon = 0.84;
@@ -93,14 +93,14 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   // double bistar[6] = {16./135.,0,6656./12825,28561./56430,-9./50,2./55};
   // double bi[6] = {25./216.,0,1408./2565.,2197./4104.,-1./5.,0};
 
-  //Cash-Karp Parameters for evolution
+  // //Cash-Karp Parameters for evolution
   double ci[6] = {0,0.2,0.3,0.6,1.,7./8} ;
   double aij[6][5] = {
     {0,0,0,0,0},
     {0.2,0,0,0,0},
     {3./40.,9./40.,0,0,0},
     {3./10.,-9./10.,6./5.,0,0},
-    {-11./54.,5/2.,-70./27.,35./27.,0},
+    {-11./54.,5/2.,-70./27,35./27.,0},
     {1631./55296,175./512.,575./13824.,44275./110592,253./4096}
   };
   double bistar[6] = {37./378,0,250./621,125./594,0,512./1771};
@@ -142,7 +142,8 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   eval_rhs(time+ci[4]*dt, temp, k5, flag_kappa, CurvSqr, SS);
 
   for (int idim = 0; idim < ndim; ++idim){
-    temp[idim] = y[idim] + aij[5][0]*k1[idim]*dt + aij[5][1]*k2[idim]*dt + aij[5][2]*k3[idim]*dt + aij[5][3]*k4[idim]*dt + aij[5][4]*k5[idim]*dt ;
+    temp[idim] = y[idim] + aij[5][0]*k1[idim]*dt + aij[5][1]*k2[idim]*dt + aij[5][2]*k3[idim]*dt
+                         + aij[5][3]*k4[idim]*dt + aij[5][4]*k5[idim]*dt ;
   }
   eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
   error=0;

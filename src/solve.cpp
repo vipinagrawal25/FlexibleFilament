@@ -22,7 +22,6 @@ int main()
   string lastline;
   int ldiagnos=0;
   int tdiagnos = 1;
-  // remember that the lengthmin and lengthmax might be different when the code is getting started in the middle i.e. conf_number==-1
   // But these things are only for diagnostic purpose and it's too much hassle for someting that is not even important. So we wil keep 
   // it in the wrong way, as most of time this would give right result.
   double lengthmin=height;
@@ -142,7 +141,7 @@ int main()
     system("exec rm -rf output");
     system("exec mkdir output");
     system("exec rm -f MSD.txt");
-    iniconf(y0, vel, conf_number);
+    iniconf(y0, vel);
     ofstream outfile;
     outfile.open("output/var0.txt"); 
     for (int ip = 0; ip < Np; ++ip){
@@ -160,7 +159,7 @@ int main()
   fstream outfile_time("output/time.txt", ios::app);
   fstream outfile_curvature("output/curvature.txt", ios::app);
   fstream outfile_SS("output/material_point.txt", ios::app);
-  iniconf(y, vel, conf_number);
+  iniconf(y, vel);
   timer = clock();
   timer_global = timer/CLOCKS_PER_SEC;
   while(time < TMAX){

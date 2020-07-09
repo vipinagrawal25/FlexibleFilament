@@ -116,13 +116,13 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   /* Set up parameters for evolution */
   /* Should we save them somewhere else? */
   /*Yes we should save them somewhere else.--vipin*/
-  (*TT).time = 0.;
-  (*TT).tprime = (*TT).time;
-  (*TT).dt = 1.e-5;
-  (*TT).ndiag = 500;
-  (*TT).tmax = 10;
-  (*TT).tdiag = 0.;
-  (*TT).substep = 0.;
+  (*TT).time = 0.;            // current time of the simulation.
+  (*TT).tprime = (*TT).time;  // time after every substep inside any function.
+  (*TT).dt = 1.e-5;           // initial dt for the evolution
+  (*TT).ndiag = 500;          // total number of files
+  (*TT).tmax = 10;            // Tmax for the simulation.
+  (*TT).tdiag = 0.;           // Time to save diagnostics
+  (*TT).substep = 0.;         // substep inside the function calculation
   EV *temp ;
   cudaMalloc(  (void**)&temp, size_EV );
   *dev_tt = temp;
@@ -416,7 +416,6 @@ __global__ void rnkf45_psi_substep( double psip[], double* kin[], double psi[], 
     }
     tid += blockDim.x * gridDim.x ;
   } // loop over threads ends here
-  
 }
 /*-----------------------------------------------------------------------*/
 void rnkf45_time_substep( EV* TT, EV *dev_tt, int j ){
@@ -433,9 +432,9 @@ void rnkf45_time_substep( EV* TT, EV *dev_tt, int j ){
 /*----------------------------------------------------------------*/
 __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  // // cash-karp parameter
-  // double rnkf45c[2][6] = { {37./378,0.,250./621,125./594,0.,512./1771},
-                          // {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25} };
+  // cash-karp parameter
+  // double rnkf45c[2][6] = { {2825./27648,0.,18575./48384,13525./55296,277./14336,0.25},
+  //                            {37./378,0.,250./621,125./594,0.,512./1771} };
 
   // original fehlberg parameters
   double rnkf45c[2][6] = { {25./216.,0,1408./2565.,2197./4104.,-1./5.,0},
@@ -462,7 +461,7 @@ __global__ void rnkf45_calc_error(  double error[], double *kptr[], EV *tt ){
 __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   // Cash-Karp parameters
-  // double rnkf45c[6] = {37./378,0,250./621,125./594,0.,512./1771};  
+  // double rnkf45c[6] = {37./378,0,250./621,125./594,0.,512./1771}; 
 
   // original fehlberg parameters
   double rnkf45c[6] = {16./135.,0.,6656./12825.,28561./56430.,-9./50.,2./55.};
@@ -470,7 +469,7 @@ __global__ void rnkf45_psi_step( double psi[], double *kptr[], EV *tt ){
   while (tid < NN ){
     for ( int ip=0; ip<pp; ip++){
       for (int jp = 0; jp < 6; ++jp){
-          psi[ip+pp*tid] += (rnkf45c[jp]*kptr[jp][ip+pp*tid])*((*tt).dt);   
+          psi[ip+pp*tid] += (rnkf45c[jp]*kptr[jp][ip+pp*tid])*((*tt).dt);  
       }
     }
     tid += blockDim.x * gridDim.x ;

@@ -35,37 +35,25 @@ if (flag_kappa){
 }
 dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
 EForce[ip] = EForce_ip;
-// EForce[ip] = EForce[ip]*aa*aa;
-// dR[ip]=EForce*OneByGamma;
 CurvSqr[ip]=kappasqr;
-// cout << CurvSqr[ip] << endl;
 }
 drag(R, dR, EForce);
-switch(conf_number){
-  case 0:
-    FF0.x = 0;
-    FF0.y = 0;
-    FF0.z = -FFZ0*sin(omega*time);
-    EForce[Np-1] = EForce[Np-1]-FF0;
-    break;
-  case 1:
-    for(int ip=0; ip<Np;ip++){
-      dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*sin(omega*time);
-    }
-    break;
-  case 2:
-    for (int ip = 0; ip < Np; ++ip)
-    {
-      double Ts = 40;
-      // NOT SO GOOD WAY TO WRITE LIKE THIS
-      if (time<Ts*(1/ShearRate)){
-        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z);
-      }else{
-        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*sin(omega*(time-Ts*(1/ShearRate)));
-      }
-    }
-    break; 
-  case 3:
+// Is the string forced at some points? Implement it here.
+if (iext_force){
+  FF0.x = 0;
+  FF0.y = 0;
+  FF0.z = -FFZ0*sin(omega*time);
+  if (floc>=0 && floc<Np){
+    EForce[floc] = EForce[Np-1]-FF0;
+  }
+  else{
+    cout << "Location of the external force is wrong." <<endl;
+    cout << "Exiting" << endl;
+    exit(1); 
+  }
+}
+switch(iext_flow){
+   case 1:
     if (sin(omega*time)>=0){
       for (int ip = 0; ip < Np; ++ip){
         dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*ceil(sin(omega*time));
@@ -77,11 +65,23 @@ switch(conf_number){
       }
     }
     break;
+  case 2:
+    for (int ip = 0; ip < Np; ++ip){
+      double Ts = 40;
+      // NOT SO GOOD WAY TO WRITE LIKE THIS
+      if (time<Ts*(1/ShearRate)){
+        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z);
+      }else{
+        dR[ip].y = dR[ip].y + ShearRate*(R[ip].z)*sin(omega*(time-Ts*(1/ShearRate)));
+      }
+    }
+    break; 
+  case 3:
+    for(int ip=0; ip<Np;ip++){
+      dR[ip].y = dR[ip].y + ShearRate*(height-R[ip].z)*sin(omega*time);
+    }
+    break;
 }
-// External force applied on the end point.
-// cout << FF0.z <<endl;
-// dR[Np-1] = dR[Np-1]-FF0*; 
-//dR[Np-1].y = 0;                     // Constraint that last point should always remain on z axis.   
 for (int ip=0;ip<Np;ip++){
   rhs[3*ip]=dR[ip].x;
   rhs[3*ip+1]=dR[ip].y;
@@ -160,11 +160,10 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
   // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
   //vec3 FF;
   
-  if (conf_number==0){
-    // cout << "ise yaha aana chahiye kyuki 2 number hai " << endl;
+  if (bcb==0){
+    // If the bottom point is fixed, then it can not move.
     Xzero.x=0.; Xzero.y=0.; Xzero.z=Z0;      
   }
-
   /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be fixed in general.
   But for some cases like the implementation of the taylor experiment, we want this to be free. For this I am implementing Xzero 
   based on the configuration. Since finally with this function we just want to calculate the force on particular node. So we can
@@ -179,7 +178,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
     case 0:
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
-      if (conf_number==0 ){
+      if (bcb==0){
           dX = X[kp-1+1]-Xzero;
           bkm1 = norm(dX);
           // cout << bkm1 << endl;
@@ -195,20 +194,19 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
           *add_FF = FF;
           // *add_SS = (kp+1)*bkm1;
       }
-      else{
+      else if(bcb==1){
           FF = ( (uk/bk)*( dot(uk,ukp1) )  - (ukp1)/bk );
           FF = FF*AA/aa;
           // Add an extra term for inextensibility constraint
           FF = FF + ( uk*(bk-aa))*HH/aa; 
           // cout << FF.z << endl;
           *add_FF = FF;
-          // cout << "Kya ye yaha aa raha hai?" << endl;
-          // *add_SS = 0;
-          // cout << bk << '\t' << aa << endl;  
-
-          break;
       }
-      
+      else{
+        cout << "Boundary condition at bottom not implemented." << endl;
+        cout << "Exiting" << endl;
+        exit(1);
+      }
       *add_kappasqr=0.;
       break;     
 
@@ -216,8 +214,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       getub(&bkm1, &ukm1, kp-1, X);
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
-      if (conf_number==0)
-      {
+      if (bcb==0){
           dX = X[kp-2+1]-Xzero;
           bkm2 = norm(dX);
           ukm2 = dX/bkm2;
@@ -230,9 +227,8 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
           FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH/aa;   // Inextensibility constraint
           *add_FF = FF;
       }
-      else
-      {
-          FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
+      else if(bcb==1){
+          FF = ( (uk)/bkm1 - (ukm1+ukp1)/bk
               + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
               - (ukm1/bkm1)*( dot(ukm1,uk) )
               );
@@ -241,42 +237,61 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
           FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;   // Inextensibility constraint
           *add_FF = FF;
       }
+      else{
+        cout << "Boundary condition at Np==1 not implemented." << endl;
+        cout << "Exiting" << endl;
+        exit(1);
+      }
       *add_kappasqr=0.;
       // *add_SS = (kp+1)*bkm1;      
       break;
+
     case Np-2:
-      getub(&bkm2, &ukm2, kp-2, X);
-      getub(&bkm1, &ukm1, kp-1, X);
-      getub(&bk, &uk, kp, X);
-      FF = (     (uk+ukm2)/bkm1 - (ukm1)/bk
-          + (uk/bk)*( dot(uk,ukm1))
-          - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
-          );    
-      FF = FF*(AA/aa);
-      // cout << bk << endl;
-      // cout << FF.z << endl;
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
-      // cout << FF.z << endl;
-      *add_kappasqr=0.;
-      *add_FF = FF;  
+      if(bct==1){
+        getub(&bkm2, &ukm2, kp-2, X);
+        getub(&bkm1, &ukm1, kp-1, X);
+        getub(&bk, &uk, kp, X);
+        FF = (     (uk+ukm2)/bkm1 - (ukm1)/bk
+            + (uk/bk)*( dot(uk,ukm1))
+            - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
+            );    
+        FF = FF*(AA/aa);
+        // cout << bk << endl;
+        // cout << FF.z << endl;
+        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
+        // cout << FF.z << endl;
+        *add_kappasqr=0.;
+        *add_FF = FF;
+      }else{
+        cout << "Boundary condition at Np==NN-1 not implemented." << endl;
+        cout << "Exiting" << endl;
+        exit(1);
+
+      }
       // *add_SS = (kp+1)*bkm1;
       break;
 
     case Np-1:
-      getub(&bkm2, &ukm2, kp-2, X);
-      getub(&bkm1, &ukm1, kp-1, X);
-  
-      FF = (     (ukm2)/bkm1
-        - (ukm1/bkm1)*( dot(ukm1,ukm2) )
-        );
-      FF = FF*(AA/aa);
-      // cout << bkm1 << endl;
-      // cout << FF.y << endl;
-      FF = FF - (ukm1*(bkm1-aa))*HH/aa;
-      // cout << FF.y << endl;
-      *add_kappasqr=0.;
-      *add_FF = FF;
-      // *add_SS = (kp+1)*bkm1;
+      if(bct==1){
+        getub(&bkm2, &ukm2, kp-2, X);
+        getub(&bkm1, &ukm1, kp-1, X);
+    
+        FF = (     (ukm2)/bkm1
+          - (ukm1/bkm1)*( dot(ukm1,ukm2) )
+          );
+        FF = FF*(AA/aa);
+        // cout << bkm1 << endl;
+        // cout << FF.y << endl;
+        FF = FF - (ukm1*(bkm1-aa))*HH/aa;
+        // cout << FF.y << endl;
+        *add_kappasqr=0.;
+        *add_FF = FF;
+      }
+      else{
+        cout << "Boundary condition at Np==NN not implemented." << endl;
+        cout << "Exiting" << endl;
+        exit(1);
+      }
       break;
 
     default:
@@ -289,25 +304,16 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );
       FF = FF*(AA/aa);
-      // cout << bkm1 <<endl;
-      // cout << FF.y << endl;
       FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
-      // cout << FF.x << endl;
-      // cout << FF.y << endl;     
-
       if (flag_kappa==false){
         *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
-        // cout << kappasqr << endl;
-        // cout << "This is also high level shit" << endl;
       }
       *add_FF = FF;
-      // *add_SS = (kp+1)*bkm1;
       break;
   }  
-
 }
 /**************************/
-void iniconf(double *y, double *vel, int configuration)
+void iniconf(double *y, double *vel)
 {
     vec3 R[Np];  // R is the position of the beads.
     double k = 1;      // determines the frequency for initial configuration
@@ -322,17 +328,15 @@ void iniconf(double *y, double *vel, int configuration)
         myfile >> y[3*ip];
         myfile >> y[3*ip+1];
         myfile >> y[3*ip+2];
-        // Now just throw away next three numbers as they contain values of velocity.
+        // Now just throw next three numbers as they contain values of velocity.
         myfile >> vel[3*ip];
         myfile >> vel[3*ip+1];
         myfile >> vel[3*ip+2];
       }
       myfile.close();   
     }
-    else
-    {
-      switch(configuration)
-      {
+    else{
+      switch(niniconf){
         case 0:
           for (int ip=0;ip<Np;ip++){
             R[ip].x=0.;
@@ -351,13 +355,10 @@ void iniconf(double *y, double *vel, int configuration)
             y[3*ip+1]=R[ip].y;
             y[3*ip+2]=R[ip].z;
           }
-
           break;
-
         case 1:
           // In this case we implement the initial configuration for GI Taylor experiment. 
-          // i.e. a straight rod which is stretched half of the height of the box and free to move from bottom.
-          
+          // i.e. a straight rod which has length equal to the height of the box and free to move from bottom.
           for (int ip = 0; ip < Np; ++ip){
               R[ip].x = 0;
               R[ip].y = 0;
@@ -367,14 +368,11 @@ void iniconf(double *y, double *vel, int configuration)
               y[3*ip+1] = R[ip].y;
               y[3*ip+2] = R[ip].z;
           }
-
-          // cout << aa << endl;
           break;
-
         case 2:
-        // Santillian's experiment
-        // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. The rod
-        // should be deviated a little bit from origin in starting.           
+          // Santillian's experiment
+          // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. The rod
+          // should be deviated a little bit from origin in starting.           
           for (int ip = 0; ip < Np; ++ip)
           {
               R[ip].x = 0;
@@ -396,27 +394,8 @@ void iniconf(double *y, double *vel, int configuration)
               y[3*ip+2] = R[ip].z;
           }
           break;
-      
-        case 3:
-          // In this case we implement the initial configuration for GI Taylor experiment. 
-          // i.e. a straight rod which is stretched half of the height of the box and free to move from bottom.
-          
-          for (int ip = 0; ip < Np; ++ip)
-          {
-              R[ip].x = 0;
-              R[ip].y = 0;
-              R[ip].z = aa*double(ip);
-              // cout << R[ip].z << endl ;
-              y[3*ip] = R[ip].x;
-              y[3*ip+1] = R[ip].y;
-              y[3*ip+2] = R[ip].z;
-          }
-
-          // cout << aa << endl;
-          break;
-        }
+      }
     }
-
 }
 
 /********************************************/
