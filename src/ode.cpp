@@ -203,16 +203,13 @@ void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* a
     {35./384,0,500./1113,125./192,-2187./6784,11./84}
   };
   double bi[7] = {5179./57600,0,7571./16695,393./640,-92097./339200,187./2100,1./40};
-
   // eval_rhs(time,y,k1,flag_kappa);
-
   if (ldiagnos){
       flag_kappa = true;
   }
   else{
       flag_kappa = false;
   }
-
   eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
   // CurvSqr_Store = CurvSqr;
 

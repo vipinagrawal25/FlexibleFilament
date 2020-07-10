@@ -20,7 +20,6 @@ public:
   Tens2 inline operator/(double);
 
 private:
-
 };
 
 Tens2::Tens2(){

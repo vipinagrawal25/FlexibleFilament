@@ -5,4 +5,6 @@ include ../host
 default:
 	${compile} -std=c++0x -o ode.exe ode.cpp solve.cpp model.cpp
 clean:
-	rm -f *.o *.exe 
+	rm -f *.o *.exe
+map_dyn:
+	${compile} -std=c++0x -o ode.exe ode.cpp map_dyn.cpp model.cpp

@@ -22,7 +22,6 @@ public:
 
 private:
 };
-
 vec3::vec3(){
   x = 0.0;
   y = 0.0;

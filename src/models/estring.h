@@ -1,6 +1,7 @@
 #ifndef FILE_ESTRING_SEEN
 #define FILE_ESTRING_SEEN
 // #include <../input.h>
+#include "math.h"
 /**************************/
 using namespace std;
 /* ----------------------------------------*/
@@ -34,7 +35,6 @@ int const lastfile=0;						// If you want to read input from some file, Mention 
 /* ----------------------------------------*/
 void iniconf(double *y, double *vel); 	// The configuration number is defined for different
 											// Initial configuration into the system.
-ifstream outfile_time("output/time.txt");
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */
 

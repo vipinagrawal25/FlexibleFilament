@@ -2,7 +2,6 @@
 #define FILE_EVOLVE_SEEN
 #include "model.h"
 #include "cuda.h"
-// #include "main.cu"
 /*--------------------------------------------------*/
 struct EV{
   double tmax;
