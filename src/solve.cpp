@@ -14,8 +14,7 @@ using namespace std;
 /**************************/
 unsigned int const ndim=Nensemble*pdim;
 /* ----------------------------------------*/
-int main()
-{
+int main(){
   double y[ndim], y0[ndim], CurvSqr[Np], SS[Np],time,MeanSqDis,timer_global;
   double vel[ndim];
   int filenumber;

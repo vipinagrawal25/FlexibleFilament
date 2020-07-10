@@ -11,8 +11,8 @@ double const aa = height/(double)(Np-1); 	// distance between two nodes.
 double const dd = 0.005; 					// diameter of the filament.
 											// The particles would also have same diameter. 
 double const viscosity = 10;				// Equivalent to kinematic viscosity of glycerin
-double const Z0=0.;							// If we want the bottom point of the rod to be fixed.
-double const FFZ0 = 0;						// Amplitude of the force.
+double const Z0=0.;		 					// If we want the bottom point of the rod to be fixed.
+double const FFZ0 = 0;	  					// Amplitude of the force.
 // Sigma is a dimensionless number, which is described as frequency parameter.
 double const sigma=0.75;					
 double const ShearRate = 2;
@@ -34,5 +34,7 @@ int const lastfile=0;						// If you want to read input from some file, Mention 
 /* ----------------------------------------*/
 void iniconf(double *y, double *vel); 	// The configuration number is defined for different
 											// Initial configuration into the system.
+ifstream outfile_time("output/time.txt");
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */
+
