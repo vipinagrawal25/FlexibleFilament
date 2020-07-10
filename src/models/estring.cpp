@@ -313,11 +313,10 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
   }  
 }
 /**************************/
-void iniconf(double *y, double *vel)
-{
-    vec3 R[Np];  // R is the position of the beads.
-    double k = 1;      // determines the frequency for initial configuration
-    double CurvLength = 0;  // determines the total length of the curve
+void iniconf(double *y, double *vel){
+    vec3 R[Np];              // R is the position of the beads.
+    double k = 1;            // determines the frequency for initial configuration
+    double CurvLength = 0;   // determines the total length of the curve
     if (lastfile){
       string l = "output/var";
       l.append(to_string(lastfile));
@@ -333,7 +332,7 @@ void iniconf(double *y, double *vel)
         myfile >> vel[3*ip+1];
         myfile >> vel[3*ip+2];
       }
-      myfile.close();   
+      myfile.close();  
     }
     else{
       switch(niniconf){
@@ -349,11 +348,11 @@ void iniconf(double *y, double *vel)
             }else{
                 CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y)+(R[ip].z)*(R[ip].z));
             }
-            // cout << CurvLength << endl;
-            // cout << M_PI << endl;
             y[3*ip]=R[ip].x;
             y[3*ip+1]=R[ip].y;
             y[3*ip+2]=R[ip].z;
+
+            // Compute velocity here or in solve.cpp. It is just an evaluation of eval_rhs function.
           }
           break;
         case 1:
