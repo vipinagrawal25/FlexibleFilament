@@ -36,11 +36,7 @@ int main(){
   clock_t timer;
   // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt time 
   // for a particular value of AA.
-  if (dd>aa){
-      cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
-      return 0;
-  }
-  
+  check_param(dd,aa);
   if(lastfile){
     filenumber = lastfile+1;
     // -----------------------------------------------------------------------------------------------------

@@ -43,10 +43,11 @@ void map_one_iter(double *y, double *vel, double *CurvSqr,double *SS, MV* MM){
                                  // which can depend on the initial condition, but not in this case.
   double time = (*MM).time;
   double dt = (*MM).dt;
-  double ldiag = 0;  //Theoretically it should be bool but both works.
+  double ldiag = 0;               //Theoretically it should be bool but both works.
   while(time-Tmax>time_tol){
     rnkf45(ndim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], ldiag);
   }
+
   for (int idim = 0; idim < ndim; ++idim){
     cout << y[idim] << endl;
   }

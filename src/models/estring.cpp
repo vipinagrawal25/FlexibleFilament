@@ -406,3 +406,10 @@ void GetRij(vec3 R[], int i, int j, double *Distance, vec3 *rij)
   double Dis = norm(R[j]-R[i]); 
   *Distance = Dis;
 }
+/********************************************/
+void check_param(double dd, double aa){
+if (dd>aa){
+      cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
+      exit(0);
+  }
+}
