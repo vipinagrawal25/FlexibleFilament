@@ -1,6 +1,6 @@
 # Makefile for compiling the ode-solver in cpp 
 # ---------------------------------------------------------------------
-MODEL= estring
+MODEL= estring2dim
 #MODEL=particle_in_mag
 CUDA=nocuda
 target=output

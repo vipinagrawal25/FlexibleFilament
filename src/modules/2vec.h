@@ -102,10 +102,8 @@ void PVec2(vec2 a){
   cout<<a.x<<"\t"<<a.y<<"\n";
 }
 
-vec2 dot(Tens2b2 a, vec2 b)
-{
+vec2 dot(Tens2b2 a, vec2 b){
     vec2 temp;
-
     temp.x = (a.xx)*(b.x)+(a.xy)*(b.y);
     temp.y = (a.yx)*(b.x)+(a.yy)*(b.y);
 

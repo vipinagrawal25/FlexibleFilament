@@ -89,7 +89,7 @@ for (int ip=0;ip<Np;ip++){
   }
 }
 /**************************/
-void drag(vec3 X[], vec3 dX[], vec3 EForce[]){
+void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
   double onebythree = 1./3.;
   double mu0 = onebythree/(M_PI*viscosity*dd);
   if (UseRP == 'Y'){
@@ -97,8 +97,8 @@ void drag(vec3 X[], vec3 dX[], vec3 EForce[]){
     // Every element of the matrix itself is a 2nd rank tensor and the dimension of that should 3x3.
     Tens2b2 mu_ij, mu_ii;
     double d_rij;
-    vec3 rij;
-    mu_ii = dab*mu0;    // dab is the unit 2 dimensional tensor. It is defined in module/2Tens file.
+    vec2 rij;
+    mu_ii = dab2b2*mu0;    // dab2b2 is the unit 2 dimensional tensor. It is defined in module/2Tens file.
     // PTens2(mu_ii);
     // rij = R[j]-R[i] and d_rij is just the norm of this value.
 
@@ -110,14 +110,14 @@ void drag(vec3 X[], vec3 dX[], vec3 EForce[]){
             GetRij(X, ip, jp, &d_rij, &rij);
             double c1 = 1/(8*M_PI*viscosity*d_rij);
             double dsqr1 = 1./(d_rij*d_rij);
-            mu_ij = c1*(dab + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab*onebythree - (rij*rij)*dsqr1));
+            mu_ij = c1*(dab2b2 + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab2b2*onebythree - (rij*rij)*dsqr1));
             dX[ip] = dX[ip] + dot(mu_ij, EForce[jp]);
             dX[jp] = dX[jp] + dot(mu_ij, EForce[ip]);
             // cout << dot(mu_ij, EForce[jp]).y << "\t" << dot(mu_ij, EForce[jp]).z << endl;
         }
     }
   }
-  else if(UseRP='N'){
+  else if(UseRP=='N'){
     for (int ip = 0; ip < Np; ++ip){
         dX[ip] = EForce[ip]*mu0;
     }
@@ -136,13 +136,13 @@ void getub(double *bk, vec2 *uk, int kp, vec2 X[]){
   *uk =dX/bb;
 }
 /**************************/
-void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa){
+void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa){
   // This function calculates the force at every node which is a function of X, time.
-  vec3 ukm2(0.,0.), ukm1(0.,0.), uk(0.,0.), ukp1(0.,0.), Xzero(0.,0.), dX(0.,0.);
+  vec2 ukm2(0.,0.), ukm1(0.,0.), uk(0.,0.), ukp1(0.,0.), Xzero(0.,0.), dX(0.,0.);
   double bkm2, bkm1, bk, bkp1;
-  vec3 FF = *add_FF;             
+  vec2 FF = *add_FF;             
   // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
-  //vec3 FF;
+  //vec2 FF;
   if (bcb==0){
     // If the bottom point is fixed, then it can not move.
     Xzero.x=0.; Xzero.y=0.;      
@@ -296,7 +296,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
 }
 /**************************/
 void iniconf(double *y, double *vel){
-    vec3 R[Np];              // R is the position of the beads.
+    vec2 R[Np];              // R is the position of the beads.
     double k = 1;            // determines the frequency for initial configuration
     double CurvLength = 0;   // determines the total length of the curve
     if (lastfile){
