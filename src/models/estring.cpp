@@ -82,7 +82,7 @@ switch(iext_flow){
     }
     break;
 }
-for (int ip=0;ip<Np;ip++){
+for(int ip=0;ip<Np;ip++){
   rhs[3*ip]=dR[ip].x;
   rhs[3*ip+1]=dR[ip].y;
   rhs[3*ip+2]=dR[ip].z;
@@ -173,7 +173,6 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
   Suppose if XZero is taken as the fixed point, then we dont need to calculate F^{0} but only F^{1} which would be implemented
   in case 0 because Xzero is the bottom most point for which we dont care to calculate the force and X[0] is the first point being
   implemented in case 0. Though for a different configuration these things should be changed.*/
-
   switch(kp){
     case 0:
       getub(&bk, &uk, kp, X);
@@ -275,8 +274,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
       if(bct==1){
         getub(&bkm2, &ukm2, kp-2, X);
         getub(&bkm1, &ukm1, kp-1, X);
-    
-        FF = (     (ukm2)/bkm1
+        FF = ( (ukm2)/bkm1
           - (ukm1/bkm1)*( dot(ukm1,ukm2) )
           );
         FF = FF*(AA/aa);
