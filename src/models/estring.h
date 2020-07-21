@@ -35,8 +35,12 @@ int const lastfile=0;						// If you want to read input from some file, Mention 
 /* ----------------------------------------*/
 void iniconf(double *y); 	// The configuration number is defined for different
 											// Initial configuration into the system.
+<<<<<<< HEAD
 void rData(ifstream *fptr,double *y);
 void check_param();
+=======
+void check_param(double dd, double aa);
+>>>>>>> map_dev
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */
 
