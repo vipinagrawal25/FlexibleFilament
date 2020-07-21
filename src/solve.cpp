@@ -131,7 +131,7 @@ int main(){
     system("exec mkdir output");
     system("exec rm -f MSD.txt");
     iniconf(y0);
-    eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS);
+    eval_rhs(time,y0,vel,tdiagnos,CurvSqr,SS);
     ofstream outfile;
     outfile.open("output/var0.txt");
     wData(&outfile,y0,vel);                   //Code it in your model.cpp file
@@ -238,13 +238,13 @@ void wData(ofstream *fptr, double y[], double vel[]){
   switch(wDataMeth){
     case 1:
       for(int ip = 0; ip < Np; ++ip){
-        for (int ip = 0; ip < pp; ++ip){
-          *fptr << y[3*ip+ip];
+        for (int jp = 0; jp < pp; ++jp){
+          *fptr << y[pp*ip+jp];
           *fptr << '\t';
         }
         // Now just throw away next three numbers as they contain values of velocity.
-        for (int ip = 0; ip < pp; ++ip){
-          *fptr << vel[3*ip+ip];
+        for (int jp = 0; jp < pp; ++jp){
+          *fptr << vel[pp*ip+jp];
           *fptr << '\t';
         }
         *fptr << '\n';
@@ -264,6 +264,6 @@ void wData(ofstream *fptr, double y[], double vel[]){
 }
 /******************************************************/
 void check_param(){
-  cout << "I believe all your parameters are physical. Otherwise, define function:"
+  cout << "I believe all your model parameters are physical. Otherwise, define function: "
           "void check_param() in model.cpp file" << endl;
 }

@@ -98,7 +98,7 @@ void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
     Tens2b2 mu_ij, mu_ii;
     double d_rij;
     vec2 rij;
-    mu_ii = dab2b2*mu0;    // dab2b2 is the unit 2 dimensional tensor. It is defined in module/2Tens file.
+    mu_ii = dab2b2*mu0;    // dab2b2 is the unit 2 dimensional tensor. It is defined in module/2b2Tens file.
     // PTens2(mu_ii);
     // rij = R[j]-R[i] and d_rij is just the norm of this value.
 
