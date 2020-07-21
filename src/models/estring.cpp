@@ -393,7 +393,6 @@ void GetRij(vec3 R[], int i, int j, double *Distance, vec3 *rij){
   *Distance = Dis;
 }
 /********************************************/
-<<<<<<< HEAD
 void rData(ifstream *fptr, double *y){
   double num=0.0;
   for(int ip = 0; ip < Np; ++ip){
@@ -412,11 +411,5 @@ void check_param(){
   if (dd>aa){
     cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
     exit(1);
-=======
-void check_param(double dd, double aa){
-if (dd>aa){
-      cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
-      exit(0);
->>>>>>> map_dev
   }
 }

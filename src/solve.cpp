@@ -36,11 +36,7 @@ int main(){
   clock_t timer;
   // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt time 
   // for a particular value of AA.
-<<<<<<< HEAD
   check_param();            // Define this function in solve.cpp using weak attribute.
-=======
-  check_param(dd,aa);
->>>>>>> map_dev
   if(lastfile){
     filenumber = lastfile+1;
     // -----------------------------------------------------------------------------------------------------
