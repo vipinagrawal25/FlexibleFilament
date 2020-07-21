@@ -113,7 +113,6 @@ void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
             mu_ij = c1*(dab2b2 + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab2b2*onebythree - (rij*rij)*dsqr1));
             dX[ip] = dX[ip] + dot(mu_ij, EForce[jp]);
             dX[jp] = dX[jp] + dot(mu_ij, EForce[ip]);
-            // cout << dot(mu_ij, EForce[jp]).y << "\t" << dot(mu_ij, EForce[jp]).z << endl;
         }
     }
   }
@@ -295,7 +294,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
   }  
 }
 /**************************/
-void iniconf(double *y, double *vel){
+void iniconf(double *y){
     vec2 R[Np];              // R is the position of the beads.
     double k = 1;            // determines the frequency for initial configuration
     double CurvLength = 0;   // determines the total length of the curve
@@ -304,15 +303,8 @@ void iniconf(double *y, double *vel){
       l.append(to_string(lastfile));
       l.append(".txt");
       ifstream myfile(l,ios::in); 
-      double num = 0.0;           
-      for (int ip = 0; ip < Np; ++ip){
-        myfile >> y[2*ip];
-        myfile >> y[2*ip+1];
-        // Now just throw next three numbers as they contain values of velocity.
-        myfile >> vel[2*ip];
-        myfile >> vel[2*ip+1];
-      }
-      myfile.close();  
+      rData(&myfile,&y[0]);
+      myfile.close();
     }
     else{
       switch(niniconf){
@@ -371,10 +363,27 @@ void iniconf(double *y, double *vel){
     }
 }
 /********************************************/
-void GetRij(vec2 R[], int i, int j, double *Distance, vec2 *rij)
-{
+void GetRij(vec2 R[], int i, int j, double *Distance, vec2 *rij){
   /*This calculated the distance at two index i and j on the elastic string*/
   *rij = R[j] - R[i];
   double Dis = norm(R[j]-R[i]); 
   *Distance = Dis;
+}
+/********************************************/
+void rData(ifstream *fptr, double *y){
+  double num=0.0;
+  for(int ip = 0; ip < Np; ++ip){
+    *fptr >> y[2*ip];
+    *fptr >> y[2*ip+1];
+    // Now just throw away next three numbers as they contain values of velocity.
+    *fptr >> num;
+    *fptr >> num;
+  }
+}
+/********************************************/
+void check_param(){
+  if (dd>aa){
+    cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
+    exit(1);
+  }
 }

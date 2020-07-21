@@ -7,7 +7,8 @@ using namespace std;
 /* ----------------------------------------*/
 double const height = 1.28;					// height of the box we are doing simulations in.
 unsigned int const Np=256;					// total number of points on the rod.
-unsigned int const pdim=3*Np;				
+unsigned int const pp=3;
+unsigned int const pdim=pp*Np;				
 double const aa = height/(double)(Np-1); 	// distance between two nodes.
 double const dd = 0.005; 					// diameter of the filament.
 											// The particles would also have same diameter. 
@@ -33,8 +34,10 @@ int const niniconf = 1;    	 				/* Configuration of the system at t = 0. 0 -> s
 											1 -> Straight filament, 2-> */
 int const lastfile=0;						// If you want to read input from some file, Mention the file number.
 /* ----------------------------------------*/
-void iniconf(double *y, double *vel); 	// The configuration number is defined for different
+void iniconf(double *y); 	// The configuration number is defined for different
 											// Initial configuration into the system.
+void rData(ifstream *fptr,double *y);
+void check_param();
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */
 

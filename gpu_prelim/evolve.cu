@@ -637,11 +637,4 @@ void rnkf45( double PSI[], double dev_psi[],
           BUG, dev_bug,
           Nblock, Nthread );
   }
-  // StringLen=SumDevArray(dev_diag,Nblock,Nthread);
-  // if (StringLen>MaxLen){
-  //   MaxLen=StringLen;
-  // }
-  // else if (StringLen<MinLen){
-  //   MinLen=StringLen;
-  // }
 }

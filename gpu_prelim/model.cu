@@ -590,7 +590,7 @@ void D2H(double ARR[], double dev_arr[], int Nsize){
 }
 /*-------------------------------------------------------------------*/
 void wPSI ( double PSI[], double VEL[] ,double tau){
-  // This is a very slow way to save file. I am opening some file again and
+  // This is a very slow way to save file. I am opening same file again and
   // closing it. Let's just pass the file pointer to reduce the time."
   // FILE *fp = fopen( "data/PSI", "a" );
   // fprintf( fp, "%lf\t", tau ) ;

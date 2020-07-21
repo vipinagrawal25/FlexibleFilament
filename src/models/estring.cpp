@@ -313,7 +313,7 @@ void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa)
   }  
 }
 /**************************/
-void iniconf(double *y, double *vel){
+void iniconf(double *y){
     vec3 R[Np];              // R is the position of the beads.
     double k = 1;            // determines the frequency for initial configuration
     double CurvLength = 0;   // determines the total length of the curve
@@ -322,17 +322,7 @@ void iniconf(double *y, double *vel){
       l.append(to_string(lastfile));
       l.append(".txt");
       ifstream myfile(l,ios::in); 
-      double num = 0.0;           
-      for (int ip = 0; ip < Np; ++ip){
-        myfile >> y[3*ip];
-        myfile >> y[3*ip+1];
-        myfile >> y[3*ip+2];
-        // Now just throw next three numbers as they contain values of velocity.
-        myfile >> vel[3*ip];
-        myfile >> vel[3*ip+1];
-        myfile >> vel[3*ip+2];
-      }
-      myfile.close();  
+      rData(&myfile,&y[0]);
     }
     else{
       switch(niniconf){
@@ -398,11 +388,30 @@ void iniconf(double *y, double *vel){
 }
 
 /********************************************/
-void GetRij(vec3 R[], int i, int j, double *Distance, vec3 *rij)
-{
+void GetRij(vec3 R[], int i, int j, double *Distance, vec3 *rij){
   /*This calculated the distance at two index i and j on the elastic string*/
-
   *rij = R[j] - R[i];
   double Dis = norm(R[j]-R[i]); 
   *Distance = Dis;
+}
+/********************************************/
+void rData(ifstream *fptr, double *y){
+  double num=0.0;
+  for(int ip = 0; ip < Np; ++ip){
+    *fptr >> y[3*ip];
+    *fptr >> y[3*ip+1];
+    *fptr >> y[3*ip+2];
+    // Now just throw away next three numbers as they contain values of velocity.
+    *fptr >> num;
+    *fptr >> num;
+    *fptr >> num;
+  }
+}
+/********************************************/
+void check_param(){
+  // This function checks whether the parameter makes physical sense.
+  if (dd>aa){
+    cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
+    exit(1);
+  }
 }

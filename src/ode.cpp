@@ -105,17 +105,14 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   };
   double bistar[6] = {37./378,0,250./621,125./594,0,512./1771};
   double bi[6] = {2825./27648.,0,18575./48384,13525./55296.,277./14336.,0.25};
-
   if (ldiagnos){
       flag_kappa = true;
-      // cout<< "This is a high level shit" << endl;
   }
   else{
       flag_kappa = false;
   }
   eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
   // CurvSqr_Store = CurvSqr;
-
   for(idim=0;idim<ndim;idim++){
       temp[idim]=y[idim]+k1[idim]*dt*aij[1][0];
   }
