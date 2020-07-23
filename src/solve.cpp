@@ -20,8 +20,7 @@ void check_param() __attribute__((weak));
 using namespace std;
 /* ----------------------------------------*/
 int main(){
-  unsigned int const ndim=Nensemble*pdim;
-  double y[ndim], y0[ndim], CurvSqr[Np],SS[Np],time,MeanSqDis,timer_global;
+  double y[ndim],y0[ndim],CurvSqr[Np],SS[Np],time,MeanSqDis,timer_global;
   double vel[ndim];
   int filenumber;
   string lastline;
@@ -37,7 +36,7 @@ int main(){
   // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt time 
   // for a particular value of AA.
   check_param();            // Define this function in solve.cpp using weak attribute.
-  if(lastfile){
+  if(lastfile+1){
     filenumber = lastfile+1;
     // -----------------------------------------------------------------------------------------------------
     double num = 0.0;
@@ -157,7 +156,7 @@ int main(){
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
-    rnkf45(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
+    rnkf45(ndim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
     // DP54(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos); 
     // cout << time << endl;
     if (dt<dt_min){

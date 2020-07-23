@@ -25,7 +25,7 @@ Thing7 = "MSD_no_trans"
 Thing8 = "SqrtCurvature"
 Thing9 = "TracerVelocity"
 
-Things = [Thing9]
+Things = [Thing1]
 
 # figure=MSD_plot(step=1)
 # show(figure)

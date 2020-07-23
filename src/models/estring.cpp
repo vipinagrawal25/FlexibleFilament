@@ -315,7 +315,7 @@ void iniconf(double *y){
     vec3 R[Np];              // R is the position of the beads.
     double k = 1;            // determines the frequency for initial configuration
     double CurvLength = 0;   // determines the total length of the curve
-    if (lastfile){
+    if(lastfile+1){
       string l = "output/var";
       l.append(to_string(lastfile));
       l.append(".txt");
@@ -339,7 +339,6 @@ void iniconf(double *y){
             y[3*ip]=R[ip].x;
             y[3*ip+1]=R[ip].y;
             y[3*ip+2]=R[ip].z;
-
             // Compute velocity here or in solve.cpp. It is just an evaluation of eval_rhs function.
           }
           break;
@@ -360,8 +359,7 @@ void iniconf(double *y){
           // Santillian's experiment
           // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. The rod
           // should be deviated a little bit from origin in starting.           
-          for (int ip = 0; ip < Np; ++ip)
-          {
+          for (int ip = 0; ip < Np; ++ip){
               R[ip].x = 0;
               R[ip].y = aa*(double(ip+1))-height*0.5;
               R[ip].z = aa*sin(M_PI*k*aa*double(ip+1)/height);
