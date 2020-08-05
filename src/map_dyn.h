@@ -4,7 +4,7 @@
 struct MV{
   double time;    // Current time of the simulation
   double dt;      // Current dt for the adaptive scheme
-  int niter;      // Number of iteration of the map.
+  int period;      // Number of iteration of the map.
   // int ndiag;
   // int ldiag;
 };

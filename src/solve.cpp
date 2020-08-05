@@ -11,7 +11,7 @@
 #include "input.h"
 #include<sys/stat.h>
 /**************************/
-void wData(ofstream *fptr, double y[], double vel[]);
+void wData(ofstream *fptr, double y[], double vel[]) __attribute__((weak));
 void check_param() __attribute__((weak));
 /* Writing method: 1 -> to save every snap in different file
                    2 -> to save all the snaps in single file called PSI, VEL */
@@ -38,7 +38,7 @@ int main(){
   check_param();            // Define this function in solve.cpp using weak attribute.
   if(lastfile+1){
     filenumber = lastfile+1;
-    // -----------------------------------------------------------------------------------------------------
+    // -----------------------------------------------
     double num = 0.0;
     string line;
     ifstream outfile_time("output/time.txt");
@@ -56,9 +56,6 @@ int main(){
       if (outfile_time >> num){
         time = num;
         outfile_time_new << num << endl;
-        // 
-        // outfile_MSD >> num;
-        // outfile_MSD_new << num << endl;
         //
         getline(outfile_curvature,line,'\n');
         outfile_curvature_new << line << endl;
@@ -106,6 +103,7 @@ int main(){
     string filename = "output/var";
     filename.append(to_string(ifile));
     filename.append(".txt");
+    
     struct stat buffer;
     while(!stat(filename.c_str(), &buffer)){
       string removefile = "exec rm -f ";
