@@ -6,6 +6,8 @@
 #include "model.h"
 #include <string>
 #include <math.h>
+#include <sstream>
+
 using namespace std;
 /**************************/
 /* We consider simulation of elastic filament in 2 dimension. Filament is in XY dimension.
@@ -293,18 +295,32 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
       break;
   }  
 }
-/**************************/
+/****************************************************/
 void iniconf(double *y){
     vec2 R[Np];              // R is the position of the beads.
     double k = 1;            // determines the frequency for initial configuration
     double CurvLength = 0;   // determines the total length of the curve
     if (lastfile){
-      string l = "output/var";
-      l.append(to_string(lastfile));
-      l.append(".txt");
-      ifstream myfile(l,ios::in); 
-      rData(&myfile,&y[0]);
-      myfile.close();
+      switch(wDataMeth){
+        case 1:
+          string l = "output/var";
+          l.append(to_string(lastfile));
+          l.append(".txt");
+          ifstream myfile(l,ios::in); 
+          rData(&myfile,&y[0]);
+          myfile.close();
+          break;
+
+        case 2:
+          ifstream myfile("data/PSI",ios::in);
+          rData(&myfile,&y[0]);
+          myfile.close();
+          break;
+
+        default:
+          cout << "Reading method not implemented" << endl;
+          exit(1);
+      }
     }
     else{
       switch(niniconf){
@@ -371,13 +387,38 @@ void GetRij(vec2 R[], int i, int j, double *Distance, vec2 *rij){
 }
 /********************************************/
 void rData(ifstream *fptr, double *y){
-  double num=0.0;
-  for(int ip = 0; ip < Np; ++ip){
-    *fptr >> y[2*ip];
-    *fptr >> y[2*ip+1];
-    // Now just throw away next three numbers as they contain values of velocity.
-    *fptr >> num;
-    *fptr >> num;
+  string line,token;
+  switch(wDataMeth){
+    case 1:
+      double num=0.0;
+      for(int ip = 0; ip < Np; ++ip){
+        *fptr >> y[2*ip];
+        *fptr >> y[2*ip+1];
+        // Now just throw away next two numbers as they contain values of velocity.
+        *fptr >> num;
+        *fptr >> num;
+      }
+      break;
+
+    case 2:
+      while( getline(*fptr,token) ){
+        line=token;
+        getline(myfile,token);          // Dumping this: #---------
+      }
+      // Now convert all the tab separated entries to array.
+      istringstream iss(line);
+      getline(iss, token, '\t');        // First entry is time, delete that.
+      for (int idim = 0; idim < ndim; ++idim){
+        getline(iss, token, '\t')       // Get next token.
+        y[idim]=stod(token);            // Convert to double and store it in y.
+      }
+      break;
+
+    default:
+      cout << "Hey, your choice of writing data does not exist. "
+              "If you want a new way, Code function: wData(ofstream *fptr, double y[], double vel[]) "
+              "in model.cpp file." << endl;
+      exit(1);
   }
 }
 /********************************************/

@@ -7,6 +7,8 @@
 #include<string>
 #include<vector>
 #include <math.h>
+#include <sstream>
+
 using namespace std;
 /**************************/
 void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa);
@@ -143,7 +145,6 @@ void drag(vec3 X[], vec3 dX[], vec3 EForce[]){
     }
   } 
 }
-
 /**************************/
 void getub(double *bk, vec3 *uk, int kp, vec3 X[]){
   vec3 dX = X[kp+1]-X[kp];
@@ -315,7 +316,7 @@ void iniconf(double *y){
     vec3 R[Np];              // R is the position of the beads.
     double k = 1;            // determines the frequency for initial configuration
     double CurvLength = 0;   // determines the total length of the curve
-    if(lastfile+1){
+    if(lastfile){
       string l = "output/var";
       l.append(to_string(lastfile));
       l.append(".txt");

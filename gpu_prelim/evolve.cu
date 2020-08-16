@@ -630,7 +630,7 @@ void rnkf45( double PSI[], double dev_psi[],
   }
   else{
     rnkf45( PSI, dev_psi,
-            VEL, dev_vel,
+          VEL, dev_vel,
           TT, dev_tt,
           PARAM, dev_param ,
           DIAG, dev_diag,
