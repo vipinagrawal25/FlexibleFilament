@@ -5,16 +5,12 @@
 #include "map_dyn.h"
 #include "math.h"
 #include <Eigen/Eigenvalues>
-#include<sys/stat.h>
+#include <sys/stat.h>
+#include "constant.h"
+#include <memory.h>
 /* -----------------------------------------------*/
 using namespace std;
 using namespace Eigen;
-/* -----------------------------------------------*/
-#define TimeScheme "rnkf45"
-#define time_tol 1.e-9
-#define err_tol 1.e-9
-#define delta 1.e-4
-#define wDataMeth 2
 /* -----------------------------------------------*/
 void map_one_iter(double *y, double *vel, MV* MM);
 void pre_ode2map(MV* MM);
@@ -41,11 +37,11 @@ void pre_ode2map(MV *MM){
   /* Set up parameters for map iteration */
   (*MM).time = 0.;
   (*MM).dt = 1.e-5;
-  (*MM).period = 1;
-  (*MM).iorbit = 1; // 0 if you already have the orbit, 1 for calculating the orbit.
+  (*MM).period = 1.;
+  (*MM).iorbit = 1.; // 0 if you already have the orbit, 1 for calculating the orbit.
   // 0 for no stability analysis, 1 for yes.
   // It computes the eigenvalues and save them in the folder.
-  (*MM).istab = 1;  
+  (*MM).istab = 0.;
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics for the time being.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses 
@@ -59,21 +55,20 @@ void periodic_orbit(double y0[],double vel[], MV* aMM, int fnum){
   // This function decide whether given initial condition is a periodic orbit or not.
   // If the initial point is not a periodic orbit, it uses the newton-raphson method 
   // to go to nearby guess.
-  double *y=y0;
-  double ynew[ndim];
+  double y[ndim];
+  memcpy(y,y0,ndim*sizeof(double));
   int period=(*aMM).period;
-  
+  //
   ofstream outfile;
   ofstream outfile_vel;
-
   outfile.open("output/PSI0.txt");
   outfile_vel.open("output/VEL0.txt");
   wData(&outfile,&outfile_vel,y0,vel);                   // Code it in your model.cpp file
-
   // The multiple iter function will take care of one iteration running again and again.
   // and saving the intermediate data as well. It is like overdo but needed,
   // so that we do not commit silly mistakes of not initializing time to zero etc.
   map_multiple_iter(y,vel,aMM,&outfile,&outfile_vel);
+  // cout << (*aMM).time << endl;
   // Now check, did we hit the periodic orbit? If not, give a new guess.
   if(SqEr(y0,y,ndim)<err_tol){
     cout << "Voila! you got the periodic orbit with period " << period << endl;
@@ -89,6 +84,8 @@ void periodic_orbit(double y0[],double vel[], MV* aMM, int fnum){
     // First step is to get the derivative of the map.
     // dy/dx = (f(x+dx) - f(x-dx))/2dx
     MatrixXd DerM(ndim,ndim);
+    cout << "-------------Jacobian Calculation for next newton-raphson iteration: ------------- " 
+         << endl << endl;
     DerM = Jacobian(y0,vel,aMM);
   }
 }
@@ -97,14 +94,17 @@ MatrixXd Jacobian(double x[], double vel[], MV *aMM){
   // Take a small step in every direction and calculate the differences.
   // dy/dx = (f(x+dx) - f(x-dx))/2dx
   int period = (*aMM).period;
+  double yp[ndim],yn[ndim];
   MatrixXd DerM(ndim,ndim);
   for (int idim = 0; idim < ndim; ++idim){
+    cout << "Starting calculation for row " << idim+1 << endl;
     // Calculation for f(x+dx)
-    double *yp=x;
-    yp[idim]=x[idim]+delta;
+    memcpy(yp,x,ndim*sizeof(double));
+    yp[idim] = x[idim]+delta;
+    cout << yp[idim]-x[idim] << endl;
     map_multiple_iter(yp,vel,aMM);
     // Calculation for f(x-dx)
-    double *yn = x;
+    memcpy(yn,x,ndim*sizeof(double));
     yn[idim]=x[idim]-delta;
     map_multiple_iter(yn,vel,aMM);
     //Calculation of the derivative
@@ -160,7 +160,7 @@ void map_one_iter(double *y, double *vel, MV* MM){
       printf( "EXITING \n " );
       exit(1);
     }
-    cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<Tmax<<"\n";
+    // cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<Tmax<<"\n";
   }
   (*MM).dt=dt;
   (*MM).time=time;
@@ -264,7 +264,7 @@ void rData(ofstream *fptr, ofstream *fptr_vel, double y[], double vel[]){
 /*-----------------------------------------------*/
 // Move it to utilities
 double SqEr(double Arr1[], double Arr2[], int nn){
-  double error;
+  double error=0;
   for (int ii = 0; ii < nn; ++ii){
     error=error+(Arr2[ii]-Arr1[ii])*(Arr2[ii]-Arr1[ii]);
   }
@@ -297,21 +297,30 @@ int main(){
     periodic_orbit(&y0[0],&vel[0],&MM,fnum);
   }
   if(MM.istab){
-    double *y=y0;
-    // First check whether you actually have the periodic orbit?
-    cout << "Is it a periodic orbit?"
-            " (if you don't want this, please comment it out in map_dyn.cpp) " << endl;
-    map_multiple_iter(y,vel,&MM);
-    if(SqEr(y0,y,ndim)<err_tol){
-      cout << "Yes!!! It is a periodic orbit. I shall calculate stability now." << endl;
+    if(!MM.iorbit){
+      double y[ndim];
+      memcpy(y,y0,ndim*sizeof(double));
+      // First check whether you actually have the periodic orbit?
+      cout << "Is it a periodic orbit?"
+              " (if you don't want this, please comment it out in map_dyn.cpp) " << endl;
+      map_multiple_iter(y,vel,&MM);
+      if(SqEr(y0,y,ndim)<err_tol){
+        cout << "Yes!!! It is a periodic orbit. I shall calculate stability now." << endl;
+        DerM = Jacobian(y0,vel,&MM);
+        VectorXcd eivals = DerM.eigenvalues();
+        cout << "The eigenvalues  are: " << endl << eivals << endl;
+      }else{
+        cout << "The guess is not periodic orbit." << endl << 
+        " Did you cross-check the data or time-period? " << endl <<
+        "If yes, use our periodic orbit solver to get nearest orbit to the guess." 
+        "Set istab=0, iorbit=1" << endl;
+      }
+    }
+    else{
+      cout << "I shall calculate the stability of the orbit." << endl;
       DerM = Jacobian(y0,vel,&MM);
       VectorXcd eivals = DerM.eigenvalues();
       cout << "The eigenvalues  are: " << endl << eivals << endl;
-    }else{
-      cout << "The guess is not periodic orbit." << endl << 
-      " Did you cross-check the data or time-period? " << endl <<
-      "If yes, use our periodic orbit solver to get nearest orbit to the guess." 
-      "Set istab=0, iorbit=1" << endl;
     }
   }
 }

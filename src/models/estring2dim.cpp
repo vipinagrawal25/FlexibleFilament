@@ -7,11 +7,12 @@
 #include <string>
 #include <math.h>
 #include <sstream>
-
+#include "constant.h"
+/**************************/
 using namespace std;
 /**************************/
-/* We consider simulation of elastic filament in 2 dimension. Filament is in XY dimension.
-X direction is horizontal.*/
+/* 1) We consider simulation of elastic filament in 2 dimension. Filament is in XY dimension.
+      X direction is horizontal. */
 /**************************/
 void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa);
 void getub(double *bk, vec2 *uk, int kp, vec2 X[]);
@@ -149,14 +150,14 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
     Xzero.x=0.; Xzero.y=0.;      
   }
   /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be fixed in general.
-  But for some cases like the implementation of the taylor experiment, we want this to be free. For this I am implementing Xzero 
-  based on the configuration. Since finally with this function we just want to calculate the force on particular node. So we can
-  just change the way we calculate force on 1st and 2nd node for different configuration.*/
+  But for some cases like the implementation of the taylor experiment, we want this to be free. For this I am implementing 
+  Xzero based on the configuration. Since finally with this function we just want to calculate the force on particular node. 
+  So we can just change the way we calculate force on 1st and 2nd node for different configuration.*/
 
   /* One thing should be noted that now the expression inside case 0 and case 1 would change depending upon the configuration.
   Suppose if XZero is taken as the fixed point, then we dont need to calculate F^{0} but only F^{1} which would be implemented
-  in case 0 because Xzero is the bottom most point for which we dont care to calculate the force and X[0] is the first point being
-  implemented in case 0. Though for a different configuration these things should be changed.*/
+  in case 0 because Xzero is the bottom most point for which we dont care to calculate the force and X[0] is the first point 
+  being implemented in case 0. Though for a different configuration these things should be changed.*/
   switch(kp){
     case 0:
       getub(&bk, &uk, kp, X);
@@ -300,23 +301,23 @@ void iniconf(double *y){
     vec2 R[Np];              // R is the position of the beads.
     double k = 1;            // determines the frequency for initial configuration
     double CurvLength = 0;   // determines the total length of the curve
+    string l;
+    ifstream myfile;
     if (lastfile){
       switch(wDataMeth){
         case 1:
-          string l = "output/var";
+          l = "output/var";
           l.append(to_string(lastfile));
           l.append(".txt");
-          ifstream myfile(l,ios::in); 
+          myfile.open(l,ifstream::in); 
           rData(&myfile,&y[0]);
           myfile.close();
           break;
-
         case 2:
-          ifstream myfile("data/PSI",ios::in);
+          myfile.open("data/PSI",ifstream::in);
           rData(&myfile,&y[0]);
           myfile.close();
           break;
-
         default:
           cout << "Reading method not implemented" << endl;
           exit(1);
@@ -356,8 +357,8 @@ void iniconf(double *y){
           break;
         case 2:
           // Santillian's experiment
-          // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. The rod
-          // should be deviated a little bit from origin in starting.           
+          // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. 
+          // The rod should be deviated a little bit from origin in starting.           
           for (int ip = 0; ip < Np; ++ip){
               R[ip].x = aa*(double(ip+1))-height*0.5;
               R[ip].y = aa*sin(M_PI*k*aa*double(ip+1)/height);
@@ -388,9 +389,11 @@ void GetRij(vec2 R[], int i, int j, double *Distance, vec2 *rij){
 /********************************************/
 void rData(ifstream *fptr, double *y){
   string line,token;
+  double num;
+  istringstream iss;
   switch(wDataMeth){
     case 1:
-      double num=0.0;
+      num=0.0;
       for(int ip = 0; ip < Np; ++ip){
         *fptr >> y[2*ip];
         *fptr >> y[2*ip+1];
@@ -399,21 +402,19 @@ void rData(ifstream *fptr, double *y){
         *fptr >> num;
       }
       break;
-
     case 2:
       while( getline(*fptr,token) ){
         line=token;
-        getline(myfile,token);          // Dumping this: #---------
+        getline(*fptr,token);          // Dumping this: #---------
       }
       // Now convert all the tab separated entries to array.
-      istringstream iss(line);
+      iss.str(line);
       getline(iss, token, '\t');        // First entry is time, delete that.
       for (int idim = 0; idim < ndim; ++idim){
-        getline(iss, token, '\t')       // Get next token.
+        getline(iss, token, '\t');       // Get next token.
         y[idim]=stod(token);            // Convert to double and store it in y.
       }
       break;
-
     default:
       cout << "Hey, your choice of writing data does not exist. "
               "If you want a new way, Code function: wData(ofstream *fptr, double y[], double vel[]) "
@@ -428,3 +429,4 @@ void check_param(){
     exit(1);
   }
 }
+/********************************************/

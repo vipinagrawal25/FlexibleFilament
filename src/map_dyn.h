@@ -10,6 +10,6 @@ struct MV{
   // int ndiag;
   // int ldiag;
 };
-const int size_MV = 2*sizeof( double ) + sizeof( int );
+const int size_MV = 2*sizeof( double ) + sizeof( int ) + 2*sizeof(bool);
 /*--------------------------------------------------*/
 #endif /* !EVOLVE_SEEN */

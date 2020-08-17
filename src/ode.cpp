@@ -3,7 +3,7 @@
 #include<cmath>
 #include "ode.h"
 #include "model.h"
-#define tiny pow(10,-15)
+#include "constant.h"
 using namespace std;
 /*********************************/
 // void euler(double *y,double* vel, double time,double dt){
@@ -289,7 +289,6 @@ void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* a
     DP54(ndim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
 }
-
 /* call eval_rhs(y,t,k1)
 call eval_rhs(y+k1*(dt/2.),t+(dt/2.),k2)
 call eval_rhs(y+k2*(dt/2.),t+(dt/2.),k3)

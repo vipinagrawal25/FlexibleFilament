@@ -10,13 +10,11 @@
 #include "model.h"
 #include "input.h"
 #include<sys/stat.h>
-/**************************/
+#include "constant.h"
+/********************************************/
 void wData(ofstream *fptr, double y[], double vel[]) __attribute__((weak));
 void check_param() __attribute__((weak));
-/* Writing method: 1 -> to save every snap in different file
-                   2 -> to save all the snaps in single file called PSI, VEL */
-#define wDataMeth 1
-/**************************/
+/********************************************/
 using namespace std;
 /* ----------------------------------------*/
 int main(){
@@ -36,7 +34,7 @@ int main(){
   // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt time 
   // for a particular value of AA.
   check_param();            // Define this function in solve.cpp using weak attribute.
-  if(lastfile+1){
+  if(lastfile){
     filenumber = lastfile+1;
     // -----------------------------------------------
     double num = 0.0;
@@ -249,7 +247,8 @@ void wData(ofstream *fptr, double y[], double vel[]){
       break;
     case 2:
       cout << "I am sorry. My developers are lazy and they have not developed "
-              "this method still. I don't know what to do with them." << endl;
+              "this method still. I don't know what to do with them. wDataMeth == 2 is not possible,"
+              "please choose another method in constant.h" << endl;
               exit(1);
               break;
     default:
