@@ -42,6 +42,8 @@ void pre_ode2map(MV *MM){
   // 0 for no stability analysis, 1 for yes.
   // It computes the eigenvalues and save them in the folder.
   (*MM).istab = 0.;
+  (*MM).irel = 0.;  // Do you want to search for relative periodic orbits?
+                    // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics for the time being.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses 
@@ -72,6 +74,9 @@ void periodic_orbit(double y0[],double vel[], MV* aMM, int fnum){
   // Now check, did we hit the periodic orbit? If not, give a new guess.
   if(SqEr(y0,y,ndim)<err_tol){
     cout << "Voila! you got the periodic orbit with period " << period << endl;
+    for (int idim = 0; idim < ndim; ++idim){
+      cout << y0[idim]-y[idim] << endl;
+    }
     // Just write the output.
     wData(&outfile,&outfile_vel,y,vel);
     outfile.close();
@@ -101,7 +106,6 @@ MatrixXd Jacobian(double x[], double vel[], MV *aMM){
     // Calculation for f(x+dx)
     memcpy(yp,x,ndim*sizeof(double));
     yp[idim] = x[idim]+delta;
-    cout << yp[idim]-x[idim] << endl;
     map_multiple_iter(yp,vel,aMM);
     // Calculation for f(x-dx)
     memcpy(yn,x,ndim*sizeof(double));
@@ -110,7 +114,7 @@ MatrixXd Jacobian(double x[], double vel[], MV *aMM){
     //Calculation of the derivative
     for (int jdim = 0; jdim < ndim; ++jdim){
       DerM(jdim,idim) = (yp[jdim]-yn[jdim])/(2*delta);
-    }
+    }   
   }
   return DerM;
 }
@@ -120,8 +124,8 @@ MatrixXd Jacobian(double x[], double vel[], MV *aMM){
 void map_multiple_iter(double y[], double vel[], MV *aMM){  
   (*aMM).time=0;
   int period = (*aMM).period;
+  cout << "Starting map iteration" << endl;
   for (int iter = 0; iter < period; ++iter){
-    cout << "Iteration " << iter << " started" << endl;
     map_one_iter(&y[0],&vel[0],aMM); 
   }
 }
@@ -267,11 +271,13 @@ double SqEr(double Arr1[], double Arr2[], int nn){
   double error=0;
   for (int ii = 0; ii < nn; ++ii){
     error=error+(Arr2[ii]-Arr1[ii])*(Arr2[ii]-Arr1[ii]);
+    // diagnosis
+    // cout << Arr2[ii]-Arr1[ii] << endl;
   }
   error = sqrt(error)/ndim;
   return error;
 }
-/* -----------------------------------------------*/
+/*-----------------------------------------------*/
 int main(){
   // Here I will define whether I am calling the code for fixed point or periodic orbits.
   // Idea is to use the same code for periodic orbit and fixed point both.
@@ -292,6 +298,7 @@ int main(){
   // ode2map(double *y, double *vel, MM);
   // map_one_iter(&y0[0],&vel[0],&MM);
   fnum = lastfilenum();
+  
   if (MM.iorbit){
     // The function use Newton-Raphson and calculate the nearest periodic orbit.
     periodic_orbit(&y0[0],&vel[0],&MM,fnum);
@@ -307,6 +314,7 @@ int main(){
       if(SqEr(y0,y,ndim)<err_tol){
         cout << "Yes!!! It is a periodic orbit. I shall calculate stability now." << endl;
         DerM = Jacobian(y0,vel,&MM);
+        cout << DerM << endl;
         VectorXcd eivals = DerM.eigenvalues();
         cout << "The eigenvalues  are: " << endl << eivals << endl;
       }else{
@@ -323,4 +331,5 @@ int main(){
       cout << "The eigenvalues  are: " << endl << eivals << endl;
     }
   }
+
 }
