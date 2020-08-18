@@ -7,9 +7,10 @@ struct MV{
   int period;      // Number of iteration of the map.
   bool istab;		// Do you want to calculate the stability of the orbit?
   bool iorbit;
+  bool irel_orb;
   // int ndiag;
   // int ldiag;
 };
-const int size_MV = 2*sizeof( double ) + sizeof( int ) + 2*sizeof(bool);
+const int size_MV = 2*sizeof( double ) + sizeof( int ) + 3*sizeof(bool);
 /*--------------------------------------------------*/
 #endif /* !EVOLVE_SEEN */

@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include "constant.h"
 #include <memory.h>
+#include <cstdlib>
 /* -----------------------------------------------*/
 using namespace std;
 using namespace Eigen;
@@ -23,6 +24,7 @@ void map_multiple_iter(double y[],double vel[], MV *MM, ofstream *outfile, ofstr
 double SqEr(double Arr1[], double Arr2[], int nn);
 MatrixXd Jacobian(double x[], double vel[],MV *MM);
 int lastfilenum();
+bool IsPathExist(const std::string &s);
 /*-----------------------------------------------*/
 /*1) Prefix a means address to that particular varibale (avar -> address to var).
 */ 
@@ -42,8 +44,9 @@ void pre_ode2map(MV *MM){
   // 0 for no stability analysis, 1 for yes.
   // It computes the eigenvalues and save them in the folder.
   (*MM).istab = 0.;
-  (*MM).irel = 0.;  // Do you want to search for relative periodic orbits?
-                    // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
+  (*MM).irel_orb = 0.;  // Do you want to search for relative periodic orbits?
+                        // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
+
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics for the time being.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses 
@@ -63,8 +66,13 @@ void periodic_orbit(double y0[],double vel[], MV* aMM, int fnum){
   //
   ofstream outfile;
   ofstream outfile_vel;
-  outfile.open("output/PSI0.txt");
-  outfile_vel.open("output/VEL0.txt");
+  //
+  outfile.open("data/PSI0");
+  outfile_vel.open("data/VEL0");
+  // Diagnosis //
+  // cout << outfile.is_open() << endl;
+  // cout << outfile_vel.is_open() << endl;
+  //
   wData(&outfile,&outfile_vel,y0,vel);                   // Code it in your model.cpp file
   // The multiple iter function will take care of one iteration running again and again.
   // and saving the intermediate data as well. It is like overdo but needed,
@@ -74,11 +82,7 @@ void periodic_orbit(double y0[],double vel[], MV* aMM, int fnum){
   // Now check, did we hit the periodic orbit? If not, give a new guess.
   if(SqEr(y0,y,ndim)<err_tol){
     cout << "Voila! you got the periodic orbit with period " << period << endl;
-    for (int idim = 0; idim < ndim; ++idim){
-      cout << y0[idim]-y[idim] << endl;
-    }
-    // Just write the output.
-    wData(&outfile,&outfile_vel,y,vel);
+    // Just write the data.
     outfile.close();
     outfile_vel.close();
   }
@@ -146,7 +150,7 @@ void map_one_iter(double *y, double *vel, MV* MM){
   // intermediate points as well.
   double Tmax = 1*2*M_PI/omega;  // We typically get this by defining Poincare section. 
                                  // which can depend on the initial condition, but not in this case.
-  // The function for Poincare section should be defined in model.cpp file.
+  // The function for Poincare section should be defined in model.cpp file .
   double time = (*MM).time;
   double dt = (*MM).dt;
   double ldiag = 0;               //Theoretically it should be bool but both works.
@@ -179,15 +183,20 @@ T abs(T value){
   }
 }
 /*-----------------------------------------------*/
+// Move it to utilities
+bool IsPathExist(const std::string &s){
+  struct stat buffer;
+  return (stat (s.c_str(), &buffer) == 0);
+}
+/*-----------------------------------------------*/
+// Move it to utilities
 int lastfilenum(){
   // Returns the last file number
   int fnum=1;
-  string filename = "output/PSI1";
-  struct stat buffer;
-  while(!stat(filename.c_str(), &buffer)){
+  string filename = "data/PSI1";
+  while(IsPathExist(filename)){
     fnum=fnum+1;
-    string filename = "output/PSI";
-    filename.append(to_string(fnum));
+    string filename = "data/PSI" + to_string(fnum);
   }
   return fnum;
 }
@@ -297,8 +306,12 @@ int main(){
   iniconf(y0);
   // ode2map(double *y, double *vel, MM);
   // map_one_iter(&y0[0],&vel[0],&MM);
-  fnum = lastfilenum();
-  
+  if (IsPathExist("data")){
+    fnum = lastfilenum();  
+  }else{
+    system("exec mkdir data");
+    fnum = 1;
+  }
   if (MM.iorbit){
     // The function use Newton-Raphson and calculate the nearest periodic orbit.
     periodic_orbit(&y0[0],&vel[0],&MM,fnum);
@@ -314,7 +327,10 @@ int main(){
       if(SqEr(y0,y,ndim)<err_tol){
         cout << "Yes!!! It is a periodic orbit. I shall calculate stability now." << endl;
         DerM = Jacobian(y0,vel,&MM);
-        cout << DerM << endl;
+
+        ofstream eigenfile;
+        eigenfile.open( "data/eig"+to_string(lastfile) );
+
         VectorXcd eivals = DerM.eigenvalues();
         cout << "The eigenvalues  are: " << endl << eivals << endl;
       }else{

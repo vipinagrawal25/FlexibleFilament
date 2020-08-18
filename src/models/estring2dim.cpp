@@ -314,7 +314,9 @@ void iniconf(double *y){
           myfile.close();
           break;
         case 2:
-          myfile.open("data/PSI",ifstream::in);
+          l = "data/PSI";
+          l.append(to_string(lastfile));
+          myfile.open(l,ifstream::in);
           rData(&myfile,&y[0]);
           myfile.close();
           break;

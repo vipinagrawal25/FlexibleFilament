@@ -9,7 +9,7 @@
 #include "ode.h"
 #include "model.h"
 #include "input.h"
-#include<sys/stat.h>
+#include <sys/stat.h>
 #include "constant.h"
 /********************************************/
 void wData(ofstream *fptr, double y[], double vel[]) __attribute__((weak));
@@ -98,18 +98,13 @@ int main(){
     // else remove the file if it has index more than lastfile mentioned in '.h' file.
     ifile = lastfile+1;
     // cout << ifile << endl;
-    string filename = "output/var";
-    filename.append(to_string(ifile));
-    filename.append(".txt");
+    string filename = "output/var" + to_string(ifile) + ".txt";
     
     struct stat buffer;
     while(!stat(filename.c_str(), &buffer)){
-      string removefile = "exec rm -f ";
-      removefile.append(filename);
+      string removefile = "exec rm -f " + filename ;
       system(removefile.c_str());
-      string filename = "output/var";
-      filename.append(to_string(ifile));
-      filename.append(".txt");
+      string filename = "output/var" + to_string(ifile) + ".txt";
       ifile = ifile+1;
     }
     //Store the values of initial file into y0.
@@ -138,7 +133,7 @@ int main(){
     CurvSqr[ip] = 0;
     SS[ip] = 0;
   }
-  /*Opening every file again in append mode. This thing does not depend on configuration number and that's why 
+  /*Opening every file again in mode. This thing does not depend on configuration number and that's why 
   it is outside the loop*/
   // fstream outfile_MSD("MSD.txt", ios::app);
   fstream outfile_time("output/time.txt", ios::app);
@@ -171,9 +166,7 @@ int main(){
     if (time>=tdiag*filenumber){
       // cout << dt << endl;
       ofstream outfile;
-      string l = "output/var";
-      l.append(to_string(filenumber));
-      l.append(".txt");
+      string l = "output/var" + to_string(filenumber) + ".txt";
       outfile.open(l, ios::out);
       wData(&outfile,y,vel);
       outfile.close(); 
