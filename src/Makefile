@@ -2,9 +2,10 @@
 # compile=g++ -pg -Wno-deprecated -Wno-unused-result -std=c++0x
 # CFLAGS=-pg -O3
 include ../host
+exename=ode
 default:
-	${compile} -std=c++11 -o ode.exe ode.cpp solve.cpp model.cpp
+	${compile} -std=c++11 -o ${exename}.exe ode.cpp solve.cpp model.cpp
 clean:
 	rm -f *.o *.exe
 map_dyn:
-	${compile} -std=c++11 -o ode.exe ode.cpp map_dyn.cpp model.cpp
+	${compile} -std=c++11 -o ${exename}.exe ode.cpp map_dyn.cpp model.cpp

@@ -308,24 +308,24 @@ int main(){
   pre_ode2map(&MM);       
   // Now get the initial configuration (t=0) of the system.
   iniconf(y);
-  // ode2map(double *y, double *vel, MM);
-  // map_one_iter(&y0[0],&vel[0],&MM);
   if (IsPathExist("data")){
     fnum = lastfilenum();  
   }else{
     system("exec mkdir data");
     fnum = 1;
   }
+  
   if(MM.iorbit){
     // The function use Newton-Raphson and calculate the nearest periodic orbit.
     // periodic_orbit(&y[0],&vel[0],&MM,fnum);
   }
+  
   if(MM.istab){
     if(MM.iorbit){
       cout << "I shall calculate the stability of the orbit." << endl;
       DerM = Jacobian(y,vel,&MM);
       VectorXcd eivals = DerM.eigenvalues();
-      cout << "The eigenvalues  are: " << endl << eivals << endl;
+      cout << "The eigenvalues are: " << endl << eivals << endl;
     }
     else{
       // First check whether you actually have the periodic orbit?
@@ -350,6 +350,7 @@ int main(){
         "If yes, use our periodic orbit solver to get nearest orbit to the guess." 
         "Set istab=0, iorbit=1" << endl;
       }
-    }
+    } 
   }
+
 }
