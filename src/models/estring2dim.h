@@ -38,5 +38,6 @@ void iniconf(double *y); 	// The configuration number is defined for different
 											// Initial configuration into the system.
 void rData(ifstream *fptr,double *y);
 void check_param();
+void write_param(string fname);
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */

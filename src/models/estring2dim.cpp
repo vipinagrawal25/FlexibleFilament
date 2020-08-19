@@ -432,3 +432,33 @@ void check_param(){
   }
 }
 /********************************************/
+void write_param( string fname ){
+  ofstream paramfile;
+  paramfile.open( fname );
+  paramfile << "# =========== Model Parameters ==========" << endl
+            << "#dimension of ODE: pp = " << pp << endl
+            << "#Number of copies: Np = " << Np << endl
+            << "height = " << height << endl
+            << "aa = " << aa << endl
+            << "dd = " << dd << endl
+            << "viscosity = " << viscosity << endl
+            << "Z0 = " << Z0 << endl
+            << "Famp = " << FFY0 << endl
+            << "sigma = " << sigma << endl
+            << "ShearRate = " << ShearRate << endl
+            << "omega = " << omega << endl
+            << "AA = " << AA << endl
+            << "HH = " << HH << endl
+            << "bcb = " << bcb << endl
+            << "bct = " << bct << endl
+            << "global_drag = " << UseRP << endl
+            << "iext_force = " << iext_force << endl
+            << "floc = " << floc << endl
+            << "iext_flow = " << iext_flow << endl
+            << "iniconf = " << iniconf << endl
+            << "KK = " << HH*dd*dd/AA << endl
+            << "Gamma = "<<  8*M_PI*viscosity*ShearRate*dd*dd*dd*height/AA << endl;
+
+  paramfile.close();  
+}
+/********************************************/
