@@ -8,6 +8,7 @@
 #include <math.h>
 #include <sstream>
 #include "constant.h"
+#include <sys/stat.h>
 /**************************/
 using namespace std;
 /**************************/
@@ -19,6 +20,7 @@ void getub(double *bk, vec2 *uk, int kp, vec2 X[]);
 int MatrixtoVector(int i, int j, int N);
 void GetRij(vec2 X[], int i, int j, double *Distance, vec2 *rij);
 void drag(vec2 X[], vec2 dX[], vec2 EForce[]);
+bool IsPathExist(const std::string &s);
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
 vec2 R[Np],dR[Np],EForce[Np],EForce_ip,FF0;  
@@ -306,7 +308,7 @@ void iniconf(double *y){
     if (lastfile){
       switch(wDataMeth){
         case 1:
-          l = "output/var";
+          if (IsPathExist("output")){l = "output/var";}else{l="var";}
           l.append(to_string(lastfile));
           l.append(".txt");
           myfile.open(l,ifstream::in); 
@@ -314,14 +316,14 @@ void iniconf(double *y){
           myfile.close();
           break;
         case 2:
-          l = "data/PSI";
-          l.append(to_string(lastfile));
+          if (IsPathExist("data")){l = "data/PSI";}else{l="PSI";}
+          // l.append(to_string(lastfile));
           myfile.open(l,ifstream::in);
           rData(&myfile,&y[0]);
           myfile.close();
           break;
         default:
-          cout << "Reading method not implemented" << endl;
+          cout << "Reading method not implemented." << endl;
           exit(1);
       }
     }
@@ -393,7 +395,7 @@ void rData(ifstream *fptr, double *y){
   string line,token;
   double num;
   istringstream iss;
-  switch(wDataMeth){
+  switch(rDataMeth){
     case 1:
       num=0.0;
       for(int ip = 0; ip < Np; ++ip){
@@ -458,7 +460,11 @@ void write_param( string fname ){
             << "iniconf = " << iniconf << endl
             << "KK = " << HH*dd*dd/AA << endl
             << "Gamma = "<<  8*M_PI*viscosity*ShearRate*dd*dd*dd*height/AA << endl;
-
   paramfile.close();  
 }
 /********************************************/
+// Move it to utilities
+bool IsPathExist(const std::string &s){
+  struct stat buffer;
+  return (stat (s.c_str(), &buffer) == 0);
+}
