@@ -25,9 +25,11 @@ void map_multiple_iter(double y[],double vel[], MV *MM);
 void map_multiple_iter(double y[][ndim],double vel[][ndim], MV *MM);
 double SqEr(double Arr1[], double Arr2[],int ndim);
 MatrixXd Jacobian(double x[], double vel[],MV *MM);
-bool IsPathExist(const std::string &s)__attribute__((weak));
+bool IsPathExist(const std::string &s);
 VectorXd arrtoVecXd(double arr[], int ndim);
 double* VecXdtoArr(VectorXd* arrvec, int ndim);
+bool IsOrbit(double y[],MV *aMM);
+write_map_param(MV *MM, string fname)
 /*-----------------------------------------------*/
 /*1) Prefix a means address to that particular varibale (avar -> address to var).
 */ 
@@ -43,7 +45,7 @@ void pre_ode2map(MV *MM){
   (*MM).time = 0.;    // Ignore for discrete map
   (*MM).dt = 1.e-5;   // Ignore for discrete map
   (*MM).period = 1.;
-  (*MM).iorbit = 2.;  // 0 if you already have the orbit, 
+  (*MM).iorbit = 1.;  // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Raphson
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
@@ -51,7 +53,6 @@ void pre_ode2map(MV *MM){
   (*MM).istab = 1.;
   (*MM).irel_orb = 0.;  // Do you want to search for relative periodic orbits?
                         // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
-  
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics for the time being.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses 
@@ -59,6 +60,18 @@ void pre_ode2map(MV *MM){
   // (*MM).tdiag = 0.;
   // (*MM).ldiag = 0.;
   // (*MM).ndiag = 1;
+  write_map_param(MM,"map_intials.txt");
+}
+/* -----------------------------------------------*/
+// Think of merging this function with write_param. 
+// An array containing the parameter names can be passed.
+void write_map_param(MV *MM, string fname){
+  ofstream pout(fname, ofstream::out);
+  pout << "# =========== Map Parameters ==========\n";
+  pout << "Period = " << MM.period << endl;
+  pout << "iorbit = " << MM.iorbit << endl;
+  pout << "istab = " << MM.istab << endl;
+  pout << "irel_orb = "<< MM.irel_orb << endl; 
 }
 /* -----------------------------------------------*/
 void periodic_orbit(double y[],double vel[], MV* aMM){
@@ -86,11 +99,7 @@ void periodic_orbit(double y[],double vel[], MV* aMM){
         // write data iff we found an orbit
         if(SqEr(fy[period+1],fy[0],ndim)<err_tol){
           cout << "Voila! you got the periodic orbit with period " << period << endl;
-          ofstream outfile("PSI", ofstream::out);
-          ofstream outfile_vel("VEL",ofstream::out);
           wData(fy,vel_all,period+1);                  // Code it in your model.cpp file 
-          outfile.close();
-          outfile_vel.close();
           return;
         }else{
           //get a new guess now and call periodic_orbit function again.
@@ -109,18 +118,13 @@ void periodic_orbit(double y[],double vel[], MV* aMM){
       break;
     case 2:
       memcpy(fy[0],y,ndim*sizeof(double));      // filling first row of fy[][] by initial guess.
-      map_multiple_iter(fy,vel_all,aMM);
-      ofstream outfile("PSI",ofstream::out);
-      ofstream outfile_vel("VEL",ofstream::out);
-
+      map_multiple_iter(fy,vel_all,aMM);      
       if (SqEr(fy[0],fy[period],ndim) < err_tol){
         cout << "Voila!!! You got the periodic orbit with period " << period << endl;
         wData(fy,vel_all,period+1);                  // Code it in your model.cpp file 
-        outfile.close();
-        outfile_vel.close();
         return;
       }
-
+      //
       for (int itry = 0; itry < MaxTry; ++itry){
         memcpy(fy_old,fy,ndim*(period+1)*sizeof(double));
         // Preparing fy for next iteration. 0th row is the starting point.
@@ -132,14 +136,10 @@ void periodic_orbit(double y[],double vel[], MV* aMM){
           if (SqEr(fy_old[iter],fy[iter],ndim)<err_tol){
             cout << "Voila!!! You got the periodic orbit with period " << period << endl;
             wData(fy,vel_all,period+1);                  // Code it in your model.cpp file 
-            outfile.close();
-            outfile_vel.close();
             return;
           }
         }
       }
-      outfile.close();
-      outfile_vel.close();
       break;
   }
 }
@@ -220,6 +220,19 @@ void map_one_iter(double *y, double *vel, MV* MM){
   }
   (*MM).dt=dt;
   (*MM).time=time;
+}
+/* ----------------------------------------------- */
+// function to find out whether given initial condition is a periodic orbit or not?
+bool IsOrbit(double y[],MV *aMM){
+  double vel[ndim],fy[ndim];
+  memcpy(fy,y,ndim*sizeof(double));
+  map_multiple_iter(fy,vel,aMM);
+  if (SqEr(fy,y,ndim)<err_tol){
+    return 1;
+  }
+  else{
+    return 0;
+  }
 }
 /*-----------------------------------------------*/
 template<typename T>
@@ -372,7 +385,7 @@ int main(){
   // Idea is to use the same code for periodic orbit and fixed point both.
   // Fixed point is a periodic orbit with time-period 1 for a map. 
   MV MM;
-  double vel[ndim],y[ndim],fy[ndim]; 
+  double vel[ndim],y[ndim]; 
   MatrixXd DerM(ndim,ndim);                 // This is better to allocate matrix.
   //Initialize them to zero.
   for (int idim = 0; idim < ndim; ++idim){
@@ -416,9 +429,7 @@ int main(){
       // First check whether you actually have the periodic orbit?
       cout << "Is it a periodic orbit?"
               " (if you don't want this, please comment it out in map_dyn.cpp) " << endl;
-      memcpy(fy,y,ndim*sizeof(double));
-      map_multiple_iter(fy,vel,&MM);
-      if(SqEr(y,fy,ndim)<err_tol){
+      if(IsOrbit(y,&MM)){
         cout << "Yes!!! It is a periodic orbit. I shall calculate stability now." << endl;
         DerM = Jacobian(y,vel,&MM);
         //
