@@ -305,6 +305,7 @@ void iniconf(double *y){
     double CurvLength = 0;   // determines the total length of the curve
     string l;
     ifstream myfile;
+    double theta=ini_theta;
     if (lastfile){
       switch(wDataMeth){
         case 1:
@@ -352,8 +353,8 @@ void iniconf(double *y){
           // In this case we implement the initial configuration for GI Taylor experiment. 
           // i.e. a straight rod which has length equal to the height of the box and free to move from bottom.
           for (int ip = 0; ip < Np; ++ip){
-              R[ip].x = 0;
-              R[ip].y = aa*double(ip);
+              R[ip].x = aa*double(ip)*sin(theta);
+              R[ip].y = aa*double(ip)*cos(theta);
               // cout << R[ip].z << endl ;
               y[2*ip] = R[ip].x;
               y[2*ip+1] = R[ip].y;
@@ -379,6 +380,17 @@ void iniconf(double *y){
           for (int ip = 0; ip < Np; ++ip){
               y[2*ip+1] = R[ip].y/CurvLength;
           }
+          break;
+        // case 3:
+        //   // The filament is rotated by some angle. theta=Pi/2 would mean a straight filament
+        //   // in the direction of the flow.
+        //   for (int ip = 0; ip < Np; ++ip){
+        //       R[ip].x = aa*double(ip)*cos(theta);
+        //       R[ip].y = aa*double(ip)*sin(theta);
+        //       // cout << R[ip].z << endl ;
+        //       y[2*ip] = R[ip].x;
+        //       y[2*ip+1] = R[ip].y;
+        //   }
           break;
       }
     }
@@ -467,4 +479,11 @@ void write_param( string fname ){
 bool IsPathExist(const std::string &s){
   struct stat buffer;
   return (stat (s.c_str(), &buffer) == 0);
+}
+/********************************************/
+void reduceSymmetry(double y[]){
+  // 1st is horizontal continuous symmetry
+  // 2nd is vertical continuous symmetry 
+  // 3rd is mix of previous two
+  // 4th is a discrete symmetry if the system is rotated by an angle of Pi/2
 }

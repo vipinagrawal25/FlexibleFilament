@@ -25,11 +25,11 @@ void map_multiple_iter(double y[],double vel[], MV *MM);
 void map_multiple_iter(double y[][ndim],double vel[][ndim], MV *MM);
 double SqEr(double Arr1[], double Arr2[],int ndim);
 MatrixXd Jacobian(double x[], double vel[],MV *MM);
-bool IsPathExist(const std::string &s);
+bool IsPathExist(const std::string &s)__attribute__((weak));
 VectorXd arrtoVecXd(double arr[], int ndim);
 double* VecXdtoArr(VectorXd* arrvec, int ndim);
 bool IsOrbit(double y[],MV *aMM);
-write_map_param(MV *MM, string fname)
+void write_map_param(MV *MM, string fname);
 /*-----------------------------------------------*/
 /*1) Prefix a means address to that particular varibale (avar -> address to var).
 */ 
@@ -45,7 +45,7 @@ void pre_ode2map(MV *MM){
   (*MM).time = 0.;    // Ignore for discrete map
   (*MM).dt = 1.e-5;   // Ignore for discrete map
   (*MM).period = 1.;
-  (*MM).iorbit = 1.;  // 0 if you already have the orbit, 
+  (*MM).iorbit = 0.;  // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Raphson
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
@@ -64,14 +64,14 @@ void pre_ode2map(MV *MM){
 }
 /* -----------------------------------------------*/
 // Think of merging this function with write_param. 
-// An array containing the parameter names can be passed.
+// An array/std::vector containing the parameter names can be passed.
 void write_map_param(MV *MM, string fname){
   ofstream pout(fname, ofstream::out);
   pout << "# =========== Map Parameters ==========\n";
-  pout << "Period = " << MM.period << endl;
-  pout << "iorbit = " << MM.iorbit << endl;
-  pout << "istab = " << MM.istab << endl;
-  pout << "irel_orb = "<< MM.irel_orb << endl; 
+  pout << "Period = " << MM -> period << endl;
+  pout << "iorbit = " << MM -> iorbit << endl;
+  pout << "istab = " << MM -> istab << endl;
+  pout << "irel_orb = "<< MM -> irel_orb << endl; 
 }
 /* -----------------------------------------------*/
 void periodic_orbit(double y[],double vel[], MV* aMM){
@@ -104,9 +104,11 @@ void periodic_orbit(double y[],double vel[], MV* aMM){
         }else{
           //get a new guess now and call periodic_orbit function again.
           MatrixXd GradF(ndim,ndim);
-          cout << "------------- Jacobian Calculation for next newton-raphson iteration: ------------- " 
+          cout << "------------- Jacobian Calculation for newton-raphson iteration: " << itry 
                << endl << endl;
           GradF = Jacobian(y,vel,aMM);
+          cout << "------------- Jacobian Calculation Completed ------------- " 
+               << endl << endl;
           // Convert fy[iter+1][] to vecXd to use Eigen.
           fyvec = arrtoVecXd(fy[period],ndim);
           // Take a new guess.
@@ -126,6 +128,7 @@ void periodic_orbit(double y[],double vel[], MV* aMM){
       }
       //
       for (int itry = 0; itry < MaxTry; ++itry){
+        cout << "------------- Starting next try: " << itry << endl << endl;
         memcpy(fy_old,fy,ndim*(period+1)*sizeof(double));
         // Preparing fy for next iteration. 0th row is the starting point.
         memcpy(fy[0],fy[period],ndim*sizeof(double));
@@ -181,11 +184,11 @@ void map_multiple_iter(double y[], double vel[], MV *aMM){
 /* ----------------------------------------------- */
 void map_multiple_iter(double fy[][ndim],double vel_all[][ndim], MV *aMM){
   double y[ndim],vel[ndim];
-  (*aMM).time=0;                                  // Set initial time to zero.
+  aMM->time=0;                                  // Set initial time to zero.
   int period = (*aMM).period;
   memcpy(y,fy[0],ndim*sizeof(double));
   for (int iter = 0; iter < period; ++iter){
-    cout << "# -------- iteration: " << iter << " started" << endl;
+    cout << "# -------- iteration: " << iter+1 << " started" << endl;
     map_one_iter(&y[0],&vel[0],aMM);
     memcpy(fy[iter+1],y,ndim*sizeof(double));
     memcpy(vel_all[iter+1],vel,ndim*sizeof(double));
@@ -199,8 +202,8 @@ void map_one_iter(double *y, double *vel, MV* MM){
   double Tmax = 1*2*M_PI/omega;  // We typically get this by defining Poincare section. 
                                  // which can depend on the initial condition, but not in this case.
   // The function for Poincare section should be defined in model.cpp file.
-  double time = (*MM).time;
-  double dt = (*MM).dt;
+  double time = MM->time;
+  double dt = MM->dt;
   double ldiag = 0;               //Theoretically it should be bool but both works.
   while(abs(time-Tmax)>time_tol){
     // Time-stepper should exactly stop at Tmax.
@@ -385,7 +388,7 @@ int main(){
   // Idea is to use the same code for periodic orbit and fixed point both.
   // Fixed point is a periodic orbit with time-period 1 for a map. 
   MV MM;
-  double vel[ndim],y[ndim]; 
+  double y[ndim],vel[ndim]; 
   MatrixXd DerM(ndim,ndim);                 // This is better to allocate matrix.
   //Initialize them to zero.
   for (int idim = 0; idim < ndim; ++idim){
@@ -394,7 +397,7 @@ int main(){
   // First define all the parameters.
   pre_ode2map(&MM);       
   // Now get the initial configuration (t=0) of the system.
-  iniconf(y);
+  iniconf(y);   // Implement a program for variable number of arguments.
   write_param("wparam.txt");
   if(MM.iorbit){
     if (IsPathExist("PSI")){

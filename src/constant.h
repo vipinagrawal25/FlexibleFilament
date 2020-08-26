@@ -5,7 +5,7 @@
 #define time_tol 1.e-9
 #define err_tol 1.e-6
 #define delta 1.e-4			
-#define wDataMeth 2	
+#define wDataMeth 1	
 #define rDataMeth 1		
 #define tiny pow(10,-15)
 //--------------------------//

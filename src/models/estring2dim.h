@@ -31,7 +31,9 @@ int const floc=Np-1;						// External force location
 int const iext_flow = 3;   					/* External flow: 1->shear rate changes as step function.
 						  					3-> Sine type shear rate.*/
 int const niniconf = 1;    	 				/* Configuration of the system at t = 0. 0 -> sine perturbation in the filament.
-											1 -> Straight filament, 2-> */
+											1 -> Straight filament, 2-> */ 
+int const ini_theta = M_PI/4;				// Angle the filament makes with vertical axes
+											// it can be used as a different parameter also.
 int const lastfile= 0;						// If you want to read input from some file, Mention the file number.
 /* ----------------------------------------*/
 void iniconf(double *y); 	// The configuration number is defined for different
