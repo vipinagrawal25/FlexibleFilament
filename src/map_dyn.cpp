@@ -55,7 +55,7 @@ void pre_ode2map(MV *MM){
                         // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics for the time being.
-  // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses 
+  // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses
   // Poincare section.
   // (*MM).tdiag = 0.;
   // (*MM).ldiag = 0.;
@@ -65,7 +65,7 @@ void pre_ode2map(MV *MM){
 /* -----------------------------------------------*/
 // Think of merging this function with write_param. 
 // An array/std::vector containing the parameter names can be passed.
-void write_map_param(MV *MM, string fname){
+void write_map_param(MV *MM, string fname){s
   ofstream pout(fname, ofstream::out);
   pout << "# =========== Map Parameters ==========\n";
   pout << "Period = " << MM -> period << endl;
@@ -84,7 +84,7 @@ void periodic_orbit(double y[],double vel[], MV* aMM){
   double fy[period+1][ndim], vel_all[period+1][ndim],fy_old[period+1][ndim];
   VectorXd fyvec(ndim),step(ndim);
   MatrixXd GradF(ndim,ndim);
-  int MaxTry = (int)MaxIter/period;      
+  int MaxTry = (int)MaxIter/period; 
   //
   switch(iorbit){
     case 0:
@@ -99,13 +99,13 @@ void periodic_orbit(double y[],double vel[], MV* aMM){
         // write data iff we found an orbit
         if(SqEr(fy[period+1],fy[0],ndim)<err_tol){
           cout << "Voila! you got the periodic orbit with period " << period << endl;
-          wData(fy,vel_all,period+1);                  // Code it in your model.cpp file 
+          wData(fy,vel_all,period+1);                  // Code it in your model.cpp file
           return;
         }else{
           //get a new guess now and call periodic_orbit function again.
           MatrixXd GradF(ndim,ndim);
-          cout << "------------- Jacobian Calculation for newton-raphson iteration: " << itry 
-               << endl << endl;
+          cout << "\n---- Jacobian Calculation for newton-raphson iteration: " << itry 
+               << "----" << endl;
           GradF = Jacobian(y,vel,aMM);
           cout << "------------- Jacobian Calculation Completed ------------- " 
                << endl << endl;
@@ -128,7 +128,7 @@ void periodic_orbit(double y[],double vel[], MV* aMM){
       }
       //
       for (int itry = 0; itry < MaxTry; ++itry){
-        cout << "------------- Starting next try: " << itry << endl << endl;
+        cout << "\n---------- Starting next try: " << itry << "----------" << endl;
         memcpy(fy_old,fy,ndim*(period+1)*sizeof(double));
         // Preparing fy for next iteration. 0th row is the starting point.
         memcpy(fy[0],fy[period],ndim*sizeof(double));
@@ -136,6 +136,8 @@ void periodic_orbit(double y[],double vel[], MV* aMM){
         // Now take the difference of every row of fy_old and fy. Stop the simulation
         // if you find any periodic orbit.
         for (int iter = 1; iter < period+1; ++iter){
+
+          cout << "Mean square distance: " << SqEr(fy_old[iter],fy[iter],ndim) << endl;
           if (SqEr(fy_old[iter],fy[iter],ndim)<err_tol){
             cout << "Voila!!! You got the periodic orbit with period " << period << endl;
             wData(fy,vel_all,period+1);                  // Code it in your model.cpp file 
@@ -174,6 +176,7 @@ MatrixXd Jacobian(double x[], double vel[], MV *aMM){
 // Wrapper function for map_multiple_iter.
 // it takes only one dimensional array as an input.
 void map_multiple_iter(double y[], double vel[], MV *aMM){
+  // Dignosis //
   (*aMM).time=0;
   int period = (*aMM).period;
   cout << "Starting map iteration" << endl;
@@ -193,14 +196,15 @@ void map_multiple_iter(double fy[][ndim],double vel_all[][ndim], MV *aMM){
     memcpy(fy[iter+1],y,ndim*sizeof(double));
     memcpy(vel_all[iter+1],vel,ndim*sizeof(double));
   }
-  cout << "# ------- Completed iterations.---------- "<< endl;
+  cout << "# ------- Completed iterations. "<< endl;
 }
 /* ----------------------------------------------- */
 void map_one_iter(double *y, double *vel, MV* MM){
   // This function convert ODE to map for 1 iteration. It also has flexibility to save a few 
   // intermediate points as well.
   double Tmax = 1*2*M_PI/omega;  // We typically get this by defining Poincare section. 
-                                 // which can depend on the initial condition, but not in this case.
+                                 // which can depend on the initial condition, but not in the case
+                                // Elastic string.
   // The function for Poincare section should be defined in model.cpp file.
   double time = MM->time;
   double dt = MM->dt;
@@ -266,7 +270,7 @@ bool IsPathExist(const std::string &s){
 // }
 /*-----------------------------------------------*/
 // Move it to utilities
-void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel){
+void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, MV* MM){
   switch(wDataMeth){
     case 1:
       for(int ip = 0; ip < Np; ++ip){
@@ -284,15 +288,17 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel){
       break;
 
     case 2:
+      (*fptr) << MM->time << "\t";
+      (*fptr_vel) << MM->time << "\t";
       for (int idim = 0; idim < ndim; ++idim){
         *fptr << y[idim] << "\t";
         *fptr_vel << vel[idim] << "\t";
       }
-      *fptr <<  "\n";
-      *fptr << "#------------------------------------------------#\n";
+      *fptr <<  endl;
+      *fptr << "#------------------------------------------------#" << endl;
 
-      *fptr_vel <<  "\n";
-      *fptr_vel << "#------------------------------------------------#\n";
+      *fptr_vel <<  endl;
+      *fptr_vel << "#------------------------------------------------#" << endl;
       break;
     default:
       cout << "Hey, your choice of writing data does not exist. "
@@ -304,7 +310,7 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel){
 /*-----------------------------------------------*/
 // Wrapper function for wData, in case y and vel contains multiple rows.
 // We do not pass the file pointer.
-void wData(double y[][ndim], double vel[][ndim], int nrow){
+void wData(double y[][ndim], double vel[][ndim], MV* aMM,int nrow){
   switch(wDataMeth){
     case 1:{
       // for (int irow = 0; irow < nrow; ++irow){
@@ -330,7 +336,7 @@ void wData(double y[][ndim], double vel[][ndim], int nrow){
       ofstream outfile("PSI",ofstream::out);
       ofstream outfile_vel("VEL",ofstream::out);
       for (int irow = 0; irow < nrow; ++irow){
-        wData(&outfile,&outfile_vel,y[irow],vel[irow]);
+        wData(&outfile,&outfile_vel,y[irow],vel[irow],aMM);
       }
       outfile.close();
       outfile_vel.close();
@@ -360,7 +366,6 @@ double SqEr(double Arr1[], double Arr2[],int nn){
   for (int cdim=0; cdim < nn; cdim++){
     error=error+(Arr2[cdim]-Arr1[cdim])*(Arr2[cdim]-Arr1[cdim]);
   }
-  // cdim is equal to number of dimension now.
   error = sqrt(error)/nn;
   return error;
 }
@@ -388,7 +393,7 @@ int main(){
   // Idea is to use the same code for periodic orbit and fixed point both.
   // Fixed point is a periodic orbit with time-period 1 for a map. 
   MV MM;
-  double y[ndim],vel[ndim]; 
+  double y[ndim],vel[ndim];
   MatrixXd DerM(ndim,ndim);                 // This is better to allocate matrix.
   //Initialize them to zero.
   for (int idim = 0; idim < ndim; ++idim){
@@ -398,9 +403,16 @@ int main(){
   pre_ode2map(&MM);       
   // Now get the initial configuration (t=0) of the system.
   iniconf(y);   // Implement a program for variable number of arguments.
+  //
+  /********** Diagnosis start **********/
+  // for (int i = 0; i < ndim; ++i){
+  //   cout << y[i] << " ";
+  // }
+  /********** Diagnosis end  **********/
+  //
   write_param("wparam.txt");
   if(MM.iorbit){
-    if (IsPathExist("PSI")){
+    if (IsPathExist("VEL")){
       cout << "There is already some data in the folder. I can not replace that.\n"
            << "Please remove the PSI & VEL and run the exec again. ";
       exit(1);

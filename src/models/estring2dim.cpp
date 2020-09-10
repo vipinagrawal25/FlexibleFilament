@@ -305,9 +305,11 @@ void iniconf(double *y){
     double CurvLength = 0;   // determines the total length of the curve
     string l;
     ifstream myfile;
-    double theta=ini_theta;
+    double theta=0;
+    double vdis=0;          // Define a parameter called middle point in model.h
+                            // that will take care of everything.
     if (lastfile){
-      switch(wDataMeth){
+      switch(rDataMeth){
         case 1:
           if (IsPathExist("output")){l = "output/var";}else{l="var";}
           l.append(to_string(lastfile));
@@ -353,8 +355,8 @@ void iniconf(double *y){
           // In this case we implement the initial configuration for GI Taylor experiment. 
           // i.e. a straight rod which has length equal to the height of the box and free to move from bottom.
           for (int ip = 0; ip < Np; ++ip){
-              R[ip].x = aa*double(ip)*sin(theta);
-              R[ip].y = aa*double(ip)*cos(theta);
+              R[ip].x = (aa*double(ip)-vdis*height)*sin(theta);
+              R[ip].y = (aa*double(ip)-vdis*height)*cos(theta);
               // cout << R[ip].z << endl ;
               y[2*ip] = R[ip].x;
               y[2*ip+1] = R[ip].y;
@@ -381,6 +383,9 @@ void iniconf(double *y){
               y[2*ip+1] = R[ip].y/CurvLength;
           }
           break;
+        default:
+          cout << "We have not implemented this initial configuration." << endl
+                << "EXITING" << endl;
         // case 3:
         //   // The filament is rotated by some angle. theta=Pi/2 would mean a straight filament
         //   // in the direction of the flow.
@@ -425,7 +430,7 @@ void rData(ifstream *fptr, double *y){
       }
       // Now convert all the tab separated entries to array.
       iss.str(line);
-      getline(iss, token, '\t');        // First entry is time, delete that.
+      // getline(iss, token, '\t');        // First entry is time, delete that.
       for (int idim = 0; idim < ndim; ++idim){
         getline(iss, token, '\t');       // Get next token.
         y[idim]=stod(token);            // Convert to double and store it in y.

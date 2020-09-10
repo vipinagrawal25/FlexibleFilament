@@ -4,9 +4,9 @@
 #define TimeScheme "rnkf45"
 #define time_tol 1.e-9
 #define err_tol 1.e-6
-#define delta 1.e-4			
-#define wDataMeth 1	
-#define rDataMeth 1		
+#define delta 1.e-4
+#define wDataMeth 2
+#define rDataMeth 2
 #define tiny pow(10,-15)
 //--------------------------//
 #endif
