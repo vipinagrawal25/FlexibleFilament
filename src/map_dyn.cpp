@@ -5,30 +5,24 @@
 #include "map_dyn.h"
 #include "math.h"
 #include <Eigen/Eigenvalues>
-#include <sys/stat.h>
 #include "constant.h"
 #include <memory.h>
 #include <cstdlib>
 #include <algorithm>
+#include <../util/misc.cpp>
 /* -----------------------------------------------*/
 using namespace std;
 using namespace Eigen;
 /* -----------------------------------------------*/
-void map_one_iter(double *y, double *vel, MV* MM);
+void map_one_iter(double *y, MV* MM);
 void pre_ode2map(MV* MM);
-void periodic_orbit(double y0[],double vel[], MV* MM);
-template<typename T>  // This type of function definition can take any variable type. 
-T abs(T value);       // Quite interesting, isn't it ?
+void periodic_orbit(double y0[], MV* MM);
 void wData(ofstream *fptr, ofstream *fptr_vel, double y[], double vel[]) __attribute__((weak));
 void wData(double fy[][ndim], double vel_all[][ndim], int row) __attribute__((weak));
-void map_multiple_iter(double y[],double vel[], MV *MM);
-void map_multiple_iter(double y[][ndim],double vel[][ndim], MV *MM);
-double SqEr(double Arr1[], double Arr2[],int ndim);
-MatrixXd Jacobian(double x[], double vel[],MV *MM);
-bool IsPathExist(const std::string &s)__attribute__((weak));
-VectorXd arrtoVecXd(double arr[], int ndim);
-double* VecXdtoArr(VectorXd* arrvec, int ndim);
-bool IsOrbit(double y[],MV *aMM);
+void map_multiple_iter(double y[], MV *MM);
+void map_multiple_iter(double y[][ndim], MV *MM);
+MatrixXd Jacobian(double x[],MV *MM);
+bool IsOrbit(double y[], MV *aMM);
 void write_map_param(MV *MM, string fname);
 /*-----------------------------------------------*/
 /*1) Prefix a means address to that particular varibale (avar -> address to var).
@@ -65,7 +59,7 @@ void pre_ode2map(MV *MM){
 /* -----------------------------------------------*/
 // Think of merging this function with write_param. 
 // An array/std::vector containing the parameter names can be passed.
-void write_map_param(MV *MM, string fname){s
+void write_map_param(MV *MM, string fname){
   ofstream pout(fname, ofstream::out);
   pout << "# =========== Map Parameters ==========\n";
   pout << "Period = " << MM -> period << endl;
@@ -74,14 +68,14 @@ void write_map_param(MV *MM, string fname){s
   pout << "irel_orb = "<< MM -> irel_orb << endl; 
 }
 /* -----------------------------------------------*/
-void periodic_orbit(double y[],double vel[], MV* aMM){
+void periodic_orbit(double y[], MV* aMM){
   // This function decide whether given initial condition is a periodic orbit or not.
   // If the initial point is not a periodic orbit, it uses the newton-raphson method 
   // to go to nearby guess.
   int iorbit = (*aMM).iorbit;
   int period = (*aMM).period;
   //
-  double fy[period+1][ndim], vel_all[period+1][ndim],fy_old[period+1][ndim];
+  double fy[period+1][ndim],fy_old[period+1][ndim];
   VectorXd fyvec(ndim),step(ndim);
   MatrixXd GradF(ndim,ndim);
   int MaxTry = (int)MaxIter/period; 
@@ -136,7 +130,6 @@ void periodic_orbit(double y[],double vel[], MV* aMM){
         // Now take the difference of every row of fy_old and fy. Stop the simulation
         // if you find any periodic orbit.
         for (int iter = 1; iter < period+1; ++iter){
-
           cout << "Mean square distance: " << SqEr(fy_old[iter],fy[iter],ndim) << endl;
           if (SqEr(fy_old[iter],fy[iter],ndim)<err_tol){
             cout << "Voila!!! You got the periodic orbit with period " << period << endl;
@@ -181,7 +174,7 @@ void map_multiple_iter(double y[], double vel[], MV *aMM){
   int period = (*aMM).period;
   cout << "Starting map iteration" << endl;
   for (int iter = 0; iter < period; ++iter){
-    map_one_iter(&y[0],&vel[0],aMM); 
+    map_one_iter(&y[0],&vel[0],aMM);
   }
 }
 /* ----------------------------------------------- */
@@ -241,33 +234,6 @@ bool IsOrbit(double y[],MV *aMM){
     return 0;
   }
 }
-/*-----------------------------------------------*/
-template<typename T>
-T abs(T value){
-  if (value>=0){
-    return value;
-  }else{
-    return value*(-1);
-  }
-}
-/*-----------------------------------------------*/
-// Move it to utilities
-bool IsPathExist(const std::string &s){
-  struct stat buffer;
-  return (stat (s.c_str(), &buffer) == 0);
-}
-/*-----------------------------------------------*/
-// Move it to utilities
-// int lastfilenum(){
-//   // Returns the last file number
-//  =1;
-//   string filename = "data/orbit1";
-//   while(IsPathExist(filename)){
-//     fnum=fnum+1;
-//     string filename = "data/orbit" + to_string(fnum);
-//   }
-//   return fnum;
-// }
 /*-----------------------------------------------*/
 // Move it to utilities
 void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, MV* MM){
@@ -360,38 +326,10 @@ void wData(double y[][ndim], double vel[][ndim], MV* aMM,int nrow){
   }
 }
 /*-----------------------------------------------*/
-// Move it to utilities
-double SqEr(double Arr1[], double Arr2[],int nn){
-  double error=0;
-  for (int cdim=0; cdim < nn; cdim++){
-    error=error+(Arr2[cdim]-Arr1[cdim])*(Arr2[cdim]-Arr1[cdim]);
-  }
-  error = sqrt(error)/nn;
-  return error;
-}
-/*-----------------------------------------------*/
-// Move it to utilities
-VectorXd arrtoVecXd(double arr[],int nn){
-  VectorXd arrvec(nn);
-  for (int idim = 0; idim < nn; ++idim){
-    arrvec << arr[idim];
-  }
-  return arrvec;
-}
-/*-----------------------------------------------*/
-// Move it to utilities
-double* VecXdtoArr(VectorXd* arrvec, int nn){
-  static double *arr {new double[nn]{}};
-  for (int idim = 0; idim < nn; ++idim){
-    arr[idim] = (*arrvec)(idim);
-  }
-  return arr;
-}
-/*-----------------------------------------------*/
 int main(){
   // Here I will define whether I am calling the code for fixed point or periodic orbits.
   // Idea is to use the same code for periodic orbit and fixed point both.
-  // Fixed point is a periodic orbit with time-period 1 for a map. 
+  // Fixed point is a periodic orbit with time-period 1 for a map.
   MV MM;
   double y[ndim],vel[ndim];
   MatrixXd DerM(ndim,ndim);                 // This is better to allocate matrix.
