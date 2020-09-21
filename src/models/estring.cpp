@@ -8,7 +8,7 @@
 #include<vector>
 #include <math.h>
 #include <sstream>
-
+/**************************/
 using namespace std;
 /**************************/
 void dHdR(int kp, vec3 X[], vec3* add_FF, double* add_kappasqr, bool flag_kappa);
@@ -390,19 +390,6 @@ void GetRij(vec3 R[], int i, int j, double *Distance, vec3 *rij){
   *rij = R[j] - R[i];
   double Dis = norm(R[j]-R[i]); 
   *Distance = Dis;
-}
-/********************************************/
-void rData(ifstream *fptr, double *y){
-  double num=0.0;
-  for(int ip = 0; ip < Np; ++ip){
-    *fptr >> y[3*ip];
-    *fptr >> y[3*ip+1];
-    *fptr >> y[3*ip+2];
-    // Now just throw away next three numbers as they contain values of velocity.
-    *fptr >> num;
-    *fptr >> num;
-    *fptr >> num;
-  }
 }
 /********************************************/
 void check_param(){

@@ -30,8 +30,8 @@ using namespace std;
 // }
 // /*********************************/
 // Wrapper function for rnkt4.
-void rnkt4(double *y, double *vel, double *add_time, double* add_dt){
-  double CurvSqr[ndim],SS[ndim];
+void rnkt4(double *y,double *add_time, double* add_dt){
+  double CurvSqr[ndim],SS[ndim],vel[ndim];
   double ldiagnos=0;
   // CurvSqr[0]=NULL;
   // SS[0]=NULL;
@@ -75,8 +75,8 @@ void rnkt4(unsigned int ndim, double *y, double *vel, double *add_time, double *
 }
 /*********************************/
 // Wrapper function for rnkf45.
-void rnkf45(double *y, double *vel, double *add_time, double* add_dt){
-  double CurvSqr[ndim],SS[ndim];
+void rnkf45(double *y, double *add_time, double* add_dt){
+  double CurvSqr[ndim],SS[ndim],vel[ndim];
   double ldiagnos=0;
   // CurvSqr[0]=NULL;
   // SS[0]=NULL;
