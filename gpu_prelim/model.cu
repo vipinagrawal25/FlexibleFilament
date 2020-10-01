@@ -589,7 +589,7 @@ void D2H(double ARR[], double dev_arr[], int Nsize){
   cudaMemcpy( ARR, dev_arr, Nsize*sizeof(double), cudaMemcpyDeviceToHost);
 }
 /*-------------------------------------------------------------------*/
-void wPSI ( double PSI[], double VEL[] ,double tau){
+void wPSI ( double PSI[], double VEL[] ,double tau ){
   // This is a very slow way to save file. I am opening same file again and
   // closing it. Let's just pass the file pointer to reduce the time."
   // FILE *fp = fopen( "data/PSI", "a" );

@@ -1,7 +1,14 @@
-#ifndef FILE_MAP_DYN_SEEN
-#define FILE_MAP_DYN_SEEN
+#include "model.h"
+#ifndef FILE_MAPDYN_SEEN
+#define FILE_MAPDYN_SEEN
 // #include "main.cu"
 #define MaxIter 256
+/*--------------------------------------------------*/
+void periodic_orbit(double y0[], double fyvec[]);
+bool IsOrbit(double y[]);
+void Jacobian(double DerM[][ndim],double x[]);
+void assign_map_param(void);
+void GG(double y[]);
 /*--------------------------------------------------*/
 struct MV{
   double time;    // Current time of the simulation
@@ -15,8 +22,6 @@ struct MV{
 };
 const int size_MV = 2*sizeof( double ) + 2*sizeof( int ) + 2*sizeof(bool);
 /*--------------------------------------------------*/
-void periodic_orbit(double y0[],double vel[], MV* MM);
-bool IsOrbit(double y[],MV *aMM);
-void Jacobian(double DerM[][ndim],double x[], double vel[],MV *MM);
+extern MV MM;					// Saying that MM exists globally
 /*--------------------------------------------------*/
-#endif /* !EVOLVE_SEEN */
+#endif /* !MAPDYN_SEEN */

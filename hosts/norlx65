@@ -1,3 +1,3 @@
-compile=g++ -I ${ES} -O2 -DNDEBUG -Wno-deprecated -Wno-unused-result 
+compile=g++ -I ${ES}/lib -O2 -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11
 #compile=pgc++ -std=c++0x -O3
 #compile=g++ -pg -O2

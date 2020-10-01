@@ -1,14 +1,11 @@
 #include <iostream>
 #include <fstream>
-#include "ode.h"
 #include "modules/2vec.h"
 #include "modules/2b2Tens.h"
 #include "model.h"
 #include <string>
 #include <math.h>
-#include <sstream>
 #include "constant.h"
-#include <sys/stat.h>
 /**************************/
 using namespace std;
 /**************************/
@@ -408,42 +405,6 @@ void GetRij(vec2 R[], int i, int j, double *Distance, vec2 *rij){
   *Distance = Dis;
 }
 /********************************************/
-void rData(ifstream *fptr, double *y){
-  string line,token;
-  double num;
-  istringstream iss;
-  switch(rDataMeth){
-    case 1:
-      num=0.0;
-      for(int ip = 0; ip < Np; ++ip){
-        *fptr >> y[2*ip];
-        *fptr >> y[2*ip+1];
-        // Now just throw away next two numbers as they contain values of velocity.
-        *fptr >> num;
-        *fptr >> num;
-      }
-      break;
-    case 2:
-      while( getline(*fptr,token) ){
-        line=token;
-        getline(*fptr,token);          // Dumping this: #---------
-      }
-      // Now convert all the tab separated entries to array.
-      iss.str(line);
-      // getline(iss, token, '\t');        // First entry is time, delete that.
-      for (int idim = 0; idim < ndim; ++idim){
-        getline(iss, token, '\t');       // Get next token.
-        y[idim]=stod(token);            // Convert to double and store it in y.
-      }
-      break;
-    default:
-      cout << "Hey, your choice of writing data does not exist. "
-              "If you want a new way, Code function: wData(ofstream *fptr, double y[], double vel[]) "
-              "in model.cpp file." << endl;
-      exit(1);
-  }
-}
-/********************************************/
 void check_param(){
   if (dd>aa){
     cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
@@ -478,12 +439,6 @@ void write_param( string fname ){
             << "KK = " << HH*dd*dd/AA << endl
             << "Gamma = "<<  8*M_PI*viscosity*ShearRate*dd*dd*dd*height/AA << endl;
   paramfile.close();  
-}
-/********************************************/
-// Move it to utilities
-bool IsPathExist(const std::string &s){
-  struct stat buffer;
-  return (stat (s.c_str(), &buffer) == 0);
 }
 /********************************************/
 void reduceSymmetry(double y[]){

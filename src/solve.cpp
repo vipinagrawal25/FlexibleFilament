@@ -1,7 +1,4 @@
 #include <iostream>
-#include<fstream>
-#include<stdlib.h>
-#include<stdio.h>
 #include<time.h>
 #include<math.h>
 #include<string>
@@ -11,9 +8,8 @@
 #include "input.h"
 #include <sys/stat.h>
 #include "constant.h"
-/********************************************/
-void wData(ofstream *fptr, double y[], double vel[]) __attribute__((weak));
-void check_param() __attribute__((weak));
+#include "IO.h"
+#include "misc.h"
 /********************************************/
 using namespace std;
 /* ----------------------------------------*/
@@ -124,7 +120,7 @@ int main(){
     eval_rhs(time,y0,vel,tdiagnos,CurvSqr,SS);
     ofstream outfile;
     outfile.open("output/var0.txt");
-    wData(&outfile,y0,vel);                   //Code it in your model.cpp file
+    wData(&outfile,&outfile,y0,vel);                   //Code it in your model.cpp
     outfile.close();
   } 
   // Initializing curv square and ss. It won't depend on the configuration number.
@@ -168,7 +164,7 @@ int main(){
       ofstream outfile;
       string l = "output/var" + to_string(filenumber) + ".txt";
       outfile.open(l, ios::out);
-      wData(&outfile,y,vel);
+      wData(&outfile,&outfile,y,vel);
       outfile.close(); 
       /* Call a function to write both diagnostic variable.*/
       outfile_curvature << time << '\t' ;
@@ -220,39 +216,4 @@ int main(){
   // cout << "The average change in the length of the rod is: " << sqrt(MSElen)/itn << endl;
 // cout << filenumber-1 << endl;
 //----------------------------
-}
-/******************************************************/
-void wData(ofstream *fptr, double y[], double vel[]){
-  switch(wDataMeth){
-    case 1:
-      for(int ip = 0; ip < Np; ++ip){
-        for (int jp = 0; jp < pp; ++jp){
-          *fptr << y[pp*ip+jp];
-          *fptr << '\t';
-        }
-        // Now just throw away next three numbers as they contain values of velocity.
-        for (int jp = 0; jp < pp; ++jp){
-          *fptr << vel[pp*ip+jp];
-          *fptr << '\t';
-        }
-        *fptr << '\n';
-      }
-      break;
-    case 2:
-      cout << "I am sorry. My developers are lazy and they have not developed "
-              "this method still. I don't know what to do with them. wDataMeth == 2 is not possible,"
-              "please choose another method in constant.h" << endl;
-              exit(1);
-              break;
-    default:
-      cout << "Hey, your choice of writing data does not exist. "
-              "If you want a new way, Code function: wData(ofstream *fptr, double y[], double vel[]) "
-              "in model.cpp file." << endl;
-      exit(1);
-  }
-}
-/******************************************************/
-void check_param(){
-  cout << "I believe all your model parameters are physical. Otherwise, define function: "
-          "void check_param() in model.cpp file" << endl;
 }

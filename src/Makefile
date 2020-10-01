@@ -1,11 +1,13 @@
 #compile=g++ -g -Wno-deprecated -std=c++0x
 # compile=g++ -pg -Wno-deprecated -Wno-unused-result -std=c++0x
 # CFLAGS=-pg -O3
-include ../host
+compile=g++ -I ${ES}/lib -O2 -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11
 exec=ode
 default:
-	${compile} -std=c++11 -o ${exec}.exe ode.cpp solve.cpp model.cpp
+	${compile} -o ${exec}.exe ode.cpp IO.cpp solve.cpp model.cpp
 clean:
 	rm -f *.o *.exe
 map_dyn:
-	${compile} -std=c++11 -o ${exec}.exe ode.cpp map_dyn.cpp model.cpp
+	${compile} -o ${exec}.exe IO.cpp misc.cpp NewtonKrylov.cpp MapDyn.cpp MapSolve.cpp model.cpp
+test1:
+	${compile} -o ${exec}.exe misc.cpp NewtonKrylov.cpp model.cpp test1.cpp MapDyn.cpp
