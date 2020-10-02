@@ -141,11 +141,13 @@ void rData(ifstream *fptr, double *y){
     case 1:
       num=0.0;
       for(int ip = 0; ip < Np; ++ip){
-        *fptr >> y[2*ip];
-        *fptr >> y[2*ip+1];
+        for (int jp = 0; jp < pp; ++jp){
+          *fptr >> y[2*ip];
+        }
         // Now just throw away next two numbers as they contain values of velocity.
-        *fptr >> num;
-        *fptr >> num;
+        for (int jp = 0; jp < pp; ++jp){
+          *fptr >> num;
+        }
       }
       break;
     case 2:

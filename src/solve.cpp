@@ -20,8 +20,8 @@ int main(){
   string lastline;
   int ldiagnos=0;
   int tdiagnos = 1;
-  // But these things are only for diagnostic purpose and it's too much hassle for someting that is not even important. 
-  // So we wil keep it in the wrong way, as most of time this would give right result.
+  // But these things are only for diagnostic purpose and it's too much hassle for someting that is not even 
+  // important. So we wil keep it in the wrong way, as most of time this would give right result.
   double dt_min = 10;
   // This gamma is non-dimensional number which describes the competition between viscous forces and elastic forces.
   //----------------------------
