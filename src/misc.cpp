@@ -9,7 +9,7 @@ double SqEr(double Arr1[], double Arr2[],int nn){
   for (int cdim=0; cdim < nn; cdim++){
     error=error+(Arr2[cdim]-Arr1[cdim])*(Arr2[cdim]-Arr1[cdim]);
   }
-  error = sqrt(error)/nn;
+  error = sqrt(error);
   return error;
 }
 /*-----------------------------------------------*/
@@ -18,21 +18,21 @@ bool IsPathExist(const std::string &s){
   return (stat (s.c_str(), &buffer) == 0);
 }
 /*-----------------------------------------------*/
-template<typename T>
-T abs(T value){
-  if (value>=0){
-    return value;
-  }else{
-    return value*(-1);
-  }
-}
+// template<typename T>
+// T abs(T value){
+//   if (value>=0){
+//     return value;
+//   }else{
+//     return value*(-1);
+//   }
+// }
 /******************************************************/
-void check_param(){
+void __attribute__((weak)) check_param(){
   cout << "I believe all your model parameters are physical. Otherwise, define function: "
           "void check_param() in model.cpp file" << endl;
 }
-/*-----------------------------------------------*/
-void write_param(string fname){
+// -----------------------------------------------
+void __attribute__((weak)) write_param(string fname){
   cout << "I can not find any implementation to write model parameters." 
           "Hence I will not write anything." << endl;
 }
@@ -50,6 +50,15 @@ void add(double *added, double *arr1, double *arr2, int nn ){
     added[ii] = arr1[ii] + arr2[ii];
   }
 }
+/*-----------------------------------------------*/
+double norm(double *y, int nn ){
+  double norr =0;
+  for (int ii = 0; ii < nn; ++ii){
+    norr = norr+y[ii]*y[ii];
+  }
+  return sqrt(norr);
+}
+/*-----------------------------------------------*/
 // template<typename T, typename ... Args>
 // T First(T first,Args ... args ){
 //   return first;

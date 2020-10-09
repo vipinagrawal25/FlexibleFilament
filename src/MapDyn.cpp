@@ -1,8 +1,7 @@
 #include <iostream>
-#include "ode.h"
 #include "model.h"
 #include "MapDyn.h"
-#include "math.h"
+#include <cmath>
 #include <sys/stat.h>
 #include "constant.h"
 #include <memory.h>
@@ -12,12 +11,13 @@
 #include <string>
 #include <fstream>
 #include "misc.h"
+#include "ode.h"
+#include <time.h> 
 /* -----------------------------------------------*/
 using namespace std;
 MV MM;            // Assigning globally
 /* -----------------------------------------------*/
 // void map_multiple_iter(double y[][ndim],double tAll);
-void map_multiple_iter(double y[]);
 void map_one_iter(double *y);
 void write_map_param(string fname);
 void rnkt4(double *y,double *add_time, double* add_dt) __attribute__((weak));
@@ -40,14 +40,14 @@ void assign_map_param(){
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-5;   // Ignore for discrete map
   MM.period = 1.;
-  MM.iorbit = 2.;  // 0 if you already have the orbit, 
+  MM.iorbit = 0.;     // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Raphson
                       // 2 for Newtom-Krylov method
                       // 3 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
   // It computes the eigenvalues and save them in the folder.
-  MM.istab = 0.;
-  MM.irel_orb = 0.;  // Do you want to search for relative periodic orbits?
+  MM.istab = 1.;
+  MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
                         // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics for the time being.
@@ -116,10 +116,26 @@ void periodic_orbit(double y[], double fy[]){
       break;
     case 2:
       // Implement NewtonKrylov method
-      newton_krylov(GG,y,fy,ndim);
-      // test(GG,y,fy,ndim);
-      add(fy,y,fy,ndim);
+      // if(IsOrbit(y)){
+    {
+      memcpy(fy,y,ndim*sizeof(double));
+      // print(fy,ndim);
+      map_multiple_iter(fy);
+      // print(fy,ndim);
+      if(SqEr(fy,y,ndim)/norm(y,ndim) < err_tol){
+      // if(0){
+          cout << "Voila! you got the periodic orbit with period " << period << endl;
+          cout << "I would go ahead and save it -:)" << endl;
+      }
+      else{
+        newton_krylov(GG,y,fy,ndim);
+        // test(GG,y,fy,ndim);
+        add(fy,y,fy,ndim);
+        cout << "Voila! you found the periodic orbit with period " << period << endl;
+        cout << "I would go ahead and save it -:)" << endl;
+      }
       break;
+    }
     case 3:
       memcpy(fy,y,ndim*sizeof(double));
       for (int itry = 0; itry < MaxTry; ++itry){
@@ -127,10 +143,13 @@ void periodic_orbit(double y[], double fy[]){
         memcpy(y,fy,ndim*sizeof(double));
         // Preparing fy for next iteration. 0th row is the starting point.
         map_multiple_iter(fy);
-        if (SqEr(fy,y,ndim)<err_tol){
-          return;
-        }
+        // if (SqEr(fy,y,ndim)/norm(y,ndim)<err_tol){
+        //   cout << "Voila! you found the periodic orbit with period " << period << endl;
+        //   cout << "I would go ahead and save it -:)" << endl;
+        //   return;
+        // }
       }
+
       break;
   }
 }
@@ -155,17 +174,6 @@ void Jacobian(double DerM[][ndim], double x[]){
     for (int jdim = 0; jdim < ndim; ++jdim){
       DerM[idim][jdim] = (yp[jdim]-yn[jdim])/(2*delta);
     }
-  }
-}
-/* ----------------------------------------------- */
-// Wrapper function for map_multiple_iter.
-// it takes only one dimensional array as an input.
-void map_multiple_iter(double y[]){
-  MM.time=0;
-  int period = MM.period;
-  cout << "Starting map iteration" << endl;
-  for (int iter = 0; iter < period; ++iter){
-    map_one_iter(&y[0]);
   }
 }
 /* ----------------------------------------------- */
@@ -194,13 +202,28 @@ void GG(double y[]){
   }
 }
 /* ----------------------------------------------- */
+// Wrapper function for map_multiple_iter.
+// it takes only one dimensional array as an input.
+void map_multiple_iter(double y[]){
+  MM.time=0;
+  int period = MM.period;
+  cout << "# Starting map iteration" << endl;
+  // clock_t timer=clock();
+  for (int iter = 0; iter < period; ++iter){
+    map_one_iter(&y[0]);
+  }
+  // timer = clock() - timer;
+  // double timeT = timer/CLOCKS_PER_SEC;
+  // cout << "Time taken by function: " << timeT << "seconds" << endl;
+}
+/* ----------------------------------------------- */
 void map_one_iter(double *y){
   if (SysType == "continuous"){
     // This function convert ODE to map for 1 iteration. It also has flexibility to save a few 
     // intermediate points as well.
-    double Tmax = 1*2*M_PI/omega;  // We typically get this by defining Poincare section. 
-                                   // which can depend on the initial condition, but not in the case
-                                  // Elastic string.
+    double Tmax = 1*2*M_PI/omega;   // We typically get this by defining Poincare section. 
+                                    // which can depend on the initial condition, but not in the case
+                                    // Elastic string.
     // The function for Poincare section should be defined in model.cpp file.
     double time = MM.time;
     double dt = MM.dt;
@@ -211,9 +234,9 @@ void map_one_iter(double *y){
         dt=Tmax-time;             
       }
       if(TimeScheme == "rnkt4"){
-        rnkt4(&y[0], &time, &dt);
+        rnkt4(y, &time, &dt);
       }else if ( TimeScheme == "rnkf45" ){
-        rnkf45(&y[0], &time, &dt);
+        rnkf45(y, &time, &dt);
       }else{
         printf( "Algorithm\t%s\t not coded \n", TimeScheme);
         printf( "EXITING \n " );
@@ -238,7 +261,7 @@ bool IsOrbit(double y[]){
   double fy[ndim];
   memcpy(fy,y,ndim*sizeof(double));
   map_multiple_iter(fy);
-  if (SqEr(fy,y,ndim)<err_tol){
+  if (SqEr(fy,y,ndim)/norm(y,ndim)<err_tol){
     return 1;
   }
   else{

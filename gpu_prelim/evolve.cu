@@ -490,7 +490,7 @@ bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
     (*TT).time = (*TT).time + (*TT).dt;
     (*TT).tprime = (*TT).time ;
     (*TT).substep = 0;
-    s = eps*pow((tol/maxErr),0.25);
+    s = eps*pow((tol/maxErr),0.20);
     // cout << s << endl;
     if (s>truncationmax){ s=truncationmax;}
     (*TT).dt=s*((*TT).dt);
@@ -499,7 +499,7 @@ bool rnkf45_time_step( EV* TT, EV *dev_tt, double maxErr){
     laccept=0;  
     (*TT).tprime = (*TT).time ;
     (*TT).substep = 0;
-    s = eps*pow((tol/maxErr),0.2);
+    s = eps*pow((tol/maxErr),0.25);
     if (s<truncationmin){s=truncationmin;}
     (*TT).dt = s*((*TT).dt);
     (*TT).ldiag = 0;

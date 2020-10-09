@@ -177,15 +177,14 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
       y[idim]=ynew[idim];   // Accept the step
       vel[idim]=k1[idim];
     }
-    s = epsilon*pow((tol_dt/error),0.25);
+    s = epsilon*pow((tol_dt/error),0.20);
     if (s>truncationmax){s=truncationmax;}
     *add_dt = s*dt;
     // cout << *add_dt << endl;
   }else{
-    s = epsilon*pow((tol_dt/error),0.2);
+    s = epsilon*pow((tol_dt/error),0.25);
     if (s<truncationmin){s=truncationmin;}
     *add_dt = s*dt;
-    // cout << "So you mean to say that the segmentation fault is here?" << endl;
     rnkf45(ndim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
 } 

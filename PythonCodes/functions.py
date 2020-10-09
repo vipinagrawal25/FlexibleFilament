@@ -409,3 +409,9 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
 
     print("I am done")
     return time, Vtracer
+
+    def reScale(file,factor,file2="downscale.txt",wDataMeth=1):
+    	dd = loadtxt(file);
+    	Nrows,Ncols = dd.shape
+    	dd2 = dd[0:factor:-1,:]
+    	return dd,dd2

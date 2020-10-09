@@ -6,6 +6,7 @@
 #include <string>
 #include <math.h>
 #include "constant.h"
+#include "IO.h"
 /**************************/
 using namespace std;
 /**************************/
@@ -17,7 +18,6 @@ void getub(double *bk, vec2 *uk, int kp, vec2 X[]);
 int MatrixtoVector(int i, int j, int N);
 void GetRij(vec2 X[], int i, int j, double *Distance, vec2 *rij);
 void drag(vec2 X[], vec2 dX[], vec2 EForce[]);
-bool IsPathExist(const std::string &s);
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
 vec2 R[Np],dR[Np],EForce[Np],EForce_ip,FF0;  
@@ -103,7 +103,6 @@ void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
     mu_ii = dab2b2*mu0;    // dab2b2 is the unit 2 dimensional tensor. It is defined in module/2b2Tens file.
     // PTens2(mu_ii);
     // rij = R[j]-R[i] and d_rij is just the norm of this value.
-
     for (int ip = 0; ip < Np; ++ip){
         // The mu_ij in the next line represents the mobility tensor when j is equal to i and in 
         // response to that the "for loop" is started from ip+1 .
@@ -298,34 +297,14 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
 /****************************************************/
 void iniconf(double *y){
     vec2 R[Np];              // R is the position of the beads.
-    double k = 1;            // determines the frequency for initial configuration
+    double k = 2;            // determines the frequency for initial configuration
     double CurvLength = 0;   // determines the total length of the curve
     string l;
-    ifstream myfile;
     double theta=0;
     double vdis=0;          // Define a parameter called middle point in model.h
                             // that will take care of everything.
-    if (lastfile){
-      switch(rDataMeth){
-        case 1:
-          if (IsPathExist("output")){l = "output/var";}else{l="var";}
-          l.append(to_string(lastfile));
-          l.append(".txt");
-          myfile.open(l,ifstream::in); 
-          rData(&myfile,&y[0]);
-          myfile.close();
-          break;
-        case 2:
-          if (IsPathExist("data")){l = "data/PSI";}else{l="PSI";}
-          // l.append(to_string(lastfile));
-          myfile.open(l,ifstream::in);
-          rData(&myfile,&y[0]);
-          myfile.close();
-          break;
-        default:
-          cout << "Reading method not implemented." << endl;
-          exit(1);
-      }
+    if (niniconf == -1){
+      rData(y,datafile);
     }
     else{
       switch(niniconf){
@@ -343,17 +322,17 @@ void iniconf(double *y){
             y[2*ip]=R[ip].x;
             y[2*ip+1]=R[ip].y;
             // Compute velocity here or in solve.cpp. It is just an evaluation of eval_rhs function.
-            for (int ip = 0; ip < Np; ++ip){
-              y[2*ip+1] = R[ip].y/CurvLength;
-            }
+          }
+          for (int idim = 0; idim < ndim; ++idim){
+            y[idim]   = y[idim]/CurvLength;
           }
           break;
         case 1:
           // In this case we implement the initial configuration for GI Taylor experiment. 
           // i.e. a straight rod which has length equal to the height of the box and free to move from bottom.
           for (int ip = 0; ip < Np; ++ip){
-              R[ip].x = (aa*double(ip)-vdis*height)*sin(theta);
-              R[ip].y = (aa*double(ip)-vdis*height)*cos(theta);
+              R[ip].x = (aa*double(ip+1)-vdis*height)*sin(theta);
+              R[ip].y = (aa*double(ip+1)-vdis*height)*cos(theta);
               // cout << R[ip].z << endl ;
               y[2*ip] = R[ip].x;
               y[2*ip+1] = R[ip].y;
@@ -447,3 +426,36 @@ void reduceSymmetry(double y[]){
   // 3rd is mix of previous two
   // 4th is a discrete symmetry if the system is rotated by an angle of Pi/2
 }
+/********************************************/
+// Just random things to use later
+ // switch(rDataMeth){
+      //   case 1:
+          // if (IsPathExist("output")){
+          //   l = "output/";
+          //   l.append(datafile);
+          // }else{
+          //   l=datafile;
+          // }
+      //     // l.append(to_string(lastfile));
+      //     // l.append(".txt");
+      //     myfile.open(l,ifstream::in);
+      //     rData(&myfile,&y[0]);
+      //     myfile.close();
+      //     cout << "Read data successfully from a file." << endl;
+      //     break;
+      //   case 2:
+      //     if (IsPathExist("data")){
+      //       l = "data/";
+      //       l.append(datafile);
+      //     }else{
+      //       l=datafile;
+      //     }
+      //     // l.append(to_string(lastfile));
+      //     myfile.open(l,ifstream::in);
+      //     rData(&myfile,&y[0]);
+      //     myfile.close();
+      //     break;
+      //   default:
+      //     cout << "Reading method not implemented." << endl;
+      //     exit(1);
+      // }

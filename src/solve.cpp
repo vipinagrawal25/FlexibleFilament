@@ -192,8 +192,8 @@ int main(){
       itn=itn+1;
     }
   }
-// timer = clock()-timer;
-  timer_global = clock()/CLOCKS_PER_SEC - timer_global;  
+  // timer = clock()-timer;
+  timer_global = clock()/CLOCKS_PER_SEC - timer_global;
   outfile_time.close();
   outfile_curvature.close();
   outfile_SS.close();

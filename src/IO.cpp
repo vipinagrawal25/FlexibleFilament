@@ -3,6 +3,8 @@
 #include "model.h"
 #include "constant.h"
 #include <sstream>
+#include <string>
+#include "misc.h"
 using namespace std;
 /*-----------------------------------------------*/
 void wData(ofstream *fptr, double *y, double time){
@@ -133,27 +135,43 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
 //   }
 // }
 /********************************************/
-void rData(ifstream *fptr, double *y){
+void rData(double *y, string filename){
   string line,token;
   double num;
   istringstream iss;
+  string l;
+  ifstream myfile;
   switch(rDataMeth){
     case 1:
+      if(IsPathExist("output")){
+        l = "output/";
+        l.append(filename);
+      }else{
+        l=filename;
+      }
+      myfile.open(l,ifstream::in);
       num=0.0;
       for(int ip = 0; ip < Np; ++ip){
         for (int jp = 0; jp < pp; ++jp){
-          *fptr >> y[2*ip];
+          myfile >> y[2*ip+jp];
         }
         // Now just throw away next two numbers as they contain values of velocity.
         for (int jp = 0; jp < pp; ++jp){
-          *fptr >> num;
+          myfile >> num;
         }
       }
+      myfile.close();
       break;
     case 2:
-      while( getline(*fptr,token) ){
+      if(IsPathExist("data")){
+        l = "data/";
+        l.append(filename);
+      }else{
+        l=filename;
+      }
+      while( getline(myfile,token) ){
         line=token;
-        getline(*fptr,token);          // Dumping this: #---------
+        getline(myfile,token);          // Dumping this: #---------
       }
       // Now convert all the tab separated entries to array.
       iss.str(line);
@@ -162,10 +180,11 @@ void rData(ifstream *fptr, double *y){
         getline(iss, token, '\t');       // Get next token.
         y[idim]=stod(token);            // Convert to double and store it in y.
       }
+      myfile.close();
       break;
     default:
       cout << "Hey, your choice of writing data does not exist. "
-              "If you want a new way, Code function: wData(ofstream *fptr, double y[], double vel[]) "
+              "If you want a new way, Code function: wData( double y[], string filename) "
               "in model.cpp file." << endl;
       exit(1);
   }

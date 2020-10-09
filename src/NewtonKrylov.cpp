@@ -1,5 +1,10 @@
+// 1) Use template to pass a type of structure. Let's say that the function GG(y,MV)
+// typename of second argument can be passed using typenamen and template.
+
 // This file implements Matrix-free Newton Krylov method of findign zeros using GMRES. 
 // We use predefined Eigen library and define a wrapper class to use GMRES in a matrix-free way.
+
+// We should make templates like JacobEig function.
 #include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -7,6 +12,7 @@
 #include <unsupported/Eigen/IterativeSolvers>
 #include "misc.h"
 #include "NewtonKrylov.h"
+#include <cmath>
 /*---------------------------------------------------------------------------- */
 double eps;
 using namespace std;
@@ -67,26 +73,18 @@ namespace internal {
     typedef typename Product<MatrixReplacement,Rhs>::Scalar Scalar;
     template<typename Dest>
     static void scaleAndAddTo(Dest& dst, const MatrixReplacement& lhs, const Rhs& rhs, const Scalar& alpha){
-      // This method should implement "dst += alpha * lhs * rhs" inplace,
-      // however, for iterative solvers, alpha is always equal to 1, so let's not bother about it.
-      // assert(alpha==Scalar(1) && "scaling is not implemented");
-      // EIGEN_ONLY_USED_FOR_DEBUG(alpha);
-      // Here we could simply call dst.noalias() += lhs.my_matrix() * rhs,
-      // VectorXd Xpos(lhs.rows());
-      // lhs.my_vec(&Xpos);
-      // VectorXd *Xpos = lhs.my_vec;
-      // VectorXd *Xneg = lhs.my_vec;
-      // &Xneg = &Xpos;
       VectorXd Xpos = *lhs.my_vec+eps*rhs;
       VectorXd Xneg = *lhs.my_vec-eps*rhs;
-      // cout << "Xpos = " << Xpos << endl;
-      // cout << "Xneg = " << Xneg << endl; 
+
       lhs.my_func(&Xpos);
       lhs.my_func(&Xneg);
       // cout << "Xpos new = " << Xpos << endl;
       // cout << "Xneg new= " << Xneg << endl; 
       VectorXd temp =  Xpos - Xneg;
-      dst.noalias() =  temp/(2*eps);
+      temp = temp/(2*eps);
+      // cout << "Jdotdu norm = " << temp.norm() << endl;
+      cout << "Jdotdu = " << temp << endl;
+      dst.noalias() =  temp;
       // for(Index i=0; i<lhs.cols(); ++i)
       //   dst += rhs(i) * lhs.my_matrix().col(i);
     }
@@ -100,15 +98,15 @@ namespace internal {
 // Find X* such that F(X*) = 0
 // aMM will contain every other parameter in a structure form, it should be passed to a function.
 // template<int Maxtry>
-void newton_krylov(void func(double*), double yini[], int ndim,
+void newton_krylov(void func(double*), double Xini[], int ndim,
                   int Maxtry, double tol, double eps_temp){
 	// input for Xstar is the initial guess.
   eps=eps_temp;
   MatrixReplacement AA;
   AA.f_display = func;
   double Err=1;
-  VectorXd Xstar = Map<VectorXd>( yini, ndim, 1 );
-  // Map<VectorXd> Xstar(yini,ndim);           // Converting double to VectorXd
+  VectorXd Xstar = Map<VectorXd>( Xini, ndim, 1 );
+  // Map<VectorXd> Xstar(Xini,ndim);           // Converting double to VectorXd
   VectorXd deltaX(ndim),bb(ndim);
   double *bbdoub;
   while(Err>tol){
@@ -121,36 +119,27 @@ void newton_krylov(void func(double*), double yini[], int ndim,
     func(bbdoub);
     bb = Map<VectorXd>(bbdoub,ndim,1);
     deltaX = gmres.solve(-bb);
-    Err = deltaX.norm()/Xstar.norm();
+    // Err = deltaX.norm()/Xstar.norm();
+    // Err = max(deltaX.norm()/ndim, deltaX.maxCoeff());
+    Err = (bb).norm()/Xstar.norm();
   }
-  yini = Xstar.data();
+  Xini = Xstar.data();
 } 
-// /*--------------------------------------*/
-// // Wrapper function
-// template <double Maxtry, double tol, double eps, typename T, typename ... Args>
-// double *newton_krylov(double Xstar, int ndim, double *func(), double *guess(), Args ... args){
-//   // If we get guess from a function.
-// }
-// --------------------------------------
-// // Wrapper function
-// template <double Maxtry, double tol, double eps, typename T, typename ... Args>
-// double *newton_krylov(double Xstar, int ndim, double *func(), void Gradient(), Args ... args){
-// 	// Xstar is the initial guess.
-// 	// In case gradient is retuned directly from a function. 
-// }
 /*-----------------------------------------------------------------------------*/
-// template<int Maxtry>
-void newton_krylov(void func(double*), double yini[], double gy[], int ndim,
+void newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
                   int Maxtry, double tol, double eps_temp){
   MatrixReplacement AA;
   AA.f_display = func;
   eps=eps_temp;
   double Err=1;
 
-  VectorXd Xstar = Map<VectorXd>( yini, ndim,1 );
+  VectorXd Xstar = Map<VectorXd>( Xini, ndim,1 );
   VectorXd deltaX(ndim),bb(ndim);
   double *bbdoub;
+  int itry=0;
   while(Err>tol){
+    itry++;
+    cout << "#Starting NewtonKrylov iteration: " << itry << endl;
     Xstar = Xstar+deltaX;
     AA.my_vec = &Xstar;
     GMRES<MatrixReplacement, IdentityPreconditioner> gmres;
@@ -159,26 +148,19 @@ void newton_krylov(void func(double*), double yini[], double gy[], int ndim,
     double *bbdoub = bb.data();
     func(bbdoub);
     bb = Map<VectorXd> (bbdoub,ndim,1);
+    cout << "bb Norm = " << bb.norm() << endl;
     deltaX = gmres.solve(-bb);
-    // cout << deltaX << endl;
-    Err = deltaX.norm()/Xstar.norm();
-    // cout << Err << endl;
+    // Err = deltaX.norm()/Xstar.norm();
+    // Err = max(deltaX.norm()/ndim, deltaX.maxCoeff());
+    Err = (bb).norm()/Xstar.norm();
+    cout << "#Finished NewtonKrylov iteration: " << itry << endl;
+    cout << "#Error = " << Err << endl;
   }
-  // yini = Xstar.data();
+  // Xini = Xstar.data();
   for (int idim = 0; idim < ndim; ++idim){
-    gy[idim] = bb(idim);
-    yini[idim] = Xstar(idim);
+    gx[idim] = bb(idim);
+    Xini[idim] = Xstar(idim);
   }
   // fy = bb.data();
-}
-/*-----------------------------------------------------------------------------*/
-void test(void func(double*), double yini[], double fy[], int ndim,
-          int Maxtry, double tol, double eps_temp){
-  VectorXd Xstar = Map<VectorXd>(yini, ndim,1);
-  // VectorXd Xstar(ndim);
-  // Xstar.data() = yini;
-  for (int idim = 0; idim < ndim-1; ++idim){
-    Xstar(idim) = Xstar(idim)+5;
-  }
 }
 /*-----------------------------------------------------------------------------*/

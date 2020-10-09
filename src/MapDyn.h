@@ -2,13 +2,14 @@
 #ifndef FILE_MAPDYN_SEEN
 #define FILE_MAPDYN_SEEN
 // #include "main.cu"
-#define MaxIter 256
+#define MaxIter 64
 /*--------------------------------------------------*/
 void periodic_orbit(double y0[], double fyvec[]);
 bool IsOrbit(double y[]);
 void Jacobian(double DerM[][ndim],double x[]);
 void assign_map_param(void);
 void GG(double y[]);
+void map_multiple_iter(double y[]);
 /*--------------------------------------------------*/
 struct MV{
   double time;    // Current time of the simulation
