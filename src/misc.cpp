@@ -38,8 +38,7 @@ void __attribute__((weak)) write_param(string fname){
 }
 /*-----------------------------------------------*/
 void print(double *arr, int nn){
-  for (int in = 0; in < nn; ++in)
-  {
+  for (int in = 0; in < nn; ++in){
       cout << arr[in] << " ";
   }
   cout << endl;

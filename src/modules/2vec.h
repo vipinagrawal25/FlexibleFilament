@@ -8,7 +8,7 @@ using namespace std;
 /*-------------------------*/
 class vec2{
 public:
-  double x,y,z;
+  double x,y;
   vec2();
   vec2(int,int);
   vec2(float,float);
@@ -51,14 +51,14 @@ vec2 vec2::operator-(vec2 param){
   temp.y = y-param.y;
   return(temp);
 }
-
+/*---------------------------------------*/
 vec2 vec2::operator*(double param){
   vec2 temp;
   temp.x=param*x;
   temp.y=param*y;
   return(temp);
 }
-
+/*---------------------------------------*/
 Tens2b2 vec2::operator*(vec2 param)
 {   
     // This is a direct product of 2 vectors. Assuming vec2 a column vector with 3 entries
@@ -74,26 +74,28 @@ Tens2b2 vec2::operator*(vec2 param)
 
     return(temp);
 }
-
+/*---------------------------------------*/
 vec2 vec2::operator/(double param){
   vec2 temp;
   temp.x=x/param;
   temp.y=y/param;
   return(temp);
 }
-
+/*---------------------------------------*/
 double dot(vec2 a, vec2 b){
   double temp;
   temp = a.x*b.x+a.y*b.y;
   return(temp);
 }
+/*---------------------------------------*/
 double cross(vec2 a, vec2 b){
   double temp;
   temp = a.x*b.y-a.y*b.x;
   return(temp);
 }
+/*---------------------------------------*/
 double norm(vec2 a){
-  return( sqrt( a.x*a.x+a.y*a.y) );}
+  return( sqrt( a.x*a.x+a.y*a.y) ); }
 /*---------------------------------------*/
 double sqnorm(vec2 a){
   return( a.x*a.x+a.y*a.y) ;}
@@ -110,4 +112,4 @@ vec2 dot(Tens2b2 a, vec2 b){
     return (temp);
 }
 /*---------------------------------------*/
-#endif /* !FILE_3vec_SEEN */
+#endif /* !FILE_2vec_SEEN */

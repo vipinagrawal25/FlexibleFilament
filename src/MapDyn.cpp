@@ -15,13 +15,15 @@
 #include <time.h> 
 /* -----------------------------------------------*/
 using namespace std;
-MV MM;            // Assigning globally
+MV MM;
 /* -----------------------------------------------*/
 // void map_multiple_iter(double y[][ndim],double tAll);
 void map_one_iter(double *y);
 void write_map_param(string fname);
 void rnkt4(double *y,double *add_time, double* add_dt) __attribute__((weak));
 void rnkf45(double *y,double *add_time, double* add_dt) __attribute__((weak));
+void eval_rhs(double *y) __attribute__((weak));
+// Define coordinate transform in model.cpp file, if you wish to.
 /*-----------------------------------------------*/
 /*1) Prefix a means address to that particular varibale (avar -> address to var).
   2) Idea is not to use Eigen/Spectra namespace anywhere in these files.
@@ -49,6 +51,7 @@ void assign_map_param(){
   MM.istab = 1.;
   MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
                         // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
+  MM.mapsize = Np;
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics for the time being.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses
@@ -158,21 +161,21 @@ void Jacobian(double DerM[][ndim], double x[]){
   // Take a small step in every direction and calculate the differences.
   // dy/dx = (f(x+dx) - f(x-dx))/2dx
   int period = MM.period;
-  double yp[ndim],yn[ndim];
+  double ypos[ndim],yneg[ndim];
   // MatrixXd DerM(ndim,ndim);
   for (int idim = 0; idim < ndim; ++idim){
     cout << "Starting calculation for row " << idim+1 << endl;
     // Calculation for f(x+dx)
-    memcpy(yp,x,ndim*sizeof(double));
-    yp[idim] = x[idim]+delta;
-    map_multiple_iter(yp);
+    memcpy(ypos,x,ndim*sizeof(double));
+    ypos[idim] = x[idim]+delta;
+    map_multiple_iter(ypos);
     // Calculation for f(x-dx)
-    memcpy(yn,x,ndim*sizeof(double));
-    yn[idim]=x[idim]-delta;
-    map_multiple_iter(yn);
+    memcpy(yneg,x,ndim*sizeof(double));
+    yneg[idim]=x[idim]-delta;
+    map_multiple_iter(yneg);
     //Calculation of the derivative
     for (int jdim = 0; jdim < ndim; ++jdim){
-      DerM[idim][jdim] = (yp[jdim]-yn[jdim])/(2*delta);
+      DerM[idim][jdim] = (ypos[jdim]-yneg[jdim])/(2*delta);
     }
   }
 }
@@ -202,7 +205,6 @@ void GG(double y[]){
   }
 }
 /* ----------------------------------------------- */
-// Wrapper function for map_multiple_iter.
 // it takes only one dimensional array as an input.
 void map_multiple_iter(double y[]){
   MM.time=0;
@@ -217,10 +219,12 @@ void map_multiple_iter(double y[]){
   // cout << "Time taken by function: " << timeT << "seconds" << endl;
 }
 /* ----------------------------------------------- */
-void map_one_iter(double *y){
+void map_one_iter(double *y_trans){
+  double y[ndim];
   if (SysType == "continuous"){
     // This function convert ODE to map for 1 iteration. It also has flexibility to save a few 
     // intermediate points as well.
+    inv_coordinate_transform(y,y_trans);
     double Tmax = 1*2*M_PI/omega;   // We typically get this by defining Poincare section. 
                                     // which can depend on the initial condition, but not in the case
                                     // Elastic string.
@@ -246,12 +250,15 @@ void map_one_iter(double *y){
     }
     MM.dt=dt;
     MM.time=time;
+    coordinate_transform(y_trans,y);
   }
   else if(SysType == "discrete"){
+    inv_coordinate_transform(y,y_trans);
     eval_rhs(y);
+    coordinate_transform(y_trans,y);
   }
   else{
-    cout << "ERROR: I don't know what is the system type" << endl;
+    cout << "ERROR: I don't know what is the system type." << endl;
     exit(1);
   }
 }
@@ -268,4 +275,7 @@ bool IsOrbit(double y[]){
     return 0;
   }
 }
+/*----------------------------------------------- */
+void coordinate_transform(double *y_trans, double *y){y_trans = y;}
+void inv_coordinate_transform(double *y,double *y_trans){y=y_trans;}
 /*----------------------------------------------- */

@@ -136,6 +136,16 @@ void getub(double *bk, vec2 *uk, int kp, vec2 X[]){
   *uk =dX/bb;
 }
 /**************************/
+void getub(double *bk, vec2 *uk, int kp, double *y){
+  vec2 dX;
+  dX.x = y[2*kp+2] - y[2*kp];
+  dX.y = y[2*kp+3] - y[2*kp+1];
+
+  double bb = norm(dX);
+  *bk = bb;
+  *uk =dX/bb;
+}
+/**************************/
 void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa){
   // This function calculates the force at every node which is a function of X, time.
   vec2 ukm2(0.,0.), ukm1(0.,0.), uk(0.,0.), ukp1(0.,0.), Xzero(0.,0.), dX(0.,0.);
@@ -248,7 +258,6 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
         cout << "Boundary condition at Np==NN-1 not implemented." << endl;
         cout << "Exiting" << endl;
         exit(1);
-
       }
       // *add_SS = (kp+1)*bkm1;
       break;
@@ -324,15 +333,15 @@ void iniconf(double *y){
             // Compute velocity here or in solve.cpp. It is just an evaluation of eval_rhs function.
           }
           for (int idim = 0; idim < ndim; ++idim){
-            y[idim]   = y[idim]/CurvLength;
+            y[idim] = y[idim]/CurvLength;
           }
           break;
         case 1:
           // In this case we implement the initial configuration for GI Taylor experiment. 
           // i.e. a straight rod which has length equal to the height of the box and free to move from bottom.
           for (int ip = 0; ip < Np; ++ip){
-              R[ip].x = (aa*double(ip+1)-vdis*height)*sin(theta);
-              R[ip].y = (aa*double(ip+1)-vdis*height)*cos(theta);
+              R[ip].x = (aa*double(ip)-vdis*height)*sin(theta);
+              R[ip].y = (aa*double(ip)-vdis*height)*cos(theta);
               // cout << R[ip].z << endl ;
               y[2*ip] = R[ip].x;
               y[2*ip+1] = R[ip].y;
@@ -361,17 +370,7 @@ void iniconf(double *y){
           break;
         default:
           cout << "We have not implemented this initial configuration." << endl
-                << "EXITING" << endl;
-        // case 3:
-        //   // The filament is rotated by some angle. theta=Pi/2 would mean a straight filament
-        //   // in the direction of the flow.
-        //   for (int ip = 0; ip < Np; ++ip){
-        //       R[ip].x = aa*double(ip)*cos(theta);
-        //       R[ip].y = aa*double(ip)*sin(theta);
-        //       // cout << R[ip].z << endl ;
-        //       y[2*ip] = R[ip].x;
-        //       y[2*ip+1] = R[ip].y;
-        //   }
+               << "EXITING" << endl;
           break;
       }
     }
@@ -420,42 +419,100 @@ void write_param( string fname ){
   paramfile.close();  
 }
 /********************************************/
-void reduceSymmetry(double y[]){
-  // 1st is horizontal continuous symmetry
-  // 2nd is vertical continuous symmetry 
-  // 3rd is mix of previous two
-  // 4th is a discrete symmetry if the system is rotated by an angle of Pi/2
+void straightline(vec2 *Tngt, vec2 *Nrml, char dirn = 'y'){
+  if (dirn=='y'){
+    Tngt -> x = 0;
+    Tngt -> y = 1;
+    Nrml -> x = 1;
+    Nrml -> y = 0;
+  }else{
+    cout<< "This function is called to set straightline in model.cpp file"
+           "Only 'y' direction is implemented. EXITING!! ";
+           exit(1);
+  }
 }
 /********************************************/
-// Just random things to use later
- // switch(rDataMeth){
-      //   case 1:
-          // if (IsPathExist("output")){
-          //   l = "output/";
-          //   l.append(datafile);
-          // }else{
-          //   l=datafile;
-          // }
-      //     // l.append(to_string(lastfile));
-      //     // l.append(".txt");
-      //     myfile.open(l,ifstream::in);
-      //     rData(&myfile,&y[0]);
-      //     myfile.close();
-      //     cout << "Read data successfully from a file." << endl;
-      //     break;
-      //   case 2:
-      //     if (IsPathExist("data")){
-      //       l = "data/";
-      //       l.append(datafile);
-      //     }else{
-      //       l=datafile;
-      //     }
-      //     // l.append(to_string(lastfile));
-      //     myfile.open(l,ifstream::in);
-      //     rData(&myfile,&y[0]);
-      //     myfile.close();
-      //     break;
-      //   default:
-      //     cout << "Reading method not implemented." << endl;
-      //     exit(1);
-      // }
+vec2 y2vec(double *y,int ip){
+  vec2 XX;
+  XX.x = y[2*ip];
+  XX.y = y[2*ip+1];
+  return XX;
+}
+/********************************************/
+void vec2y(double *y, vec2 XX, int ip){
+  y[2*ip] = XX.x;
+  y[2*ip+1] = XX.y;
+}
+/********************************************/
+void y2kappa(double kappa[], double y[]){
+  double bk, bkm1;
+  vec2 uk,ukm1;
+  if(bcb==1){
+    kappa[0]=0;
+    kappa[1]=0;
+  }
+  else{
+    cout << "Boundary condition at Np==0,1 not implemented." << endl;
+    cout << "Exiting" << endl;
+    exit(1);
+  }
+  //
+  if(bct==1){
+    kappa[Np-2]=0;
+    kappa[Np-1]=0;
+  }else{
+    cout << "Boundary condition at Np==0,1 not implemented." << endl;
+    cout << "Exiting" << endl;
+    exit(1);
+  }
+  //
+  getub(&bk,&uk,1,y);
+  for (int ip = 2; ip < Np-2; ++ip){
+    ukm1 = uk;
+    getub(&bk, &uk, ip, y);
+    kappa[ip] = cross(ukm1,uk);
+  }
+}
+/********************************************/
+void kappa2y(double y[], double kappa[]){
+  // Transformation from kappa to y goes here.
+  /* This is done using Frent-Serret equations.
+    dT/ds = \kappa N
+    dN/ds = -\kappa T
+  */
+  vec2 Tngt,Nrml,Tngtm1,Nrmlm1,XX;
+  double ds=aa;
+  vec2y(y,XX,0);
+  XX.x = 0;
+  XX.y = ds;
+  vec2y(y,XX,1);
+  if (bcb==1){
+    //vector from ip=0 to ip=1;
+    straightline(&Tngt,&Nrml);
+    straightline(&Tngtm1,&Nrmlm1);
+  }
+  for (int ip = 2; ip < Np-2; ++ip){
+    // ds = norm(y2vec(y,ip) - y2vec(y,ip-1));
+    Tngtm1 = Tngt;
+    Nrmlm1 = Nrml;
+    Tngt = Tngtm1 + Nrmlm1*kappa[ip-1]*ds;
+    Nrml = Nrmlm1 + Tngtm1*kappa[ip-1]*ds;
+    XX = XX + Tngt*ds;
+    vec2y(y,XX,ip);
+  }
+  if(bct==1){
+    // Curvature is zero here.
+    vec2y(y,XX+Tngt*ds,Np-2);
+    vec2y(y,XX+Tngt*ds*2,Np-1);
+  }
+}
+/********************************************/
+void coordinate_transform(double y_trans[], double y[]){
+  // I will write about the transformation from y to kappa here.
+  y2kappa(y_trans,y);
+}
+/********************************************/
+void inv_coordinate_transform(double y[],double y_trans[]){
+  // Transformation from kappa to y goes here.
+  kappa2y(y,y_trans);
+}

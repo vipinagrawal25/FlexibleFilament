@@ -291,7 +291,6 @@ def CurvatureSign(kappasqr,yy,zz,eps):
 	sign[2:NN-1]=cpdiff
 	return sign
 
-
 def GetCurv(Folder='output/',code='CPU',dim=2):
 	# This function will take the square root of curvature. Sign of the final thing would be decided
 	# by double derivative of the position vector. If the function is convex, curvature can be negative

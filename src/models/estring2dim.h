@@ -26,12 +26,12 @@ char const UseRP = 'N';						// Y is for the new one, O is for old one and N is 
 											// Rotne Pragor tensor.
 // This sets up the initial configuration of the system. For more information go through the Readme file.
 bool const bcb = 1 ;      					// Boundary condition at bottom, 0 means fixed, 1 means free.
-bool const bct = 1 ;       					// Boundary condition at top.
+bool const bct = 1 ;       					// Boundary condition at top. 1 means free.
 bool const iext_force = 0; 					// Whether to apply the external force or not
 int const floc=Np-1;						// External force location
 int const iext_flow = 3;   					/* External flow: 1->shear rate changes as step function.
 						  					3-> Sine type shear rate.*/
-int const niniconf = 0;    	 				/* Configuration of the system at t = 0. 0 -> sine perturbation in 
+int const niniconf = 1;    	 				/* Configuration of the system at t = 0. 0 -> sine perturbation in 
 											the  filament. 1 -> Straight filament, 2-> , -1 -> read from a file*/
 string const datafile = "PSI";				// If you want to read input from some file, Mention the file number.
 /* ----------------------------------------*/
@@ -40,7 +40,8 @@ void iniconf(double *y); 	// The configuration number is defined for different
 void rData(ifstream *fptr,double *y);
 void check_param();
 void write_param(string fname);
-void eval_rhs(double *y);
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]);
+void coordinate_transform(double *y_trans, double *y);
+void inv_coordinate_transform(double *y, double *y_trans);
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */
