@@ -100,16 +100,16 @@ double norm(vec2 a){
 double sqnorm(vec2 a){
   return( a.x*a.x+a.y*a.y) ;}
 /*---------------------------------------*/
-void PVec2(vec2 a){
+void Print(vec2 a){
   cout<<a.x<<"\t"<<a.y<<"\n";
 }
-
+/*---------------------------------------*/
 vec2 dot(Tens2b2 a, vec2 b){
-    vec2 temp;
-    temp.x = (a.xx)*(b.x)+(a.xy)*(b.y);
-    temp.y = (a.yx)*(b.x)+(a.yy)*(b.y);
+  vec2 temp;
+  temp.x = (a.xx)*(b.x)+(a.xy)*(b.y);
+  temp.y = (a.yx)*(b.x)+(a.yy)*(b.y);
 
-    return (temp);
+  return (temp);
 }
 /*---------------------------------------*/
 #endif /* !FILE_2vec_SEEN */

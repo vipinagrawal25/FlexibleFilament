@@ -206,25 +206,26 @@ void GG(double y[]){
 }
 /* ----------------------------------------------- */
 // it takes only one dimensional array as an input.
-void map_multiple_iter(double y[]){
+void map_multiple_iter(double y_trans[]){
   MM.time=0;
   int period = MM.period;
+  double y[ndim];
   cout << "# Starting map iteration" << endl;
   // clock_t timer=clock();
+  inv_coordinate_transform(y,y_trans);
   for (int iter = 0; iter < period; ++iter){
     map_one_iter(&y[0]);
   }
+  coordinate_transform(y_trans,y);
   // timer = clock() - timer;
   // double timeT = timer/CLOCKS_PER_SEC;
   // cout << "Time taken by function: " << timeT << "seconds" << endl;
 }
 /* ----------------------------------------------- */
-void map_one_iter(double *y_trans){
-  double y[ndim];
+void map_one_iter(double *y){
   if (SysType == "continuous"){
     // This function convert ODE to map for 1 iteration. It also has flexibility to save a few 
     // intermediate points as well.
-    inv_coordinate_transform(y,y_trans);
     double Tmax = 1*2*M_PI/omega;   // We typically get this by defining Poincare section. 
                                     // which can depend on the initial condition, but not in the case
                                     // Elastic string.
@@ -250,12 +251,9 @@ void map_one_iter(double *y_trans){
     }
     MM.dt=dt;
     MM.time=time;
-    coordinate_transform(y_trans,y);
   }
   else if(SysType == "discrete"){
-    inv_coordinate_transform(y,y_trans);
     eval_rhs(y);
-    coordinate_transform(y_trans,y);
   }
   else{
     cout << "ERROR: I don't know what is the system type." << endl;

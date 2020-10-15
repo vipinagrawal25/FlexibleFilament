@@ -18,6 +18,7 @@ void getub(double *bk, vec2 *uk, int kp, vec2 X[]);
 int MatrixtoVector(int i, int j, int N);
 void GetRij(vec2 X[], int i, int j, double *Distance, vec2 *rij);
 void drag(vec2 X[], vec2 dX[], vec2 EForce[]);
+vec2 y2vec(double *y,int ip);
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
 vec2 R[Np],dR[Np],EForce[Np],EForce_ip,FF0;  
@@ -136,15 +137,16 @@ void getub(double *bk, vec2 *uk, int kp, vec2 X[]){
   *uk =dX/bb;
 }
 /**************************/
-void getub(double *bk, vec2 *uk, int kp, double *y){
-  vec2 dX;
-  dX.x = y[2*kp+2] - y[2*kp];
-  dX.y = y[2*kp+3] - y[2*kp+1];
+// void getub(double *bk, vec2 *uk, vec2 X, vec2 Xpos){
+//   vec2 dX = Xpos-X;
+//   // dX = y2vec(y,kp+1)-y2vec(y,kp);
+//   // dX.x = y[2*kp+2] - y[2*kp];
+//   // dX.y = y[2*kp+3] - y[2*kp+1];
 
-  double bb = norm(dX);
-  *bk = bb;
-  *uk =dX/bb;
-}
+//   double bb = norm(dX);
+//   *bk = bb;
+//   *uk = dX/bb;
+// }
 /**************************/
 void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa){
   // This function calculates the force at every node which is a function of X, time.
@@ -187,7 +189,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
           // *add_SS = (kp+1)*bkm1;
       }
       else if(bcb==1){
-          FF = ( (uk/bk)*( dot(uk,ukp1) )  - (ukp1)/bk );
+          FF = ( (uk/bk)*( dot(uk,ukp1) )  - (ukp1)/bk ); 
           FF = FF*AA/aa;
           // Add an extra term for inextensibility constraint
           FF = FF + ( uk*(bk-aa))*HH/aa; 
@@ -311,35 +313,39 @@ void iniconf(double *y){
     string l;
     double theta=0;
     double vdis=0;          // Define a parameter called middle point in model.h
-                            // that will take care of everything.
+        // that will take care of everything.
+
     if (niniconf == -1){
       rData(y,datafile);
     }
     else{
       switch(niniconf){
         case 0:
-          for (int ip=0;ip<Np;ip++){
-            R[ip].x=aa*sin(M_PI*k*aa*double(ip+1)/height);
-            R[ip].y=aa*double(ip+1);
-            // R[ip].y = 0;    
-            if (ip>0){
-                CurvLength = CurvLength + norm(R[ip]-R[ip-1]);
-                // cout << CurvLength << endl;
-            }else{
-                CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y));
-            }
-            y[2*ip]=R[ip].x;
-            y[2*ip+1]=R[ip].y;
+          y[0]=0;
+          y[1]=0;
+          for (int ip=1;ip<Np;ip++){
+            R[ip].x=aa*sin(M_PI*k*aa*double(ip)/height);
+            R[ip].y=aa*double(ip);
+            CurvLength += norm(R[ip]-R[ip-1]);
+            y[2*ip] = R[ip].x;
+            y[2*ip+1] = R[ip].y;
+            // // R[ip].y = 0;    
+            // if (ip>0){
+            //     CurvLength = CurvLength + norm(R[ip]-R[ip-1]);
+            //     // cout << CurvLength << endl;
+            // }else{
+            //     CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y));
+            // }
             // Compute velocity here or in solve.cpp. It is just an evaluation of eval_rhs function.
-          }
+          } 
           for (int idim = 0; idim < ndim; ++idim){
-            y[idim] = y[idim]/CurvLength;
+            y[idim] = y[idim]*height/CurvLength;
           }
           break;
         case 1:
           // In this case we implement the initial configuration for GI Taylor experiment. 
           // i.e. a straight rod which has length equal to the height of the box and free to move from bottom.
-          for (int ip = 0; ip < Np; ++ip){
+          for (int ip = 1; ip < Np-1; ++ip){
               R[ip].x = (aa*double(ip)-vdis*height)*sin(theta);
               R[ip].y = (aa*double(ip)-vdis*height)*cos(theta);
               // cout << R[ip].z << endl ;
@@ -449,7 +455,7 @@ void y2kappa(double kappa[], double y[]){
   vec2 uk,ukm1;
   if(bcb==1){
     kappa[0]=0;
-    kappa[1]=0;
+    // kappa[1]=0;
   }
   else{
     cout << "Boundary condition at Np==0,1 not implemented." << endl;
@@ -458,7 +464,7 @@ void y2kappa(double kappa[], double y[]){
   }
   //
   if(bct==1){
-    kappa[Np-2]=0;
+    // kappa[Np-2]=0;
     kappa[Np-1]=0;
   }else{
     cout << "Boundary condition at Np==0,1 not implemented." << endl;
@@ -466,11 +472,14 @@ void y2kappa(double kappa[], double y[]){
     exit(1);
   }
   //
-  getub(&bk,&uk,1,y);
-  for (int ip = 2; ip < Np-2; ++ip){
+  vec2 dX = y2vec(y,1)-y2vec(y,0);
+  uk = dX/norm(dX);
+  // getub(&bk,&uk,y2vec(y,0),y2vec(y,1));
+  for (int ip = 1; ip < Np-1; ++ip){
     ukm1 = uk;
-    getub(&bk, &uk, ip, y);
-    kappa[ip] = cross(ukm1,uk);
+    dX = y2vec(y,ip+1)-y2vec(y,ip);
+    uk = dX/norm(dX);
+    kappa[ip] = 1/aa*cross(uk,ukm1);
   }
 }
 /********************************************/
@@ -480,31 +489,35 @@ void kappa2y(double y[], double kappa[]){
     dT/ds = \kappa N
     dN/ds = -\kappa T
   */
-  vec2 Tngt,Nrml,Tngtm1,Nrmlm1,XX;
   double ds=aa;
+  vec2 Tngt,Nrml,Tngtm1,Nrmlm1,XX;
   vec2y(y,XX,0);
-  XX.x = 0;
-  XX.y = ds;
-  vec2y(y,XX,1);
+  // XX.x = 0;
+  // XX.y = ds;
+  // vec2y(y,XX,1);
   if (bcb==1){
     //vector from ip=0 to ip=1;
     straightline(&Tngt,&Nrml);
     straightline(&Tngtm1,&Nrmlm1);
   }
-  for (int ip = 2; ip < Np-2; ++ip){
-    // ds = norm(y2vec(y,ip) - y2vec(y,ip-1));
+  for (int ip = 2; ip < Np; ++ip){
+    // ds = norm(Tngt)*aa;
     Tngtm1 = Tngt;
     Nrmlm1 = Nrml;
     Tngt = Tngtm1 + Nrmlm1*kappa[ip-1]*ds;
-    Nrml = Nrmlm1 + Tngtm1*kappa[ip-1]*ds;
-    XX = XX + Tngt*ds;
+    Tngt = Tngt/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
+    Nrml = Nrmlm1 - Tngtm1*kappa[ip-1]*ds;
+    Nrml = Nrml/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
+    XX = XX + Tngt;
     vec2y(y,XX,ip);
   }
-  if(bct==1){
-    // Curvature is zero here.
-    vec2y(y,XX+Tngt*ds,Np-2);
-    vec2y(y,XX+Tngt*ds*2,Np-1);
-  }
+  // if(bct==1){
+  //   // Curvature is zero here.
+  //   XX = XX+Tngt*ds;
+  //   vec2y(y,XX,Np-2);
+  //   XX = XX+Tngt*ds;
+  //   vec2y(y,XX,Np-1);
+  // }
 }
 /********************************************/
 void coordinate_transform(double y_trans[], double y[]){

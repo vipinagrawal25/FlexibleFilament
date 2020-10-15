@@ -3,12 +3,15 @@
 #include "misc.h"
 using namespace std;
 int main(){
-	double y[ndim],y_trans[Np],y2[ndim];
+	double y[ndim],kappa[Np],y2[ndim];
 	iniconf(y);
-	print(y,ndim);
-	coordinate_transform(y_trans, y);
-	print(y_trans,Np);
-	inv_coordinate_transform(y2, y_trans);
-	print(y2,ndim);
+	print(y,0,2,ndim);
+	print(y,1,2,ndim);
+	// coordinate_transform(kappa,y);
+	// print(kappa,Np);
+	// // print(y,Np);
+	// inv_coordinate_transform(y2,kappa);
+	// print(y2,0,2,ndim);
+	// print(y2,1,2,ndim);
 	return 0;
 }

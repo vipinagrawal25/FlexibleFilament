@@ -37,6 +37,13 @@ void __attribute__((weak)) write_param(string fname){
           "Hence I will not write anything." << endl;
 }
 /*-----------------------------------------------*/
+void print(double *arr, int start, int skip, int end){
+  for (int in = 0; in < int(end/skip); ++in){
+      cout << arr[skip*in+start] << " ";
+  }
+  cout << endl;
+}
+/*-----------------------------------------------*/
 void print(double *arr, int nn){
   for (int in = 0; in < nn; ++in){
       cout << arr[in] << " ";
@@ -47,6 +54,12 @@ void print(double *arr, int nn){
 void add(double *added, double *arr1, double *arr2, int nn ){
   for (int ii = 0; ii < nn; ++ii){
     added[ii] = arr1[ii] + arr2[ii];
+  }
+}
+/*-----------------------------------------------*/
+void substract(double *subsed, double *arr1, double *arr2, int nn ){
+  for (int ii = 0; ii < nn; ++ii){
+    subsed[ii] = arr1[ii] - arr2[ii];
   }
 }
 /*-----------------------------------------------*/

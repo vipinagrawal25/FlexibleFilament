@@ -6,7 +6,7 @@
 using namespace std;
 /* ----------------------------------------*/
 double const height = 1.28;					// height of the box we are doing simulations in.
-unsigned int const Np= 16;					// total number of points on the rod.
+unsigned int const Np= 256;					// total number of points on the rod.
 unsigned int const pp= 2;
 unsigned int const ndim=pp*Np;				
 double const aa = height/(double)(Np-1); 	// distance between two nodes.
@@ -31,7 +31,7 @@ bool const iext_force = 0; 					// Whether to apply the external force or not
 int const floc=Np-1;						// External force location
 int const iext_flow = 3;   					/* External flow: 1->shear rate changes as step function.
 						  					3-> Sine type shear rate.*/
-int const niniconf = 1;    	 				/* Configuration of the system at t = 0. 0 -> sine perturbation in 
+int const niniconf = -1;    	 				/* Configuration of the system at t = 0. 0 -> sine perturbation in 
 											the  filament. 1 -> Straight filament, 2-> , -1 -> read from a file*/
 string const datafile = "PSI";				// If you want to read input from some file, Mention the file number.
 /* ----------------------------------------*/
