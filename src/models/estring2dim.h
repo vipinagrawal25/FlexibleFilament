@@ -31,13 +31,12 @@ bool const iext_force = 0; 					// Whether to apply the external force or not
 int const floc=Np-1;						// External force location
 int const iext_flow = 3;   					/* External flow: 1->shear rate changes as step function.
 						  					3-> Sine type shear rate.*/
-int const niniconf = -1;    	 				/* Configuration of the system at t = 0. 0 -> sine perturbation in 
+int const niniconf = -1;    	 			/* Configuration of the system at t = 0. 0 -> sine perturbation in 
 											the  filament. 1 -> Straight filament, 2-> , -1 -> read from a file*/
-string const datafile = "PSI";				// If you want to read input from some file, Mention the file number.
+string const datafile = "var.txt";				// If you want to read input from some file, Mention the file number.
 /* ----------------------------------------*/
 void iniconf(double *y); 	// The configuration number is defined for different
 							// Initial configuration into the system.
-void rData(ifstream *fptr,double *y);
 void check_param();
 void write_param(string fname);
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]);

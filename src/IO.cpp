@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include "misc.h"
+#include "model.h"
 using namespace std;
 /*-----------------------------------------------*/
 void wData(ofstream *fptr, double *y, double time, int Npt, int ppt){
@@ -137,13 +138,17 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
 //   }
 // }
 /********************************************/
-void rData(double *y, string filename, int Npt, int ppt){
+void rData(double *y){
+  cout << "So it is not coming here now also ?" << endl;
+  int Npt=Np;
+  int ppt=pp;
   string line,token;
   double num;
   istringstream iss;
   string l;
   ifstream myfile;
   double ndimt = Npt*ppt;
+  string filename = datafile;
   switch(rDataMeth){
     case 1:
       if(IsPathExist("output")){

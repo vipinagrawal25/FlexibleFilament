@@ -307,79 +307,88 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
 }
 /****************************************************/
 void iniconf(double *y){
-    vec2 R[Np];              // R is the position of the beads.
-    double k = 2;            // determines the frequency for initial configuration
-    double CurvLength = 0;   // determines the total length of the curve
-    string l;
-    double theta=0;
-    double vdis=0;          // Define a parameter called middle point in model.h
-        // that will take care of everything.
-
-    if (niniconf == -1){
-      rData(y,datafile);
-    }
-    else{
-      switch(niniconf){
-        case 0:
-          y[0]=0;
-          y[1]=0;
-          for (int ip=1;ip<Np;ip++){
-            R[ip].x=aa*sin(M_PI*k*aa*double(ip)/height);
-            R[ip].y=aa*double(ip);
-            CurvLength += norm(R[ip]-R[ip-1]);
-            y[2*ip] = R[ip].x;
-            y[2*ip+1] = R[ip].y;
-            // // R[ip].y = 0;    
-            // if (ip>0){
-            //     CurvLength = CurvLength + norm(R[ip]-R[ip-1]);
-            //     // cout << CurvLength << endl;
-            // }else{
-            //     CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y));
-            // }
-            // Compute velocity here or in solve.cpp. It is just an evaluation of eval_rhs function.
-          } 
-          for (int idim = 0; idim < ndim; ++idim){
-            y[idim] = y[idim]*height/CurvLength;
-          }
-          break;
-        case 1:
-          // In this case we implement the initial configuration for GI Taylor experiment. 
-          // i.e. a straight rod which has length equal to the height of the box and free to move from bottom.
-          for (int ip = 1; ip < Np-1; ++ip){
-              R[ip].x = (aa*double(ip)-vdis*height)*sin(theta);
-              R[ip].y = (aa*double(ip)-vdis*height)*cos(theta);
-              // cout << R[ip].z << endl ;
-              y[2*ip] = R[ip].x;
-              y[2*ip+1] = R[ip].y;
-          }
-          break;
-        case 2:
-          // Santillian's experiment
-          // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. 
-          // The rod should be deviated a little bit from origin in starting.           
-          for (int ip = 0; ip < Np; ++ip){
-              R[ip].x = aa*(double(ip+1))-height*0.5;
-              R[ip].y = aa*sin(M_PI*k*aa*double(ip+1)/height);
-              if (ip>0){
-                CurvLength = CurvLength + norm(R[ip] - R[ip-1]);
-                  // cout << CurvLength << endl;
-              }
-              else{
-                CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y));
-              }
-              y[2*ip] = R[ip].x;
-              y[2*ip+1] = R[ip].y;
-          }
-          for (int ip = 0; ip < Np; ++ip){
-              y[2*ip+1] = R[ip].y/CurvLength;
-          }
-          break;
-        default:
-          cout << "We have not implemented this initial configuration." << endl
-               << "EXITING" << endl;
-          break;
+  vec2 R[Np];              // R is the position of the beads.
+  double k = 2;            // determines the frequency for initial configuration
+  double CurvLength = 0;   // determines the total length of the curve
+  string l;
+  double theta=0;
+  double vdis=0;           // Define a parameter called middle point in model.h
+                          // that will take care of everything
+  ifstream myfile;
+  double num=0.0;
+  switch(niniconf){
+    case -1:
+      myfile.open(datafile,ifstream::in);
+      for(int ip = 0; ip < Np; ++ip){
+        for (int jp = 0; jp < pp; ++jp){
+          myfile >> y[2*ip+jp];
+        }
+        // Now just throw away next two numbers as they contain values of velocity.
+        for (int jp = 0; jp < pp; ++jp){
+          myfile >> num;
+        }
       }
-    }
+      myfile.close();
+      break;
+    case 0:
+      y[0]=0;
+      y[1]=0;
+      for (int ip=1;ip<Np;ip++){
+        R[ip].x=aa*sin(M_PI*k*aa*double(ip)/height);
+        R[ip].y=aa*double(ip);
+        CurvLength += norm(R[ip]-R[ip-1]);
+        y[2*ip] = R[ip].x;
+        y[2*ip+1] = R[ip].y;
+        // // R[ip].y = 0;    
+        // if (ip>0){
+        //     CurvLength = CurvLength + norm(R[ip]-R[ip-1]);
+        //     // cout << CurvLength << endl;
+        // }else{
+        //     CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y));
+        // }
+        // Compute velocity here or in solve.cpp. It is just an evaluation of eval_rhs function.
+      } 
+      for (int idim = 0; idim < ndim; ++idim){
+        y[idim] = y[idim]*height/CurvLength;
+      }
+      break;
+    case 1:
+      // In this case we implement the initial configuration for GI Taylor experiment. 
+      // i.e. a straight rod which has length equal to the height of the box and free to move from bottom.
+      for (int ip = 1; ip < Np-1; ++ip){
+          R[ip].x = (aa*double(ip)-vdis*height)*sin(theta);
+          R[ip].y = (aa*double(ip)-vdis*height)*cos(theta);
+          // cout << R[ip].z << endl ;
+          y[2*ip] = R[ip].x;
+          y[2*ip+1] = R[ip].y;
+      }
+      break;
+    case 2:
+      // Santillian's experiment
+      // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. 
+      // The rod should be deviated a little bit from origin in starting.           
+      for (int ip = 0; ip < Np; ++ip){
+          R[ip].x = aa*(double(ip+1))-height*0.5;
+          R[ip].y = aa*sin(M_PI*k*aa*double(ip+1)/height);
+          if (ip>0){
+            CurvLength = CurvLength + norm(R[ip] - R[ip-1]);
+              // cout << CurvLength << endl;
+          }
+          else{
+            CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y));
+          }
+          y[2*ip] = R[ip].x;
+          y[2*ip+1] = R[ip].y;
+      }
+      for (int ip = 0; ip < Np; ++ip){
+          y[2*ip+1] = R[ip].y/CurvLength;
+      }
+      break;
+    default:
+      cout << "We have not implemented this initial configuration." << endl
+           << "EXITING" << endl;
+      break;
+  }
 }
 /********************************************/
 void GetRij(vec2 R[], int i, int j, double *Distance, vec2 *rij){
@@ -500,7 +509,7 @@ void kappa2y(double y[], double kappa[]){
     straightline(&Tngt,&Nrml);
     straightline(&Tngtm1,&Nrmlm1);
   }
-  for (int ip = 2; ip < Np; ++ip){
+  for (int ip = 1; ip < Np; ++ip){
     // ds = norm(Tngt)*aa;
     Tngtm1 = Tngt;
     Nrmlm1 = Nrml;
