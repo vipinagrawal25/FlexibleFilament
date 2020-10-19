@@ -98,7 +98,7 @@ namespace internal {
 // Find X* such that F(X*) = 0
 // aMM will contain every other parameter in a structure form, it should be passed to a function.
 // template<int Maxtry>
-void newton_krylov(void func(double*), double Xini[], int ndim,
+bool newton_krylov(void func(double*), double Xini[], int ndim,
                   int Maxtry, double tol, double eps_temp){
 	// input for Xstar is the initial guess.
   eps=eps_temp;
@@ -109,7 +109,9 @@ void newton_krylov(void func(double*), double Xini[], int ndim,
   // Map<VectorXd> Xstar(Xini,ndim);           // Converting double to VectorXd
   VectorXd deltaX(ndim),bb(ndim);
   double *bbdoub;
+  int itry=0;
   while(Err>tol){
+    itry++;
     Xstar = Xstar+deltaX;
     AA.my_vec = &Xstar;
     GMRES<MatrixReplacement, IdentityPreconditioner> gmres;
@@ -122,11 +124,15 @@ void newton_krylov(void func(double*), double Xini[], int ndim,
     // Err = deltaX.norm()/Xstar.norm();
     // Err = max(deltaX.norm()/ndim, deltaX.maxCoeff());
     Err = (bb).norm()/Xstar.norm();
+    if (itry>=Maxtry){return 0;}
   }
   Xini = Xstar.data();
+  if (Err<tol){
+      return 1;
+  }
 } 
 /*-----------------------------------------------------------------------------*/
-void newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
+bool newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
                   int Maxtry, double tol, double eps_temp){
   MatrixReplacement AA;
   AA.f_display = func;
@@ -155,11 +161,17 @@ void newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
     Err = (bb).norm()/Xstar.norm();
     cout << "#Finished NewtonKrylov iteration: " << itry << endl;
     cout << "#Error = " << Err << endl;
+    if(itry>=Maxtry){
+      return 0;
+    }
   }
   // Xini = Xstar.data();
   for (int idim = 0; idim < ndim; ++idim){
     gx[idim] = bb(idim);
     Xini[idim] = Xstar(idim);
+  }
+  if (Err<tol){
+    return 1;
   }
   // fy = bb.data();
 }

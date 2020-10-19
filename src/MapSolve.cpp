@@ -21,8 +21,8 @@ int main(){
   // Here I will define whether I am calling the code for fixed point or periodic orbits.
   // Idea is to use the same code for periodic orbit and fixed point both.
   // Fixed point is a periodic orbit with time-period 1 for a map.
-  int mapsize = MM.mapsize;
-  double y[ndim],y_trans[mapsize],fy_trans[mapsize];
+  int mapdim = MM.mapdim;
+  double y[ndim],y_trans[mapdim],fy_trans[mapdim];
   assign_map_param();
   // First define all the parameters.
   // Now get the initial configuration (t=0) of the system.
@@ -36,11 +36,18 @@ int main(){
            << "Please run make clean or remove the PSI and then run the exec again. ";
       exit(1);
     }else{
-      periodic_orbit(y_trans,fy_trans);
+      bool success = periodic_orbit(y_trans,fy_trans);
+      if(success){
+        cout << "Voila! you found the periodic orbit with period " << MM.period << endl;
+        cout << "I would go ahead and save it -:)" << endl;
+      }else{
+        cout << "The code to Newton Krylov did not converge. Here are the options: \n"
+             << "1) Change the initial guess. 2) Increase the number of trials" << endl;
+      }
       // Now save the data;
       ofstream outfile("PSI",ofstream::out);
-      wData(&outfile,y_trans,Np,1);
-      wData(&outfile,fy_trans,MM.time,Np,1);
+      wData(&outfile,y_trans,mapdim,1);
+      wData(&outfile,fy_trans,MM.time,mapdim,1);
     }
     // The function use Newton-Raphson and calculate the nearest periodic orbit.
   }
@@ -63,7 +70,6 @@ int main(){
 /*-----------------------------------------------*/
 void calc_stab(double *y, int const neigs){
   Vecc eigval(neigs);
-
   if(IsPathExist("eig") || IsPathExist("Eig")){
     cout << "I have already calculated the stability of this orbit."
             "There are already some eigenvalues in the folder. I can not replace that.\n"
@@ -73,7 +79,7 @@ void calc_stab(double *y, int const neigs){
  bool success = jacob_eigval<selectionRule>(&eigval,neigs,ndim,map_multiple_iter,y);
  if(!success){
     cout << "Sorry, there is something wrong." 
-            "I can not converge to make stability analysis in a matrix free way."
+            "I can not converge to perform stability analysis in a matrix free way."
             "I will calculate the complete Jacobian using finite-difference method with the error o(eps^2)" 
          << endl;
     // double DerM[ndim][ndim];

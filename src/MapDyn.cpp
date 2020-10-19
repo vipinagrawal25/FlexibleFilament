@@ -42,16 +42,15 @@ void assign_map_param(){
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-5;   // Ignore for discrete map
   MM.period = 1.;
-  MM.iorbit = 0.;     // 0 if you already have the orbit, 
-                      // 1 for calculating the orbit using Newton-Raphson
-                      // 2 for Newtom-Krylov method
-                      // 3 for letting the simulation evolve to a stable orbit.
+  MM.iorbit = 1.;     // 0 if you already have the orbit, 
+                      // 1 for calculating the orbit using Newton-Krylov
+                      // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
   // It computes the eigenvalues and save them in the folder.
-  MM.istab = 1.;
+  MM.istab = 0.;
   MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
                         // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
-  MM.mapsize = Np;
+  MM.mapdim = Np;
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics for the time being.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses
@@ -73,7 +72,7 @@ void write_map_param(string fname){
   pout << "irel_orb = "<< MM.irel_orb << endl; 
 }
 /* -----------------------------------------------*/
-void periodic_orbit(double y[], double fy[]){
+bool periodic_orbit(double y[], double fy[]){
   // This function decide whether given initial condition is a periodic orbit or not.
   // If the initial point is not a periodic orbit, it uses the newton-raphson method 
   // to go to nearby guess.
@@ -82,103 +81,60 @@ void periodic_orbit(double y[], double fy[]){
   //
   double step[ndim];
   int MaxTry = (int) MaxIter/period;
+  int mapdim = MM.mapdim;
   //
   switch(iorbit){
     case 0:
       break ;    // the code should never come here.
     case 1:
-      // newton_raphson(A function pointer which returns f(x), function to write gradient/gradient matrix, 
-      // initial guess, MaxNewtonStep);
-      // for (int itry = 0; itry < MaxTry; ++itry){
-      //   memcpy(fy[0],y,ndim*sizeof(double));      // Filling first row of fy[][] by initial guess.
-      //   // The multiple iter function will take care of one iteration running again and again.
-      //   // and saving the intermediate data as well. It is like overdo but needed,
-      //   // so that we do not commit silly mistakes of not initializing time to zero etc.
-      //   map_multiple_iter(fy,vel_all,aMM);
-      //   // write data iff we found an orbit
-      //   if(SqEr(fy[period+1],fy[0],ndim)<err_tol){
-      //     cout << "Voila! you got the periodic orbit with period " << period << endl;
-      //     wData("PSI",fy,period+1);                  // Code it in your model.cpp file
-      //     return;
-      //   }else{
-      //     //get a new guess now and call periodic_orbit function again.
-      //     MatrixXd GradF(ndim,ndim);
-      //     cout << "\n---- Jacobian Calculation for newton-raphson iteration: " << itry 
-      //          << "----" << endl;
-      //     GradF = Jacobian(y,vel,aMM);
-      //     cout << "------------- Jacobian Calculation Completed ------------- " 
-      //          << endl << endl;
-      //     // Convert fy[iter+1][] to vecXd to use Eigen.
-      //     fyvec = arrtoVecXd(fy[period],ndim);
-      //     // Take a new guess.
-      //     step = GradF.inverse() * fyvec;
-      //     // Now take step: y = y - step;
-      //     transform(y, y + ndim, VecXdtoArr(&step,ndim), y, minus<double>());
-      //   }
-      // }
-      break;
-    case 2:
-      // Implement NewtonKrylov method
-      // if(IsOrbit(y)){
     {
-      memcpy(fy,y,ndim*sizeof(double));
-      // print(fy,ndim);
+      memcpy(fy,y,mapdim*sizeof(double));
       map_multiple_iter(fy);
-      // print(fy,ndim);
-      if(SqEr(fy,y,ndim)/norm(y,ndim) < err_tol){
-      // if(0){
+      if(SqEr(fy,y,mapdim)/norm(y,mapdim) < err_tol){
           cout << "Voila! you got the periodic orbit with period " << period << endl;
           cout << "I would go ahead and save it -:)" << endl;
       }
       else{
-        newton_krylov(GG,y,fy,ndim);
-        // test(GG,y,fy,ndim);
-        add(fy,y,fy,ndim);
-        cout << "Voila! you found the periodic orbit with period " << period << endl;
-        cout << "I would go ahead and save it -:)" << endl;
+        bool success = newton_krylov(GG,y,fy,mapdim);
+        add(fy,y,fy,mapdim);
+        return success;
       }
       break;
     }
-    case 3:
-      memcpy(fy,y,ndim*sizeof(double));
+    case 2:
+      memcpy(fy,y,mapdim*sizeof(double));
       for (int itry = 0; itry < MaxTry; ++itry){
         cout << "\n---------- Starting next try: " << itry << "----------" << endl;
-        memcpy(y,fy,ndim*sizeof(double));
+        memcpy(y,fy,mapdim*sizeof(double));
         // Preparing fy for next iteration. 0th row is the starting point.
         map_multiple_iter(fy);
-        // if (SqEr(fy,y,ndim)/norm(y,ndim)<err_tol){
-        //   cout << "Voila! you found the periodic orbit with period " << period << endl;
-        //   cout << "I would go ahead and save it -:)" << endl;
-        //   return;
-        // }
       }
-
       break;
   }
 }
 /* ----------------------------------------------- */
-void Jacobian(double DerM[][ndim], double x[]){
-  // Take a small step in every direction and calculate the differences.
-  // dy/dx = (f(x+dx) - f(x-dx))/2dx
-  int period = MM.period;
-  double ypos[ndim],yneg[ndim];
-  // MatrixXd DerM(ndim,ndim);
-  for (int idim = 0; idim < ndim; ++idim){
-    cout << "Starting calculation for row " << idim+1 << endl;
-    // Calculation for f(x+dx)
-    memcpy(ypos,x,ndim*sizeof(double));
-    ypos[idim] = x[idim]+delta;
-    map_multiple_iter(ypos);
-    // Calculation for f(x-dx)
-    memcpy(yneg,x,ndim*sizeof(double));
-    yneg[idim]=x[idim]-delta;
-    map_multiple_iter(yneg);
-    //Calculation of the derivative
-    for (int jdim = 0; jdim < ndim; ++jdim){
-      DerM[idim][jdim] = (ypos[jdim]-yneg[jdim])/(2*delta);
-    }
-  }
-}
+// void Jacobian(double DerM[][ndim], double x[]){
+//   // Take a small step in every direction and calculate the differences.
+//   // dy/dx = (f(x+dx) - f(x-dx))/2dx
+//   int period = MM.period;
+//   double ypos[ndim],yneg[ndim];
+//   // MatrixXd DerM(ndim,ndim);
+//   for (int idim = 0; idim < ndim; ++idim){
+//     cout << "Starting calculation for row " << idim+1 << endl;
+//     // Calculation for f(x+dx)
+//     memcpy(ypos,x,ndim*sizeof(double));
+//     ypos[idim] = x[idim]+delta;
+//     map_multiple_iter(ypos);
+//     // Calculation for f(x-dx)
+//     memcpy(yneg,x,ndim*sizeof(double));
+//     yneg[idim]=x[idim]-delta;
+//     map_multiple_iter(yneg);
+//     //Calculation of the derivative
+//     for (int jdim = 0; jdim < ndim; ++jdim){
+//       DerM[idim][jdim] = (ypos[jdim]-yneg[jdim])/(2*delta);
+//     }
+//   }
+// }
 /* ----------------------------------------------- */
 // void map_multiple_iter(double fy[][ndim],double tAll[]){
 //   double y[ndim];
@@ -197,10 +153,11 @@ void Jacobian(double DerM[][ndim], double x[]){
 /* ----------------------------------------------- */
 // G(x) = f(x) - x;
 void GG(double y[]){
-  double fy[ndim];
-  memcpy(fy,y,ndim*sizeof(double));
+  int mapdim = MM.mapdim;
+  double fy[mapdim];
+  memcpy(fy,y,mapdim*sizeof(double));
   map_multiple_iter(fy);
-  for (int idim = 0; idim < ndim; ++idim){
+  for (int idim = 0; idim < mapdim; ++idim){
     y[idim] = fy[idim]-y[idim];
   }
 }
@@ -213,6 +170,7 @@ void map_multiple_iter(double y_trans[]){
   cout << "# Starting map iteration" << endl;
   // clock_t timer=clock();
   inv_coordinate_transform(y,y_trans);
+  cout << "Where is the issue? "<< endl;
   for (int iter = 0; iter < period; ++iter){
     map_one_iter(&y[0]);
   }
@@ -263,10 +221,11 @@ void map_one_iter(double *y){
 /*----------------------------------------------- */
 // function to find out whether given initial condition is a periodic orbit or not?
 bool IsOrbit(double y[]){
-  double fy[ndim];
-  memcpy(fy,y,ndim*sizeof(double));
+  int mapdim = MM.mapdim; 
+  double fy[mapdim];
+  memcpy(fy,y,mapdim*sizeof(double));
   map_multiple_iter(fy);
-  if (SqEr(fy,y,ndim)/norm(y,ndim)<err_tol){
+  if (SqEr(fy,y,mapdim)/norm(y,mapdim)<err_tol){
     return 1;
   }
   else{

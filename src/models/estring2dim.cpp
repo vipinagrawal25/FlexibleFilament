@@ -159,15 +159,17 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
     // If the bottom point is fixed, then it can not move.
     Xzero.x=0.; Xzero.y=0.;      
   }
-  /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be fixed in general.
-  But for some cases like the implementation of the taylor experiment, we want this to be free. For this I am implementing 
-  Xzero based on the configuration. Since finally with this function we just want to calculate the force on particular node. 
+  /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be 
+  fixed in general. But for some cases like the implementation of the taylor experiment, we want this to be free. 
+  For this I am implementing Xzero based on the configuration. 
+  Since finally with this function we just want to calculate the force on particular node. 
   So we can just change the way we calculate force on 1st and 2nd node for different configuration.*/
 
-  /* One thing should be noted that now the expression inside case 0 and case 1 would change depending upon the configuration.
-  Suppose if XZero is taken as the fixed point, then we dont need to calculate F^{0} but only F^{1} which would be implemented
-  in case 0 because Xzero is the bottom most point for which we dont care to calculate the force and X[0] is the first point 
-  being implemented in case 0. Though for a different configuration these things should be changed.*/
+  /* One thing should be noted that now the expression inside case 0 and case 1 would change depending upon 
+  the configuration. Suppose if XZero is taken as the fixed point, then we dont need to calculate F^{0} 
+  but only F^{1} which would be implemented in case 0 because Xzero is the bottom most point for 
+  which we dont care to calculate the force and X[0] is the first point being implemented in case 0. 
+  Though for a different configuration these things should be changed.*/
   switch(kp){
     case 0:
       getub(&bk, &uk, kp, X);
@@ -307,13 +309,14 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
 }
 /****************************************************/
 void iniconf(double *y){
+  // Merge all three cases into 1;
   vec2 R[Np];              // R is the position of the beads.
   double k = 2;            // determines the frequency for initial configuration
   double CurvLength = 0;   // determines the total length of the curve
   string l;
   double theta=0;
   double vdis=0;           // Define a parameter called middle point in model.h
-                          // that will take care of everything
+                           // that will take care of everything
   ifstream myfile;
   double num=0.0;
   switch(niniconf){
@@ -339,14 +342,6 @@ void iniconf(double *y){
         CurvLength += norm(R[ip]-R[ip-1]);
         y[2*ip] = R[ip].x;
         y[2*ip+1] = R[ip].y;
-        // // R[ip].y = 0;    
-        // if (ip>0){
-        //     CurvLength = CurvLength + norm(R[ip]-R[ip-1]);
-        //     // cout << CurvLength << endl;
-        // }else{
-        //     CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y));
-        // }
-        // Compute velocity here or in solve.cpp. It is just an evaluation of eval_rhs function.
       } 
       for (int idim = 0; idim < ndim; ++idim){
         y[idim] = y[idim]*height/CurvLength;
@@ -365,7 +360,7 @@ void iniconf(double *y){
       break;
     case 2:
       // Santillian's experiment
-      // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. 
+    // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. 
       // The rod should be deviated a little bit from origin in starting.           
       for (int ip = 0; ip < Np; ++ip){
           R[ip].x = aa*(double(ip+1))-height*0.5;
@@ -464,7 +459,6 @@ void y2kappa(double kappa[], double y[]){
   vec2 uk,ukm1;
   if(bcb==1){
     kappa[0]=0;
-    // kappa[1]=0;
   }
   else{
     cout << "Boundary condition at Np==0,1 not implemented." << endl;
@@ -504,29 +498,23 @@ void kappa2y(double y[], double kappa[]){
   // XX.x = 0;
   // XX.y = ds;
   // vec2y(y,XX,1);
-  if (bcb==1){
+  // if (bcb==1){
     //vector from ip=0 to ip=1;
-    straightline(&Tngt,&Nrml);
-    straightline(&Tngtm1,&Nrmlm1);
-  }
+  straightline(&Tngt,&Nrml);
+  straightline(&Tngtm1,&Nrmlm1);
+  // }
   for (int ip = 1; ip < Np; ++ip){
-    // ds = norm(Tngt)*aa;
     Tngtm1 = Tngt;
     Nrmlm1 = Nrml;
     Tngt = Tngtm1 + Nrmlm1*kappa[ip-1]*ds;
-    Tngt = Tngt/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
+    // Tngt = Tngt/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
+    Tngt = Tngt/(norm(Tngt)+tiny);
     Nrml = Nrmlm1 - Tngtm1*kappa[ip-1]*ds;
-    Nrml = Nrml/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
-    XX = XX + Tngt;
+    // Nrml = Nrml/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
+    Nrml = Nrml/(norm(Nrml)+tiny);
+    XX = XX + Tngt*ds;
     vec2y(y,XX,ip);
   }
-  // if(bct==1){
-  //   // Curvature is zero here.
-  //   XX = XX+Tngt*ds;
-  //   vec2y(y,XX,Np-2);
-  //   XX = XX+Tngt*ds;
-  //   vec2y(y,XX,Np-1);
-  // }
 }
 /********************************************/
 void coordinate_transform(double y_trans[], double y[]){

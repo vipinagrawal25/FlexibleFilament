@@ -11,15 +11,15 @@ struct MV{
   int iorbit;
   bool istab;		// Do you want to calculate the stability of the orbit?
   bool irel_orb;
-  int mapsize;
+  int mapdim;
   // int ndiag;
   // int ldiag;
 };
 const int size_MV = 2*sizeof( double ) + 3*sizeof( int ) + 2*sizeof(bool);
 /*--------------------------------------------------*/
-void periodic_orbit(double y0[], double fyvec[]);
+bool periodic_orbit(double y0[], double fyvec[]);
 bool IsOrbit(double y[]);
-void Jacobian(double DerM[][ndim],double x[]);
+// void Jacobian(double DerM[][ndim],double x[]);
 void assign_map_param(void);
 void GG(double y[]);
 void map_multiple_iter(double y[]);
