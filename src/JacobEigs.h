@@ -62,8 +62,6 @@ public:
       for (int i = 0; i < rows(); ++i){
         y_out[i] = (Xpos[i] - Xneg[i])/(2*eps);
       }
-      // VectorXd temp =  (Xpos - Xneg)/(2*eps);
-      // y_out = temp.data();
     }
 private:
 };
@@ -82,6 +80,7 @@ public:
     double eps;
     /*----------------*/
     void perform_op(const double *x_in, double *y_out){
+      cout << "Arnoldi iteration " << iter << " for eigenvalues." << endl;
       double Xpos[rows()],Xneg[rows()];
       // Map<VectorXd> rhs(x_in,rows());   // rhs due to same terminology as Eigen.
       // VectorXd Xpos = Xstar+eps*rhs;
@@ -95,11 +94,13 @@ public:
       for (int i = 0; i < rows(); ++i){
         y_out[i] = (Xpos[i] - Xneg[i])/(2*eps);
       }
+      iter++;
       // VectorXd temp =  (Xpos - Xneg)/(2*eps);
       // y_out = temp.data();
     }
     /*----------------*/
 private:
+  int iter=1;
   // void my_func(VectorXd *vec){ 
   //   double *vecdoub = (*vec).data();
   //   f_display(vecdoub);
@@ -121,7 +122,7 @@ private:
 
 //   GenEigsSolver< double, SelectionRule, JdotX<T> > eigs(&op, neigs, 2*neigs+1);
 //   eigs.init();
-//   eigs.compute();
+//   eigs.compute(ndim,1.e-2);
 //   if(eigs.info() == SUCCESSFUL){
 //       return 1;
 //       VectorXd eigval_vec = eigs.eigenvalues();
@@ -134,17 +135,18 @@ private:
 // }
 // /*--------------------------------------------------------------------------*/
 template<int const SelectionRule>
-bool jacob_eigvalvec(VectorXcd *eigval, MatrixXcd *eigvec, int neigs, int ndim,
-                     void func(double*), double Xini[], double eps_temp=1.e-4){
+bool jacob_eigvalvec(VectorXcd *eigval, MatrixXcd *eigvec, int neigs, int ndim,void func(double*), 
+                     double Xini[], double eps_temp=1.e-4){
   JdotX op;
   op.Xstar = Xini;
   op.f_display = func;
   op.nn = ndim;
   op.eps = eps_temp;
 
-  GenEigsSolver< double, SelectionRule, JdotX > eigs(&op, neigs, 2*neigs+1);
+  int ncv = max(2*neigs+1,ndim);
+  GenEigsSolver< double, SelectionRule, JdotX > eigs(&op, neigs, ncv);
   eigs.init();
-  eigs.compute();
+  eigs.compute(ndim,1.e-2);
   if(eigs.info() == SUCCESSFUL){
     *eigval = eigs.eigenvalues();
     *eigvec = eigs.eigenvectors();
@@ -165,9 +167,10 @@ bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*, T*)
   op.aTV = TV;
   op.eps = eps_temp;
 
-  GenEigsSolver< double, selectionRule, T_JdotX<T> > eigs(&op, neigs, 2*neigs+1);
+  int ncv = max(2*neigs+1,ndim);
+  GenEigsSolver< double, selectionRule, T_JdotX<T> > eigs(&op, neigs, ncv);
   eigs.init();
-  eigs.compute();
+  eigs.compute(ndim,1.e-2);
 
   if(eigs.info() == SUCCESSFUL){
     *eigval = eigs.eigenvalues();
@@ -189,9 +192,10 @@ bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*),
   op.nn = ndim;
   op.eps=eps_temp;
 
-  GenEigsSolver< double, selectionRule, JdotX > eigs(&op, neigs, 2*neigs+1);
+  int ncv = min(2*neigs+1,ndim);
+  GenEigsSolver< double, selectionRule, JdotX > eigs(&op, neigs, ncv);
   eigs.init();
-  eigs.compute();
+  int nconv = eigs.compute(ndim,1.e-2);
 
   if(eigs.info() == SUCCESSFUL){
     *eigval = eigs.eigenvalues();

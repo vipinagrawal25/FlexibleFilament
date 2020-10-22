@@ -6,7 +6,7 @@
 using namespace std;
 /* ----------------------------------------*/
 double const height = 1.28;					// height of the box we are doing simulations in.
-unsigned int const Np= 256;					// total number of points on the rod.
+unsigned int const Np= 32;					// total number of points on the rod.
 unsigned int const pp= 2;
 unsigned int const ndim=pp*Np;				
 double const aa = height/(double)(Np-1); 	// distance between two nodes.
@@ -20,7 +20,7 @@ double const sigma=0.75;
 double const ShearRate = 2;
 double const omega = ShearRate*sigma;
 // double const AA = 1.5*pow(10,-5)*pow(height,4)*100;
-double const AA = 1.5*pow(10,-5)*pow(height,4)*200;
+double const AA = 1.5*pow(10,-5)*pow(height,4)*400;
 double const HH = 16*AA/(dd*dd);			// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
 char const UseRP = 'N';						// Y is for the new one, O is for old one and N is for not using 
 											// Rotne Pragor tensor.
@@ -31,7 +31,7 @@ bool const iext_force = 0; 					// Whether to apply the external force or not
 int const floc=Np-1;						// External force location
 int const iext_flow = 3;   					/* External flow: 1->shear rate changes as step function.
 						  					3-> Sine type shear rate.*/
-int const niniconf = -1;    	 			/* Configuration of the system at t = 0. 0 -> sine perturbation in 
+int const niniconf = 1;    	 			/* Configuration of the system at t = 0. 0 -> sine perturbation in 
 										the  filament. 1 -> Straight filament, 2-> , -1 -> read from a file*/
 string const datafile = "var2.txt";			// If you want to read input from some file, Mention the file number.
 /* ----------------------------------------*/

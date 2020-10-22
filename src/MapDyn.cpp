@@ -40,14 +40,14 @@ void assign_map_param(){
   // "n" time period.
   /* Set up parameters for map iteration */
   MM.time = 0.;    // Ignore for discrete map
-  MM.dt = 1.e-5;   // Ignore for discrete map
+  MM.dt = 1.e-4;   // Ignore for discrete map
   MM.period = 1.;
-  MM.iorbit = 1.;     // 0 if you already have the orbit, 
+  MM.iorbit = 0.;     // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
   // It computes the eigenvalues and save them in the folder.
-  MM.istab = 0.;
+  MM.istab = 1.;
   MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
                         // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
   MM.mapdim = Np;
@@ -58,7 +58,14 @@ void assign_map_param(){
   // (*MM).tdiag = 0.;
   // (*MM).ldiag = 0.;
   // (*MM).ndiag = 1;
-  write_map_param("map_intials.txt");
+  int suffix = 1;
+  string filename = "map_intials";
+  string filename_temp = filename+".txt";
+  // while(IsPathExist(filename_temp)){
+  //   suffix++;
+  //   filename_temp = filename + to_string(suffix) + ".txt"; 
+  // }
+  write_map_param(filename_temp);
 }
 /* -----------------------------------------------*/
 // Think of merging this function with write_param. 
@@ -69,7 +76,8 @@ void write_map_param(string fname){
   pout << "Period = " << MM.period << endl;
   pout << "iorbit = " << MM.iorbit << endl;
   pout << "istab = " << MM.istab << endl;
-  pout << "irel_orb = "<< MM.irel_orb << endl; 
+  pout << "irel_orb = "<< MM.irel_orb << endl;
+  pout << "mapdim = "<< MM.mapdim << endl;
 }
 /* -----------------------------------------------*/
 bool periodic_orbit(double y[], double fy[]){
@@ -85,22 +93,21 @@ bool periodic_orbit(double y[], double fy[]){
   //
   switch(iorbit){
     case 0:
-      break ;    // the code should never come here.
+      break ;       //The code should never come here.
     case 1:
-    {
       memcpy(fy,y,mapdim*sizeof(double));
       map_multiple_iter(fy);
-      if(SqEr(fy,y,mapdim)/norm(y,mapdim) < err_tol){
-          cout << "Voila! you got the periodic orbit with period " << period << endl;
-          cout << "I would go ahead and save it -:)" << endl;
-      }
-      else{
+      // if(0){
+      if(SqEr(fy,y,mapdim)/mapdim < err_tol){
+        cout << SqEr(fy,y,mapdim)/mapdim << endl;
+        bool success = 1;
+        return success;
+      }else{
         bool success = newton_krylov(GG,y,fy,mapdim);
         add(fy,y,fy,mapdim);
         return success;
       }
       break;
-    }
     case 2:
       memcpy(fy,y,mapdim*sizeof(double));
       for (int itry = 0; itry < MaxTry; ++itry){
@@ -170,9 +177,8 @@ void map_multiple_iter(double y_trans[]){
   cout << "# Starting map iteration" << endl;
   // clock_t timer=clock();
   inv_coordinate_transform(y,y_trans);
-  cout << "Where is the issue? "<< endl;
   for (int iter = 0; iter < period; ++iter){
-    map_one_iter(&y[0]);
+    map_one_iter(y);
   }
   coordinate_transform(y_trans,y);
   // timer = clock() - timer;
@@ -225,7 +231,7 @@ bool IsOrbit(double y[]){
   double fy[mapdim];
   memcpy(fy,y,mapdim*sizeof(double));
   map_multiple_iter(fy);
-  if (SqEr(fy,y,mapdim)/norm(y,mapdim)<err_tol){
+  if (SqEr(fy,y,mapdim)/mapdim<err_tol){
     return 1;
   }
   else{

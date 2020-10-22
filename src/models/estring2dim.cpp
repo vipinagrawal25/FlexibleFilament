@@ -128,7 +128,6 @@ void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
     exit(1);
   } 
 }
-
 /**************************/
 void getub(double *bk, vec2 *uk, int kp, vec2 X[]){
   vec2 dX = X[kp+1]-X[kp];
@@ -194,7 +193,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
           FF = ( (uk/bk)*( dot(uk,ukp1) )  - (ukp1)/bk ); 
           FF = FF*AA/aa;
           // Add an extra term for inextensibility constraint
-          FF = FF + ( uk*(bk-aa))*HH/aa; 
+          FF = FF + (uk*(bk-aa))*HH/aa; 
           // cout << FF.z << endl;
           *add_FF = FF;
       }
@@ -305,7 +304,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
       }
       *add_FF = FF;
       break;
-  }  
+  }
 }
 /****************************************************/
 void iniconf(double *y){
@@ -350,7 +349,7 @@ void iniconf(double *y){
     case 1:
       // In this case we implement the initial configuration for GI Taylor experiment. 
       // i.e. a straight rod which has length equal to the height of the box and free to move from bottom.
-      for (int ip = 1; ip < Np-1; ++ip){
+      for (int ip = 0; ip < Np; ++ip){
           R[ip].x = (aa*double(ip)-vdis*height)*sin(theta);
           R[ip].y = (aa*double(ip)-vdis*height)*cos(theta);
           // cout << R[ip].z << endl ;

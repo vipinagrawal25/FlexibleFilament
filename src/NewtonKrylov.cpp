@@ -13,6 +13,7 @@
 #include "misc.h"
 #include "NewtonKrylov.h"
 #include <cmath>
+#define tiny 1.e-15
 /*---------------------------------------------------------------------------- */
 double eps;
 using namespace std;
@@ -83,7 +84,7 @@ namespace internal {
       VectorXd temp =  Xpos - Xneg;
       temp = temp/(2*eps);
       // cout << "Jdotdu norm = " << temp.norm() << endl;
-      cout << "Jdotdu = " << temp << endl;
+      // cout << "Jdotdu = " << temp << endl;
       dst.noalias() =  temp;
       // for(Index i=0; i<lhs.cols(); ++i)
       //   dst += rhs(i) * lhs.my_matrix().col(i);
@@ -101,36 +102,37 @@ namespace internal {
 bool newton_krylov(void func(double*), double Xini[], int ndim,
                   int Maxtry, double tol, double eps_temp){
 	// input for Xstar is the initial guess.
-  eps=eps_temp;
-  MatrixReplacement AA;
-  AA.f_display = func;
-  double Err=1;
-  VectorXd Xstar = Map<VectorXd>( Xini, ndim, 1 );
-  // Map<VectorXd> Xstar(Xini,ndim);           // Converting double to VectorXd
-  VectorXd deltaX(ndim),bb(ndim);
-  double *bbdoub;
-  int itry=0;
-  while(Err>tol){
-    itry++;
-    Xstar = Xstar+deltaX;
-    AA.my_vec = &Xstar;
-    GMRES<MatrixReplacement, IdentityPreconditioner> gmres;
-    gmres.compute(AA);
-    bb = Xstar;
-    double *bbdoub = bb.data();
-    func(bbdoub);
-    bb = Map<VectorXd>(bbdoub,ndim,1);
-    deltaX = gmres.solve(-bb);
-    // Err = deltaX.norm()/Xstar.norm();
-    // Err = max(deltaX.norm()/ndim, deltaX.maxCoeff());
-    Err = (bb).norm()/Xstar.norm();
-    if (itry>=Maxtry){return 0;}
-  }
-  Xini = Xstar.data();
-  if (Err<tol){
-      return 1;
-  }
-} 
+  double gx[ndim];
+  newton_krylov(func,Xini,gx,ndim,Maxtry,tol,eps_temp);
+  // eps=eps_temp;
+  // MatrixReplacement AA;
+  // AA.f_display = func;
+  // double Err=1;
+  // VectorXd Xstar = Map<VectorXd>( Xini, ndim, 1 );
+  // // Map<VectorXd> Xstar(Xini,ndim);           // Converting double to VectorXd
+  // VectorXd deltaX(ndim),bb(ndim);
+  // double *bbdoub;
+  // int itry=0;
+  // while(Err>tol){
+  //   itry++;
+  //   Xstar = Xstar+deltaX;
+  //   AA.my_vec = &Xstar;
+  //   GMRES<MatrixReplacement, IdentityPreconditioner> gmres;
+  //   gmres.compute(AA);
+  //   bb = Xstar;
+  //   double *bbdoub = bb.data();
+  //   func(bbdoub);
+  //   bb = Map<VectorXd>(bbdoub,ndim,1);
+  //   deltaX = gmres.solve(-bb);
+  //   // Err = (bb).norm()/(Xstar.norm()+tiny);
+  //   Err = min((bb).norm()/(Xstar.norm()+tiny),(bb).norm()/ndim);
+  //   if (itry>=Maxtry){return 0;}
+  // }
+  // Xini = Xstar.data();
+  // if (Err<tol){
+  //     return 1;
+  // }
+}
 /*-----------------------------------------------------------------------------*/
 bool newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
                   int Maxtry, double tol, double eps_temp){
@@ -145,7 +147,7 @@ bool newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
   int itry=0;
   while(Err>tol){
     itry++;
-    cout << "#Starting NewtonKrylov iteration: " << itry << endl;
+    cout << "# Starting NewtonKrylov iteration: " << itry << endl;
     Xstar = Xstar+deltaX;
     AA.my_vec = &Xstar;
     GMRES<MatrixReplacement, IdentityPreconditioner> gmres;
@@ -154,18 +156,14 @@ bool newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
     double *bbdoub = bb.data();
     func(bbdoub);
     bb = Map<VectorXd> (bbdoub,ndim,1);
-    cout << "bb Norm = " << bb.norm() << endl;
     deltaX = gmres.solve(-bb);
-    // Err = deltaX.norm()/Xstar.norm();
-    // Err = max(deltaX.norm()/ndim, deltaX.maxCoeff());
-    Err = (bb).norm()/Xstar.norm();
+    Err = min((bb).norm()/(Xstar.norm()+tiny),(bb).norm()/ndim);
     cout << "#Finished NewtonKrylov iteration: " << itry << endl;
     cout << "#Error = " << Err << endl;
     if(itry>=Maxtry){
       return 0;
     }
   }
-  // Xini = Xstar.data();
   for (int idim = 0; idim < ndim; ++idim){
     gx[idim] = bb(idim);
     Xini[idim] = Xstar(idim);
@@ -173,6 +171,5 @@ bool newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
   if (Err<tol){
     return 1;
   }
-  // fy = bb.data();
 }
 /*-----------------------------------------------------------------------------*/

@@ -81,3 +81,14 @@ double norm(double *y, int nn ){
 //   return Last(args...);
 // }
 // /*-----------------------------------------------*/
+// double upScale(double *y, int factor, int nn ){
+//   for (int in = 0; in < nn; ++in){
+//     y[in] = y[in]*factor;
+//   }
+// }
+/*-----------------------------------------------*/
+double downScale(double *yscaled, double *y, int factor, int nn ){
+  for (int in = 0; in < nn/factor; ++in){
+    yscaled[in] = y[in*factor];
+  }
+}

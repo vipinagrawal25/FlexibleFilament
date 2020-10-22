@@ -3,12 +3,12 @@
 //---------------------------//
 #define TimeScheme "rnkf45"
 #define time_tol 1.e-9
-#define err_tol 1.e-2
+#define err_tol 1.e-4
 #define delta 1.e-4
 #define wDataMeth 2
 #define rDataMeth 1
 #define tiny pow(10,-15)
-#define SysType "discrete"
+#define SysType "continuous"
 //--------------------------//
 #endif
 /*  TimeScheme: You can choose Euler, rnkt2, rnkt4, rnkf45(adaptive runge-kutta scheme), 
