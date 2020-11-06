@@ -7,6 +7,8 @@
 #include <math.h>
 #include "constant.h"
 #include "IO.h"
+#include <memory.h>
+#include "misc.h"
 /**************************/
 using namespace std;
 /**************************/
@@ -19,6 +21,11 @@ int MatrixtoVector(int i, int j, int N);
 void GetRij(vec2 X[], int i, int j, double *Distance, vec2 *rij);
 void drag(vec2 X[], vec2 dX[], vec2 EForce[]);
 vec2 y2vec(double *y,int ip);
+/**************************/
+// Global variables to the file.
+/* save the coordinates of first two points to go back and forth from kappa to y.
+   first 4 points for points before map iteration and last 4 points for after map iteration.*/
+double y_start[4*pp] = {0,0,0,aa,0,0,0,aa};
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
 vec2 R[Np],dR[Np],EForce[Np],EForce_ip,FF0;  
@@ -317,19 +324,29 @@ void iniconf(double *y){
   double vdis=0;           // Define a parameter called middle point in model.h
                            // that will take care of everything
   ifstream myfile;
-  double num=0.0;
+  double ch;
+  int cnt=0;
   switch(niniconf){
     case -1:
-      myfile.open(datafile,ifstream::in);
-      for(int ip = 0; ip < Np; ++ip){
-        for (int jp = 0; jp < pp; ++jp){
-          myfile >> y[2*ip+jp];
-        }
-        // Now just throw away next two numbers as they contain values of velocity.
-        for (int jp = 0; jp < pp; ++jp){
-          myfile >> num;
-        }
-      }
+      myfile.open(datafile);
+      myfile >> ch;
+      while(myfile >> ch){y[cnt]=ch;cnt++;}
+      // for(int ip = 0; ip < Np; ++ip){
+      //   for (int jp = 0; jp < pp; ++jp){
+      //     myfile >> ch;
+      //     cout << ch << endl;
+      //   }
+      // }
+      // Now just throw away next two numbers as they contain values of velocity.
+      // for (int jp = 0; jp < pp; ++jp){
+      //   myfile >> num;
+      // }
+      // myfile.open(datafile,ifstream::in);
+      // myfile >> num;
+      // for(int ip = 0; ip < Np; ++ip){
+      //   myfile >> y[ip];
+      //   cout << y[ip] << endl;
+      // }
       myfile.close();
       break;
     case 0:
@@ -424,7 +441,7 @@ void write_param( string fname ){
             << "iext_flow = " << iext_flow << endl
             << "iniconf = " << iniconf << endl
             << "KK = " << HH*dd*dd/AA << endl
-            << "Gamma = "<<  8*M_PI*viscosity*ShearRate*dd*dd*dd*height/AA << endl;
+            << "MuBar = "<<  8*M_PI*viscosity*ShearRate*pow(height,4)/AA << endl;
   paramfile.close();  
 }
 /********************************************/
@@ -432,7 +449,7 @@ void straightline(vec2 *Tngt, vec2 *Nrml, char dirn = 'y'){
   if (dirn=='y'){
     Tngt -> x = 0;
     Tngt -> y = 1;
-    Nrml -> x = 1;
+    Nrml -> x = -1;
     Nrml -> y = 0;
   }else{
     cout<< "This function is called to set straightline in model.cpp file"
@@ -455,6 +472,8 @@ void vec2y(double *y, vec2 XX, int ip){
 /********************************************/
 void y2kappa(double kappa[], double y[]){
   double bk, bkm1;
+  memcpy(y_start,y_start+2*pp,2*pp*sizeof(double));
+  memcpy(y_start+2*pp,y,4*sizeof(double));
   vec2 uk,ukm1;
   if(bcb==1){
     kappa[0]=0;
@@ -485,7 +504,7 @@ void y2kappa(double kappa[], double y[]){
   }
 }
 /********************************************/
-void kappa2y(double y[], double kappa[]){
+void kappa2y(double y[], double kappa[], string cc){
   // Transformation from kappa to y goes here.
   /* This is done using Frent-Serret equations.
     dT/ds = \kappa N
@@ -493,16 +512,31 @@ void kappa2y(double y[], double kappa[]){
   */
   double ds=aa;
   vec2 Tngt,Nrml,Tngtm1,Nrmlm1,XX;
-  vec2y(y,XX,0);
+  // vec2y(y,XX,0);
   // XX.x = 0;
   // XX.y = ds;
   // vec2y(y,XX,1);
   // if (bcb==1){
-    //vector from ip=0 to ip=1;
-  straightline(&Tngt,&Nrml);
-  straightline(&Tngtm1,&Nrmlm1);
+  //vector from ip=0 to ip=1;
+  // straightline(&Tngt,&Nrml);
+  // straightline(&Tngtm1,&Nrmlm1);
+  vec2 dX = y2vec(y_start,1)-y2vec(y_start,0);
+  Tngt = dX/norm(dX);
+  // Take a cross product of tngt with (\hat{k}) to get normal.
+  Nrml.x = Tngt.y;
+  Nrml.y = -Tngt.x;
+
+  if (cc=="previous"){
+    vec2 dX = y2vec(y_start,1)-y2vec(y_start,0);
+  }
+  else if(cc=="current"){
+    vec2 dX = y2vec(y_start,3)-y2vec(y_start,2);
+  }
+
+  memcpy(y,y_start,2*pp*sizeof(double));
+  XX = y2vec(y,1);
   // }
-  for (int ip = 1; ip < Np; ++ip){
+  for (int ip = 2; ip < Np; ++ip){
     Tngtm1 = Tngt;
     Nrmlm1 = Nrml;
     Tngt = Tngtm1 + Nrmlm1*kappa[ip-1]*ds;
@@ -521,7 +555,8 @@ void coordinate_transform(double y_trans[], double y[]){
   y2kappa(y_trans,y);
 }
 /********************************************/
-void inv_coordinate_transform(double y[],double y_trans[]){
+void inv_coordinate_transform(double y[], double y_trans[]){
   // Transformation from kappa to y goes here.
-  kappa2y(y,y_trans);
+  string cc = "current";
+  kappa2y(y,y_trans,cc);
 }

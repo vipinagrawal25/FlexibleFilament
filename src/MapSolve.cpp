@@ -21,14 +21,15 @@ int main(){
   // Here I will define whether I am calling the code for fixed point or periodic orbits.
   // Idea is to use the same code for periodic orbit and fixed point both.
   // Fixed point is a periodic orbit with time-period 1 for a map.
-  bool success;
+  bool success=1;
   assign_map_param();
   int mapdim = MM.mapdim;
   double y[ndim],y_trans[mapdim],fy_trans[mapdim];
   // First define all the parameters.
   // Now get the initial configuration (t=0) of the system.
-  iniconf(y);                         // Implement a program for variable number of arguments.
-  coordinate_transform(y_trans,y);
+  iniconf(y_trans);                         // Implement a program for variable number of arguments.
+  print(y_trans,Np);
+  // coordinate_transform(y_trans,y);
   // Save parameters in starting.
   write_param("wparam.txt");
   if(MM.iorbit){
@@ -41,10 +42,16 @@ int main(){
       if(success){
         cout << "Voila! you found the periodic orbit with period " << MM.period << endl;
         cout << "I would go ahead and save it -:)" << endl;
-        ofstream outfile("PSI",ofstream::out);
+        //
+        ofstream outfile("PSI_trans",ofstream::out);
         wData(&outfile,y_trans,0,mapdim,1);
         wData(&outfile,fy_trans,MM.time,mapdim,1);
         outfile.close();
+        //
+        inv_coordinate_transform(y,y_trans);
+        ofstream outfile2("PSI",ofstream::out);
+        wData(&outfile2,y,0);
+        outfile2.close();
       }else{
         cout << "The code to Newton Krylov did not converge. Here are the options: \n"
              << "1) Change the initial guess. 2) Increase the number of trials" << endl;
@@ -54,13 +61,16 @@ int main(){
     // The function use Newton-Raphson and calculate the nearest periodic orbit.
   }
   if(MM.istab){
-    if (MM.iorbit && success){calc_stab(y_trans);}
-    else {
+    if (MM.iorbit){
+      if (success){calc_stab(y_trans);}
+      else{cout << "Sorry!!! This is not a periodic orbit so it does not make sense.\n";}
+    }
+    else{
      // First check whether you actually have the periodic orbit?
       cout << "Is it a periodic orbit?"
              " (if you don't want this, please comment it out in MapSolve.cpp) " << endl;
-      // if(IsOrbit(y_trans)){calc_stab(y_trans,3);}
-      if (1){calc_stab(y_trans);}
+      if(IsOrbit(y_trans)){calc_stab(y_trans,3);}
+      // if (1){calc_stab(y_trans);}
       else{
         cout << "The guess is not periodic orbit." << endl << 
         " Did you cross-check the data or time-period? " << endl <<

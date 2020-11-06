@@ -157,7 +157,10 @@ bool newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
     func(bbdoub);
     bb = Map<VectorXd> (bbdoub,ndim,1);
     deltaX = gmres.solve(-bb);
-    Err = min((bb).norm()/(Xstar.norm()+tiny),(bb).norm()/ndim);
+    //
+    if (Xstar.norm()<tol*ndim){Err = bb.norm()/(tol*ndim);}
+    else{ Err = bb.norm()/Xstar.norm(); }
+    //
     cout << "#Finished NewtonKrylov iteration: " << itry << endl;
     cout << "#Error = " << Err << endl;
     if(itry>=Maxtry){

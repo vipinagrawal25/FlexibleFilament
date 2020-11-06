@@ -138,62 +138,57 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
 //   }
 // }
 /********************************************/
-void rData(double *y){
-  cout << "So it is not coming here now also ?" << endl;
-  int Npt=Np;
-  int ppt=pp;
-  string line,token;
-  double num;
-  istringstream iss;
-  string l;
-  ifstream myfile;
-  double ndimt = Npt*ppt;
-  string filename = datafile;
-  switch(rDataMeth){
-    case 1:
-      if(IsPathExist("output")){
-        l = "output/";
-        l.append(filename);
-      }else{
-        l=filename;
-      }
-      myfile.open(l,ifstream::in);
-      num=0.0;
-      for(int ip = 0; ip < Npt; ++ip){
-        for (int jp = 0; jp < ppt; ++jp){
-          myfile >> y[2*ip+jp];
-        }
-        // Now just throw away next two numbers as they contain values of velocity.
-        for (int jp = 0; jp < ppt; ++jp){
-          myfile >> num;
-        }
-      }
-      myfile.close();
-      break;
-    case 2:
-      if(IsPathExist("data")){
-        l = "data/";
-        l.append(filename);
-      }else{
-        l=filename;
-      }
-      while( getline(myfile,token) ){
-        line=token;
-        getline(myfile,token);          // Dumping this: #---------
-      }
-      // Now convert all the tab separated entries to array.
-      iss.str(line);
-      // getline(iss, token, '\t');        // First entry is time, delete that.
-      for (int idim = 0; idim < ndimt; ++idim){
-        getline(iss, token, '\t');       // Get next token.
-        y[idim]=stod(token);            // Convert to double and store it in y.
-      }
-      myfile.close();
-      break;
-    default:
-      cout << "Hey, your choice of writing data does not exist. "
-              "If you want a new way, Code function: wData( double y[], string filename) "
-              "in model.cpp file." << endl;
-      exit(1);
-  }
-}
+// void rData(ofstream *fptr, int Npt, int ppt){
+//   string line,token;
+//   double num;
+//   istringstream iss;
+
+//   double ndimt = Npt*ppt;
+//   switch(rDataMeth){
+//     case 1:
+//       if(IsPathExist("output")){
+//         l = "output/";
+//         l.append(filename);
+//       }else{
+//         l=filename;
+//       }
+//       myfile.open(l,ifstream::in);
+//       num=0.0;
+//       for(int ip = 0; ip < Npt; ++ip){
+//         for (int jp = 0; jp < ppt; ++jp){
+//           myfile >> y[2*ip+jp];
+//         }
+//         // Now just throw away next two/three numbers as they contain values of velocity.
+//         for (int jp = 0; jp < ppt; ++jp){
+//           myfile >> num;
+//         }
+//       }
+//       myfile.close();
+//       break;
+//     case 2:
+//       if(IsPathExist("data")){
+//         l = "data/";
+//         l.append(filename);
+//       }else{
+//         l=filename;
+//       }
+//       while( getline(myfile,token) ){
+//         line=token;
+//         getline(myfile,token);          // Dumping this: #---------
+//       }
+//       // Now convert all the tab separated entries to array.
+//       iss.str(line);
+//       // getline(iss, token, '\t');        // First entry is time, delete that.
+//       for (int idim = 0; idim < ndimt; ++idim){
+//         getline(iss, token, '\t');       // Get next token.
+//         y[idim]=stod(token);            // Convert to double and store it in y.
+//       }
+//       myfile.close();
+//       break;
+//     default:
+//       cout << "Hey, your choice of writing data does not exist. "
+//               "If you want a new way, Code function: wData( double y[], string filename) "
+//               "in model.cpp file." << endl;
+//       exit(1);
+//   }
+// }

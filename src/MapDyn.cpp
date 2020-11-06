@@ -42,16 +42,15 @@ void assign_map_param(){
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
   MM.period = 1.;
-  MM.iorbit = 0.;     // 0 if you already have the orbit, 
+  MM.iorbit = 1.;     // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
   // It computes the eigenvalues and save them in the folder.
   MM.istab = 1.;
-  MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
+  // MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
                         // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
   MM.mapdim = Np;
-  // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics for the time being.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses
   // Poincare section.
@@ -76,7 +75,7 @@ void write_map_param(string fname){
   pout << "Period = " << MM.period << endl;
   pout << "iorbit = " << MM.iorbit << endl;
   pout << "istab = " << MM.istab << endl;
-  pout << "irel_orb = "<< MM.irel_orb << endl;
+  // pout << "irel_orb = "<< MM.irel_orb << endl;
   pout << "mapdim = "<< MM.mapdim << endl;
 }
 /* -----------------------------------------------*/
@@ -93,7 +92,7 @@ bool periodic_orbit(double y[], double fy[]){
   //
   switch(iorbit){
     case 0:
-      break ;       //The code should never come here.
+      break ;       // The code should never come here.
     case 1:
       memcpy(fy,y,mapdim*sizeof(double));
       map_multiple_iter(fy);
@@ -157,6 +156,11 @@ bool periodic_orbit(double y[], double fy[]){
 //   }
 //   cout << "# ------- Completed iterations. "<< endl;
 // }
+/* ----------------------------------------------- */
+template <int ndim>
+void map_multiple_iter(double fy[][ndim]){
+
+}
 /* ----------------------------------------------- */
 // G(x) = f(x) - x;
 void GG(double y[]){

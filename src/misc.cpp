@@ -46,7 +46,7 @@ void print(double *arr, int start, int skip, int end){
 /*-----------------------------------------------*/
 void print(double *arr, int nn){
   for (int in = 0; in < nn; ++in){
-      cout << arr[in] << " ";
+      cout << arr[in] << "\t";
   }
   cout << endl;
 }

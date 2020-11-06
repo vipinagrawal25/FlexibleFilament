@@ -100,7 +100,7 @@ double norm(vec2 a){
 double sqnorm(vec2 a){
   return( a.x*a.x+a.y*a.y) ;}
 /*---------------------------------------*/
-void Print(vec2 a){
+void print(vec2 a){
   cout<<a.x<<"\t"<<a.y<<"\n";
 }
 /*---------------------------------------*/

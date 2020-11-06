@@ -186,6 +186,9 @@ bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*, T*)
 template<int const selectionRule>
 bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*), 
                   double Xini[], double eps_temp=1.e-4){
+  // TempV tempV;
+  // void func_temp = [func](double Xini[],TempV * tempV) {func(Xini)};
+  // jacob_eigval<selectionRule>(eigval,neigs,ndim,func,Xini,&tempV,eps_temp);
   JdotX op;
   op.Xstar = Xini;
   op.f_display = func;
