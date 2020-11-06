@@ -41,8 +41,8 @@ void assign_map_param(){
   /* Set up parameters for map iteration */
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
-  MM.period = 1.;
-  MM.iorbit = 0.;     // 0 if you already have the orbit, 
+  MM.period = 2.;
+  MM.iorbit = 1.;     // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
