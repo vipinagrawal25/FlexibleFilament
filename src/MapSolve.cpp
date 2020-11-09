@@ -27,9 +27,12 @@ int main(){
   double y[ndim],y_trans[mapdim],fy_trans[mapdim];
   // First define all the parameters.
   // Now get the initial configuration (t=0) of the system.
-  iniconf(y_trans);                         // Implement a program for variable number of arguments.
-  print(y_trans,Np);
-  // coordinate_transform(y_trans,y);
+  // iniconf(y_trans);                         // Implement a program for variable number of arguments.
+  // print(y_trans,Np);
+
+  iniconf(y);
+  print(y,ndim);
+  coordinate_transform(y_trans,y);
   // Save parameters in starting.
   write_param("wparam.txt");
   if(MM.iorbit){

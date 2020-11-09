@@ -41,8 +41,8 @@ void assign_map_param(){
   /* Set up parameters for map iteration */
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
-  MM.period = 2.;
-  MM.iorbit = 1.;     // 0 if you already have the orbit, 
+  MM.period = 1.;
+  MM.iorbit = 0.;     // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
@@ -231,6 +231,7 @@ bool IsOrbit(double y[]){
   double fy[mapdim];
   memcpy(fy,y,mapdim*sizeof(double));
   map_multiple_iter(fy);
+  cout << SqEr(fy,y,mapdim)/mapdim << endl;
   if (SqEr(fy,y,mapdim)/mapdim<err_tol){
     return 1;
   }
