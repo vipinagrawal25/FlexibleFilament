@@ -12,11 +12,14 @@ struct MV{
   bool istab;		// Do you want to calculate the stability of the orbit?
   // bool irel_orb;
   int mapdim;
+  string guess_space;
   // int ndiag;
   // int ldiag;
 };
 const int size_MV = 2*sizeof( double ) + 3*sizeof( int ) + sizeof(bool);
+// add the size of guess_space.
 /*--------------------------------------------------*/
+void map_one_iter(double *y);
 bool periodic_orbit(double y[], double fy[]);
 bool IsOrbit(double y[]);
 // void Jacobian(double DerM[][ndim],double x[]);

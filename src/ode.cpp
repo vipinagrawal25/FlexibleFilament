@@ -170,7 +170,9 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
     error=max(temp_error,error);
   }
   error=error+tiny;
+  
   // cout << error << endl;
+
   if (error<tol_dt){
     *add_time=time+dt;
     for (int idim = 0; idim < ndim; ++idim){

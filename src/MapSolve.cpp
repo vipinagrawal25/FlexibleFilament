@@ -16,6 +16,7 @@ typedef Eigen::Map<MatrixXd> MapMat;
 int const selectionRule = Spectra::LARGEST_REAL;
 /*-----------------------------------------------*/
 void calc_stab(double *y, int const neigs = 3);
+void wData_map(string fname_trans, double ytrans[], double fytrans[]);
 /*-----------------------------------------------*/
 int main(){
   // Here I will define whether I am calling the code for fixed point or periodic orbits.
@@ -24,15 +25,28 @@ int main(){
   bool success=1;
   assign_map_param();
   int mapdim = MM.mapdim;
-  double y[ndim],y_trans[mapdim],fy_trans[mapdim];
+  int period = MM.period;
+  double y[ndim],ytrans[mapdim],fytrans[mapdim],fy[ndim],ytrans_all[mapdim*period],time[period+1];
+  time[0]=0;
   // First define all the parameters.
   // Now get the initial configuration (t=0) of the system.
-  // iniconf(y_trans);                         // Implement a program for variable number of arguments.
-  // print(y_trans,Np);
-
-  iniconf(y);
-  print(y,ndim);
-  coordinate_transform(y_trans,y);
+  if (MM.guess_space == "Real" || MM.guess_space == "real"){
+    iniconf(y);
+    coordinate_transform(ytrans,y);
+    memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
+  }
+  else if(MM.guess_space== "Transformed" || MM.guess_space=="transformed"){
+    iniconf(ytrans);
+    // print(ytrans,Np);
+    memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
+  }
+  else{
+    cout << "guess_space is not mentioned."
+            " Reading input as real space" << endl;
+    iniconf(y);
+    coordinate_transform(ytrans,y);
+    memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
+  }
   // Save parameters in starting.
   write_param("wparam.txt");
   if(MM.iorbit){
@@ -41,39 +55,41 @@ int main(){
            << "Please run make clean or remove the PSI and then run the exec again. ";
       exit(1);
     }else{
-      success = periodic_orbit(y_trans,fy_trans);
+      success = periodic_orbit(ytrans_all,fytrans,time);
       if(success){
         cout << "Voila! you found the periodic orbit with period " << MM.period << endl;
         cout << "I would go ahead and save it -:)" << endl;
         //
-        ofstream outfile("PSI_trans",ofstream::out);
-        wData(&outfile,y_trans,0,mapdim,1);
-        wData(&outfile,fy_trans,MM.time,mapdim,1);
+        cc = "previous";
+        inv_coordinate_transform(y,ytrans);
+        // cc="current" is the default setting.
+        inv_coordinate_transform(fy,fytrans);
+        //
+        wData_map("PSI_trans",ytrans,fytrans);
+        //
+        ofstream outfile("PSI",ofstream::out);
+        wData(&outfile,y,0);
+        wData(&outfile,fy,MM.time);
         outfile.close();
         //
-        inv_coordinate_transform(y,y_trans);
-        ofstream outfile2("PSI",ofstream::out);
-        wData(&outfile2,y,0);
-        outfile2.close();
       }else{
         cout << "The code to Newton Krylov did not converge. Here are the options: \n"
              << "1) Change the initial guess. 2) Increase the number of trials" << endl;
       }
-      // Now save the data;
     }
-    // The function use Newton-Raphson and calculate the nearest periodic orbit.
   }
+  // Calculate stability
   if(MM.istab){
     if (MM.iorbit){
-      if (success){calc_stab(y_trans);}
+      if (success){calc_stab(ytrans);}
       else{cout << "Sorry!!! This is not a periodic orbit so it does not make sense.\n";}
     }
     else{
      // First check whether you actually have the periodic orbit?
       cout << "Is it a periodic orbit?"
              " (if you don't want this, please comment it out in MapSolve.cpp) " << endl;
-      if(IsOrbit(y_trans)){calc_stab(y_trans,3);}
-      // if (1){calc_stab(y_trans);}
+      if(IsOrbit(ytrans)){calc_stab(ytrans,3);}
+      // if (1){calc_stab(ytrans);}
       else{
         cout << "The guess is not periodic orbit." << endl << 
         " Did you cross-check the data or time-period? " << endl <<
@@ -113,3 +129,21 @@ void calc_stab(double *y, int const neigs){
   }
 }
 /*-----------------------------------------------*/
+// This function should not be needed or should look differently when we implement everything
+// as in overshooting method also.
+// This function is written in very bad way.
+void wData_map(string fname_trans, double y[]){
+  int time = MM.time;
+  int period = MM.period;
+  MM.time = 0;
+  ofstream outfile(fname_trans,ofstream::out);
+  wData(&outfile,ytrans,0,MM.mapdim,1);
+  for (int iter = 0; iter < period-1; ++iter){
+    map_one_iter(y);
+
+    wData(&outfile,ytrans,MM.time,MM.mapdim,1);
+  }
+  wData(&outfile,fytrans,time,MM.mapdim,1);
+  outfile.close();
+  MM.time = time;
+}

@@ -18,11 +18,11 @@ using namespace std;
 MV MM;
 /* -----------------------------------------------*/
 // void map_multiple_iter(double y[][ndim],double tAll);
-void map_one_iter(double *y);
 void write_map_param(string fname);
 void rnkt4(double *y,double *add_time, double* add_dt) __attribute__((weak));
 void rnkf45(double *y,double *add_time, double* add_dt) __attribute__((weak));
 void eval_rhs(double *y) __attribute__((weak));
+// void map_trans_one_iter(double ytrans[]);
 // Define coordinate transform in model.cpp file, if you wish to.
 /*-----------------------------------------------*/
 /*1) Prefix a means address to that particular varibale (avar -> address to var).
@@ -41,8 +41,8 @@ void assign_map_param(){
   /* Set up parameters for map iteration */
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
-  MM.period = 1.;
-  MM.iorbit = 0.;     // 0 if you already have the orbit, 
+  MM.period = 2.;
+  MM.iorbit = 1.;     // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
@@ -51,6 +51,7 @@ void assign_map_param(){
   // MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
                         // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
   MM.mapdim = Np;
+  MM.guess_space = "real";  // take two values "Real" or "Transformed"
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics for the time being.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses
@@ -59,13 +60,13 @@ void assign_map_param(){
   // (*MM).ldiag = 0.;
   // (*MM).ndiag = 1;
   int suffix = 1;
-  string filename = "map_intials";
-  string filename_temp = filename+".txt";
+  // string filename = "map_intials";
+  // string filename_temp = filename+".txt";
   // while(IsPathExist(filename_temp)){
   //   suffix++;
-  //   filename_temp = filename + to_string(suffix) + ".txt"; 
+  //   filename_temp = filename + to_string(suffix) + ".txt";
   // }
-  write_map_param(filename_temp);
+  write_map_param("map_intials.txt");
 }
 /* -----------------------------------------------*/
 // Think of merging this function with write_param. 
@@ -78,43 +79,79 @@ void write_map_param(string fname){
   pout << "istab = " << MM.istab << endl;
   // pout << "irel_orb = "<< MM.irel_orb << endl;
   pout << "mapdim = "<< MM.mapdim << endl;
+  pout << "Guess space = " << MM.guess_space << endl;
 }
 /* -----------------------------------------------*/
-bool periodic_orbit(double y[], double fy[]){
+bool periodic_orbit(double ytrans_all[], double fytrans[], 
+                    double yall[], double fy[], double time[]){
   // This function decide whether given initial condition is a periodic orbit or not.
   // If the initial point is not a periodic orbit, it uses the newton-raphson method 
   // to go to nearby guess.
   int iorbit = MM.iorbit;
   int period = MM.period;
   //
-  double step[ndim];
+  double ytrans[mapdim],y[ndim];
   int MaxTry = (int) MaxIter/period;
   int mapdim = MM.mapdim;
+  // memcpy(fytrans,ytrans_all,mapdim*sizeof(double));
+  memcpy(ytrans,ytrans_all,mapdim*sizeof(double));
+  inv_coordinate_transform(y,ytrans);
+  memcpy(yall,y,mapdim*sizeof(double));
+  memcpy(fy,y,ndim*sizeof(double));
   //
   switch(iorbit){
     case 0:
       break ;       //The code should never come here.
     case 1:
-      memcpy(fy,y,mapdim*sizeof(double));
-      map_multiple_iter(fy);
-      // if(0){
-      if(SqEr(fy,y,mapdim)/mapdim < err_tol){
-        cout << SqEr(fy,y,mapdim)/mapdim << endl;
+      MM.time=0;
+      for (int iter = 0; iter < period-1; ++iter){
+        map_one_iter(fy);
+        coordinate_transform(fytrans,fy);
+        memcpy(ytrans_all+mapdim*(iter+1),fytrans,mapdim*sizeof(double));
+        memcpy(yall+ndim*(iter+1),y,ndim*sizeof(double));
+        time[iter+1]=MM.time;
+      }
+      map_one_iter(fy);
+      coordinate_transform(fytrans,fy);
+      time[period]=MM.time;
+      // cout << SqEr(fy,y,mapdim)/mapdim << endl;
+      if(SqEr(fytrans,ytrans,mapdim)/mapdim < err_tol){
+      // if(1){
         bool success = 1;
         return success;
       }else{
-        bool success = newton_krylov(GG,y,fy,mapdim);
-        add(fy,y,fy,mapdim);
+        bool success = newton_krylov(GG,ytrans,fytrans,mapdim);
+        add(fytrans,ytrans,fytrans,mapdim);
+        inv_coordinate_transform(fy,fytrans);
+        
+        time[period]=MM.time;
+        MM.time=0;
+        time[0]=0;
+        cc = "previous";
+        inv_coordinate_transform(y,ytrans);
+        memcpy(fy,y,ndim*sizeof(double));
+        memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
+        memcpy(yall,y,ndim*sizeof(double));
+        for (int iter = 0; iter < period-1; ++iter){
+          map_one_iter(fy);
+          coordinate_transform(fytrans,fy);
+          memcpy(ytrans_all+mapdim*(iter+1),fytrans,mapdim*sizeof(double));
+          memcpy(yall+ndim*(iter+1),y,ndim*sizeof(double));
+          time[iter+1]=MM.time;
+        }
         return success;
       }
       break;
     case 2:
-      memcpy(fy,y,mapdim*sizeof(double));
       for (int itry = 0; itry < MaxTry; ++itry){
         cout << "\n---------- Starting next try: " << itry << "----------" << endl;
         memcpy(y,fy,mapdim*sizeof(double));
         // Preparing fy for next iteration. 0th row is the starting point.
         map_multiple_iter(fy);
+        if(SqEr(fy,y,mapdim)/mapdim < err_tol){
+          bool success = 1;
+          return success;
+        }
       }
       break;
   }
@@ -170,17 +207,18 @@ void GG(double y[]){
 }
 /* ----------------------------------------------- */
 // it takes only one dimensional array as an input.
-void map_multiple_iter(double y_trans[]){
+void map_multiple_iter(double ytrans[]){
   MM.time=0;
   int period = MM.period;
   double y[ndim];
-  cout << "# Starting map iteration" << endl;
   // clock_t timer=clock();
-  inv_coordinate_transform(y,y_trans);
+  cout << "# Starting map iteration" << endl;
+  inv_coordinate_transform(y,ytrans);
+  print(y,ndim);
   for (int iter = 0; iter < period; ++iter){
     map_one_iter(y);
   }
-  coordinate_transform(y_trans,y);
+  coordinate_transform(ytrans,y);
   // timer = clock() - timer;
   // double timeT = timer/CLOCKS_PER_SEC;
   // cout << "Time taken by function: " << timeT << "seconds" << endl;
@@ -190,11 +228,11 @@ void map_one_iter(double *y){
   if (SysType == "continuous"){
     // This function convert ODE to map for 1 iteration. It also has flexibility to save a few 
     // intermediate points as well.
-    double Tmax = 1*2*M_PI/omega;   // We typically get this by defining Poincare section. 
+    double time = MM.time;
+    double Tmax = 1*2*M_PI/omega + time;   // We typically get this by defining Poincare section. 
                                     // which can depend on the initial condition, but not in the case
                                     // Elastic string.
     // The function for Poincare section should be defined in model.cpp file.
-    double time = MM.time;
     double dt = MM.dt;
     double ldiag = 0;               //Theoretically it should be bool but both works.
     while(abs(time-Tmax)>time_tol){
@@ -215,6 +253,7 @@ void map_one_iter(double *y){
     }
     MM.dt=dt;
     MM.time=time;
+    // print(y,ndim);
   }
   else if(SysType == "discrete"){
     eval_rhs(y);
@@ -224,6 +263,14 @@ void map_one_iter(double *y){
     exit(1);
   }
 }
+/*-----------------------------------------------*/
+// iteration of map in transformed space
+// void map_trans_one_iter(double ytrans[]){
+//   double y[ndim];
+//   inv_coordinate_transform(y,ytrans);
+//   map_one_iter(y);
+//   coordinate_transform(ytrans,y);
+// }
 /*----------------------------------------------- */
 // function to find out whether given initial condition is a periodic orbit or not?
 bool IsOrbit(double y[]){
@@ -240,6 +287,6 @@ bool IsOrbit(double y[]){
   }
 }
 /*----------------------------------------------- */
-void coordinate_transform(double *y_trans, double *y){y_trans = y;}
-void inv_coordinate_transform(double *y,double *y_trans){y=y_trans;}
+void coordinate_transform(double *ytrans, double *y){ytrans = y;}
+void inv_coordinate_transform(double *y,double *ytrans){y=ytrans;}
 /*----------------------------------------------- */

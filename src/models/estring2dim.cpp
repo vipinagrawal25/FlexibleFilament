@@ -26,6 +26,7 @@ vec2 y2vec(double *y,int ip);
 /* save the coordinates of first two points to go back and forth from kappa to y.
    first 4 points for points before map iteration and last 4 points for after map iteration.*/
 double y_start[4*pp] = {0,0,0,aa,0,0,0,aa};
+string cc = "current";
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
 vec2 R[Np],dR[Np],EForce[Np],EForce_ip,FF0;  
@@ -39,15 +40,15 @@ for (int ip=0;ip<Np;ip++){
   R[ip].y=y[2*ip+1];
 }
 for (int ip=0;ip<Np;ip++){
-kappasqr=CurvSqr[ip];
-if (flag_kappa){
-  if (ip<Np-1){
-    SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip]);
+  kappasqr=CurvSqr[ip];
+  if (flag_kappa){
+    if (ip<Np-1){
+      SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip]);
+    }
   }
-}
-dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
-EForce[ip] = EForce_ip;
-CurvSqr[ip]=kappasqr;
+  dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
+  EForce[ip] = EForce_ip;
+  CurvSqr[ip]=kappasqr;
 }
 drag(R, dR, EForce);
 // Is the string forced at some points? Implement it here.
@@ -117,6 +118,7 @@ void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
         dX[ip] = dX[ip] + dot(mu_ii, EForce[ip]);
         for (int jp = ip+1; jp < Np; ++jp){
             GetRij(X, ip, jp, &d_rij, &rij);
+            // cout << d_rij << endl;
             double c1 = 1/(8*M_PI*viscosity*d_rij);
             double dsqr1 = 1./(d_rij*d_rij);
             mu_ij = c1*(dab2b2 + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab2b2*onebythree - (rij*rij)*dsqr1));
@@ -329,7 +331,7 @@ void iniconf(double *y){
   switch(niniconf){
     case -1:
       myfile.open(datafile);
-      myfile >> ch;
+      // myfile >> ch;
       while(myfile >> ch){y[cnt]=ch;cnt++;}
       // for(int ip = 0; ip < Np; ++ip){
       //   for (int jp = 0; jp < pp; ++jp){
@@ -504,14 +506,14 @@ void y2kappa(double kappa[], double y[]){
   }
 }
 /********************************************/
-void kappa2y(double y[], double kappa[], string cc){
+void kappa2y(double y[], double kappa[]){
   // Transformation from kappa to y goes here.
   /* This is done using Frent-Serret equations.
     dT/ds = \kappa N
     dN/ds = -\kappa T
   */
   double ds=aa;
-  vec2 Tngt,Nrml,Tngtm1,Nrmlm1,XX;
+  vec2 Tngt,Nrml,Tngtm1,Nrmlm1,XX,dX;
   // vec2y(y,XX,0);
   // XX.x = 0;
   // XX.y = ds;
@@ -520,20 +522,19 @@ void kappa2y(double y[], double kappa[], string cc){
   //vector from ip=0 to ip=1;
   // straightline(&Tngt,&Nrml);
   // straightline(&Tngtm1,&Nrmlm1);
-  vec2 dX = y2vec(y_start,1)-y2vec(y_start,0);
+  // vec2 dX = y2vec(y_start,1)-y2vec(y_start,0);
+  if (cc=="previous"){
+    dX = y2vec(y_start,1)-y2vec(y_start,0);
+    memcpy(y,y_start,2*pp*sizeof(double));
+  }
+  else if(cc=="current"){
+    dX = y2vec(y_start,3)-y2vec(y_start,2);
+    memcpy(y,y_start+2*pp,2*pp*sizeof(double));
+  }
   Tngt = dX/norm(dX);
   // Take a cross product of tngt with (\hat{k}) to get normal.
   Nrml.x = Tngt.y;
   Nrml.y = -Tngt.x;
-
-  if (cc=="previous"){
-    vec2 dX = y2vec(y_start,1)-y2vec(y_start,0);
-  }
-  else if(cc=="current"){
-    vec2 dX = y2vec(y_start,3)-y2vec(y_start,2);
-  }
-
-  memcpy(y,y_start,2*pp*sizeof(double));
   XX = y2vec(y,1);
   // }
   for (int ip = 2; ip < Np; ++ip){
@@ -548,6 +549,8 @@ void kappa2y(double y[], double kappa[], string cc){
     XX = XX + Tngt*ds;
     vec2y(y,XX,ip);
   }
+
+  cc = "current";
 }
 /********************************************/
 void coordinate_transform(double y_trans[], double y[]){
@@ -557,6 +560,6 @@ void coordinate_transform(double y_trans[], double y[]){
 /********************************************/
 void inv_coordinate_transform(double y[], double y_trans[]){
   // Transformation from kappa to y goes here.
-  string cc = "current";
-  kappa2y(y,y_trans,cc);
+  // string cc = "current";
+  kappa2y(y,y_trans);
 }

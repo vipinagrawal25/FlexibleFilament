@@ -41,6 +41,6 @@ void check_param();
 void write_param(string fname);
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]);
 void coordinate_transform(double *y_trans, double *y);
-void inv_coordinate_transform(double *y, double *y_trans, string cc = "current");
+void inv_coordinate_transform(double *y, double *y_trans);
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */

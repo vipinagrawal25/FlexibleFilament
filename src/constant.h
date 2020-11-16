@@ -6,8 +6,8 @@
 #define err_tol 1.e-3
 #define delta 1.e-4
 #define wDataMeth 2
-#define rDataMeth 2
-#define tiny pow(10,-15)
+#define rDataMeth 1
+#define tiny 1.e-15
 #define SysType "continuous"
 //--------------------------//
 #endif
@@ -20,5 +20,4 @@
 	wDataMeth(Writing/Reading data type): 
 				1 -> to save every snap in different file
                 2 -> to save all the snaps in single file called PSI, VEL
-    tiny	->	add this to any varibale while dividing so stop blowing-up 
 	SysType	-> Is it a map or ODE?*/

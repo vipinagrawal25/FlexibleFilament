@@ -154,6 +154,7 @@ bool newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
     gmres.compute(AA);
     bb = Xstar;
     double *bbdoub = bb.data();
+    print(bbdoub,ndim);
     func(bbdoub);
     bb = Map<VectorXd> (bbdoub,ndim,1);
     deltaX = gmres.solve(-bb);
@@ -163,6 +164,7 @@ bool newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
     //
     cout << "#Finished NewtonKrylov iteration: " << itry << endl;
     cout << "#Error = " << Err << endl;
+    cout << Xstar+bb << endl;
     if(itry>=Maxtry){
       return 0;
     }
