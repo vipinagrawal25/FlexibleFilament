@@ -89,10 +89,10 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
   // to go to nearby guess.
   int iorbit = MM.iorbit;
   int period = MM.period;
+  int mapdim = MM.mapdim;
   //
   double ytrans[mapdim],y[ndim];
   int MaxTry = (int) MaxIter/period;
-  int mapdim = MM.mapdim;
   // memcpy(fytrans,ytrans_all,mapdim*sizeof(double));
   memcpy(ytrans,ytrans_all,mapdim*sizeof(double));
   inv_coordinate_transform(y,ytrans);
@@ -104,6 +104,7 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
       break ;       //The code should never come here.
     case 1:
       MM.time=0;
+      cout << "# Starting map iteration " << endl;
       for (int iter = 0; iter < period-1; ++iter){
         map_one_iter(fy);
         coordinate_transform(fytrans,fy);
@@ -123,7 +124,7 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
         bool success = newton_krylov(GG,ytrans,fytrans,mapdim);
         add(fytrans,ytrans,fytrans,mapdim);
         inv_coordinate_transform(fy,fytrans);
-        
+        //
         time[period]=MM.time;
         MM.time=0;
         time[0]=0;
@@ -211,7 +212,6 @@ void map_multiple_iter(double ytrans[]){
   MM.time=0;
   int period = MM.period;
   double y[ndim];
-  // clock_t timer=clock();
   cout << "# Starting map iteration" << endl;
   inv_coordinate_transform(y,ytrans);
   print(y,ndim);
@@ -219,9 +219,6 @@ void map_multiple_iter(double ytrans[]){
     map_one_iter(y);
   }
   coordinate_transform(ytrans,y);
-  // timer = clock() - timer;
-  // double timeT = timer/CLOCKS_PER_SEC;
-  // cout << "Time taken by function: " << timeT << "seconds" << endl;
 }
 /* ----------------------------------------------- */
 void map_one_iter(double *y){

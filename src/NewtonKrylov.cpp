@@ -99,18 +99,18 @@ namespace internal {
 // Find X* such that F(X*) = 0
 // aMM will contain every other parameter in a structure form, it should be passed to a function.
 // template<int Maxtry>
-bool newton_krylov(void func(double*), double Xini[], int ndim,
-                  int Maxtry, double tol, double eps_temp){
+bool newton_krylov(void func(double*), double Xini[], int dim,
+                  int Maxtry, double tol, double eps_temp, bool verbose){
 	// input for Xstar is the initial guess.
-  double gx[ndim];
-  newton_krylov(func,Xini,gx,ndim,Maxtry,tol,eps_temp);
+  double gx[dim];
+  newton_krylov(func,Xini,gx,dim,Maxtry,tol,eps_temp);
   // eps=eps_temp;
   // MatrixReplacement AA;
   // AA.f_display = func;
   // double Err=1;
-  // VectorXd Xstar = Map<VectorXd>( Xini, ndim, 1 );
-  // // Map<VectorXd> Xstar(Xini,ndim);           // Converting double to VectorXd
-  // VectorXd deltaX(ndim),bb(ndim);
+  // VectorXd Xstar = Map<VectorXd>( Xini, dim, 1 );
+  // // Map<VectorXd> Xstar(Xini,dim);           // Converting double to VectorXd
+  // VectorXd deltaX(dim),bb(dim);
   // double *bbdoub;
   // int itry=0;
   // while(Err>tol){
@@ -122,10 +122,10 @@ bool newton_krylov(void func(double*), double Xini[], int ndim,
   //   bb = Xstar;
   //   double *bbdoub = bb.data();
   //   func(bbdoub);
-  //   bb = Map<VectorXd>(bbdoub,ndim,1);
+  //   bb = Map<VectorXd>(bbdoub,dim,1);
   //   deltaX = gmres.solve(-bb);
   //   // Err = (bb).norm()/(Xstar.norm()+tiny);
-  //   Err = min((bb).norm()/(Xstar.norm()+tiny),(bb).norm()/ndim);
+  //   Err = min((bb).norm()/(Xstar.norm()+tiny),(bb).norm()/dim);
   //   if (itry>=Maxtry){return 0;}
   // }
   // Xini = Xstar.data();
@@ -134,15 +134,16 @@ bool newton_krylov(void func(double*), double Xini[], int ndim,
   // }
 }
 /*-----------------------------------------------------------------------------*/
-bool newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
-                  int Maxtry, double tol, double eps_temp){
+bool newton_krylov(void func(double*), double Xini[], double gx[], int dim,
+                  int Maxtry, double tol, double eps_temp, bool verbose){
   MatrixReplacement AA;
   AA.f_display = func;
   eps=eps_temp;
   double Err=1;
 
-  VectorXd Xstar = Map<VectorXd>( Xini, ndim,1 );
-  VectorXd deltaX(ndim),bb(ndim);
+  VectorXd Xstar = Map<VectorXd>( Xini, dim,1 );
+  VectorXd deltaX =  VectorXd::Zero(dim);
+  VectorXd bb(dim); 
   double *bbdoub;
   int itry=0;
   while(Err>tol){
@@ -154,22 +155,24 @@ bool newton_krylov(void func(double*), double Xini[], double gx[], int ndim,
     gmres.compute(AA);
     bb = Xstar;
     double *bbdoub = bb.data();
-    print(bbdoub,ndim);
     func(bbdoub);
-    bb = Map<VectorXd> (bbdoub,ndim,1);
+    bb = Map<VectorXd> (bbdoub,dim,1);
     deltaX = gmres.solve(-bb);
     //
-    if (Xstar.norm()<tol*ndim){Err = bb.norm()/(tol*ndim);}
+    if (Xstar.norm()<tol*dim){Err = bb.norm()/(tol*dim);}
     else{ Err = bb.norm()/Xstar.norm(); }
     //
     cout << "#Finished NewtonKrylov iteration: " << itry << endl;
     cout << "#Error = " << Err << endl;
+    if (verbose){
+      
+    }
     cout << Xstar+bb << endl;
     if(itry>=Maxtry){
       return 0;
     }
   }
-  for (int idim = 0; idim < ndim; ++idim){
+  for (int idim = 0; idim < dim; ++idim){
     gx[idim] = bb(idim);
     Xini[idim] = Xstar(idim);
   }

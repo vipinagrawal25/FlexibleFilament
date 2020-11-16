@@ -3,10 +3,10 @@
 /*****************************************************************/
 // template<int Maxtry=128>
 bool newton_krylov(void func(double*), double yini[], int ndim,
-                  int Maxtry=128,double tol=1.e-3, double eps_temp=1.e-4);
+                  int Maxtry=128,double tol=1.e-3, double eps_temp=1.e-4, bool verbose=1);
 
 // template<int Maxtry=128>
 bool newton_krylov(void func(double*), double yini[], double fy[], int ndim,
-                   int Maxtry=128,double tol=1.e-3, double eps_temp=1.e-4);
+                   int Maxtry=128,double tol=1.e-3, double eps_temp=1.e-4, bool verbose=1);
 /*****************************************************************/
 #endif

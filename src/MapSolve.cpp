@@ -16,7 +16,7 @@ typedef Eigen::Map<MatrixXd> MapMat;
 int const selectionRule = Spectra::LARGEST_REAL;
 /*-----------------------------------------------*/
 void calc_stab(double *y, int const neigs = 3);
-void wData_map(string fname_trans, double ytrans[], double fytrans[]);
+// void wData_map(string fname_trans, double ytrans[], double fytrans[]);
 /*-----------------------------------------------*/
 int main(){
   // Here I will define whether I am calling the code for fixed point or periodic orbits.
@@ -26,7 +26,8 @@ int main(){
   assign_map_param();
   int mapdim = MM.mapdim;
   int period = MM.period;
-  double y[ndim],ytrans[mapdim],fytrans[mapdim],fy[ndim],ytrans_all[mapdim*period],time[period+1];
+  double y[ndim],fy[ndim],yall[ndim*period],time[period+1];
+  double ytrans[mapdim],fytrans[mapdim],ytrans_all[mapdim*period];
   time[0]=0;
   // First define all the parameters.
   // Now get the initial configuration (t=0) of the system.
@@ -34,11 +35,13 @@ int main(){
     iniconf(y);
     coordinate_transform(ytrans,y);
     memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
+    memcpy(yall,y,ndim*sizeof(double));
   }
   else if(MM.guess_space== "Transformed" || MM.guess_space=="transformed"){
     iniconf(ytrans);
-    // print(ytrans,Np);
     memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
+    inv_coordinate_transform(y,ytrans);
+    memcpy(yall,y,ndim*sizeof(double));
   }
   else{
     cout << "guess_space is not mentioned."
@@ -46,6 +49,7 @@ int main(){
     iniconf(y);
     coordinate_transform(ytrans,y);
     memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
+    memcpy(yall,y,ndim*sizeof(double));
   }
   // Save parameters in starting.
   write_param("wparam.txt");
@@ -55,22 +59,21 @@ int main(){
            << "Please run make clean or remove the PSI and then run the exec again. ";
       exit(1);
     }else{
-      success = periodic_orbit(ytrans_all,fytrans,time);
+      success = periodic_orbit(ytrans_all,fytrans,yall,fy,time);
       if(success){
         cout << "Voila! you found the periodic orbit with period " << MM.period << endl;
         cout << "I would go ahead and save it -:)" << endl;
-        //
-        cc = "previous";
-        inv_coordinate_transform(y,ytrans);
-        // cc="current" is the default setting.
-        inv_coordinate_transform(fy,fytrans);
-        //
-        wData_map("PSI_trans",ytrans,fytrans);
-        //
+
+        ofstream outfile_trans("PSI_trans",ofstream::out);
         ofstream outfile("PSI",ofstream::out);
-        wData(&outfile,y,0);
-        wData(&outfile,fy,MM.time);
+        for (int iter = 0; iter < period; ++iter){
+          wData(&outfile_trans,ytrans_all+iter*mapdim,time[iter],MM.mapdim,1);
+          wData(&outfile,yall+iter*ndim,time[iter]);
+        }
+        wData(&outfile_trans,fytrans,time[period],MM.mapdim,1);
+        wData(&outfile,fy,time[period]);
         outfile.close();
+        outfile_trans.close();
         //
       }else{
         cout << "The code to Newton Krylov did not converge. Here are the options: \n"
@@ -132,18 +135,18 @@ void calc_stab(double *y, int const neigs){
 // This function should not be needed or should look differently when we implement everything
 // as in overshooting method also.
 // This function is written in very bad way.
-void wData_map(string fname_trans, double y[]){
-  int time = MM.time;
-  int period = MM.period;
-  MM.time = 0;
-  ofstream outfile(fname_trans,ofstream::out);
-  wData(&outfile,ytrans,0,MM.mapdim,1);
-  for (int iter = 0; iter < period-1; ++iter){
-    map_one_iter(y);
+// void wData_map(string fname_trans, double y[]){
+//   int time = MM.time;
+//   int period = MM.period;
+//   MM.time = 0;
+//   ofstream outfile(fname_trans,ofstream::out);
+//   wData(&outfile,ytrans,0,MM.mapdim,1);
+//   for (int iter = 0; iter < period-1; ++iter){
+//     map_one_iter(y);
 
-    wData(&outfile,ytrans,MM.time,MM.mapdim,1);
-  }
-  wData(&outfile,fytrans,time,MM.mapdim,1);
-  outfile.close();
-  MM.time = time;
-}
+//     wData(&outfile,ytrans,MM.time,MM.mapdim,1);
+//   }
+//   wData(&outfile,fytrans,time,MM.mapdim,1);
+//   outfile.close();
+//   MM.time = time;
+// }

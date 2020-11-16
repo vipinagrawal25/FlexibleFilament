@@ -20,7 +20,8 @@ const int size_MV = 2*sizeof( double ) + 3*sizeof( int ) + sizeof(bool);
 // add the size of guess_space.
 /*--------------------------------------------------*/
 void map_one_iter(double *y);
-bool periodic_orbit(double y[], double fy[]);
+bool periodic_orbit(double ytrans_all[], double fytrans[], 
+                    double yall[], double fy[], double time[]);
 bool IsOrbit(double y[]);
 // void Jacobian(double DerM[][ndim],double x[]);
 void assign_map_param(void);
