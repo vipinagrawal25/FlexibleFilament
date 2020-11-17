@@ -48,18 +48,11 @@ public:
   {
     return Product<MatrixReplacement,Rhs,AliasFreeProduct>(*this, x.derived());
   }
-  // Custom API:
-  // template<typename T>
-  // void assign_var(T vec, void func(double*) ){
-  //   mp_vec = vec;
-  //   f_display = func;
-  // }
   const void my_func(VectorXd *vec)const{ 
     double *vecdoub = (*vec).data();
     f_display(vecdoub);
     new (vec) Map<VectorXd>(vecdoub,rows());
   }
-  // void my_vec(VectorXd *XX) const { XX =  mp_vec; }
 private:
 };
 /*----------------------------------------------------------------------------*/
@@ -76,18 +69,11 @@ namespace internal {
     static void scaleAndAddTo(Dest& dst, const MatrixReplacement& lhs, const Rhs& rhs, const Scalar& alpha){
       VectorXd Xpos = *lhs.my_vec+eps*rhs;
       VectorXd Xneg = *lhs.my_vec-eps*rhs;
-
       lhs.my_func(&Xpos);
       lhs.my_func(&Xneg);
-      // cout << "Xpos new = " << Xpos << endl;
-      // cout << "Xneg new= " << Xneg << endl; 
       VectorXd temp =  Xpos - Xneg;
       temp = temp/(2*eps);
-      // cout << "Jdotdu norm = " << temp.norm() << endl;
-      // cout << "Jdotdu = " << temp << endl;
       dst.noalias() =  temp;
-      // for(Index i=0; i<lhs.cols(); ++i)
-      //   dst += rhs(i) * lhs.my_matrix().col(i);
     }
   };
 }
@@ -165,7 +151,7 @@ bool newton_krylov(void func(double*), double Xini[], double gx[], int dim,
     cout << "#Finished NewtonKrylov iteration: " << itry << endl;
     cout << "#Error = " << Err << endl;
     if (verbose){
-      
+      cout << Xstar << endl;
     }
     cout << Xstar+bb << endl;
     if(itry>=Maxtry){

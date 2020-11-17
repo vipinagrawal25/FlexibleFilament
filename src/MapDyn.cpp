@@ -42,7 +42,7 @@ void assign_map_param(){
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
   MM.period = 2.;
-  MM.iorbit = 1.;     // 0 if you already have the orbit, 
+  MM.iorbit = 2.;     // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
@@ -82,6 +82,33 @@ void write_map_param(string fname){
   pout << "Guess space = " << MM.guess_space << endl;
 }
 /* -----------------------------------------------*/
+void get_yall(double ytrans_all[], double yall[], double time[]){
+  int mapdim = MM.mapdim;
+  int period = MM.period;
+  double fytrans[mapdim],fy[ndim];
+  memcpy(fy,yall,ndim*sizeof(double));
+  MM.time=0;
+  cout << "# Starting map iteration " << endl;
+  for (int iter = 0; iter < period-1; ++iter){
+    map_one_iter(fy);
+    coordinate_transform(fytrans,fy);
+    memcpy(ytrans_all+mapdim*(iter+1),fytrans,mapdim*sizeof(double));
+    memcpy(yall+ndim*(iter+1),fy,ndim*sizeof(double));
+    time[iter+1]=MM.time;
+  }
+}
+/* -----------------------------------------------*/
+void get_yall(double ytrans_all[], double fytrans[], 
+                    double yall[], double fy[], double time[]){
+  int mapdim=MM.mapdim;
+  int period=MM.period;
+  get_yall(ytrans_all,yall,time);
+  memcpy(fy,yall+ndim*(period-1),ndim*sizeof(double));
+  map_one_iter(fy);
+  coordinate_transform(fytrans,fy);
+  time[period]=MM.time;
+}
+/* -----------------------------------------------*/
 bool periodic_orbit(double ytrans_all[], double fytrans[], 
                     double yall[], double fy[], double time[]){
   // This function decide whether given initial condition is a periodic orbit or not.
@@ -92,30 +119,14 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
   int mapdim = MM.mapdim;
   //
   double ytrans[mapdim],y[ndim];
-  int MaxTry = (int) MaxIter/period;
-  // memcpy(fytrans,ytrans_all,mapdim*sizeof(double));
   memcpy(ytrans,ytrans_all,mapdim*sizeof(double));
-  inv_coordinate_transform(y,ytrans);
-  memcpy(yall,y,mapdim*sizeof(double));
-  memcpy(fy,y,ndim*sizeof(double));
+  int MaxTry = (int) MaxIter/period;
   //
   switch(iorbit){
     case 0:
       break ;       //The code should never come here.
     case 1:
-      MM.time=0;
-      cout << "# Starting map iteration " << endl;
-      for (int iter = 0; iter < period-1; ++iter){
-        map_one_iter(fy);
-        coordinate_transform(fytrans,fy);
-        memcpy(ytrans_all+mapdim*(iter+1),fytrans,mapdim*sizeof(double));
-        memcpy(yall+ndim*(iter+1),y,ndim*sizeof(double));
-        time[iter+1]=MM.time;
-      }
-      map_one_iter(fy);
-      coordinate_transform(fytrans,fy);
-      time[period]=MM.time;
-      // cout << SqEr(fy,y,mapdim)/mapdim << endl;
+      get_yall(ytrans_all,fytrans,yall,fy,time);
       if(SqEr(fytrans,ytrans,mapdim)/mapdim < err_tol){
       // if(1){
         bool success = 1;
@@ -124,35 +135,26 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
         bool success = newton_krylov(GG,ytrans,fytrans,mapdim);
         add(fytrans,ytrans,fytrans,mapdim);
         inv_coordinate_transform(fy,fytrans);
-        //
         time[period]=MM.time;
-        MM.time=0;
-        time[0]=0;
+        //
         cc = "previous";
         inv_coordinate_transform(y,ytrans);
-        memcpy(fy,y,ndim*sizeof(double));
         memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
         memcpy(yall,y,ndim*sizeof(double));
-        for (int iter = 0; iter < period-1; ++iter){
-          map_one_iter(fy);
-          coordinate_transform(fytrans,fy);
-          memcpy(ytrans_all+mapdim*(iter+1),fytrans,mapdim*sizeof(double));
-          memcpy(yall+ndim*(iter+1),y,ndim*sizeof(double));
-          time[iter+1]=MM.time;
-        }
+        get_yall(ytrans_all,yall,time);
         return success;
       }
       break;
     case 2:
       for (int itry = 0; itry < MaxTry; ++itry){
-        cout << "\n---------- Starting next try: " << itry << "----------" << endl;
-        memcpy(y,fy,mapdim*sizeof(double));
-        // Preparing fy for next iteration. 0th row is the starting point.
-        map_multiple_iter(fy);
-        if(SqEr(fy,y,mapdim)/mapdim < err_tol){
+        get_yall(ytrans_all,fytrans,yall,fy,time);
+        if(SqEr(fytrans,ytrans_all,mapdim)/mapdim < err_tol){
           bool success = 1;
           return success;
         }
+        // Preparing for next iteration
+        memcpy(yall,fy,ndim*sizeof(double));
+        memcpy(ytrans_all,fytrans,mapdim*sizeof(double)); 
       }
       break;
   }
@@ -214,7 +216,7 @@ void map_multiple_iter(double ytrans[]){
   double y[ndim];
   cout << "# Starting map iteration" << endl;
   inv_coordinate_transform(y,ytrans);
-  print(y,ndim);
+  // print(y,ndim);
   for (int iter = 0; iter < period; ++iter){
     map_one_iter(y);
   }
