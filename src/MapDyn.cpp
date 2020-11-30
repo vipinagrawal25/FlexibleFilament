@@ -42,7 +42,7 @@ void assign_map_param(){
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
   MM.period = 2.;
-  MM.iorbit = 2.;     // 0 if you already have the orbit, 
+  MM.iorbit = 1.;     // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
@@ -53,7 +53,7 @@ void assign_map_param(){
   MM.mapdim = Np;
   MM.guess_space = "real";  // take two values "Real" or "Transformed"
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
-  // I am commenting things for diagnostics for the time being.
+  // I am commenting things for diagnostics.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses
   // Poincare section.
   // (*MM).tdiag = 0.;
@@ -127,12 +127,13 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
       break ;       //The code should never come here.
     case 1:
       get_yall(ytrans_all,fytrans,yall,fy,time);
-      if(SqEr(fytrans,ytrans,mapdim)/mapdim < err_tol){
+      cout << "Error = " << SqEr(fytrans,ytrans_all,mapdim)/mapdim << endl;
+      if(SqEr(fytrans,ytrans_all,mapdim)/mapdim < err_tol){
       // if(1){
         bool success = 1;
         return success;
       }else{
-        bool success = newton_krylov(GG,ytrans,fytrans,mapdim);
+        bool success = newton_krylov(GG,ytrans,fytrans,mapdim,err_tol);
         add(fytrans,ytrans,fytrans,mapdim);
         inv_coordinate_transform(fy,fytrans);
         time[period]=MM.time;
@@ -147,8 +148,12 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
       break;
     case 2:
       for (int itry = 0; itry < MaxTry; ++itry){
+        cout << "Starting next try:" << itry << endl; 
         get_yall(ytrans_all,fytrans,yall,fy,time);
+        cout << "Error= " << SqEr(fytrans,ytrans_all,mapdim)/mapdim << endl;
         if(SqEr(fytrans,ytrans_all,mapdim)/mapdim < err_tol){
+          // print(fytrans,mapdim);
+          // print(ytrans_all,ndim);
           bool success = 1;
           return success;
         }
@@ -262,14 +267,6 @@ void map_one_iter(double *y){
     exit(1);
   }
 }
-/*-----------------------------------------------*/
-// iteration of map in transformed space
-// void map_trans_one_iter(double ytrans[]){
-//   double y[ndim];
-//   inv_coordinate_transform(y,ytrans);
-//   map_one_iter(y);
-//   coordinate_transform(ytrans,y);
-// }
 /*----------------------------------------------- */
 // function to find out whether given initial condition is a periodic orbit or not?
 bool IsOrbit(double y[]){
@@ -286,6 +283,11 @@ bool IsOrbit(double y[]){
   }
 }
 /*----------------------------------------------- */
-void coordinate_transform(double *ytrans, double *y){ytrans = y;}
-void inv_coordinate_transform(double *y,double *ytrans){y=ytrans;}
+void coordinate_transform(double *ytrans, double *y){
+  int mapdim = MM.mapdim;
+  memcpy(ytrans,y,mapdim*sizeof(double));
+}
+void inv_coordinate_transform(double *y,double *ytrans){
+  memcpy(y,ytrans,ndim*sizeof(double));
+}
 /*----------------------------------------------- */

@@ -331,8 +331,9 @@ void iniconf(double *y){
   switch(niniconf){
     case -1:
       myfile.open(datafile);
-      // myfile >> ch;
+      myfile >> ch;
       while(myfile >> ch){y[cnt]=ch;cnt++;}
+      cout << "Number of elements read: " << cnt << endl;
       // for(int ip = 0; ip < Np; ++ip){
       //   for (int jp = 0; jp < pp; ++jp){
       //     myfile >> ch;

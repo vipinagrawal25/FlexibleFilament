@@ -15,7 +15,7 @@ typedef Spectra::DenseGenMatProd<double> MatProd;
 typedef Eigen::Map<MatrixXd> MapMat;
 int const selectionRule = Spectra::LARGEST_REAL;
 /*-----------------------------------------------*/
-void calc_stab(double *y, int const neigs = 3);
+void calc_stab(double *y, int const neigs = 10);
 // void wData_map(string fname_trans, double ytrans[], double fytrans[]);
 /*-----------------------------------------------*/
 int main(){
@@ -34,23 +34,20 @@ int main(){
   if (MM.guess_space == "Real" || MM.guess_space == "real"){
     iniconf(y);
     coordinate_transform(ytrans,y);
-    memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
-    memcpy(yall,y,ndim*sizeof(double));
+    print(ytrans,mapdim);
   }
   else if(MM.guess_space== "Transformed" || MM.guess_space=="transformed"){
     iniconf(ytrans);
-    memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
     inv_coordinate_transform(y,ytrans);
-    memcpy(yall,y,ndim*sizeof(double));
   }
   else{
     cout << "guess_space is not mentioned."
             " Reading input as real space" << endl;
     iniconf(y);
     coordinate_transform(ytrans,y);
-    memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
-    memcpy(yall,y,ndim*sizeof(double));
   }
+  memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
+  memcpy(yall,y,ndim*sizeof(double));
   // Save parameters in starting.
   write_param("wparam.txt");
   if(MM.iorbit){
@@ -61,9 +58,11 @@ int main(){
     }else{
       success = periodic_orbit(ytrans_all,fytrans,yall,fy,time);
       if(success){
+        // Diagnosis //
+        print(fytrans,mapdim);
         cout << "Voila! you found the periodic orbit with period " << MM.period << endl;
         cout << "I would go ahead and save it -:)" << endl;
-
+        //
         ofstream outfile_trans("PSI_trans",ofstream::out);
         ofstream outfile("PSI",ofstream::out);
         for (int iter = 0; iter < period; ++iter){
@@ -91,7 +90,7 @@ int main(){
      // First check whether you actually have the periodic orbit?
       cout << "Is it a periodic orbit?"
              " (if you don't want this, please comment it out in MapSolve.cpp) " << endl;
-      if(IsOrbit(ytrans)){calc_stab(ytrans,3);}
+      if(IsOrbit(ytrans)){calc_stab(ytrans,6);}
       // if (1){calc_stab(ytrans);}
       else{
         cout << "The guess is not periodic orbit." << endl << 
@@ -104,8 +103,9 @@ int main(){
 }
 /*-----------------------------------------------*/
 void calc_stab(double *y, int const neigs){
-  Vecc eigval(neigs);
   int mapdim = MM.mapdim;
+  Vecc eigval(neigs);
+  // Mat eigvec(neigs,mapdim);
   if(IsPathExist("eig") || IsPathExist("Eig")){
     cout << "I have already calculated the stability of this orbit."
             "There are already some eigenvalues in the folder. I can not replace that.\n"
@@ -113,6 +113,7 @@ void calc_stab(double *y, int const neigs){
     exit(1);
   }
  bool success = jacob_eigval<selectionRule>(&eigval,neigs,mapdim,map_multiple_iter,y);
+ // bool success = jacob_eigvalvec<selectionRule>(&eigval,&eigvec,neigs,mapdim,map_multiple_iter,y)
  if(!success){
     cout << "Sorry, there is something wrong."
             "I can not converge to perform stability analysis in a matrix free way."

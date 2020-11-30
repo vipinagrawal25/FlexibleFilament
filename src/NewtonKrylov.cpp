@@ -139,10 +139,11 @@ bool newton_krylov(void func(double*), double Xini[], double gx[], int dim,
     AA.my_vec = &Xstar;
     GMRES<MatrixReplacement, IdentityPreconditioner> gmres;
     gmres.compute(AA);
+    gmres.setTolerance(tol);
     bb = Xstar;
     double *bbdoub = bb.data();
     func(bbdoub);
-    bb = Map<VectorXd> (bbdoub,dim,1);
+    bb = Map<VectorXd>(bbdoub,dim,1);
     deltaX = gmres.solve(-bb);
     //
     if (Xstar.norm()<tol*dim){Err = bb.norm()/(tol*dim);}
@@ -150,13 +151,13 @@ bool newton_krylov(void func(double*), double Xini[], double gx[], int dim,
     //
     cout << "#Finished NewtonKrylov iteration: " << itry << endl;
     cout << "#Error = " << Err << endl;
-    if (verbose){
-      cout << Xstar << endl;
-    }
-    cout << Xstar+bb << endl;
+    
+    if (verbose){print(Xstar.data(),dim);}
+
     if(itry>=Maxtry){
       return 0;
     }
+
   }
   for (int idim = 0; idim < dim; ++idim){
     gx[idim] = bb(idim);

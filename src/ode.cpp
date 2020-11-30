@@ -238,7 +238,7 @@ void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* a
   for(idim=0;idim<ndim;idim++){
     temp[idim]=y[idim]+(aij[2][0]*k1[idim]+aij[2][1]*k2[idim])*dt;
   }
-  eval_rhs(time+ci[2]*dt,temp,k3, flag_kappa, CurvSqr, SS);
+  eval_rhs(time+ci[2]*dt,temp,k3,flag_kappa,CurvSqr,SS);
 
   for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim]+ (aij[3][0]*k1[idim]+aij[3][1]*k2[idim]+aij[3][2]*k3[idim])*dt ;

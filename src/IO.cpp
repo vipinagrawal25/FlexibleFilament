@@ -5,6 +5,7 @@
 #include <string>
 #include "misc.h"
 #include "model.h"
+#include <iomanip>
 using namespace std;
 /*-----------------------------------------------*/
 void wData(ofstream *fptr, double *y, double time, int Npt, int ppt){
@@ -14,7 +15,7 @@ void wData(ofstream *fptr, double *y, double time, int Npt, int ppt){
     case 1:
       for(int ip = 0; ip < Npt; ++ip){
         for (int jp = 0; jp < ppt; ++jp){
-          *fptr << y[ppt*ip+jp];
+          *fptr << setprecision(15) << y[ppt*ip+jp];
           *fptr << '\t';
         }
         *fptr << '\n';
@@ -23,7 +24,7 @@ void wData(ofstream *fptr, double *y, double time, int Npt, int ppt){
     case 2:
       (*fptr) << time << "\t";
       for (int idim = 0; idim < ndimt; ++idim){
-        *fptr << y[idim] << "\t";
+        *fptr << setprecision(15) << y[idim] << "\t";
       }
       *fptr <<  endl;
       *fptr << "#------------------------------------------------#" << endl;
@@ -43,12 +44,12 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
     case 1:
       for(int ip = 0; ip < Npt; ++ip){
         for (int jp = 0; jp < ppt; ++jp){
-          *fptr << y[ppt*ip+jp];
-          *fptr << '\t';
+          *fptr << setprecision(15) << y[ppt*ip+jp];
+          *fptr << setprecision(15) << '\t';
         }
         // Now next three numbers contain values of velocity.
         for (int jp = 0; jp < ppt; ++jp){
-          *fptr << vel[ppt*ip+jp];
+          *fptr << setprecision(15) << vel[ppt*ip+jp];
           *fptr << '\t';
         }
         *fptr << '\n';
@@ -56,11 +57,11 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
       break;
 
     case 2:
-      (*fptr) << time << "\t";
-      (*fptr_vel) << time << "\t";
+      (*fptr) << setprecision(15) << time << "\t";
+      (*fptr_vel) << setprecision(15) << time << "\t";
       for (int idim = 0; idim < ndimt; ++idim){
-        *fptr << y[idim] << "\t";
-        *fptr_vel << vel[idim] << "\t";
+        *fptr << setprecision(15) << y[idim] << "\t";
+        *fptr_vel << setprecision(15) << vel[idim] << "\t";
       }
       *fptr <<  endl;
       *fptr << "#------------------------------------------------#" << endl;

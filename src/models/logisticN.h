@@ -14,5 +14,7 @@ void iniconf(double *y); 	// The configuration number is defined for different
 							// Initial configuration into the system.
 void eval_rhs(double *y);
 void definelambda();
+void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]);
+extern string cc;
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */
