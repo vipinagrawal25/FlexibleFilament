@@ -27,8 +27,8 @@ bool IsOrbit(double y[]);
 void assign_map_param(void);
 void GG(double y[]);
 void map_multiple_iter(double y[]);
-void coordinate_transform(double *y_trans, double *y) __attribute__((weak));
-void inv_coordinate_transform(double *y, double *y_trans) __attribute__((weak));
+void coordinate_transform(double *y_trans, double *y);
+void inv_coordinate_transform(double *y, double *y_trans);
 /*--------------------------------------------------*/
 extern MV MM;					// Saying that MM exists globally
 /*--------------------------------------------------*/

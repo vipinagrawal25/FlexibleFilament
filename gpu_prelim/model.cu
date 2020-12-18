@@ -52,7 +52,7 @@ int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM ){
 /*---------------------------------------------------------------------------------*/
 void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   MPARAM *temp;
-  double height = 1.28;  
+  double height = 1.28*4;  
   (*PARAM).height = height;
   (*PARAM).aa = height/(double)(NN-1);
   // distance between two nodes.
@@ -67,7 +67,7 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).sigma=0.75;
   (*PARAM).ShearRate = 2;
   (*PARAM).omega = (*PARAM).ShearRate*(*PARAM).sigma ;
-  (*PARAM).factorAA = 1.5*pow(height,4)*15;
+  (*PARAM).factorAA = 1.5*pow(height,4)*2;
   // (*PARAM).factorAA = 0. ;
   (*PARAM).AA= (*PARAM).factorAA*pow(10,-5); //AA is the bending rigidity.
   //
@@ -145,9 +145,9 @@ __host__ void write_param( MPARAM *PARAM, char *fname ){
   fprintf( pout, " iniconf=%d\n", (*PARAM).iniconf );
   //
   fprintf( pout, " KK = %f \n ", (*PARAM).KK ) ;
-  double gamma = 8*M_PI*((*PARAM).viscosity)*((*PARAM).ShearRate)*((*PARAM).height)*pow((*PARAM).aa,3)/((*PARAM).AA);
+  double gamma = 8*M_PI*((*PARAM).viscosity)*((*PARAM).ShearRate)*pow((*PARAM).height,4)/((*PARAM).AA);
   cout << gamma << endl;
-  fprintf( pout, " Gamma=%lf\n",  gamma);  
+  fprintf( pout, " Gamma=%lf\n",  gamma);
   fprintf( pout, " #============================\n" );
   fclose( pout );
 }
@@ -589,7 +589,7 @@ void D2H(double ARR[], double dev_arr[], int Nsize){
   cudaMemcpy( ARR, dev_arr, Nsize*sizeof(double), cudaMemcpyDeviceToHost);
 }
 /*-------------------------------------------------------------------*/
-void wPSI ( double PSI[], double VEL[] ,double tau ){
+void wPSI ( double PSI[], double VEL[] ,double tau){
   // This is a very slow way to save file. I am opening same file again and
   // closing it. Let's just pass the file pointer to reduce the time."
   // FILE *fp = fopen( "data/PSI", "a" );

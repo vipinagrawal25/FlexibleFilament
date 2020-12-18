@@ -414,3 +414,4 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
     	Nrows,Ncols = dd.shape
     	dd2 = dd[0:factor:-1,:]
     	return dd,dd2
+    

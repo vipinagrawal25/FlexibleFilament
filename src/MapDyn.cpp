@@ -22,6 +22,7 @@ void write_map_param(string fname);
 void rnkt4(double *y,double *add_time, double* add_dt) __attribute__((weak));
 void rnkf45(double *y,double *add_time, double* add_dt) __attribute__((weak));
 void eval_rhs(double *y) __attribute__((weak));
+void pre_next_iter(double *y, double *ytrans) __attribute__((weak));
 // void map_trans_one_iter(double ytrans[]);
 // Define coordinate transform in model.cpp file, if you wish to.
 /*-----------------------------------------------*/
@@ -42,16 +43,16 @@ void assign_map_param(){
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
   MM.period = 2.;
-  MM.iorbit = 1.;     // 0 if you already have the orbit, 
+  MM.iorbit = 2.;     // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
   // It computes the eigenvalues and save them in the folder.
   MM.istab = 1.;
   // MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
-                        // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
+                           // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
   MM.mapdim = Np;
-  MM.guess_space = "real";  // take two values "Real" or "Transformed"
+  MM.guess_space = "Real";  // take two values "Real" or "Transformed"
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses
@@ -69,7 +70,7 @@ void assign_map_param(){
   write_map_param("map_intials.txt");
 }
 /* -----------------------------------------------*/
-// Think of merging this function with write_param. 
+// Think of merging this function with write_param.
 // An array/std::vector containing the parameter names can be passed.
 void write_map_param(string fname){
   ofstream pout(fname, ofstream::out);
@@ -124,10 +125,10 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
   //
   switch(iorbit){
     case 0:
-      break ;       //The code should never come here.
+      break ;       // The code should never come here.
     case 1:
       get_yall(ytrans_all,fytrans,yall,fy,time);
-      cout << "Error = " << SqEr(fytrans,ytrans_all,mapdim)/mapdim << endl;
+      cout << "# Error = " << SqEr(fytrans,ytrans_all,mapdim)/mapdim << endl;
       if(SqEr(fytrans,ytrans_all,mapdim)/mapdim < err_tol){
       // if(1){
         bool success = 1;
@@ -138,7 +139,6 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
         inv_coordinate_transform(fy,fytrans);
         time[period]=MM.time;
         //
-        cc = "previous";
         inv_coordinate_transform(y,ytrans);
         memcpy(ytrans_all,ytrans,mapdim*sizeof(double));
         memcpy(yall,y,ndim*sizeof(double));
@@ -148,9 +148,9 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
       break;
     case 2:
       for (int itry = 0; itry < MaxTry; ++itry){
-        cout << "Starting next try:" << itry << endl; 
+        cout << "# Starting next try:" << itry << endl;
         get_yall(ytrans_all,fytrans,yall,fy,time);
-        cout << "Error= " << SqEr(fytrans,ytrans_all,mapdim)/mapdim << endl;
+        cout << "# Error= " << SqEr(fytrans,ytrans_all,mapdim)/mapdim << endl;
         if(SqEr(fytrans,ytrans_all,mapdim)/mapdim < err_tol){
           // print(fytrans,mapdim);
           // print(ytrans_all,ndim);
@@ -159,7 +159,10 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
         }
         // Preparing for next iteration
         memcpy(yall,fy,ndim*sizeof(double));
-        memcpy(ytrans_all,fytrans,mapdim*sizeof(double)); 
+        memcpy(ytrans_all,fytrans,mapdim*sizeof(double));
+        // An additional function in case you want to change anything in model before starting the nextiteration.
+        // A weak function is defined at the bottom of this file.
+        pre_next_iter(fy,fytrans);
       }
       break;
   }
@@ -233,7 +236,7 @@ void map_one_iter(double *y){
     // This function convert ODE to map for 1 iteration. It also has flexibility to save a few 
     // intermediate points as well.
     double time = MM.time;
-    double Tmax = 1*2*M_PI/omega + time;   // We typically get this by defining Poincare section. 
+    double Tmax = 2*M_PI/omega + time;   // We typically get this by defining Poincare section. 
                                     // which can depend on the initial condition, but not in the case
                                     // Elastic string.
     // The function for Poincare section should be defined in model.cpp file.
@@ -263,7 +266,7 @@ void map_one_iter(double *y){
     eval_rhs(y);
   }
   else{
-    cout << "ERROR: I don't know what is the system type." << endl;
+    cout << "# ERROR: I don't know what is the system type." << endl;
     exit(1);
   }
 }
@@ -274,6 +277,7 @@ bool IsOrbit(double y[]){
   double fy[mapdim];
   memcpy(fy,y,mapdim*sizeof(double));
   map_multiple_iter(fy);
+  print(fy,mapdim);
   cout << SqEr(fy,y,mapdim)/mapdim << endl;
   if (SqEr(fy,y,mapdim)/mapdim<err_tol){
     return 1;
@@ -283,11 +287,12 @@ bool IsOrbit(double y[]){
   }
 }
 /*----------------------------------------------- */
-void coordinate_transform(double *ytrans, double *y){
+void __attribute__((weak)) coordinate_transform(double *ytrans, double *y){
   int mapdim = MM.mapdim;
   memcpy(ytrans,y,mapdim*sizeof(double));
 }
-void inv_coordinate_transform(double *y,double *ytrans){
+void __attribute__((weak)) inv_coordinate_transform(double *y,double *ytrans){
   memcpy(y,ytrans,ndim*sizeof(double));
 }
+void pre_next_iter(double *y, double *ytrans){}
 /*----------------------------------------------- */

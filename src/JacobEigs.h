@@ -150,7 +150,6 @@ bool jacob_eigvalvec(VectorXcd *eigval, MatrixXcd *eigvec, int neigs, int ndim,v
   if(eigs.info() == SUCCESSFUL){
     *eigval = eigs.eigenvalues();
     *eigvec = eigs.eigenvectors();
-    cout << *eigvec << endl;
     return 1;
   }else{
     return 0;

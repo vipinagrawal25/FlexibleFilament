@@ -9,6 +9,7 @@
 #include "IO.h"
 #include <memory.h>
 #include "misc.h"
+#include "MapDyn.h"
 /**************************/
 using namespace std;
 /**************************/
@@ -25,8 +26,8 @@ vec2 y2vec(double *y,int ip);
 // Global variables to the file.
 /* save the coordinates of first two points to go back and forth from kappa to y.
    first 4 points for points before map iteration and last 4 points for after map iteration.*/
-double y_start[4*pp] = {0,0,0,aa,0,0,0,aa};
-string cc = "current";
+double y_start[2*pp] = {0,0,0,aa};
+string cc;
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
 vec2 R[Np],dR[Np],EForce[Np],EForce_ip,FF0;  
@@ -307,7 +308,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );
       FF = FF*(AA/aa);
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
+      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint
       if (flag_kappa==false){
         *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
       }
@@ -333,7 +334,10 @@ void iniconf(double *y){
       myfile.open(datafile);
       myfile >> ch;
       while(myfile >> ch){y[cnt]=ch;cnt++;}
-      cout << "Number of elements read: " << cnt << endl;
+      cout << "# Number of elements read: " << cnt << endl;
+      if(cnt==Np){}
+      else if(cnt==ndim){memcpy(y_start,y,2*pp*sizeof(double));}
+      else{ cout << "Initial point is not right." << endl; }
       // for(int ip = 0; ip < Np; ++ip){
       //   for (int jp = 0; jp < pp; ++jp){
       //     myfile >> ch;
@@ -475,8 +479,9 @@ void vec2y(double *y, vec2 XX, int ip){
 /********************************************/
 void y2kappa(double kappa[], double y[]){
   double bk, bkm1;
-  memcpy(y_start,y_start+2*pp,2*pp*sizeof(double));
-  memcpy(y_start+2*pp,y,4*sizeof(double));
+  // memcpy(y_start,y_start+2*pp,2*pp*sizeof(double));
+  // memcpy(y_start+2*pp,y,4*sizeof(double));
+  int iorbit = MM.iorbit;
   vec2 uk,ukm1;
   if(bcb==1){
     kappa[0]=0;
@@ -524,14 +529,13 @@ void kappa2y(double y[], double kappa[]){
   // straightline(&Tngt,&Nrml);
   // straightline(&Tngtm1,&Nrmlm1);
   // vec2 dX = y2vec(y_start,1)-y2vec(y_start,0);
-  if (cc=="previous"){
-    dX = y2vec(y_start,1)-y2vec(y_start,0);
-    memcpy(y,y_start,2*pp*sizeof(double));
-  }
-  else if(cc=="current"){
-    dX = y2vec(y_start,3)-y2vec(y_start,2);
-    memcpy(y,y_start+2*pp,2*pp*sizeof(double));
-  }
+  print(y_start,4);
+  dX = y2vec(y_start,1)-y2vec(y_start,0);
+  memcpy(y,y_start,2*pp*sizeof(double));
+  // else if(cc=="current"){
+  //   dX = y2vec(y_start,3)-y2vec(y_start,2);
+  //   memcpy(y,y_start+2*pp,2*pp*sizeof(double));
+  // }
   Tngt = dX/norm(dX);
   // Take a cross product of tngt with (\hat{k}) to get normal.
   Nrml.x = Tngt.y;
@@ -542,16 +546,15 @@ void kappa2y(double y[], double kappa[]){
     Tngtm1 = Tngt;
     Nrmlm1 = Nrml;
     Tngt = Tngtm1 + Nrmlm1*kappa[ip-1]*ds;
-    // Tngt = Tngt/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
-    Tngt = Tngt/(norm(Tngt)+tiny);
+    Tngt = Tngt/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
+    // Tngt = Tngt/(norm(Tngt)+tiny);
     Nrml = Nrmlm1 - Tngtm1*kappa[ip-1]*ds;
-    // Nrml = Nrml/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
-    Nrml = Nrml/(norm(Nrml)+tiny);
+    Nrml = Nrml/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
+    // Nrml = Nrml/(norm(Nrml)+tiny);
     XX = XX + Tngt*ds;
     vec2y(y,XX,ip);
   }
-
-  cc = "current";
+  // cc = "previous";
 }
 /********************************************/
 void coordinate_transform(double y_trans[], double y[]){
@@ -563,4 +566,8 @@ void inv_coordinate_transform(double y[], double y_trans[]){
   // Transformation from kappa to y goes here.
   // string cc = "current";
   kappa2y(y,y_trans);
+}
+/********************************************/
+void pre_next_iter(double *y, double *y_trans){
+  memcpy(y_start,y,2*pp*sizeof(double));
 }
