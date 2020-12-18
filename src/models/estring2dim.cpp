@@ -554,18 +554,50 @@ void kappa2y(double y[], double kappa[]){
     XX = XX + Tngt*ds;
     vec2y(y,XX,ip);
   }
+  // Is it physical?
+  bool isphysical=1;
+  double d_rij;
+  vec2 X1;
+  vec2 X2;
+  for (int ip = 0; ip < Np; ++ip){
+    for (int jp = ip+1; jp < Np; ++jp){
+       X1 = y2vec(y,ip);
+       X2 = y2vec(y,jp);
+       d_rij = norm(X1-X2);
+       if (d_rij<dd){
+         isphysical=0;
+         break;
+       }
+    }
+    if (isphysical==0){
+      break;
+    }
+  }
+  if (isphysical==0){
+    cout << "I am halving the curvature to take a physical NK step." << endl;
+    for (int ip = 0; ip < Np; ++ip){
+      kappa[ip] = kappa[ip]/2;
+    }
+    kappa2y(y,kappa);
+  }
   // cc = "previous";
 }
 /********************************************/
 void coordinate_transform(double y_trans[], double y[]){
   // I will write about the transformation from y to kappa here.
   y2kappa(y_trans,y);
+  // memcpy(y_trans,y,MM.mapdim*sizeof(double));
+  // for (int idim = 0; idim < int(ndim)/2; ++idim){
+  //   y_trans[2*idim] = y_trans[2*idim] - y_trans[0];
+  //   y_trans[2*idim+1] = y_trans[2*idim+1] - y_trans[1];
+  // }
 }
 /********************************************/
 void inv_coordinate_transform(double y[], double y_trans[]){
   // Transformation from kappa to y goes here.
   // string cc = "current";
   kappa2y(y,y_trans);
+  // memcpy(y,y_trans,MM.mapdim*sizeof(double));
 }
 /********************************************/
 void pre_next_iter(double *y, double *y_trans){
