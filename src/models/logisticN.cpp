@@ -17,17 +17,24 @@ void eval_rhs(double *y){
 /*-----------------------------------------------*/
 void iniconf(double *y){
 	definelambda();
-	for (int ip = 0; ip < Np; ++ip){
-		y[ip]= 0.8236;
+	y[0] = 0.611260467;
+	y[1] = 0.950484434;
+	y[2] = 0.188255099;
+	y[3] = 0.611260467;
+	y[4] = 0.950484434;
+	y[5] = 0.188255099;
+
+	for (int ip = 6; ip < Np; ++ip){
+		y[ip]= 0;
 	}
-	y[0] = (lambda[0]-1)/lambda[0];
+	// y[0] = (lambda[0]-1)/lambda[0];
 }
 /*-----------------------------------------------*/
 void definelambda(){
 	for (int ip = 0; ip < Np; ++ip){
-		lambda[ip]=3.3;
+		lambda[ip]=4;
 	}
-	lambda[0]=1.5;
+	lambda[0]=4;
 }
 /* ----------------------------------------------- */
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){

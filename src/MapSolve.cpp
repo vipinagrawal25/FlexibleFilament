@@ -8,6 +8,8 @@
 #include "IO.h"
 #include "JacobEigs.h"
 #include <Spectra/GenEigsSolver.h>
+#include <sys/types.h>
+#include <unistd.h>
 /*----------------------------------------------*/
 typedef Eigen::VectorXcd Vecc;
 typedef Eigen::MatrixXcd Matc;
@@ -22,6 +24,11 @@ int main(){
   // Here I will define whether I am calling the code for fixed point or periodic orbits.
   // Idea is to use the same code for periodic orbit and fixed point both.
   // Fixed point is a periodic orbit with time-period 1 for a map.
+  //
+  // Printing prcess id for future purpose
+  pid_t pid = getpid();
+  cout << "ID for this process is:" << pid << endl;
+  //
   bool success=1;
   assign_map_param();
   int mapdim = MM.mapdim;

@@ -143,7 +143,7 @@ bool jacob_eigvalvec(VectorXcd *eigval, MatrixXcd *eigvec, int neigs, int ndim,v
   op.nn = ndim;
   op.eps = eps_temp;
 
-  int ncv = max(2*neigs+1,ndim);
+  int ncv = min(2*neigs+1,ndim);
   GenEigsSolver< double, SelectionRule, JdotX > eigs(&op, neigs, ncv);
   eigs.init();
   eigs.compute(ndim,1.e-3);
@@ -167,7 +167,7 @@ bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*, T*)
   op.aTV = TV;
   op.eps = eps_temp;
 
-  int ncv = max(2*neigs+1,ndim);
+  int ncv = min(2*neigs+1,ndim);
   GenEigsSolver< double, selectionRule, T_JdotX<T> > eigs(&op, neigs, ncv);
   eigs.init();
   eigs.compute(ndim,1.e-3);

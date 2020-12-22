@@ -42,8 +42,8 @@ void assign_map_param(){
   /* Set up parameters for map iteration */
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
-  MM.period = 2.;
-  MM.iorbit = 1.;     // 0 if you already have the orbit, 
+  MM.period = 3.;
+  MM.iorbit = 2.;     // 0 if you already have the orbit, 
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
@@ -52,7 +52,7 @@ void assign_map_param(){
   // MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
                            // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
   MM.mapdim = Np;
-  MM.guess_space = "Real";  // take two values "Real" or "Transformed"
+  MM.guess_space = "real";  // take two values "Real" or "Transformed"
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses
@@ -129,7 +129,7 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
     case 1:
       get_yall(ytrans_all,fytrans,yall,fy,time);
       cout << "# Error = " << SqEr(fytrans,ytrans_all,mapdim)/mapdim << endl;
-      if(SqEr(fytrans,ytrans_all,mapdim)/mapdim < err_tol){
+      if(SqEr(fytrans,ytrans_all,mapdim)/norm(fytrans,mapdim) < err_tol){
       // if(1){
         bool success = 1;
         return success;
@@ -151,7 +151,7 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
         cout << "# Starting next try:" << itry << endl;
         get_yall(ytrans_all,fytrans,yall,fy,time);
         cout << "# Error= " << SqEr(fytrans,ytrans_all,mapdim)/mapdim << endl;
-        if(SqEr(fytrans,ytrans_all,mapdim)/mapdim < err_tol){
+        if(SqEr(fytrans,ytrans_all,mapdim)/norm(fytrans,mapdim) < err_tol){
           // print(fytrans,mapdim);
           // print(ytrans_all,ndim);
           bool success = 1;
@@ -224,7 +224,6 @@ void map_multiple_iter(double ytrans[]){
   double y[ndim];
   cout << "# Starting map iteration" << endl;
   inv_coordinate_transform(y,ytrans);
-  // print(y,ndim);
   for (int iter = 0; iter < period; ++iter){
     map_one_iter(y);
   }
@@ -279,7 +278,7 @@ bool IsOrbit(double y[]){
   map_multiple_iter(fy);
   print(fy,mapdim);
   cout << SqEr(fy,y,mapdim)/mapdim << endl;
-  if (SqEr(fy,y,mapdim)/mapdim<err_tol){
+  if (SqEr(fy,y,mapdim)/norm(fy,mapdim)<err_tol){
     return 1;
   }
   else{

@@ -546,10 +546,10 @@ void kappa2y(double y[], double kappa[]){
     Tngtm1 = Tngt;
     Nrmlm1 = Nrml;
     Tngt = Tngtm1 + Nrmlm1*kappa[ip-1]*ds;
-    Tngt = Tngt/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
+    Tngt = Tngt/norm(Tngt);
     // Tngt = Tngt/(norm(Tngt)+tiny);
     Nrml = Nrmlm1 - Tngtm1*kappa[ip-1]*ds;
-    Nrml = Nrml/(1+kappa[ip-1]*kappa[ip-1]*ds*ds);
+    Nrml = Nrml/norm(Nrml);
     // Nrml = Nrml/(norm(Nrml)+tiny);
     XX = XX + Tngt*ds;
     vec2y(y,XX,ip);
@@ -564,7 +564,7 @@ void kappa2y(double y[], double kappa[]){
        X1 = y2vec(y,ip);
        X2 = y2vec(y,jp);
        d_rij = norm(X1-X2);
-       if (d_rij<dd){
+       if (d_rij<dd/2){
          isphysical=0;
          break;
        }
