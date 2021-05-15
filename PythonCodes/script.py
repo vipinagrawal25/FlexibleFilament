@@ -14,7 +14,7 @@ omega = ShearRate*sigma
 # TMAX= 15;
 # Totalfiles=2000;
 
-#This is an array of things that you want to calculate.
+# This is an array of things that you want to calculate.
 Thing1 = "Movie"
 Thing2 = "MSD"
 Thing3 = "Curvature"
@@ -25,7 +25,7 @@ Thing7 = "MSD_no_trans"
 Thing8 = "SqrtCurvature"
 Thing9 = "TracerVelocity"
 
-Things = [Thing1]
+Things = [Thing8]
 
 # figure=MSD_plot(step=1)
 # show(figure)
@@ -33,7 +33,7 @@ Things = [Thing1]
 # close()
 for i in range(0,len(Things)):
 	if Things[i] == "movie" or Things[i] == "Movie":
-		MOVIE.MultiFileMovie(dim=2)
+		MOVIE.MultiFileMovie(FILE='output',dim=2)
 	elif Things[i] == "MSD":
 		MSD_plot()
 		close()

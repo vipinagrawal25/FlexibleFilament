@@ -12,7 +12,7 @@
 #include <fstream>
 #include "misc.h"
 #include "ode.h"
-#include <time.h> 
+#include <time.h>
 /* -----------------------------------------------*/
 using namespace std;
 MV MM;
@@ -22,7 +22,7 @@ void write_map_param(string fname);
 void rnkt4(double *y,double *add_time, double* add_dt) __attribute__((weak));
 void rnkf45(double *y,double *add_time, double* add_dt) __attribute__((weak));
 void eval_rhs(double *y) __attribute__((weak));
-void pre_next_iter(double *y, double *ytrans) __attribute__((weak));
+void pre_next_iter(double *y) __attribute__((weak));
 // void map_trans_one_iter(double ytrans[]);
 // Define coordinate transform in model.cpp file, if you wish to.
 /*-----------------------------------------------*/
@@ -42,8 +42,8 @@ void assign_map_param(){
   /* Set up parameters for map iteration */
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
-  MM.period = 3.;
-  MM.iorbit = 2.;     // 0 if you already have the orbit, 
+  MM.period = 2.;
+  MM.iorbit = 0.;     // 0 if you already have the orbit,
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
@@ -51,15 +51,15 @@ void assign_map_param(){
   MM.istab = 1.;
   // MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
                            // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
-  MM.mapdim = Np;
-  MM.guess_space = "real";  // take two values "Real" or "Transformed"
+  MM.mapdim = ndim;
+  MM.guess_space = "Real";  // take two values "Real" or "Transformed"
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics.
   // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses
   // Poincare section.
   // (*MM).tdiag = 0.;
   // (*MM).ldiag = 0.;
-  // (*MM).ndiag = 1;
+  // (*MM).ndiag = 1.;
   int suffix = 1;
   // string filename = "map_intials";
   // string filename_temp = filename+".txt";
@@ -98,7 +98,7 @@ void get_yall(double ytrans_all[], double yall[], double time[]){
     time[iter+1]=MM.time;
   }
 }
-/* -----------------------------------------------*/
+/*-----------------------------------------------*/
 void get_yall(double ytrans_all[], double fytrans[], 
                     double yall[], double fy[], double time[]){
   int mapdim=MM.mapdim;
@@ -109,8 +109,8 @@ void get_yall(double ytrans_all[], double fytrans[],
   coordinate_transform(fytrans,fy);
   time[period]=MM.time;
 }
-/* -----------------------------------------------*/
-bool periodic_orbit(double ytrans_all[], double fytrans[], 
+/*-----------------------------------------------*/
+bool periodic_orbit(double ytrans_all[], double fytrans[],
                     double yall[], double fy[], double time[]){
   // This function decide whether given initial condition is a periodic orbit or not.
   // If the initial point is not a periodic orbit, it uses the newton-raphson method 
@@ -122,16 +122,21 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
   double ytrans[mapdim],y[ndim];
   memcpy(ytrans,ytrans_all,mapdim*sizeof(double));
   int MaxTry = (int) MaxIter/period;
+  // int MaxTry = 1;
+  bool success = 0;
+  double Error = 0;
   //
   switch(iorbit){
     case 0:
-      break ;       // The code should never come here.
+      break ;         // The code should never come here.
     case 1:
       get_yall(ytrans_all,fytrans,yall,fy,time);
-      cout << "# Error = " << SqEr(fytrans,ytrans_all,mapdim)/mapdim << endl;
-      if(SqEr(fytrans,ytrans_all,mapdim)/norm(fytrans,mapdim) < err_tol){
+      if(norm(fytrans,mapdim)<err_tol*mapdim*10){Error = SqEr(fytrans,ytrans_all,mapdim)/(err_tol*mapdim);}
+      else{Error = SqEr(fytrans,ytrans_all,mapdim)/norm(fytrans,mapdim);}
+      // cout << "# Error = " << SqEr(fytrans,ytrans_all,mapdim)/mapdim << endl;
+      if(Error < err_tol){
       // if(1){
-        bool success = 1;
+        success = 1;
         return success;
       }else{
         bool success = newton_krylov(GG,ytrans,fytrans,mapdim,err_tol);
@@ -150,25 +155,29 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
       for (int itry = 0; itry < MaxTry; ++itry){
         cout << "# Starting next try:" << itry << endl;
         get_yall(ytrans_all,fytrans,yall,fy,time);
-        cout << "# Error= " << SqEr(fytrans,ytrans_all,mapdim)/mapdim << endl;
-        if(SqEr(fytrans,ytrans_all,mapdim)/norm(fytrans,mapdim) < err_tol){
+        if(norm(fytrans,mapdim)<err_tol*mapdim*10){Error = SqEr(fytrans,ytrans_all,mapdim)/(err_tol*mapdim);}
+        else{Error = SqEr(fytrans,ytrans_all,mapdim)/norm(fytrans,mapdim);}
+        cout << "# Error= " << Error << endl;
+        if(Error < err_tol){
           // print(fytrans,mapdim);
           // print(ytrans_all,ndim);
-          bool success = 1;
+          success = 1;
           return success;
         }
         // Preparing for next iteration
         memcpy(yall,fy,ndim*sizeof(double));
         memcpy(ytrans_all,fytrans,mapdim*sizeof(double));
-        // An additional function in case you want to change anything in model before starting the nextiteration.
+        // print(yall,ndim*period);
+        // An additional function in case you want to change anything in model before starting the next iteration.
         // A weak function is defined at the bottom of this file.
         pre_next_iter(fy,fytrans);
       }
       break;
   }
+  return success;
 }
 /* ----------------------------------------------- */
-// void Jacobian(double DerM[][ndim], double x[]){
+// void Jacobian(double DerM[][MM.mapdim], double x[]){
 //   // Take a small step in every direction and calculate the differences.
 //   // dy/dx = (f(x+dx) - f(x-dx))/2dx
 //   int period = MM.period;
@@ -176,7 +185,7 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
 //   // MatrixXd DerM(ndim,ndim);
 //   for (int idim = 0; idim < ndim; ++idim){
 //     cout << "Starting calculation for row " << idim+1 << endl;
-//     // Calculation for f(x+dx)
+//   // Calculation for f(x+dx)
 //     memcpy(ypos,x,ndim*sizeof(double));
 //     ypos[idim] = x[idim]+delta;
 //     map_multiple_iter(ypos);
@@ -190,6 +199,49 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
 //     }
 //   }
 // }
+/* ----------------------------------------------- */
+void Jacobian(Matd *DerM, double x[]){
+  // Take a small step in every direction and calculate the differences.
+  // dy/dx = (f(x+dx) - f(x-dx))/2dx
+  double delta = 1.e-4;
+  cout << "# delta = " << delta <<endl;
+  int period = MM.period;
+  int mapdim = MM.mapdim;
+  //
+  double ypos[mapdim],yneg[mapdim];
+  // MatrixXd DerM(mapdim,mapdim);
+  for (int idim = 0; idim < mapdim; ++idim){
+    cout << "# Starting calculation for row " << idim << endl;
+  // Calculation for f(x+dx)
+    memcpy(ypos,x,mapdim*sizeof(double));
+    ypos[idim] = x[idim]+delta;
+    map_multiple_iter(ypos);
+    // Calculation for f(x-dx)
+    memcpy(yneg,x,mapdim*sizeof(double));
+    yneg[idim]=x[idim]-delta;
+    map_multiple_iter(yneg);
+    // Calculation of the derivative
+    for (int jdim = 0; jdim < mapdim; ++jdim){
+      (*DerM)(idim,jdim) = (ypos[jdim]-yneg[jdim]);
+    }
+  }
+  // for (int idim = 0; idim < mapdim-2; ++idim){
+  //   cout << "# Starting calculation for row " << idim+1 << endl;
+  // // Calculation for f(x+dx)
+  //   memcpy(ypos,x,mapdim*sizeof(double));
+  //   ypos[idim+1] = x[idim+1]+delta;
+  //   map_multiple_iter(ypos);
+  //   // Calculation for f(x-dx)
+  //   memcpy(yneg,x,mapdim*sizeof(double));
+  //   yneg[idim+1]=x[idim+1]-delta;
+  //   map_multiple_iter(yneg);
+  //   // Calculation of the derivative
+  //   for (int jdim = 0; jdim < mapdim-2; ++jdim){
+  //     (*DerM)(idim,jdim) = (ypos[jdim+1]-yneg[jdim+1]);
+  //   }
+  // }
+  (*DerM) = 1/(2*delta)*(*DerM);
+}
 /* ----------------------------------------------- */
 // void map_multiple_iter(double fy[][ndim],double tAll[]){
 //   double y[ndim];
@@ -269,16 +321,21 @@ void map_one_iter(double *y){
     exit(1);
   }
 }
-/*----------------------------------------------- */
+/*-----------------------------------------------*/
 // function to find out whether given initial condition is a periodic orbit or not?
 bool IsOrbit(double y[]){
   int mapdim = MM.mapdim; 
   double fy[mapdim];
   memcpy(fy,y,mapdim*sizeof(double));
   map_multiple_iter(fy);
-  print(fy,mapdim);
-  cout << SqEr(fy,y,mapdim)/mapdim << endl;
-  if (SqEr(fy,y,mapdim)/norm(fy,mapdim)<err_tol){
+  double Error=0;
+  if(norm(fy,mapdim)<err_tol*mapdim*10){Error = SqEr(fy,y,mapdim)/(err_tol*mapdim);}
+  else{Error = SqEr(fy,y,mapdim)/norm(fy,mapdim);}
+  // cout << "SqEr(fy,y,mapdim) =" << SqEr(fy,y,mapdim) << endl;
+  // cout << "norm(fy,mapdim)" << norm(fy,mapdim) << endl;
+  cout << "# Error= " << Error << endl;
+  return 1;
+  if (Error<err_tol){
     return 1;
   }
   else{
@@ -293,5 +350,5 @@ void __attribute__((weak)) coordinate_transform(double *ytrans, double *y){
 void __attribute__((weak)) inv_coordinate_transform(double *y,double *ytrans){
   memcpy(y,ytrans,ndim*sizeof(double));
 }
-void pre_next_iter(double *y, double *ytrans){}
+void pre_next_iter(double *y){}
 /*----------------------------------------------- */

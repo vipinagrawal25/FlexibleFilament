@@ -2,7 +2,8 @@
 #ifndef FILE_MAPDYN_SEEN
 #define FILE_MAPDYN_SEEN
 // #include "main.cu"
-#define MaxIter 64
+#define MaxIter 128000
+#include <Eigen/Core>
 /*--------------------------------------------------*/
 struct MV{
   double time;    // Current time of the simulation
@@ -19,6 +20,8 @@ struct MV{
 const int size_MV = 2*sizeof( double ) + 3*sizeof( int ) + sizeof(bool);
 // add the size of guess_space.
 /*--------------------------------------------------*/
+typedef Eigen::MatrixXd Matd;
+/*--------------------------------------------------*/
 void map_one_iter(double *y);
 bool periodic_orbit(double ytrans_all[], double fytrans[], 
                     double yall[], double fy[], double time[]);
@@ -29,6 +32,7 @@ void GG(double y[]);
 void map_multiple_iter(double y[]);
 void coordinate_transform(double *y_trans, double *y);
 void inv_coordinate_transform(double *y, double *y_trans);
+void Jacobian(Matd *DerM, double x[]);
 /*--------------------------------------------------*/
 extern MV MM;					// Saying that MM exists globally
 /*--------------------------------------------------*/

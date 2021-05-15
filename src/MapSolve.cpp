@@ -15,7 +15,8 @@ typedef Eigen::VectorXcd Vecc;
 typedef Eigen::MatrixXcd Matc;
 typedef Spectra::DenseGenMatProd<double> MatProd;
 typedef Eigen::Map<MatrixXd> MapMat;
-int const selectionRule = Spectra::LARGEST_REAL;
+typedef Eigen::MatrixXd Matd;
+int const selectionRule = Spectra::LARGEST_MAGN;
 /*-----------------------------------------------*/
 void calc_stab(double *y, int const neigs = 6);
 // void wData_map(string fname_trans, double ytrans[], double fytrans[]);
@@ -27,7 +28,7 @@ int main(){
   //
   // Printing prcess id for future purpose
   pid_t pid = getpid();
-  cout << "ID for this process is:" << pid << endl;
+  cout << "# ID for this process is: " << pid << endl;
   //
   bool success=1;
   assign_map_param();
@@ -41,7 +42,7 @@ int main(){
   if (MM.guess_space == "Real" || MM.guess_space == "real"){
     iniconf(y);
     coordinate_transform(ytrans,y);
-    print(ytrans,mapdim);
+    // print(ytrans,mapdim);
   }
   else if(MM.guess_space== "Transformed" || MM.guess_space=="transformed"){
     iniconf(ytrans);
@@ -50,7 +51,7 @@ int main(){
   }
   else{
     cout << "# -- guess_space is not mentioned."
-            " Reading input as real space --# " << endl;
+            " Reading input as real space -- # " << endl;
     iniconf(y);
     coordinate_transform(ytrans,y);
   }
@@ -67,7 +68,7 @@ int main(){
       success = periodic_orbit(ytrans_all,fytrans,yall,fy,time);
       if(success){
         // Diagnosis //
-        print(fytrans,mapdim);
+        // print(fytrans,mapdim);
         cout << "#-- Voila! you found the periodic orbit with period --#" << MM.period << endl;
         cout << "#-- I would go ahead and save it -:) --#" << endl;
         //
@@ -91,17 +92,18 @@ int main(){
   // Calculate stability
   if(MM.istab){
     if (MM.iorbit){
-      if (success){calc_stab(ytrans);}
+      print(fytrans,mapdim);
+      if (success){calc_stab(fytrans);}
       else{cout << "#-- Sorry!!! This is not a periodic orbit so it does not make sense. --#\n";}
     }
     else{
      // First check whether you actually have the periodic orbit?
-      cout << "Is it a periodic orbit?"
+      cout << "# Is it a periodic orbit?"
              " (if you don't want this, please comment it out in MapSolve.cpp) " << endl;
-      if(IsOrbit(ytrans)){calc_stab(ytrans);}
-      // if (1){calc_stab(ytrans);}
+      // if(IsOrbit(ytrans)){calc_stab(ytrans);}
+      if (1){calc_stab(ytrans);}
       else{
-        cout << "The guess is not periodic orbit." << endl << 
+        cout << "# The guess is not periodic orbit." << endl << 
         " Did you cross-check the data or time-period? " << endl <<
         "If yes, use our periodic orbit solver to get nearest orbit to the guess." 
         "Set istab=0, iorbit=1" << endl;
@@ -112,51 +114,36 @@ int main(){
 /*-----------------------------------------------*/
 void calc_stab(double *y, int const neigs){
   int mapdim = MM.mapdim;
-  Vecc eigval(neigs);
-  Matc eigvec(neigs,mapdim);
   if(IsPathExist("eig") || IsPathExist("Eig")){
-    cout << "I have already calculated the stability of this orbit."
+    cout << "# I have already calculated the stability of this orbit."
             "There are already some eigenvalues in the folder. I can not replace that.\n"
-            "Please remove the eig file and run the exec again. ";
+            "Please remove the eig file and run the exec again.";
     exit(1);
   }
  // bool success = jacob_eigval<selectionRule>(&eigval,neigs,mapdim,map_multiple_iter,y);
- bool success = jacob_eigvalvec<selectionRule>(&eigval,&eigvec,neigs,mapdim,map_multiple_iter,y);
+ double eps_rel = 1.e-5;
+ cout << "# eps_rel = " << eps_rel << endl;
+ //  Vecc eigval(neigs);
+ //  Matc eigvec(neigs,mapdim);
+ // bool success = jacob_eigvalvec<selectionRule>(&eigval,&eigvec,neigs,mapdim,map_multiple_iter,y,eps_rel);
+ //-----------------------
+ Matd DerM(mapdim,mapdim);
+ Jacobian(&DerM, y);
+ cout << DerM << endl;
+ Vecc eigval = DerM.eigenvalues();
+ bool success = 1;
+ //----------------------
  if(!success){
-    cout << "Sorry, there is something wrong."
+    cout << "# Sorry, there is something wrong."
             "I can not converge to perform stability analysis in a matrix free way."
             "I will calculate the complete Jacobian using finite-difference method with the error o(eps^2)"
          << endl;
-    // double DerM[ndim][ndim];
-    // Jacobian(DerM,y);
-    // MapMat Mat_Jacob(DerM,ndim,ndim);
-    // MatProd op(Mat_Jacob);
-    // GenEigsSolver< double, selectionRule, MatProd > eigs(&op, neigs, 2*neigs+1);
-    // eigval = eigs.eigenvalues();
   }else{
     ofstream eigenfile;
     eigenfile.open( "eig" );
     eigenfile << "\n#------------- The eigenvalues are: -------------#\n" << eigval << endl;
-    eigenfile << "\n#------------- The eigenvectors are: -------------#\n" << eigvec << endl;
+    // eigenfile << "\n#------------- The eigenvectors are: -------------#\n" << eigvec << endl;
     eigenfile.close();
   }
 }
 /*-----------------------------------------------*/
-// This function should not be needed or should look differently when we implement everything
-// as in overshooting method also.
-// This function is written in very bad way.
-// void wData_map(string fname_trans, double y[]){
-//   int time = MM.time;
-//   int period = MM.period;
-//   MM.time = 0;
-//   ofstream outfile(fname_trans,ofstream::out);
-//   wData(&outfile,ytrans,0,MM.mapdim,1);
-//   for (int iter = 0; iter < period-1; ++iter){
-//     map_one_iter(y);
-
-//     wData(&outfile,ytrans,MM.time,MM.mapdim,1);
-//   }
-//   wData(&outfile,fytrans,time,MM.mapdim,1);
-//   outfile.close();
-//   MM.time = time;
-// }

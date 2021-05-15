@@ -119,8 +119,8 @@ void pre_evolve( int Nsize, char *algo, EV *TT,  EV **dev_tt, int Nblock, int Nt
   (*TT).time = 0.;            // current time of the simulation.
   (*TT).tprime = (*TT).time;  // time after every substep inside any function.
   (*TT).dt = 1.e-5;           // initial dt for the evolution
-  (*TT).ndiag = 500;          // total number of files
-  (*TT).tmax = 10;            // Tmax for the simulation.
+  (*TT).ndiag = 2000;          // total number of files
+  (*TT).tmax = 4;            // Tmax for the simulation.
   (*TT).tdiag = 0.;           // Time to save diagnostics
   (*TT).substep = 0.;         // substep inside the function calculation
   EV *temp ;

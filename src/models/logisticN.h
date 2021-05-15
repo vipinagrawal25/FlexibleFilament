@@ -9,6 +9,7 @@ unsigned int const ndim=pp*Np;
 extern double lambda[Np];
 // double const *lambda = new double(Np);
 double const omega=1;
+
 /* ----------------------------------------*/
 void iniconf(double *y); 	// The configuration number is defined for different
 							// Initial configuration into the system.

@@ -13,21 +13,22 @@ using namespace Spectra;
 using namespace Eigen;
 using namespace std;
 // /*****************************************************************/
+double compute_eps(double Xstar[], const double x_in[], int nn, double eps_rel);
 // // template<int const SelectionRule, int neigs, int ndim, typename T>
 // // bool jacob_eigvalvec(double eigval[], double eigvec[][ndim], void func(double*, T*),
 // //                      double Xini[], T *TV);
 
 // template<int const SelectionRule>
 // bool jacob_eigvalvec(VectorXcd *eigval, MatrixXcd *eigvec, int neigs, int ndim,
-//                      void func(double*), double Xini[], double eps_temp=1.e-4);
+//                      void func(double*), double Xini[], double eps_rel=1.e-4);
 
 // template<int const SelectionRule, typename T>
 // bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*, T*), 
-//                   double Xini[], T *TV, double eps_temp=1.e-4);
+//                   double Xini[], T *TV, double eps_rel=1.e-4);
 
 // template<int const selectionRule>
 // bool jacob_eigval(double eigval[], int neigs, int ndim, void func(double*), 
-//                   double Xini[],double eps_temp=1.e-4);
+//                   double Xini[],double eps_rel=1.e-4);
 /*****************************************************************/
 /* Question: Given a function f(x), how would you calculate 'n'
 eigen values of the derivative of this function. 
@@ -49,10 +50,14 @@ public:
     int nn;
     T* aTV;     // Address of the variable TV. TV stand for varible with T type.
     double *Xstar;
+    double eps_rel;
     double eps;
     /*----------------*/
     void perform_op(const double *x_in, double *y_out){
+      cout << "Arnoldi iteration " << iter << " for eigenvalues." << endl;
+      //
       double Xpos[rows()],Xneg[rows()];
+      eps = compute_eps(Xstar,x_in,nn,eps_rel);
       for (int i = 0; i < rows(); ++i){
         Xpos[i] = Xstar[i] + eps*x_in[i];
         Xneg[i] = Xstar[i] - eps*x_in[i];
@@ -62,8 +67,10 @@ public:
       for (int i = 0; i < rows(); ++i){
         y_out[i] = (Xpos[i] - Xneg[i])/(2*eps);
       }
+      iter++;
     }
 private:
+  int iter = 1;
 };
 /*--------------------------------------------------------------------------*/
 // Wrapper to JdotX class without template. 
@@ -77,11 +84,13 @@ public:
     function<void(double*)> f_display;
     int nn;
     double *Xstar;
+    double eps_rel;
     double eps;
     /*----------------*/
     void perform_op(const double *x_in, double *y_out){
       cout << "Arnoldi iteration " << iter << " for eigenvalues." << endl;
       double Xpos[rows()],Xneg[rows()];
+      eps = compute_eps(Xstar,x_in,nn,eps_rel);
       // Map<VectorXd> rhs(x_in,rows());   // rhs due to same terminology as Eigen.
       // VectorXd Xpos = Xstar+eps*rhs;
       // VectorXd Xneg = Xstar-eps*rhs;
@@ -122,7 +131,7 @@ private:
 
 //   GenEigsSolver< double, SelectionRule, JdotX<T> > eigs(&op, neigs, 2*neigs+1);
 //   eigs.init();
-//   eigs.compute(ndim,1.e-3);
+//   eigs.compute(ndim,1.e-6);
 //   if(eigs.info() == SUCCESSFUL){
 //       return 1;
 //       VectorXd eigval_vec = eigs.eigenvalues();
@@ -136,17 +145,18 @@ private:
 // /*--------------------------------------------------------------------------*/
 template<int const SelectionRule>
 bool jacob_eigvalvec(VectorXcd *eigval, MatrixXcd *eigvec, int neigs, int ndim,void func(double*), 
-                     double Xini[], double eps_temp=1.e-4){
+                     double Xini[], double eps_rel=1.e-4){
   JdotX op;
   op.Xstar = Xini;
   op.f_display = func;
   op.nn = ndim;
-  op.eps = eps_temp;
+  op.eps_rel = eps_rel;
 
   int ncv = min(2*neigs+1,ndim);
   GenEigsSolver< double, SelectionRule, JdotX > eigs(&op, neigs, ncv);
   eigs.init();
-  eigs.compute(ndim,1.e-3);
+  int nconv = eigs.compute(ndim,1.e-6);
+  cout << "Number of converged eigenvalues = " << nconv << endl;
   if(eigs.info() == SUCCESSFUL){
     *eigval = eigs.eigenvalues();
     *eigvec = eigs.eigenvectors();
@@ -159,19 +169,19 @@ bool jacob_eigvalvec(VectorXcd *eigval, MatrixXcd *eigvec, int neigs, int ndim,v
 /*--------------------------------------------------------------------------*/
 template<int const selectionRule, typename T>
 bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*, T*),
-                  double Xini[], T *TV, double eps_temp=1.e-4){
+                  double Xini[], T *TV, double eps_rel=1.e-4){
   T_JdotX<T> op;
   op.Xstar = Xini;
   op.f_display = func;
   op.nn = ndim;
   op.aTV = TV;
-  op.eps = eps_temp;
+  op.eps_rel = eps_rel;
 
   int ncv = min(2*neigs+1,ndim);
   GenEigsSolver< double, selectionRule, T_JdotX<T> > eigs(&op, neigs, ncv);
   eigs.init();
-  eigs.compute(ndim,1.e-3);
-
+  int nconv = eigs.compute(ndim,1.e-6);
+  cout << "Number of converged eigenvalues = " << nconv << endl;
   if(eigs.info() == SUCCESSFUL){
     *eigval = eigs.eigenvalues();
     cout << *eigval;
@@ -185,21 +195,22 @@ bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*, T*)
 // The only argument is the array.
 template<int const selectionRule>
 bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*),
-                  double Xini[], double eps_temp=1.e-4){
+                  double Xini[], double eps_rel=1.e-4){
   // TempV tempV;
   // void func_temp = [func](double Xini[],TempV * tempV) {func(Xini)};
-  // jacob_eigval<selectionRule>(eigval,neigs,ndim,func,Xini,&tempV,eps_temp);
+  // jacob_eigval<selectionRule>(eigval,neigs,ndim,func,Xini,&tempV eps_rel);
   cout << selectionRule << endl;
   JdotX op;
   op.Xstar = Xini;
   op.f_display = func;
   op.nn = ndim;
-  op.eps=eps_temp;
+  op.eps_rel = eps_rel;
 
   int ncv = min(2*neigs+1,ndim);
   GenEigsSolver< double, selectionRule, JdotX > eigs(&op, neigs, ncv);
   eigs.init();
-  int nconv = eigs.compute(ndim);
+  int nconv = eigs.compute(ndim,1.e-6);
+  cout << "Number of converged eigenvalues = " << nconv << endl;
   if(eigs.info() == SUCCESSFUL){
     *eigval = eigs.eigenvalues();
     cout << *eigval;
@@ -207,6 +218,13 @@ bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*),
   }else{
     return 0;
   }
+}
+/*****************************************************************/
+double compute_eps(double Xstar[], const double x_in[], int nn, double eps_rel){
+  double eps = eps_rel*norm(Xstar,nn)/norm(x_in,nn)+eps_rel;
+  cout << "eps = "<< eps << endl;
+  // eps = 0.1;
+  return eps;
 }
 /*****************************************************************/
 #endif

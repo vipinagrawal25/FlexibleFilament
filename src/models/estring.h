@@ -34,8 +34,9 @@ int const niniconf = 1;    	 				/* Configuration of the system at t = 0. 0 -> s
 int const lastfile= 0;						// If you want to read input from some file, Mention the file number.
 /* ----------------------------------------*/
 void iniconf(double *y); 	// The configuration number is defined for different
-											// Initial configuration into the system.
-void rData(ifstream *fptr,double *y);
+							// Initial configuration into the system.
 void check_param();
+void write_param(string fname);
+void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]);
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */

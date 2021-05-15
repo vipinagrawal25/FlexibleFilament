@@ -2,6 +2,7 @@
 #include "model.h"
 #include "misc.h"
 #include <memory.h>
+#include <fstream>
 using namespace std;
 /* -----------------------------------------------*/
 double lambda[Np];
@@ -17,24 +18,28 @@ void eval_rhs(double *y){
 /*-----------------------------------------------*/
 void iniconf(double *y){
 	definelambda();
-	y[0] = 0.611260467;
-	y[1] = 0.950484434;
-	y[2] = 0.188255099;
-	y[3] = 0.611260467;
-	y[4] = 0.950484434;
-	y[5] = 0.188255099;
-
-	for (int ip = 6; ip < Np; ++ip){
-		y[ip]= 0;
-	}
+	// y[0] = 0.859517625;
+	// y[1] = 0.41718115212;
+	// y[2] = 0.84005228779;
+	// y[3] = 0.4642291456;
+	// y[0] = 0.86;
+	// y[1] = 0.43;
+	// y[2] = 0.84;
+	// y[3] = 0.46;
+	ifstream myfile;
+	myfile.open("PSI");
+	double ch;
+ 	myfile >> ch;
+ 	int cnt =0;
+  	while(myfile >> ch){y[cnt]=ch;cnt++;}
+  	cout << "# Number of elements read: " << cnt << endl;
 	// y[0] = (lambda[0]-1)/lambda[0];
 }
 /*-----------------------------------------------*/
 void definelambda(){
 	for (int ip = 0; ip < Np; ++ip){
-		lambda[ip]=4;
+		lambda[ip]=3.455;
 	}
-	lambda[0]=4;
 }
 /* ----------------------------------------------- */
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){

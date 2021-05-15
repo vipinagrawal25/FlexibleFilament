@@ -39,7 +39,6 @@ def MakePlot2D(ax,Xaxis,Yaxis,tsnap):
 def GetCoordinate(arr,dim):
 	row,col = arr.shape
 	xx = zeros(row)
-
 	if col==6 or col==3:	# It means that the simulation was run in 3 dimension
 		xx=arr[:,0]
 		yy=arr[:,1]
@@ -48,6 +47,16 @@ def GetCoordinate(arr,dim):
 		yy = arr[:,0]
 		zz = arr[:,1]
 	return xx,yy,zz
+#####################################################
+# def GetCoordinate2(arr):
+# 	row = arr.shape
+# 	xx = zeros(row)
+# 	yy = zeros(row)
+# 	zz = zeros(row)
+# 	for ir in range(row):
+# 		yy[ir] = 
+# 		zz[ir] = 
+# 	return xx,yy,zz
 #####################################################
 def MultiFileMovie(FILE='output',dim=3):
 	if dim==2:
@@ -65,9 +74,6 @@ def MultiFileMovie(FILE='output',dim=3):
 		for isnap in range(1,nsnap,1):
 	 		dd=loadtxt(FILE+'/var'+str(isnap)+'.txt')
 	 		xx,yy,zz=GetCoordinate(dd,dim)
-	 		# xx=dd[:,0]
-	 		# yy=dd[:,1]
-	 		# zz=dd[:,2]
 
 	 		if dim==2:
 	 			MakePlot2D(ax,yy,zz,time[isnap])

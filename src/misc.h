@@ -14,5 +14,6 @@ void print(double*, int start, int skip,int end);
 void add(double *added, double *arr1, double *arr2, int nn);
 void substract(double *subsed, double *arr1, double *arr2, int nn);
 double norm(double *y, int nn );
+double norm(const double *y, int nn );
 /* -----------------------------------------------*/
 #endif

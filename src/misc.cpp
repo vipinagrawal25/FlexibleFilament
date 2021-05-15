@@ -71,6 +71,14 @@ double norm(double *y, int nn ){
   return sqrt(norr);
 }
 /*-----------------------------------------------*/
+double norm(const double *y, int nn ){
+  double norr =0;
+  for (int ii = 0; ii < nn; ++ii){
+    norr = norr+y[ii]*y[ii];
+  }
+  return sqrt(norr);
+}
+/*-----------------------------------------------*/
 // template<typename T, typename ... Args>
 // T First(T first,Args ... args ){
 //   return first;

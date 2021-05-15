@@ -22,7 +22,7 @@ vec3 R[Np],dR[Np], EForce[Np], EForce_ip, FF0;  // R is the position of the bead
 // double CurvSqr[Np];
 double kappasqr;
 double onebythree = 1./3.;
-SS[0] = 0;    // Initializing the material co-ordinate
+SS[0] = 0;    // Initializing the material co-ordinate.
 for (int ip=0;ip<Np;ip++){
   R[ip].x=y[3*ip];
   R[ip].y=y[3*ip+1];
@@ -316,14 +316,14 @@ void iniconf(double *y){
     vec3 R[Np];              // R is the position of the beads.
     double k = 1;            // determines the frequency for initial configuration
     double CurvLength = 0;   // determines the total length of the curve
-    if(lastfile){
-      string l = "output/var";
-      l.append(to_string(lastfile));
-      l.append(".txt");
-      ifstream myfile(l,ios::in); 
-      rData(&myfile,&y[0]);
-    }
-    else{
+    // if(lastfile){
+    //   string l = "output/var";
+    //   l.append(to_string(lastfile));
+    //   l.append(".txt");
+    //   ifstream myfile(l,ios::in); 
+    //   rData(&myfile,&y[0]);
+    // }
+    // else{
       switch(niniconf){
         case 0:
           for (int ip=0;ip<Np;ip++){
@@ -380,7 +380,7 @@ void iniconf(double *y){
               y[3*ip+2] = R[ip].z;
           }
           break;
-      }
+      // }
     }
 }
 

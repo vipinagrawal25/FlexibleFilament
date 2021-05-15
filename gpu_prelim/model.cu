@@ -52,11 +52,11 @@ int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM ){
 /*---------------------------------------------------------------------------------*/
 void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   MPARAM *temp;
-  double height = 1.28*4;  
+  double height = 1.28;  
   (*PARAM).height = height;
   (*PARAM).aa = height/(double)(NN-1);
   // distance between two nodes.
-  (*PARAM).dd = 0.005 ;
+  (*PARAM).dd = 0.005;
   (*PARAM).Dbyell = (*PARAM).dd/(double)height;
   /* r/l ratio for the rod has been kept constant. It should be noted that 
      the particles would also have same diameter. */
@@ -67,7 +67,7 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   (*PARAM).sigma=0.75;
   (*PARAM).ShearRate = 2;
   (*PARAM).omega = (*PARAM).ShearRate*(*PARAM).sigma ;
-  (*PARAM).factorAA = 1.5*pow(height,4)*2;
+  (*PARAM).factorAA = 1.5*pow(height,4)*200;
   // (*PARAM).factorAA = 0. ;
   (*PARAM).AA= (*PARAM).factorAA*pow(10,-5); //AA is the bending rigidity.
   //
@@ -86,12 +86,12 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   // double tdiag = TMAX/2000;
   /* qdiag is the number of diagnostics that you want to calculate.
       If you change this number, keep in mind to make changes in wdiag function as well.*/
-  (*PARAM).qdiag = 2 ;      
+  (*PARAM).qdiag = 2 ;     
   //
   // int qdiag = (*PARAM).qdiag ;
   (*PARAM).bcb = 1 ;      // Boundary condition at bottom
   (*PARAM).bct = 1;       // Boundary condition at top
-  (*PARAM).global_drag = 1; // 0 means no global drag, 1 means global drag  
+  (*PARAM).global_drag = 0; // 0 means no global drag, 1 means global drag
   (*PARAM).iext_force = 0; // Whether to apply the external force or not
   (*PARAM).floc = 0 ;       // External force location 
   (*PARAM).iext_flow = 3;   // External flow: case no. whether time dependent or not etc
@@ -274,7 +274,7 @@ __device__ vec3 drag(int ip,  double psi[], double EForce[], struct MPARAM *para
     mu_ii = dab*mu0;
     /* if we use local drag */
     dR = dot(mu_ii, EForce_jp);
-  } 
+  }
   // /*Caution: Only for debugging*/
   // printf("%lf\t%lf\t%lf\t", dR.x,dR.y,dR.z);
   // printf("\n");
@@ -570,7 +570,7 @@ void initial_configuration( double PSI[], MPARAM PARAM ){
         theta = (double) M_PI *iN/NN; 
         PSI[iN*pp] = 0.;
         PSI[iN*pp + 1] = cos(theta) ;
-        PSI[iN*pp + 2] = sin(theta) ; 
+        PSI[iN*pp + 2] = sin(theta) ;
       }
       break;
   }

@@ -337,7 +337,7 @@ void iniconf(double *y){
       cout << "# Number of elements read: " << cnt << endl;
       if(cnt==Np){}
       else if(cnt==ndim){memcpy(y_start,y,2*pp*sizeof(double));}
-      else{ cout << "Initial point is not right." << endl; }
+      else{ cout << "# Initial point is not right." << endl; }
       // for(int ip = 0; ip < Np; ++ip){
       //   for (int jp = 0; jp < pp; ++jp){
       //     myfile >> ch;
@@ -403,8 +403,8 @@ void iniconf(double *y){
       }
       break;
     default:
-      cout << "We have not implemented this initial configuration." << endl
-           << "EXITING" << endl;
+      cout << "# We have not implemented this initial configuration." << endl
+           << "# EXITING" << endl;
       break;
   }
 }
@@ -418,7 +418,7 @@ void GetRij(vec2 R[], int i, int j, double *Distance, vec2 *rij){
 /********************************************/
 void check_param(){
   if (dd>aa){
-    cout << "ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
+    cout << "# ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
     exit(1);
   }
 }
@@ -427,8 +427,8 @@ void write_param( string fname ){
   ofstream paramfile;
   paramfile.open( fname );
   paramfile << "# =========== Model Parameters ==========" << endl
-            << "#dimension of ODE: pp = " << pp << endl
-            << "#Number of copies: Np = " << Np << endl
+            << "dimension of ODE: pp = " << pp << endl
+            << "Number of copies: Np = " << Np << endl
             << "height = " << height << endl
             << "aa = " << aa << endl
             << "dd = " << dd << endl
@@ -493,7 +493,6 @@ void y2kappa(double kappa[], double y[]){
   }
   //
   if(bct==1){
-    // kappa[Np-2]=0;
     kappa[Np-1]=0;
   }else{
     cout << "Boundary condition at Np==0,1 not implemented." << endl;
@@ -529,7 +528,7 @@ void kappa2y(double y[], double kappa[]){
   // straightline(&Tngt,&Nrml);
   // straightline(&Tngtm1,&Nrmlm1);
   // vec2 dX = y2vec(y_start,1)-y2vec(y_start,0);
-  print(y_start,4);
+  // print(y_start,4);
   dX = y2vec(y_start,1)-y2vec(y_start,0);
   memcpy(y,y_start,2*pp*sizeof(double));
   // else if(cc=="current"){
@@ -585,8 +584,8 @@ void kappa2y(double y[], double kappa[]){
 /********************************************/
 void coordinate_transform(double y_trans[], double y[]){
   // I will write about the transformation from y to kappa here.
-  y2kappa(y_trans,y);
-  // memcpy(y_trans,y,MM.mapdim*sizeof(double));
+  // y2kappa(y_trans,y);
+  // memcpy(y_trans,y,ndim*sizeof(double));
   // for (int idim = 0; idim < int(ndim)/2; ++idim){
   //   y_trans[2*idim] = y_trans[2*idim] - y_trans[0];
   //   y_trans[2*idim+1] = y_trans[2*idim+1] - y_trans[1];
@@ -596,8 +595,8 @@ void coordinate_transform(double y_trans[], double y[]){
 void inv_coordinate_transform(double y[], double y_trans[]){
   // Transformation from kappa to y goes here.
   // string cc = "current";
-  kappa2y(y,y_trans);
-  // memcpy(y,y_trans,MM.mapdim*sizeof(double));
+  // kappa2y(y,y_trans);
+  // memcpy(y,y_trans,ndim*sizeof(double));
 }
 /********************************************/
 void pre_next_iter(double *y, double *y_trans){

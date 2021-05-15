@@ -170,9 +170,7 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
     error=max(temp_error,error);
   }
   error=error+tiny;
-  
   // cout << error << endl;
-
   if (error<tol_dt){
     *add_time=time+dt;
     for (int idim = 0; idim < ndim; ++idim){
@@ -191,7 +189,7 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   }
 } 
 /*********************************/
-void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, double* SS, 
+void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, double* SS,
           double ldiagnos)
 {
   // In this function I have implemented Dormand-Prince Method which is more suitable than rkf45 for high order integration.

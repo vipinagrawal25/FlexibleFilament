@@ -291,10 +291,10 @@ def CurvatureSign(kappasqr,yy,zz,eps):
 	sign[2:NN-1]=cpdiff
 	return sign
 
-def GetCurv(Folder='output/',code='CPU',dim=2):
+def GetCurv(Folder='output/',code='CPU',dim=3):
 	# This function will take the square root of curvature. Sign of the final thing would be decided
 	# by double derivative of the position vector. If the function is convex, curvature can be negative
-	# else the curvature would be positive.	
+	# else the curvature would be positive.
 	dd=loadtxt(Folder+'curvature.txt')
 	time=dd[:,0]
 	nrowcol=dd.shape
@@ -310,7 +310,7 @@ def GetCurv(Folder='output/',code='CPU',dim=2):
 			tangent=diff(position,axis=0)
 			for iN in range(NN-1):
 				tangent[iN,:]=tangent[iN,:]/sqrt( tangent[iN,0]**2 + tangent[iN,1]**2 )
-			kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])    		
+			kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])  		
 	elif (code == 'GPU'):
 		dd=loadtxt(Folder+"PSI")
 		zz=zeros(NN)
@@ -325,7 +325,6 @@ def GetCurv(Folder='output/',code='CPU',dim=2):
 				tangent[iN,:]=tangent[iN,:]/sqrt( tangent[iN,0]**2 + tangent[iN,1]**2 )
 			kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])    		
 			# kappa[isnap,1:NN+1]=sqrt(curvsqr[isnap,:])*CurvatureSign(curvsqr[isnap,:],yy,zz,eps)
-	
 	savetxt(Folder+'kappa.txt',kappa,fmt='%.5e')
 
 def SineTransform(dd,length=1.28,dia=0.005):
@@ -414,4 +413,3 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
     	Nrows,Ncols = dd.shape
     	dd2 = dd[0:factor:-1,:]
     	return dd,dd2
-    
