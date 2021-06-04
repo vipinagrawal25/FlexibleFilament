@@ -21,6 +21,7 @@ int main(){
   //
   double y[ndim],y0[ndim],CurvSqr[Np],SS[Np],time,MeanSqDis,timer_global;
   double vel[ndim];
+  double y_tracer[ntracer*pp];
   int filenumber;
   string lastline;
   int ldiagnos=0;
@@ -28,7 +29,6 @@ int main(){
   // But these things are only for diagnostic purpose and it's too much hassle for someting that is not even 
   // important. So we wil keep it in the wrong way, as most of time this would give right result.
   double dt_min = 10;
-  // This gamma is non-dimensional number which describes the competition between viscous forces and elastic forces.
   //----------------------------
   int itn=1; 
   clock_t timer;
@@ -134,8 +134,8 @@ int main(){
     CurvSqr[ip] = 0;
     SS[ip] = 0;
   }
-  /*Opening every file again in mode. This thing does not depend on configuration number and that's why 
-  it is outside the loop*/
+  /* Opening every file again in mode. This thing does not depend on configuration number and that's why 
+     it is outside the loop */
   // fstream outfile_MSD("MSD.txt", ios::app);
   fstream outfile_time("output/time.txt", ios::app);
   fstream outfile_curvature("output/curvature.txt", ios::app);
@@ -211,7 +211,7 @@ int main(){
   outfile_information.open("info.txt", ios::out | ios::app);
   outfile_information << itn << '\t' <<  timer_global << '\t' << TMAX << '\t' << dt_min << endl;
   outfile_information.close();
-
+  //
   cout << "Total number of iteration: " << itn << endl;
   // cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
   cout << "Total time elapsed: " << timer_global << "s" << endl;

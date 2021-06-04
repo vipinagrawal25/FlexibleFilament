@@ -10,6 +10,7 @@
 #include <Spectra/GenEigsSolver.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "model.h"
 /*----------------------------------------------*/
 typedef Eigen::VectorXcd Vecc;
 typedef Eigen::MatrixXcd Matc;
@@ -25,7 +26,6 @@ int main(){
   // Here I will define whether I am calling the code for fixed point or periodic orbits.
   // Idea is to use the same code for periodic orbit and fixed point both.
   // Fixed point is a periodic orbit with time-period 1 for a map.
-  //
   // Printing prcess id for future purpose
   pid_t pid = getpid();
   cout << "# ID for this process is: " << pid << endl;
@@ -42,12 +42,15 @@ int main(){
   if (MM.guess_space == "Real" || MM.guess_space == "real"){
     iniconf(y);
     coordinate_transform(ytrans,y);
-    // print(ytrans,mapdim);
+    // before going in the next iteration for stability or GMRES,
+    // do you want to change or check anything in y or ytrans?
+    // it is coded in this function.
+    pre_next_iter(y,ytrans);
   }
   else if(MM.guess_space== "Transformed" || MM.guess_space=="transformed"){
     iniconf(ytrans);
     inv_coordinate_transform(y,ytrans);
-    print(y,ndim);
+    pre_next_iter(y,ytrans);
   }
   else{
     cout << "# -- guess_space is not mentioned."
@@ -93,15 +96,15 @@ int main(){
   if(MM.istab){
     if (MM.iorbit){
       print(fytrans,mapdim);
-      if (success){calc_stab(fytrans);}
+      if(success){calc_stab(fytrans);}
       else{cout << "#-- Sorry!!! This is not a periodic orbit so it does not make sense. --#\n";}
     }
     else{
      // First check whether you actually have the periodic orbit?
       cout << "# Is it a periodic orbit?"
              " (if you don't want this, please comment it out in MapSolve.cpp) " << endl;
-      // if(IsOrbit(ytrans)){calc_stab(ytrans);}
-      if (1){calc_stab(ytrans);}
+      if(IsOrbit(ytrans)){calc_stab(ytrans);}
+      // if (1){calc_stab(ytrans);}
       else{
         cout << "# The guess is not periodic orbit." << endl << 
         " Did you cross-check the data or time-period? " << endl <<

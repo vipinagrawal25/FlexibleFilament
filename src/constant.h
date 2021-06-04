@@ -3,9 +3,9 @@
 //---------------------------//
 #define TimeScheme "rnkf45"
 #define time_tol 1.e-9
-#define err_tol 1.e-5
+#define err_tol 1.e-2
 // #define delta 1.e-2
-#define wDataMeth 2
+#define wDataMeth 1
 #define rDataMeth 1
 #define tiny 1.e-15
 #define SysType "continuous"
@@ -20,4 +20,4 @@
 	wDataMeth(Writing/Reading data type): 
 				1 -> to save every snap in different file
                 2 -> to save all the snaps in single file called PSI, VEL
-	SysType	-> Is it a map or ODE?*/
+	SysType	-> Is it a map or ODE? */

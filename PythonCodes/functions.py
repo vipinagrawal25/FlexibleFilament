@@ -291,7 +291,7 @@ def CurvatureSign(kappasqr,yy,zz,eps):
 	sign[2:NN-1]=cpdiff
 	return sign
 
-def GetCurv(Folder='output/',code='CPU',dim=3):
+def GetCurv(Folder='output/',code='CPU',dim=3,wDataMeth=1):
 	# This function will take the square root of curvature. Sign of the final thing would be decided
 	# by double derivative of the position vector. If the function is convex, curvature can be negative
 	# else the curvature would be positive.
@@ -303,10 +303,17 @@ def GetCurv(Folder='output/',code='CPU',dim=3):
 	kappa=zeros([nsnap,NN+1])
 	kappa[:,0]=time
 	tangent=zeros([NN-1,2])
+	position=zeros([NN,2])
 	if (code=='CPU'):
 		for isnap in range(1,nsnap):
 			dd = loadtxt(Folder+'var'+str(isnap)+'.txt')
-			position=dd[:,1:3]
+			if wDataMeth==1 and dim==3:
+				position=dd[:,1:3]
+			elif wDataMeth==1 and dim==2:
+				position=dd[:,0:2]
+			elif wDataMeth==2 and dim==2:
+				position[:,0] = dd[2::4]
+				position[:,1] = dd[4::4]
 			tangent=diff(position,axis=0)
 			for iN in range(NN-1):
 				tangent[iN,:]=tangent[iN,:]/sqrt( tangent[iN,0]**2 + tangent[iN,1]**2 )
@@ -356,8 +363,8 @@ def vel_tracer(dd,vel_abs,time,Xtracer,wave='sine',height=1.28,ShearRate=2,sigma
     
     for i in range(0,NN):
         Xi = Xtracer-dd[i,:] 
-        XiXj = outer(Xi,Xi)                 # XiXj second order tensor
-        rr = linalg.norm(Xi) 
+        XiXj = outer(Xi,Xi)                    # XiXj second order tensor
+        rr = linalg.norm(Xi)
         GG = (dij/rr + XiXj/(rr**3))           # Green's function for the current point
         del2G = (dij/(rr**3) - 3*XiXj/(rr**5)) # Double derivative of Green's function
         
@@ -376,6 +383,7 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
     	position = zeros([NN,3])
     	vel_abs = zeros([NN,3])
     	Vtracer = zeros([ndiag,3])
+    	
     	for fnumber in range(1,ndiag):
     		print(fnumber)
     		file = loadtxt(Folder+'var'+str(fnumber)+'.txt')
@@ -404,7 +412,7 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
     			vel_abs[iN,1]=dd_vel[fnumber,3*iN+2]
     			vel_abs[iN,2]=dd_vel[fnumber,3*iN+3]
     		Vtracer[fnumber-1,:]=vel_tracer(position,vel_abs,time[fnumber],Xtracer,height=height,sigma=sigma)
-
+    		
     print("I am done")
     return time, Vtracer
 

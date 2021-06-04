@@ -22,7 +22,7 @@ void write_map_param(string fname);
 void rnkt4(double *y,double *add_time, double* add_dt) __attribute__((weak));
 void rnkf45(double *y,double *add_time, double* add_dt) __attribute__((weak));
 void eval_rhs(double *y) __attribute__((weak));
-void pre_next_iter(double *y) __attribute__((weak));
+void pre_next_iter(double *y,double *ytrans) __attribute__((weak));
 // void map_trans_one_iter(double ytrans[]);
 // Define coordinate transform in model.cpp file, if you wish to.
 /*-----------------------------------------------*/
@@ -42,16 +42,16 @@ void assign_map_param(){
   /* Set up parameters for map iteration */
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
-  MM.period = 2.;
-  MM.iorbit = 0.;     // 0 if you already have the orbit,
+  MM.period = 8.;
+  MM.iorbit = 2.;     // 0 if you already have the orbit,
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
   // It computes the eigenvalues and save them in the folder.
-  MM.istab = 1.;
+  MM.istab = 0.;
   // MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
                            // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
-  MM.mapdim = ndim;
+  MM.mapdim = Np;
   MM.guess_space = "Real";  // take two values "Real" or "Transformed"
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics.
@@ -203,7 +203,7 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
 void Jacobian(Matd *DerM, double x[]){
   // Take a small step in every direction and calculate the differences.
   // dy/dx = (f(x+dx) - f(x-dx))/2dx
-  double delta = 1.e-4;
+  // double delta = 1.e-2;
   cout << "# delta = " << delta <<endl;
   int period = MM.period;
   int mapdim = MM.mapdim;
@@ -212,7 +212,7 @@ void Jacobian(Matd *DerM, double x[]){
   // MatrixXd DerM(mapdim,mapdim);
   for (int idim = 0; idim < mapdim; ++idim){
     cout << "# Starting calculation for row " << idim << endl;
-  // Calculation for f(x+dx)
+    // Calculation for f(x+dx)
     memcpy(ypos,x,mapdim*sizeof(double));
     ypos[idim] = x[idim]+delta;
     map_multiple_iter(ypos);
@@ -222,7 +222,7 @@ void Jacobian(Matd *DerM, double x[]){
     map_multiple_iter(yneg);
     // Calculation of the derivative
     for (int jdim = 0; jdim < mapdim; ++jdim){
-      (*DerM)(idim,jdim) = (ypos[jdim]-yneg[jdim]);
+      (*DerM)(idim,jdim) = (ypos[jdim]-yneg[jdim])/(2*delta);
     }
   }
   // for (int idim = 0; idim < mapdim-2; ++idim){
@@ -240,7 +240,7 @@ void Jacobian(Matd *DerM, double x[]){
   //     (*DerM)(idim,jdim) = (ypos[jdim+1]-yneg[jdim+1]);
   //   }
   // }
-  (*DerM) = 1/(2*delta)*(*DerM);
+  // (*DerM) = 1/(2*delta)*(*DerM);
 }
 /* ----------------------------------------------- */
 // void map_multiple_iter(double fy[][ndim],double tAll[]){
@@ -259,18 +259,32 @@ void Jacobian(Matd *DerM, double x[]){
 // }
 /* ----------------------------------------------- */
 // G(x) = f(x) - x;
-void GG(double y[]){
+void GG(double ytrans[]){
+  MM.time = 0;
   int mapdim = MM.mapdim;
-  double fy[mapdim];
-  memcpy(fy,y,mapdim*sizeof(double));
-  map_multiple_iter(fy);
+  int period = MM.period;
+  double fytrans[mapdim],fy[ndim];
+  inv_coordinate_transform(fy,ytrans);
+  cout << "# Starting map iteration" << endl;
+  for (int iter = 0; iter < period; ++iter){
+    map_one_iter(fy);
+  }
+  coordinate_transform(fytrans,fy);
+  pre_next_iter(fy,fytrans);
   for (int idim = 0; idim < mapdim; ++idim){
-    y[idim] = fy[idim]-y[idim];
+    ytrans[idim] = fytrans[idim]-ytrans[idim];
   }
 }
 /* ----------------------------------------------- */
 // it takes only one dimensional array as an input.
 void map_multiple_iter(double ytrans[]){
+  // int mapdim = MM.mapdim;
+  // double fytrans[mapdim];
+  // memcpy(fytrans,ytrans,mapdim*sizeof(double));
+  // GG(fytrans);
+  // for (int idim = 0; idim < mapdim; ++idim){
+  //   ytrans[idim] = fytrans[idim]+ytrans[idim];
+  // }
   MM.time=0;
   int period = MM.period;
   double y[ndim];
@@ -350,5 +364,5 @@ void __attribute__((weak)) coordinate_transform(double *ytrans, double *y){
 void __attribute__((weak)) inv_coordinate_transform(double *y,double *ytrans){
   memcpy(y,ytrans,ndim*sizeof(double));
 }
-void pre_next_iter(double *y){}
+void pre_next_iter(double *y,double *ytrans){}
 /*----------------------------------------------- */

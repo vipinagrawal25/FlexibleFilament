@@ -163,14 +163,12 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim] + dt*(bi[0]*k1[idim] + bi[1]*k2[idim] + bi[2]*k3[idim] + bi[3]*k4[idim] + bi[4]*k5[idim] 
                          +  bi[5]*k6[idim]);
-    // cout << temp[idim] << endl;
     ynew[idim] = y[idim]+ dt*(bistar[0]*k1[idim] + bistar[1]*k2[idim] + bistar[2]*k3[idim] + bistar[3]*k4[idim] 
                         + bistar[4]*k5[idim] +  bistar[5]*k6[idim]);
     temp_error = abs(temp[idim]-ynew[idim]);
     error=max(temp_error,error);
   }
   error=error+tiny;
-  // cout << error << endl;
   if (error<tol_dt){
     *add_time=time+dt;
     for (int idim = 0; idim < ndim; ++idim){
@@ -180,14 +178,13 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
     s = epsilon*pow((tol_dt/error),0.20);
     if (s>truncationmax){s=truncationmax;}
     *add_dt = s*dt;
-    // cout << *add_dt << endl;
   }else{
     s = epsilon*pow((tol_dt/error),0.25);
     if (s<truncationmin){s=truncationmin;}
     *add_dt = s*dt;
     rnkf45(ndim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
   }
-} 
+}
 /*********************************/
 void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, double* SS,
           double ldiagnos)

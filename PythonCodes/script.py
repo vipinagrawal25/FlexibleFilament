@@ -25,7 +25,10 @@ Thing7 = "MSD_no_trans"
 Thing8 = "SqrtCurvature"
 Thing9 = "TracerVelocity"
 
-Things = [Thing8]
+Things = [Thing1, Thing8]
+
+Xtracer2 = [0.01,0,0.5]
+Xtracer9 = [0.01,1.2,0.5]
 
 # figure=MSD_plot(step=1)
 # show(figure)
@@ -56,8 +59,10 @@ for i in range(0,len(Things)):
 	elif Things[i]=="SqrtCurvature":
 		GetCurv()
 	elif Things[i]=="TracerVelocity":
-		Vtracer=VtraceTimeSer(sigma=1.5)
-		NP.savetxt('output/Vtracer2.txt',Vtracer)
+		Vtracer=VtraceTimeSer(sigma=0.75,Xtracer=Xtracer9)
+		NP.save('output/Vtracer9.npy',Vtracer)
+		# NP.savetxt('output/Vtracer3.txt',Vtracer)
+
 # BendE = BendingEnergy(A=0.00006,FILE='data/curvature.txt')
 # plt.plot(BendE)
 # plt.savefig('data/BendE.png',dpi=300)

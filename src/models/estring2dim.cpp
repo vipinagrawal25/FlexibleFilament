@@ -66,7 +66,7 @@ if (iext_force){
   }
 }
 switch(iext_flow){
-   case 1:
+  case 1:
     if (sin(omega*time)>=0){
       for (int ip = 0; ip < Np; ++ip){
         dR[ip].x = dR[ip].x + ShearRate*(height-R[ip].y)*ceil(sin(omega*time));
@@ -94,10 +94,10 @@ switch(iext_flow){
       dR[ip].x = dR[ip].x + ShearRate*(height-R[ip].y)*sin(omega*time);
     }
     break;
-}
-for (int ip=0;ip<Np;ip++){
-  rhs[2*ip]=dR[ip].x;
-  rhs[2*ip+1]=dR[ip].y;
+  }
+  for (int ip=0;ip<Np;ip++){
+    rhs[2*ip]=dR[ip].x;
+    rhs[2*ip+1]=dR[ip].y;
   }
 }
 /**************************/
@@ -105,7 +105,7 @@ void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
   double onebythree = 1./3.;
   double mu0 = onebythree/(M_PI*viscosity*dd);
   if (UseRP == 'Y'){
-    // mu_ij represents the one element of mobility matrix (Size: NXN). 
+    // mu_ij represents the one element of mobility matrix (Size: NXN).
     // Every element of the matrix itself is a 2nd rank tensor and the dimension of that should 3x3.
     Tens2b2 mu_ij, mu_ii;
     double d_rij;
@@ -136,7 +136,7 @@ void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
   else{
     cout << "Sorry, I do not understand your choice of the paramenter UseRP." << endl;
     exit(1);
-  } 
+  }
 }
 /**************************/
 void getub(double *bk, vec2 *uk, int kp, vec2 X[]){
@@ -384,8 +384,8 @@ void iniconf(double *y){
     case 2:
       // Santillian's experiment
     // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. 
-      // The rod should be deviated a little bit from origin in starting.           
-      for (int ip = 0; ip < Np; ++ip){
+      // The rod should be deviated a little bit from origin in starting.
+        for (int ip = 0; ip < Np; ++ip){
           R[ip].x = aa*(double(ip+1))-height*0.5;
           R[ip].y = aa*sin(M_PI*k*aa*double(ip+1)/height);
           if (ip>0){
@@ -517,6 +517,7 @@ void kappa2y(double y[], double kappa[]){
     dT/ds = \kappa N
     dN/ds = -\kappa T
   */
+  cout << "#" << y_start[0] << "\t" << y_start[1] << "\t" << y_start[2] << "\t" << y_start[3] << endl;
   double ds=aa;
   vec2 Tngt,Nrml,Tngtm1,Nrmlm1,XX,dX;
   // vec2y(y,XX,0);
@@ -573,7 +574,7 @@ void kappa2y(double y[], double kappa[]){
     }
   }
   if (isphysical==0){
-    cout << "I am halving the curvature to take a physical NK step." << endl;
+    cout << "# I am halving the curvature to take a physical NK step." << endl;
     for (int ip = 0; ip < Np; ++ip){
       kappa[ip] = kappa[ip]/2;
     }
@@ -584,7 +585,7 @@ void kappa2y(double y[], double kappa[]){
 /********************************************/
 void coordinate_transform(double y_trans[], double y[]){
   // I will write about the transformation from y to kappa here.
-  // y2kappa(y_trans,y);
+  y2kappa(y_trans,y);
   // memcpy(y_trans,y,ndim*sizeof(double));
   // for (int idim = 0; idim < int(ndim)/2; ++idim){
   //   y_trans[2*idim] = y_trans[2*idim] - y_trans[0];
@@ -595,10 +596,11 @@ void coordinate_transform(double y_trans[], double y[]){
 void inv_coordinate_transform(double y[], double y_trans[]){
   // Transformation from kappa to y goes here.
   // string cc = "current";
-  // kappa2y(y,y_trans);
+  kappa2y(y,y_trans);
   // memcpy(y,y_trans,ndim*sizeof(double));
 }
 /********************************************/
 void pre_next_iter(double *y, double *y_trans){
+  cout << "# Is it coming?" << endl;
   memcpy(y_start,y,2*pp*sizeof(double));
 }
