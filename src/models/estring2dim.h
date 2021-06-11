@@ -16,10 +16,10 @@ double const viscosity = 10;				// Equivalent to kinematic viscosity of glycerin
 double const Z0=0.;		 					// If we want the bottom point of the filament to be fixed.
 double const FFY0 = 0;	  					// Amplitude of the force.
 // Sigma is a dimensionless number, which is described as frequency parameter.
-double const sigma=0.75;
+double const sigma=1.5;
 double const ShearRate = 2;
 double const omega = ShearRate*sigma;
-double const AA = 1.5*pow(10,-5)*pow(height,4)*1;
+double const AA = 1.5*pow(10,-5)*pow(height,4)*5;
 double const HH = 16*AA/(dd*dd);			// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
 char const UseRP = 'Y';						// Y is for the new one, O is for old one and N is for not using 
 											// Rotne Pragor tensor.
