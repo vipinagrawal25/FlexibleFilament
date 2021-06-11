@@ -43,15 +43,15 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
   switch(wDataMeth){
     case 1:
       for(int ip = 0; ip < Npt; ++ip){
-        *fptr << setprecision(15) << 0;
-        *fptr << setprecision(15) << '\t';
+        // *fptr << setprecision(15) << 0;
+        // *fptr << setprecision(15) << '\t';
         for (int jp = 0; jp < ppt; ++jp){
           *fptr << setprecision(15) << y[ppt*ip+jp];
           *fptr << setprecision(15) << '\t';
         }
         // Now next three numbers contain values of velocity.
-        *fptr << setprecision(15) << 0;
-        *fptr << setprecision(15) << '\t';
+        // *fptr << setprecision(15) << 0;
+        // *fptr << setprecision(15) << '\t';
         for (int jp = 0; jp < ppt; ++jp){
           *fptr << setprecision(15) << vel[ppt*ip+jp];
           *fptr << '\t';

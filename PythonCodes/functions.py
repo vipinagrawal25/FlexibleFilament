@@ -383,7 +383,6 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
     	position = zeros([NN,3])
     	vel_abs = zeros([NN,3])
     	Vtracer = zeros([ndiag,3])
-    	
     	for fnumber in range(1,ndiag):
     		print(fnumber)
     		file = loadtxt(Folder+'var'+str(fnumber)+'.txt')
@@ -412,7 +411,6 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
     			vel_abs[iN,1]=dd_vel[fnumber,3*iN+2]
     			vel_abs[iN,2]=dd_vel[fnumber,3*iN+3]
     		Vtracer[fnumber-1,:]=vel_tracer(position,vel_abs,time[fnumber],Xtracer,height=height,sigma=sigma)
-    		
     print("I am done")
     return time, Vtracer
 

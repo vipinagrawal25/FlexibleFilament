@@ -23,4 +23,4 @@ dynamics:
 dynamics_multirun:
 	(echo "I will compile myself to compute fixed points or periodic orbits for given bounday condition.\n";\
 	 ln -sf hosts/${HOST} host; cd src/;ln -sf ../${folder}/${MODEL}.h model.h;ln -sf models/${MODEL}.cpp\
-	 model.cpp; make map_dyn exec=${exec}; mv ${exec}.exe ../${folder}; echo "Compilation completed.")	
+	 model.cpp; make map_dyn exec=${exec}; mv ${exec}.exe ../${folder}; echo "Compilation completed.")

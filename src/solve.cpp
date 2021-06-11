@@ -1,8 +1,8 @@
 #include <iostream>
-#include<time.h>
-#include<math.h>
-#include<string>
-#include<vector>
+#include <time.h>
+#include <math.h>
+#include <string>
+#include <vector>
 #include "ode.h"
 #include "model.h"
 #include "input.h"
@@ -12,16 +12,17 @@
 #include "misc.h"
 #include <fstream>
 #include <unistd.h>
+#include <memory.h>
 /********************************************/
 using namespace std;
 /* ----------------------------------------*/
 int main(){
   pid_t pid = getpid();
   cout << "# ID for this process is: " << pid << endl;
+  int ndim_tr = ntracer*ptracer;
   //
-  double y[ndim],y0[ndim],CurvSqr[Np],SS[Np],time,MeanSqDis,timer_global;
-  double vel[ndim];
-  double y_tracer[ntracer*pp];
+  double y[ndim],y0[ndim],vel[ndim],CurvSqr[Np],SS[Np],time,MeanSqDis,timer_global,EForceArr[ndim];
+  double y_tr[ndim_tr],y0_tr[ndim_tr],vel_tr[ndim_tr];
   int filenumber;
   string lastline;
   int ldiagnos=0;
@@ -41,7 +42,8 @@ int main(){
   //   double num = 0.0;
   //   string line;
   //   ifstream outfile_time("output/time.txt");
-  //   fstream outfile_time_new("output/time_new.txt", ios::out);   // Just a new time file which would be renamed later anyway.
+  //   fstream outfile_time_new("output/time_new.txt", ios::out);   
+  // Just a new time file which would be renamed later anyway.
   //   // ifstream outfile_MSD("MSD.txt");
   //   // fstream outfile_MSD_new("MSD_new.txt",ios::out);
   //   ifstream outfile_curvature("output/curvature.txt");
@@ -122,12 +124,19 @@ int main(){
     system("exec mkdir output");
     system("exec rm -f MSD.txt");
     iniconf(y0);
-    eval_rhs(time,y0,vel,tdiagnos,CurvSqr,SS);
+    iniconf_tr(y0_tr);
+    eval_rhs(time,y0,vel,tdiagnos,CurvSqr,SS,EForceArr);
+    eval_rhs_tr(time,EForceArr,y0,y0_tr,vel_tr);
+    //
     ofstream outfile;
     outfile.open("output/var0.txt");
-    wData(&outfile,&outfile,y0,vel);                   // Code it in your model.cpp
+    wData(&outfile,&outfile,y0,vel);                                            // Code it in your model.cpp
     outfile.close();
-  // } 
+    //
+    outfile.open("output/tracer0.txt");
+    wData(&outfile,&outfile,y0_tr,vel_tr,time,ntracer,ptracer);                  // Code it in your model.cpp
+    outfile.close();
+    //
   // Initializing curv square and ss. It won't depend on the configuration number.
   // Call a diagnostic function for all these things. Save names in model file.
   for (int ip = 0; ip < Np; ++ip){
@@ -140,15 +149,16 @@ int main(){
   fstream outfile_time("output/time.txt", ios::app);
   fstream outfile_curvature("output/curvature.txt", ios::app);
   fstream outfile_SS("output/material_point.txt", ios::app);
-  iniconf(y);
-  eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS);
+  memcpy(y,y0,ndim*sizeof(double));
+  memcpy(y_tr,y0_tr,ndim_tr*sizeof(double));
   timer = clock();
   timer_global = timer/CLOCKS_PER_SEC;
   while(time < TMAX){
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
     // rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
-    rnkf45(ndim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
+    rnkf45(ndim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], EForceArr,tdiagnos);
+    euler_tr(ndim_tr,y,y_tr,vel_tr,time,dt,EForceArr);
     // DP54(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
     // cout << time << endl;
     if (dt<dt_min){
@@ -162,15 +172,21 @@ int main(){
     //     lengthmin=SS[Np-1];
     //     // cout << lengthmin << endl;
     // }
-    tdiagnos = 0;
+    if (time+dt>=tdiag*filenumber && time<tdiag*filenumber){tdiagnos=1;}
+    else{tdiagnos=0;}
     // cout << time << endl;
     if (time>=tdiag*filenumber){
-      // cout << dt << endl;
-      // ofstream outfile;
+      //
       string l = "output/var" + to_string(filenumber) + ".txt";
       outfile.open(l, ios::out);
       wData(&outfile,&outfile,y,vel);
       outfile.close();
+      //
+      string l_tr = "output/tracer" + to_string(filenumber) + ".txt";
+      outfile.open(l_tr, ios::out);
+      wData(&outfile,&outfile,y_tr,vel_tr,time,ntracer,ptracer);
+      outfile.close();
+      //
       /* Call a function to write both diagnostic variable.*/
       outfile_curvature << time << '\t' ;
       outfile_time << time;
@@ -181,36 +197,19 @@ int main(){
         outfile_SS << SS[ip]/SS[Np-1] << '\t';
       }
       /*---------------------------------- */
-      // MeanSqDis = 0;
-      // for (int idim = 0; idim < ndim; ++idim){
-      //     MeanSqDis = MeanSqDis+(y[idim]-y0[idim])*(y[idim]-y0[idim]);
-      // }
-      // MeanSqDis = sqrt(MeanSqDis);
-      // outfile_MSD << MeanSqDis;
       outfile_curvature << endl;
-      // outfile_MSD << endl;
       outfile_time << endl;
       outfile_SS << endl;
       filenumber = filenumber+1;
       cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<TMAX<<"\n";
-      tdiagnos =1;
+      tdiagnos=0;
       itn=itn+1;
     }
   }
-  // timer = clock()-timer;
   timer_global = clock()/CLOCKS_PER_SEC - timer_global;
   outfile_time.close();
   outfile_curvature.close();
   outfile_SS.close();
-  ofstream outfile_information;
-  // outfile_information.open("../info.csv", ios::out | ios::app);
-  // outfile_information << itn << "," <<  timer_global << "," << TMAX << ',' << dt_min << "," << viscosity << ','
-  // << ShearRate << ',' <<  omega << "," << Np << "," << AA << "," << HH << "," << dd << "," << height << "," << sigma << "," 
-  // << gamma << "," << HH*aa*aa/AA << endl;
-  // outfile_information.close();
-  outfile_information.open("info.txt", ios::out | ios::app);
-  outfile_information << itn << '\t' <<  timer_global << '\t' << TMAX << '\t' << dt_min << endl;
-  outfile_information.close();
   //
   cout << "Total number of iteration: " << itn << endl;
   // cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;

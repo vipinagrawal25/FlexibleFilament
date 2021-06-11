@@ -1,7 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include "modules/2vec.h"
+#include "modules/3vec.h"
 #include "modules/2b2Tens.h"
+#include "modules/2Tens.h"
 #include "model.h"
 #include <string>
 #include <math.h>
@@ -21,84 +23,177 @@ void getub(double *bk, vec2 *uk, int kp, vec2 X[]);
 int MatrixtoVector(int i, int j, int N);
 void GetRij(vec2 X[], int i, int j, double *Distance, vec2 *rij);
 void drag(vec2 X[], vec2 dX[], vec2 EForce[]);
-vec2 y2vec(double *y,int ip);
+vec2 y2vec2(double *y,int ip);
+vec3 y2vec3(double *y,int ip);
+void ext_force(int floc,vec2* EForce,double time);
+void vec2y(double *y, vec2 XX, int ip);
+void vec2y(double *y, vec3 XX, int ip);
+vec3 ext_flow(vec3 R3d, double time);
+vec2 ext_flow(vec2 R, double time);
 /**************************/
 // Global variables to the file.
 /* save the coordinates of first two points to go back and forth from kappa to y.
-   first 4 points for points before map iteration and last 4 points for after map iteration.*/
+   first 4 points for points before map iteration and last 4 points for after map iteration. */
 double y_start[2*pp] = {0,0,0,aa};
 string cc;
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
-vec2 R[Np],dR[Np],EForce[Np],EForce_ip,FF0;  
-// R is the position of the beads.
-// double CurvSqr[Np];
-double kappasqr;
-double onebythree = 1./3.;
-SS[0] = 0;    // Initializing the material co-ordinate
-for (int ip=0;ip<Np;ip++){
-  R[ip].x=y[2*ip];
-  R[ip].y=y[2*ip+1];
-}
-for (int ip=0;ip<Np;ip++){
-  kappasqr=CurvSqr[ip];
-  if (flag_kappa){
-    if (ip<Np-1){
-      SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip]);
-    }
+  vec2 R[Np],dR[Np],EForce_ip,FF0,EForce[Np];
+  // R is the position of the beads.
+  // double CurvSqr[Np];
+  double kappasqr;
+  double onebythree = 1./3.;
+  SS[0] = 0;                    // Initializing the material co-ordinate
+  for (int ip=0;ip<Np;ip++){
+    R[ip].x=y[2*ip];
+    R[ip].y=y[2*ip+1];
   }
-  dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
-  EForce[ip] = EForce_ip;
-  CurvSqr[ip]=kappasqr;
-}
-drag(R, dR, EForce);
-// Is the string forced at some points? Implement it here.
-if (iext_force){
-  FF0.x = 0;
-  FF0.y = -FFY0*sin(omega*time);
-  if (floc>=0 && floc<Np){
-    EForce[floc] = EForce[Np-1]-FF0;
+  for (int ip=0;ip<Np;ip++){
+    dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
+    EForce[ip] = EForce_ip;
   }
-  else{
-    cout << "Location of the external force is wrong." <<endl;
-    cout << "Exiting" << endl;
-    exit(1); 
-  }
-}
-switch(iext_flow){
-  case 1:
-    if (sin(omega*time)>=0){
-      for (int ip = 0; ip < Np; ++ip){
-        dR[ip].x = dR[ip].x + ShearRate*(height-R[ip].y)*ceil(sin(omega*time));
-      }
-    }
-    else{
-       for (int ip = 0; ip < Np; ++ip){
-        dR[ip].x = dR[ip].x + ShearRate*(height-R[ip].y)*floor(sin(omega*time));
-      }
-    }
-    break;
-  case 2:
-    for (int ip = 0; ip < Np; ++ip){
-      double Ts = 40;
-      // NOT SO GOOD WAY TO WRITE LIKE THIS
-      if (time<Ts*(1/ShearRate)){
-        dR[ip].x = dR[ip].x + ShearRate*(R[ip].y);
-      }else{
-        dR[ip].x = dR[ip].x + ShearRate*(R[ip].y)*sin(omega*(time-Ts*(1/ShearRate)));
-      }
-    }
-    break; 
-  case 3:
-    for(int ip=0; ip<Np;ip++){
-      dR[ip].x = dR[ip].x + ShearRate*(height-R[ip].y)*sin(omega*time);
-    }
-    break;
+  drag(R, dR, EForce);
+  // Is the string forced at some points? Implement it here.
+  ext_force(floc,EForce,time);
+  for (int ip = 0; ip < Np; ++ip){
+    dR[ip]=dR[ip]+ext_flow(R[ip],time);
   }
   for (int ip=0;ip<Np;ip++){
     rhs[2*ip]=dR[ip].x;
     rhs[2*ip+1]=dR[ip].y;
   }
+}
+/**************************/
+void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[], 
+              double EForceArr[]){
+  vec2 R[Np],dR[Np],EForce_ip,FF0,EForce[Np];
+  // R is the position of the beads.
+  // double CurvSqr[Np];
+  double kappasqr;
+  double onebythree = 1./3.;
+  SS[0] = 0;                                      // Initializing the material co-ordinate
+  for (int ip=0;ip<Np;ip++){
+    R[ip].x=y[2*ip];
+    R[ip].y=y[2*ip+1];
+  }
+  for (int ip=0;ip<Np;ip++){
+    kappasqr=CurvSqr[ip];
+    if (flag_kappa){
+      if (ip<Np-1){
+        SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip]);
+      }
+    }
+    dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
+    EForce[ip] = EForce_ip;
+    CurvSqr[ip]=kappasqr;
+  }
+  drag(R, dR, EForce);
+  // Is the string forced at some points? Implement it here.
+  ext_force(floc,EForce,time);
+  for (int ip = 0; ip < Np; ++ip){
+    dR[ip]=dR[ip]+ext_flow(R[ip],time);
+  }
+  for (int ip=0;ip<Np;ip++){
+    EForceArr[2*ip] = EForce[ip].x;
+    EForceArr[2*ip+1] = EForce[ip].y;
+    rhs[2*ip]=dR[ip].x;
+    rhs[2*ip+1]=dR[ip].y;
+  }
+}
+/**************************/
+void eval_rhs_tr(double time,double EForceArr[],double y[],double y_tr[],double rhs[]){
+  int ndim_tr=ntracer*ptracer;
+  vec3 dX, RR, EForce[Np], Rtracer;
+  for (int ip = 0; ip < Np; ++ip){
+    EForce[ip].x = 0;
+    EForce[ip].y = EForceArr[2*ip];
+    EForce[ip].z = EForceArr[2*ip+1];
+  }
+  double d_RR,c1,dsqr1;
+  Tens2 mu;
+  double onebythree = 1./3.;
+  for (int itracer = 0; itracer < ntracer; ++itracer){
+    dX.x = 0;
+    dX.y = 0;
+    dX.z = 0;
+    Rtracer = y2vec3(y_tr, itracer);
+    for (int ip = 0; ip < Np; ++ip){
+      RR = Rtracer - y2vec3(y,ip);
+      // PVec3(RR);
+      d_RR = norm(RR);
+      c1 = 1/(8*M_PI*viscosity*d_RR);
+      dsqr1 = 1./(d_RR*d_RR);
+      mu = c1*(dab + (RR*RR)*dsqr1 + 1./4*dd*dd*dsqr1*(dab*onebythree - (RR*RR)*dsqr1));
+      dX = dX + dot(mu,EForce[ip]);
+    }
+    dX = dX + ext_flow(Rtracer, time);
+    vec2y(rhs, dX, itracer);
+  }
+}
+/**************************/
+void ext_force(int floc,vec2* EForce,double time){
+  vec2 FF0;
+  if(iext_force){
+    FF0.x = 0;
+    FF0.y = -FFY0*sin(omega*time);
+    if (floc>=0 && floc<Np){
+      EForce[floc] = EForce[floc]-FF0;
+    }
+    else{
+      cout << "Location of the external force is wrong." <<endl;
+      cout << "Exiting" << endl;
+      exit(1); 
+    }
+  }
+}
+/**************************/
+vec2 ext_flow(vec2 R_ip, double time){
+  vec2 dR;
+  switch(iext_flow){
+    case 1:
+      if (sin(omega*time)>=0){
+        for (int ip = 0; ip < Np; ++ip){
+          dR.x = dR.x + ShearRate*(height-R_ip.y)*ceil(sin(omega*time));
+        }
+      }
+      else{
+         for (int ip = 0; ip < Np; ++ip){
+          dR.x = dR.x + ShearRate*(height-R_ip.y)*floor(sin(omega*time));
+        }
+      }
+      break;
+    case 2:
+      for (int ip = 0; ip < Np; ++ip){
+        double Ts = 40;
+        // NOT SO GOOD WAY TO WRITE LIKE THIS
+        if (time<Ts*(1/ShearRate)){
+          dR.x = dR.x + ShearRate*(R_ip.y);
+        }else{
+          dR.x = dR.x + ShearRate*(R_ip.y)*sin(omega*(time-Ts*(1/ShearRate)));
+        }
+      }
+      break; 
+    case 3:
+      for(int ip=0; ip<Np;ip++){
+        dR.x = dR.x + ShearRate*(height-R_ip.y)*sin(omega*time);
+      }
+      break;
+  }
+  return dR;
+}
+/**************************/
+vec3 ext_flow(vec3 R3d, double time){
+  // This is a wrapper function for vec3 inputs.
+  vec2 R2d;
+  vec3 dR;
+  R2d.x = R3d.y;
+  R2d.y = R3d.z;
+  
+  R2d = ext_flow(R2d,time);
+  dR.x = 0;
+  dR.y = R2d.x;
+  dR.z = R2d.y;
+  return dR; 
 }
 /**************************/
 void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
@@ -110,22 +205,22 @@ void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
     Tens2b2 mu_ij, mu_ii;
     double d_rij;
     vec2 rij;
-    mu_ii = dab2b2*mu0;    // dab2b2 is the unit 2 dimensional tensor. It is defined in module/2b2Tens file.
+    mu_ii = dab2b2*mu0;       // dab2b2 is the unit 2 dimensional tensor. It is defined in module/2b2Tens file.
     // PTens2(mu_ii);
     // rij = R[j]-R[i] and d_rij is just the norm of this value.
     for (int ip = 0; ip < Np; ++ip){
-        // The mu_ij in the next line represents the mobility tensor when j is equal to i and in 
-        // response to that the "for loop" is started from ip+1 .
-        dX[ip] = dX[ip] + dot(mu_ii, EForce[ip]);
-        for (int jp = ip+1; jp < Np; ++jp){
-            GetRij(X, ip, jp, &d_rij, &rij);
-            // cout << d_rij << endl;
-            double c1 = 1/(8*M_PI*viscosity*d_rij);
-            double dsqr1 = 1./(d_rij*d_rij);
-            mu_ij = c1*(dab2b2 + (rij*rij)*dsqr1 + dd*dd/(2*d_rij*d_rij)*(dab2b2*onebythree - (rij*rij)*dsqr1));
-            dX[ip] = dX[ip] + dot(mu_ij, EForce[jp]);
-            dX[jp] = dX[jp] + dot(mu_ij, EForce[ip]);
-        }
+      // The mu_ij in the next line represents the mobility tensor when j is equal to i and in 
+      // response to that the "for loop" is started from ip+1 .
+      dX[ip] = dX[ip] + dot(mu_ii, EForce[ip]);
+      for (int jp = ip+1; jp < Np; ++jp){
+        GetRij(X, ip, jp, &d_rij, &rij);
+        // cout << d_rij << endl;
+        double c1 = 1/(8*M_PI*viscosity*d_rij);
+        double dsqr1 = 1./(d_rij*d_rij);
+        mu_ij = c1*(dab2b2 + (rij*rij)*dsqr1 + 1/2*dd*dd*dsqr1*(dab2b2*onebythree - (rij*rij)*dsqr1));
+        dX[ip] = dX[ip] + dot(mu_ij, EForce[jp]);
+        dX[jp] = dX[jp] + dot(mu_ij, EForce[ip]);
+      }
     }
   }
   else if(UseRP=='N'){
@@ -148,7 +243,7 @@ void getub(double *bk, vec2 *uk, int kp, vec2 X[]){
 /**************************/
 // void getub(double *bk, vec2 *uk, vec2 X, vec2 Xpos){
 //   vec2 dX = Xpos-X;
-//   // dX = y2vec(y,kp+1)-y2vec(y,kp);
+//   // dX = y2vec2(y,kp+1)-y2vec2(y,kp);
 //   // dX.x = y[2*kp+2] - y[2*kp];
 //   // dX.y = y[2*kp+3] - y[2*kp+1];
 
@@ -188,7 +283,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
           bkm1 = norm(dX);
           // cout << bkm1 << endl;
           ukm1=dX/bkm1;
-          FF = (     (uk)/bkm1 - (ukm1+ukp1)/bk
+          FF = ( (uk)/bkm1 - (ukm1+ukp1)/bk
                + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
                - (ukm1/bkm1)*( dot(ukm1,uk) )
                );
@@ -309,7 +404,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
           );
       FF = FF*(AA/aa);
       FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint
-      if (flag_kappa==false){
+      if (flag_kappa){
         *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
       }
       *add_FF = FF;
@@ -407,6 +502,29 @@ void iniconf(double *y){
            << "# EXITING" << endl;
       break;
   }
+  // iniconf_tr(y);
+}
+/****************************************************/
+void iniconf_tr(double *y_tr){
+  int const ndim_tr = ntracer*ptracer;
+  int ntracerY = (int) sqrt(ntracer);
+  for (int itracer = 0; itracer < ntracer; ++itracer){
+    y_tr[itracer*ptracer] = 0.01;                                              // X coordinate of tracer particles
+  }
+  for (int itracerY = 0; itracerY < ntracerY; ++itracerY ){
+    for (int itracerZ = 0; itracerZ < ntracerY; ++itracerZ){
+      int itracer = ntracerY*itracerZ + itracerY;
+      y_tr[itracer*ptracer+1] =  itracerY*height*2/ntracerY-height;            // Y coordinate of tracer particles
+      y_tr[itracer*ptracer+2] =  itracerZ*height/ntracerY;                     // Z coordinate of tracer particles
+    }
+  }
+  int left_tracer = ntracer - ntracerY*ntracerY;
+  cout << left_tracer << endl;
+  for (int itracer = 0; itracer < left_tracer; ++itracer){
+    y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+1] = (double) rand()/RAND_MAX*height*2-height;
+    y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+2] = (double) rand()/RAND_MAX*height;
+  }
+  // print(y_tr,ndim_tr);
 }
 /********************************************/
 void GetRij(vec2 R[], int i, int j, double *Distance, vec2 *rij){
@@ -446,7 +564,7 @@ void write_param( string fname ){
             << "iext_force = " << iext_force << endl
             << "floc = " << floc << endl
             << "iext_flow = " << iext_flow << endl
-            << "iniconf = " << iniconf << endl
+            << "niniconf = " << niniconf << endl
             << "KK = " << HH*dd*dd/AA << endl
             << "MuBar = "<<  8*M_PI*viscosity*ShearRate*pow(height,4)/AA << endl;
   paramfile.close();  
@@ -465,16 +583,31 @@ void straightline(vec2 *Tngt, vec2 *Nrml, char dirn = 'y'){
   }
 }
 /********************************************/
-vec2 y2vec(double *y,int ip){
+vec2 y2vec2(double *y,int ip){
   vec2 XX;
   XX.x = y[2*ip];
   XX.y = y[2*ip+1];
   return XX;
 }
 /********************************************/
+vec3 y2vec3(double *y,int ip){
+  vec3 XX;
+  XX.x = y[3*ip];
+  XX.y = y[3*ip+1];
+  XX.z = y[3*ip+2];
+  return XX;
+}
+/********************************************/
 void vec2y(double *y, vec2 XX, int ip){
   y[2*ip] = XX.x;
   y[2*ip+1] = XX.y;
+}
+
+/********************************************/
+void vec2y(double *y, vec3 XX, int ip){
+  y[3*ip] = XX.x;
+  y[3*ip+1] = XX.y;
+  y[3*ip+2] = XX.z;
 }
 /********************************************/
 void y2kappa(double kappa[], double y[]){
@@ -500,12 +633,12 @@ void y2kappa(double kappa[], double y[]){
     exit(1);
   }
   //
-  vec2 dX = y2vec(y,1)-y2vec(y,0);
+  vec2 dX = y2vec2(y,1)-y2vec2(y,0);
   uk = dX/norm(dX);
-  // getub(&bk,&uk,y2vec(y,0),y2vec(y,1));
+  // getub(&bk,&uk,y2vec2(y,0),y2vec2(y,1));
   for (int ip = 1; ip < Np-1; ++ip){
     ukm1 = uk;
-    dX = y2vec(y,ip+1)-y2vec(y,ip);
+    dX = y2vec2(y,ip+1)-y2vec2(y,ip);
     uk = dX/norm(dX);
     kappa[ip] = 1/aa*cross(uk,ukm1);
   }
@@ -528,19 +661,19 @@ void kappa2y(double y[], double kappa[]){
   //vector from ip=0 to ip=1;
   // straightline(&Tngt,&Nrml);
   // straightline(&Tngtm1,&Nrmlm1);
-  // vec2 dX = y2vec(y_start,1)-y2vec(y_start,0);
+  // vec2 dX = y2vec2(y_start,1)-y2vec2(y_start,0);
   // print(y_start,4);
-  dX = y2vec(y_start,1)-y2vec(y_start,0);
+  dX = y2vec2(y_start,1)-y2vec2(y_start,0);
   memcpy(y,y_start,2*pp*sizeof(double));
   // else if(cc=="current"){
-  //   dX = y2vec(y_start,3)-y2vec(y_start,2);
+  //   dX = y2vec2(y_start,3)-y2vec2(y_start,2);
   //   memcpy(y,y_start+2*pp,2*pp*sizeof(double));
   // }
   Tngt = dX/norm(dX);
   // Take a cross product of tngt with (\hat{k}) to get normal.
   Nrml.x = Tngt.y;
   Nrml.y = -Tngt.x;
-  XX = y2vec(y,1);
+  XX = y2vec2(y,1);
   // }
   for (int ip = 2; ip < Np; ++ip){
     Tngtm1 = Tngt;
@@ -561,8 +694,8 @@ void kappa2y(double y[], double kappa[]){
   vec2 X2;
   for (int ip = 0; ip < Np; ++ip){
     for (int jp = ip+1; jp < Np; ++jp){
-       X1 = y2vec(y,ip);
-       X2 = y2vec(y,jp);
+       X1 = y2vec2(y,ip);
+       X2 = y2vec2(y,jp);
        d_rij = norm(X1-X2);
        if (d_rij<dd/2){
          isphysical=0;

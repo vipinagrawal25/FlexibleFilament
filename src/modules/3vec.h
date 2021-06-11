@@ -2,7 +2,7 @@
 #define FILE_3vec_SEEN
 /*---------------------------------------*/
 #include <iostream>
-#include<math.h>
+#include <math.h>
 #include "2Tens.h"
 using namespace std;
 /*-------------------------*/
@@ -19,7 +19,6 @@ public:
   vec3 operator*(double);
   vec3 operator/(double);
   Tens2 operator*(vec3);
-
 private:
 };
 vec3::vec3(){
@@ -71,7 +70,6 @@ Tens2 vec3::operator*(vec3 param)
     // This is a direct product of 2 vectors. Assuming vec3 a column vector with 3 entries
     // then this operator defines w = uv' (Where v' is the transpose of the matrix.)
     // It should be noted that this product is not commutative.
-
     Tens2 temp;
     temp.xx = x*(param.x);
     temp.xy = x*(param.y);
@@ -101,6 +99,7 @@ double dot(vec3 a, vec3 b){
   temp = a.x*b.x+a.y*b.y+a.z*b.z;
   return(temp);
 }
+
 vec3 cross(vec3 a, vec3 b){
   vec3 temp;
   temp.x = a.y*b.z-a.z*b.y;
@@ -108,6 +107,7 @@ vec3 cross(vec3 a, vec3 b){
   temp.z = a.x*b.y-a.y*b.x;
   return(temp);
 }
+
 double norm(vec3 a){
   return( sqrt( a.x*a.x+a.y*a.y+a.z*a.z) );}
 /*---------------------------------------*/
@@ -131,25 +131,6 @@ vec3 dot(Tens2 a, vec3 b)
 
     return (temp);
 }
-
-// Tens2 DirectProduct(vec3 a, vec3 b)
-// {
-//     Tens2 temp;
-//     temp.xx = a.x*b.x;
-//     temp.xy = a.x*b.y;
-//     temp.xz = a.x*b.z;
-    
-//     temp.yx = a.y*b.x;
-//     temp.yy = a.y*b.y;
-//     temp.yz = a.y*b.z;
-
-//     temp.zx = a.z*b.x;
-//     temp.zy = a.z*b.y;
-//     temp.zz = a.z*b.z;
-
-//     return(temp);
-// }
-
 /*---------------------------------------*/
 #endif /* !FILE_3vec_SEEN */
 

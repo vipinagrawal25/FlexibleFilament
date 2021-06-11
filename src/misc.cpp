@@ -95,7 +95,7 @@ double norm(const double *y, int nn ){
 //   }
 // }
 /*-----------------------------------------------*/
-double downScale(double *yscaled, double *y, int factor, int nn ){
+void downScale(double *yscaled, double *y, int factor, int nn ){
   for (int in = 0; in < nn/factor; ++in){
     yscaled[in] = y[in*factor];
   }

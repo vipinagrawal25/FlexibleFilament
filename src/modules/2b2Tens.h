@@ -1,5 +1,5 @@
-#ifndef FILE_2Tens_SEEN
-#define FILE_2Tens_SEEN
+#ifndef FILE_2b2Tens_SEEN
+#define FILE_2b2Tens_SEEN
 /*---------------------------------------*/
 #include <iostream>
 #include<math.h>
