@@ -508,7 +508,7 @@ void iniconf_tr(double *y_tr){
     }
   }
   int left_tracer = ntracer - ntracerY*ntracerY;
-  cout << left_tracer << endl;
+  // cout << left_tracer << endl;
   for (int itracer = 0; itracer < left_tracer; ++itracer){
     y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+1] = (double) rand()/RAND_MAX*height*2-height;
     y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+2] = (double) rand()/RAND_MAX*height;

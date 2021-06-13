@@ -44,9 +44,11 @@ int main(){
   iniconf(y);
   eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS,EForceArr);
   //
+  system("exec mkdir output");
+  //
   ofstream outfile;
   outfile.open("output/var0.txt");
-  wData(&outfile,&outfile,y,vel);                                            // Code it in your model.cpp
+  wData(&outfile,&outfile,y,vel);                                           // Code it in your model.cpp
   outfile.close();
   //
   if(itracer){
@@ -54,7 +56,7 @@ int main(){
     eval_rhs_tr(time,EForceArr,y,y_tr,vel_tr);
     //
     outfile.open("output/tracer0.txt");
-    wData(&outfile,&outfile,y_tr,vel_tr,time,ntracer,ptracer);                  // Code it in your model.cpp
+    wData(&outfile,&outfile,y_tr,vel_tr,time,ntracer,ptracer);              // Code it in your model.cpp
     outfile.close();
   }
   //
