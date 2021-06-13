@@ -117,7 +117,7 @@ double sqnorm(vec3 a){
 void PVec3(vec3 a){
   cout<<a.x<<"\t"<<a.y<<"\t"<<a.z<<"\n";
 }
-
+/*---------------------------------------*/
 vec3 dot(Tens2 a, vec3 b)
 {
     // Ci = Aij*Bj; (Einstein Convention)

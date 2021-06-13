@@ -19,7 +19,7 @@ double const FFY0 = 0;	  					// Amplitude of the force.
 double const sigma=1.5;
 double const ShearRate = 2;
 double const omega = ShearRate*sigma;
-double const AA = 1.5*pow(10,-5)*pow(height,4)*5;
+double const AA = 1.5*pow(10,-5)*pow(height,4)*50;
 double const HH = 16*AA/(dd*dd);			// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
 char const UseRP = 'Y';						// Y is for the new one, O is for old one and N is for not using 
 											// Rotne Pragor tensor.
@@ -43,7 +43,8 @@ void iniconf_tr(double *y_tr);
 void check_param();
 void write_param(string fname);
 void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]);
-void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[], double EForceArr[]);
+void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[], 
+			 double EForceArr[]);
 void coordinate_transform(double *y_trans, double *y);
 void inv_coordinate_transform(double *y, double *y_trans);
 void pre_next_iter(double *y, double *y_trans);

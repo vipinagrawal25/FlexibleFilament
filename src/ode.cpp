@@ -15,7 +15,8 @@ using namespace std;
 //   }
 // }
 /*********************************/
-void euler_tr(unsigned int ndim_tr,double *y, double *y_tr, double* vel_tr, double time, double dt,double *EForceArr){
+void euler_tr(unsigned int ndim_tr,double *y, double *y_tr, double* vel_tr, double time, double dt,
+              double *EForceArr){
   int idim;
   eval_rhs_tr(time,EForceArr,y,y_tr,vel_tr);
   for(idim=0;idim<ndim_tr;idim++){
@@ -88,15 +89,14 @@ void rnkf45(double *y, double *add_time, double* add_dt){
   rnkf45(ndim,&y[0],&vel[0],add_time,add_dt,&CurvSqr[0],&SS[0],&EForceArr[0],ldiagnos);
 }
 /*********************************/
-void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, 
-            double* SS, double *EForceArr, double ldiagnos){
+void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr,
+            double* SS,double *EForceArr, double ldiagnos){
   // Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
   // add_time is the address of time and the same goes for dt as well.
   double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, ynew[ndim];
   int idim ;
   double error,temp_error;
   double dt = *add_dt;
-  // double tol_dt = pow(10,-9)*dt;
   double tol_dt = 1.e-6;
   bool flag_kappa;
   double time = *add_time;
@@ -129,7 +129,7 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   double bi[6] = {2825./27648.,0,18575./48384,13525./55296.,277./14336.,0.25};
   if (ldiagnos){flag_kappa = true;}
   else{flag_kappa = false;}
-  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS,EForceArr);
+  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
   for(idim=0;idim<ndim;idim++){
       temp[idim]=y[idim]+k1[idim]*dt*aij[1][0];
   }
@@ -171,7 +171,7 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   if (error<tol_dt){
     *add_time=time+dt;
     for (int idim = 0; idim < ndim; ++idim){
-      y[idim]=ynew[idim];   // Accept the step
+      y[idim]=ynew[idim];                     // Accept the step
       vel[idim]=k1[idim];
     }
     s = epsilon*pow((tol_dt/error),0.20);
@@ -186,7 +186,7 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
 }
 /*********************************/
 void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, 
-          double* SS,double ldiagnos){
+          double* SS,double *EForceArr, double ldiagnos){
   // In this function I have implemented Dormand-Prince Method which is more suitable than rkf45 for 
   // high order integration.
   // Details could be found in Numerical recipes book and a short description on the link: 
@@ -220,7 +220,7 @@ void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* a
   else{
       flag_kappa = false;
   }
-  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
+  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS,EForceArr);
   // CurvSqr_Store = CurvSqr;
 
   for(idim=0;idim<ndim;idim++){
@@ -282,12 +282,7 @@ void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* a
     if (s<truncationmin){s=truncationmin;}
     *add_dt = s*dt;
     // cout << "So you mean to say that the segmentation fault is here?" << endl;
-    DP54(ndim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], ldiagnos);
+    DP54(ndim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], &EForceArr[0], ldiagnos);
   }
 }
-/* call eval_rhs(y,t,k1)
-call eval_rhs(y+k1*(dt/2.),t+(dt/2.),k2)
-call eval_rhs(y+k2*(dt/2.),t+(dt/2.),k3)
-call eval_rhs(y+k3*dt,t+dt,k4)
-y=y+dt*((k1/6.)+(k2/3.)+k3/3.+k4/6.) */
 /* ----------------- */

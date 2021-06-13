@@ -21,8 +21,10 @@ int main(){
   cout << "# ID for this process is: " << pid << endl;
   int ndim_tr = ntracer*ptracer;
   //
-  double y[ndim],y0[ndim],vel[ndim],CurvSqr[Np],SS[Np],time,MeanSqDis,timer_global,EForceArr[ndim];
-  double y_tr[ndim_tr],y0_tr[ndim_tr],vel_tr[ndim_tr];
+  double y[ndim],y_prev[ndim],vel[ndim],EForceArr[ndim];
+  double CurvSqr[Np],SS[Np];
+  double time,time_prev,timer_global;
+  double y_tr[ndim_tr],vel_tr[ndim_tr];
   int filenumber;
   string lastline;
   int ldiagnos=0;
@@ -33,9 +35,110 @@ int main(){
   //----------------------------
   int itn=1; 
   clock_t timer;
-  // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt time 
-  // for a particular value of AA.
+  // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt 
+    // time for a particular value of AA.
   check_param();            // Define this function in solve.cpp using weak attribute.
+  filenumber = 1;
+  time = 0;
+  // Deleting contents of the folder and creating folder again.
+  iniconf(y);
+  eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS,EForceArr);
+  //
+  ofstream outfile;
+  outfile.open("output/var0.txt");
+  wData(&outfile,&outfile,y,vel);                                            // Code it in your model.cpp
+  outfile.close();
+  //
+  if(itracer){
+    iniconf_tr(y_tr);
+    eval_rhs_tr(time,EForceArr,y,y_tr,vel_tr);
+    //
+    outfile.open("output/tracer0.txt");
+    wData(&outfile,&outfile,y_tr,vel_tr,time,ntracer,ptracer);                  // Code it in your model.cpp
+    outfile.close();
+  }
+  //
+  // Initializing curv square and ss. It won't depend on the configuration number.
+  // Call a diagnostic function for all these things. Save names in model file.
+  for (int ip = 0; ip < Np; ++ip){
+    CurvSqr[ip] = 0;
+    SS[ip] = 0;
+  }
+  /* Opening every file again in mode. This thing does not depend on configuration number and that's why 
+     it is outside the loop */
+  // fstream outfile_MSD("MSD.txt", ios::app);
+  fstream outfile_time("output/time.txt", ios::app);
+  fstream outfile_curvature("output/curvature.txt", ios::app);
+  fstream outfile_SS("output/material_point.txt", ios::app);
+  timer = clock();
+  timer_global = timer/CLOCKS_PER_SEC;
+  while(time < TMAX){
+    //euler(pdim,&y[irb],time-dt,dt);
+    //rnkt2(pdim,&y[irb],time-dt,dt);
+    // rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
+    memcpy(y_prev,y,ndim*sizeof(double));
+    time_prev = time;
+    rnkf45(ndim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], EForceArr,tdiagnos);
+    if (itracer){
+      euler_tr(ndim_tr,y_prev,y_tr,vel_tr,time_prev,dt,EForceArr);
+    }
+    // DP54(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
+    // cout << time << endl;
+    if (dt<dt_min){
+      dt_min = dt;
+    }
+    if (time+dt>=tdiag*filenumber && time<tdiag*filenumber){tdiagnos=1;}
+    else{tdiagnos=0;}
+    // cout << time << endl;
+    if (time>=tdiag*filenumber){
+      //
+      string l = "output/var" + to_string(filenumber) + ".txt";
+      outfile.open(l, ios::out);
+      wData(&outfile,&outfile,y,vel);
+      outfile.close();
+      //
+      if(itracer){
+        string l_tr = "output/tracer" + to_string(filenumber) + ".txt";
+        outfile.open(l_tr, ios::out);
+        wData(&outfile,&outfile,y_tr,vel_tr,time,ntracer,ptracer);
+        outfile.close();
+      }
+      //
+      /* Call a function to write both diagnostic variable.*/
+      outfile_curvature << time << '\t' ;
+      outfile_time << time;
+      for (int ip = 0; ip < Np; ++ip){
+        /* Non-dimensionalizing the co-ordinate with respect to the height of the rod*/
+        outfile_curvature << CurvSqr[ip]*aa*aa << '\t';   
+        /*Square of curvature is non-dimensionalized with the multiplication 
+          of square of bead distance */
+        outfile_SS << SS[ip]/SS[Np-1] << '\t';
+      }
+      /*---------------------------------- */
+      outfile_curvature << endl;
+      outfile_time << endl;
+      outfile_SS << endl;
+      filenumber = filenumber+1;
+      cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<TMAX<<"\n";
+      tdiagnos=0;
+      itn=itn+1;
+    }
+  }
+  timer_global = clock()/CLOCKS_PER_SEC - timer_global;
+  outfile_time.close();
+  outfile_curvature.close();
+  outfile_SS.close();
+  //
+  cout << "Total number of iteration: " << itn << endl;
+  // cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
+  cout << "Total time elapsed: " << timer_global << "s" << endl;
+  cout << "Minimum value of dt: " << dt_min << endl;  
+  // cout << "Difference between max length and Minimum length of the rod: " << lengthmax-lengthmin << endl;
+  // cout << "Max Length: " << lengthmax << '\t' << "Min Length: " <<lengthmin << endl;
+  // cout << "The average change in the length of the rod is: " << sqrt(MSElen)/itn << endl;
+// cout << filenumber-1 << endl;
+//----------------------------
+}
   // if(niniconf==-1){
   //   filenumber = lastfile+1;
   //   // -----------------------------------------------
@@ -90,13 +193,16 @@ int main(){
   //   // fstream outfile_time("MSD.txt", ios::app);            // Now opening file again in append mode. 
   //   system("exec rm -f output/curvature.txt");
   //   system("exec mv output/curvature_new.txt output/curvature.txt");
-  //   // fstream outfile_curvature("output/curvature.txt", ios::app);    // Now opening file again in append mode.
+  //   // fstream outfile_curvature("output/curvature.txt", ios::app);    
+      // Now opening file again in append mode.
   //   system("exec rm -f output/material_point.txt");
   //   system("exec mv output/material_point_new.txt output/material_point.txt");
-  //   // fstream outfile_SS("output/material_point.txt", ios::app);    // Now opening file again in append mode.      
-  //   // -----------------------------------------------------------------------------------------------------------
+  //   // fstream outfile_SS("output/material_point.txt", ios::app);    
+       // Now opening file again in append mode.      
+  //   // ------------------------------------------------------------------------------------------------
   //   /*Code to remove the contents of the output folder after the last file mentioned. 
-  //   The code would have already returned an error message if lastfile is more than the total number of files present*/
+  //   The code would have already returned an error message if lastfile is more than the 
+      // total number of files present*/
   //   // The idea is that I check whether the file exists or not, if not come out of loop immediately, 
   //   // else remove the file if it has index more than lastfile mentioned in '.h' file.
   //   ifile = lastfile+1;
@@ -117,107 +223,3 @@ int main(){
   //   // initialfile.close();
   // }
   // else{
-    filenumber = 1;
-    time = 0;
-    // Deleting contents of the folder and creating folder again.
-    system("exec rm -rf output");
-    system("exec mkdir output");
-    system("exec rm -f MSD.txt");
-    iniconf(y0);
-    iniconf_tr(y0_tr);
-    eval_rhs(time,y0,vel,tdiagnos,CurvSqr,SS,EForceArr);
-    eval_rhs_tr(time,EForceArr,y0,y0_tr,vel_tr);
-    //
-    ofstream outfile;
-    outfile.open("output/var0.txt");
-    wData(&outfile,&outfile,y0,vel);                                            // Code it in your model.cpp
-    outfile.close();
-    //
-    outfile.open("output/tracer0.txt");
-    wData(&outfile,&outfile,y0_tr,vel_tr,time,ntracer,ptracer);                  // Code it in your model.cpp
-    outfile.close();
-    //
-  // Initializing curv square and ss. It won't depend on the configuration number.
-  // Call a diagnostic function for all these things. Save names in model file.
-  for (int ip = 0; ip < Np; ++ip){
-    CurvSqr[ip] = 0;
-    SS[ip] = 0;
-  }
-  /* Opening every file again in mode. This thing does not depend on configuration number and that's why 
-     it is outside the loop */
-  // fstream outfile_MSD("MSD.txt", ios::app);
-  fstream outfile_time("output/time.txt", ios::app);
-  fstream outfile_curvature("output/curvature.txt", ios::app);
-  fstream outfile_SS("output/material_point.txt", ios::app);
-  memcpy(y,y0,ndim*sizeof(double));
-  memcpy(y_tr,y0_tr,ndim_tr*sizeof(double));
-  timer = clock();
-  timer_global = timer/CLOCKS_PER_SEC;
-  while(time < TMAX){
-    //euler(pdim,&y[irb],time-dt,dt);
-    //rnkt2(pdim,&y[irb],time-dt,dt);
-    // rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
-    rnkf45(ndim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], EForceArr,tdiagnos);
-    euler_tr(ndim_tr,y,y_tr,vel_tr,time,dt,EForceArr);
-    // DP54(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
-    // cout << time << endl;
-    if (dt<dt_min){
-      dt_min = dt;
-    }
-    // MSElen = MSElen+(height-SS[Np-1])*(height-SS[Np-1]);
-    // if (SS[Np-1]>lengthmax){
-    //     lengthmax=SS[Np-1];
-    // }
-    // if (SS[Np-1]<lengthmin){
-    //     lengthmin=SS[Np-1];
-    //     // cout << lengthmin << endl;
-    // }
-    if (time+dt>=tdiag*filenumber && time<tdiag*filenumber){tdiagnos=1;}
-    else{tdiagnos=0;}
-    // cout << time << endl;
-    if (time>=tdiag*filenumber){
-      //
-      string l = "output/var" + to_string(filenumber) + ".txt";
-      outfile.open(l, ios::out);
-      wData(&outfile,&outfile,y,vel);
-      outfile.close();
-      //
-      string l_tr = "output/tracer" + to_string(filenumber) + ".txt";
-      outfile.open(l_tr, ios::out);
-      wData(&outfile,&outfile,y_tr,vel_tr,time,ntracer,ptracer);
-      outfile.close();
-      //
-      /* Call a function to write both diagnostic variable.*/
-      outfile_curvature << time << '\t' ;
-      outfile_time << time;
-      for (int ip = 0; ip < Np; ++ip){
-        /* Non-dimensionalizing the co-ordinate with respect to the height of the rod*/
-        outfile_curvature << CurvSqr[ip]*aa*aa << '\t';   /*Square of curvature is non-dimensionalized with the multiplication 
-                                                          of square of bead distance */
-        outfile_SS << SS[ip]/SS[Np-1] << '\t';
-      }
-      /*---------------------------------- */
-      outfile_curvature << endl;
-      outfile_time << endl;
-      outfile_SS << endl;
-      filenumber = filenumber+1;
-      cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<TMAX<<"\n";
-      tdiagnos=0;
-      itn=itn+1;
-    }
-  }
-  timer_global = clock()/CLOCKS_PER_SEC - timer_global;
-  outfile_time.close();
-  outfile_curvature.close();
-  outfile_SS.close();
-  //
-  cout << "Total number of iteration: " << itn << endl;
-  // cout << "Total time elapsed: " << ((double)timer)/CLOCKS_PER_SEC << "s" << endl;
-  cout << "Total time elapsed: " << timer_global << "s" << endl;
-  cout << "Minimum value of dt: " << dt_min << endl;  
-  // cout << "Difference between max length and Minimum length of the rod: " << lengthmax-lengthmin << endl;
-  // cout << "Max Length: " << lengthmax << '\t' << "Min Length: " <<lengthmin << endl;
-  // cout << "The average change in the length of the rod is: " << sqrt(MSElen)/itn << endl;
-// cout << filenumber-1 << endl;
-//----------------------------
-}

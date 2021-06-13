@@ -118,4 +118,7 @@ vec2 dot(vec2 a, Tens2b2 b){
   return (temp);
 }
 /*---------------------------------------*/
+void PVec2(vec2 a){
+  cout<<a.x<<"\t"<<a.y<<"\n";
+}
 #endif /* !FILE_2vec_SEEN */

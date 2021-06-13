@@ -38,7 +38,7 @@ double y_start[2*pp] = {0,0,0,aa};
 string cc;
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
-  vec2 R[Np],dR[Np],EForce_ip,FF0,EForce[Np];
+  vec2 R[Np],dR[Np],EForce_ip,EForce[Np];
   // R is the position of the beads.
   // double CurvSqr[Np];
   double kappasqr;
@@ -53,7 +53,8 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
     EForce[ip] = EForce_ip;
   }
   drag(R, dR, EForce);
-  // Is the string forced at some points? Implement it here.
+  // Is the string forced at some points?
+  // Implement it here.
   ext_force(floc,EForce,time);
   for (int ip = 0; ip < Np; ++ip){
     dR[ip]=dR[ip]+ext_flow(R[ip],time);
@@ -83,8 +84,9 @@ void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double Curv
         SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip]);
       }
     }
-    dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
-    EForce[ip] = EForce_ip;
+    // dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
+    EForce[ip].x = EForceArr[2*ip];
+    EForce[ip].y = EForceArr[2*ip];
     CurvSqr[ip]=kappasqr;
   }
   drag(R, dR, EForce);
@@ -264,8 +266,8 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
     Xzero.x=0.; Xzero.y=0.;      
   }
   /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be 
-  fixed in general. But for some cases like the implementation of the taylor experiment, we want this to be free. 
-  For this I am implementing Xzero based on the configuration. 
+  fixed in general. But for some cases like the implementation of the taylor experiment, 
+  we want this to be free. For this I am implementing Xzero based on the configuration. 
   Since finally with this function we just want to calculate the force on particular node. 
   So we can just change the way we calculate force on 1st and 2nd node for different configuration.*/
 
@@ -398,7 +400,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
       getub(&bkm1, &ukm1, kp-1, X);
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
-      FF = (     (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
+      FF = ( (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
           + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );
@@ -433,22 +435,6 @@ void iniconf(double *y){
       if(cnt==Np){}
       else if(cnt==ndim){memcpy(y_start,y,2*pp*sizeof(double));}
       else{ cout << "# Initial point is not right." << endl; }
-      // for(int ip = 0; ip < Np; ++ip){
-      //   for (int jp = 0; jp < pp; ++jp){
-      //     myfile >> ch;
-      //     cout << ch << endl;
-      //   }
-      // }
-      // Now just throw away next two numbers as they contain values of velocity.
-      // for (int jp = 0; jp < pp; ++jp){
-      //   myfile >> num;
-      // }
-      // myfile.open(datafile,ifstream::in);
-      // myfile >> num;
-      // for(int ip = 0; ip < Np; ++ip){
-      //   myfile >> y[ip];
-      //   cout << y[ip] << endl;
-      // }
       myfile.close();
       break;
     case 0:
@@ -478,8 +464,8 @@ void iniconf(double *y){
       break;
     case 2:
       // Santillian's experiment
-    // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at origin. 
-      // The rod should be deviated a little bit from origin in starting.
+    // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at 
+      // origin.  The rod should be deviated a little bit from origin in starting.
         for (int ip = 0; ip < Np; ++ip){
           R[ip].x = aa*(double(ip+1))-height*0.5;
           R[ip].y = aa*sin(M_PI*k*aa*double(ip+1)/height);
@@ -509,13 +495,16 @@ void iniconf_tr(double *y_tr){
   int const ndim_tr = ntracer*ptracer;
   int ntracerY = (int) sqrt(ntracer);
   for (int itracer = 0; itracer < ntracer; ++itracer){
-    y_tr[itracer*ptracer] = 0.01;                                              // X coordinate of tracer particles
+    y_tr[itracer*ptracer] = 0.01;                                              
+    // X coordinate of tracer particles
   }
   for (int itracerY = 0; itracerY < ntracerY; ++itracerY ){
     for (int itracerZ = 0; itracerZ < ntracerY; ++itracerZ){
       int itracer = ntracerY*itracerZ + itracerY;
-      y_tr[itracer*ptracer+1] =  itracerY*height*2/ntracerY-height;            // Y coordinate of tracer particles
-      y_tr[itracer*ptracer+2] =  itracerZ*height/ntracerY;                     // Z coordinate of tracer particles
+      y_tr[itracer*ptracer+1] =  itracerY*height*2/ntracerY-height;            
+      // Y coordinate of tracer particles
+      y_tr[itracer*ptracer+2] =  itracerZ*height/ntracerY;                     
+      // Z coordinate of tracer particles
     }
   }
   int left_tracer = ntracer - ntracerY*ntracerY;
@@ -536,7 +525,8 @@ void GetRij(vec2 R[], int i, int j, double *Distance, vec2 *rij){
 /********************************************/
 void check_param(){
   if (dd>aa){
-    cout << "# ERROR: The diameter of a particle should be less than the distance between two particles." << endl;
+    cout << "# ERROR: The diameter of a particle should be less than the distance between two particles." 
+        << endl;
     exit(1);
   }
 }

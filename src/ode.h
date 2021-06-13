@@ -8,5 +8,5 @@ void rnkt4(double *y, double *add_time, double* add_dt);
 void rnkf45(unsigned int ndim, double *y, double *vel, double *time, double *dt, double* CurvSqr, 
 			double* SS, double *EForceArr, double ldiagnos);
 void rnkf45(double *y, double *add_time, double* add_dt);
-void DP54(unsigned int ndim, double *y, double *vel, double *time, double *dt, double* CurvSqr, 
-		 double* SS, double ldiagnos);
+void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, 
+          double* SS,double ldiagnos);
