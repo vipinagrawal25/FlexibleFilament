@@ -125,7 +125,7 @@ void eval_rhs_tr(double time,double EForceArr[],double y[],double y_tr[],double 
       d_RR = norm(RR);
       c1 = 1/(8*M_PI*viscosity*d_RR);
       dsqr1 = 1./(d_RR*d_RR);
-      mu = c1*(dab + (RR*RR)*dsqr1 + 1./4*dd*dd*dsqr1*(dab*onebythree - (RR*RR)*dsqr1));
+      mu = c1*(dab + (RR*RR)*dsqr1 + 1./4.*dd*dd*dsqr1*(dab*onebythree - (RR*RR)*dsqr1));
       dX = dX + dot(mu,EForce[ip]);
     }
     dX = dX + ext_flow(Rtracer, time);
@@ -219,7 +219,7 @@ void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
         // cout << d_rij << endl;
         double c1 = 1/(8*M_PI*viscosity*d_rij);
         double dsqr1 = 1./(d_rij*d_rij);
-        mu_ij = c1*(dab2b2 + (rij*rij)*dsqr1 + 1/2*dd*dd*dsqr1*(dab2b2*onebythree - (rij*rij)*dsqr1));
+        mu_ij = c1*(dab2b2 + (rij*rij)*dsqr1 + 1./2.*dd*dd*dsqr1*(dab2b2*onebythree - (rij*rij)*dsqr1));
         dX[ip] = dX[ip] + dot(mu_ij, EForce[jp]);
         dX[jp] = dX[jp] + dot(mu_ij, EForce[ip]);
       }
