@@ -53,6 +53,7 @@ int main(){
   //
   if(itracer){
     iniconf_tr(y_tr);
+    // memcpy(&y_tr[ndim_tr],&y_tr[0],ndim_tr*sizeof(double));
     eval_rhs_tr(time,EForceArr,y,y_tr,vel_tr);
     //
     outfile.open("output/tracer0.txt");
@@ -111,8 +112,8 @@ int main(){
       outfile_time << time;
       for (int ip = 0; ip < Np; ++ip){
         /* Non-dimensionalizing the co-ordinate with respect to the height of the rod*/
-        outfile_curvature << CurvSqr[ip]*aa*aa << '\t';   
-        /*Square of curvature is non-dimensionalized with the multiplication 
+        outfile_curvature << CurvSqr[ip]*aa*aa << '\t';
+       /*Square of curvature is non-dimensionalized with the multiplication 
           of square of bead distance */
         outfile_SS << SS[ip]/SS[Np-1] << '\t';
       }

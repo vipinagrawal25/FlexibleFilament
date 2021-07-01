@@ -18,7 +18,7 @@ using namespace std;
 /* 1) We consider simulation of elastic filament in 2 dimension. Filament is in XY dimension.
       X direction is horizontal. */
 /**************************/
-void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa);
+void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,double time);
 void getub(double *bk, vec2 *uk, int kp, vec2 X[]);
 int MatrixtoVector(int i, int j, int N);
 void GetRij(vec2 X[], int i, int j, double *Distance, vec2 *rij);
@@ -30,11 +30,15 @@ void vec2y(double *y, vec2 XX, int ip);
 void vec2y(double *y, vec3 XX, int ip);
 vec3 ext_flow(vec3 R3d, double time);
 vec2 ext_flow(vec2 R, double time);
+// vec2 extension_force(vec2 ukm1, vec2 uk, double bkm1, double bk);
+// vec2 extension_force(int ip, vec2 y[]);
+// vec2 bending_force(vec2 ukm2, vec2 ukm1, vec2 uk, vec2 ukp1, double bkm2, double bkm1, double bk, double bkp1);
+void calc_Xone(double *Xone, double *Xzero, double time);
 /**************************/
 // Global variables to the file.
 /* save the coordinates of first two points to go back and forth from kappa to y.
    first 4 points for points before map iteration and last 4 points for after map iteration. */
-double y_start[2*pp] = {0,0,0,aa};
+double y_start[2*pp] = {0.,0.,0.,aa};
 string cc;
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
@@ -49,13 +53,13 @@ void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvS
     R[ip].y=y[2*ip+1];
   }
   for (int ip=0;ip<Np;ip++){
-    dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
+    dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa, time);
     EForce[ip] = EForce_ip;
   }
-  drag(R, dR, EForce);
   // Is the string forced at some points?
   // Implement it here.
   ext_force(floc,EForce,time);
+  drag(R, dR, EForce);
   for (int ip = 0; ip < Np; ++ip){
     dR[ip]=dR[ip]+ext_flow(R[ip],time);
   }
@@ -84,14 +88,13 @@ void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double Curv
         SS[ip+1] = SS[ip] + norm(R[ip+1]-R[ip]);
       }
     }
-    // dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa);
-    EForce[ip].x = EForceArr[2*ip];
-    EForce[ip].y = EForceArr[2*ip];
+    dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa, time);
+    EForce[ip] = EForce_ip;
     CurvSqr[ip]=kappasqr;
   }
-  drag(R, dR, EForce);
   // Is the string forced at some points? Implement it here.
   ext_force(floc,EForce,time);
+  drag(R, dR, EForce);
   for (int ip = 0; ip < Np; ++ip){
     dR[ip]=dR[ip]+ext_flow(R[ip],time);
   }
@@ -103,14 +106,19 @@ void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double Curv
   }
 }
 /**************************/
-void eval_rhs_tr(double time,double EForceArr[],double y[],double y_tr[],double rhs[]){
+void eval_rhs_tr(double time, double EForceArr[], double y[], double y_tr[], double rhs[]){
   int ndim_tr=ntracer*ptracer;
   vec3 dX, RR, EForce[Np], Rtracer;
+  vec2 FF(0.,0.), R[Np];
+  for (int ip=0;ip<Np;ip++){
+    R[ip].x=y[2*ip];
+    R[ip].y=y[2*ip+1];
+  }
   for (int ip = 0; ip < Np; ++ip){
     EForce[ip].x = 0;
-    EForce[ip].y = EForceArr[2*ip];
-    EForce[ip].z = EForceArr[2*ip+1];
-  }
+    EForce[ip].y = EForceArr[2*ip]-FF.x;
+    EForce[ip].z = EForceArr[2*ip+1]-FF.y;
+  }  
   double d_RR,c1,dsqr1;
   Tens2 mu;
   double onebythree = 1./3.;
@@ -127,7 +135,10 @@ void eval_rhs_tr(double time,double EForceArr[],double y[],double y_tr[],double 
       dsqr1 = 1./(d_RR*d_RR);
       mu = c1*(dab + (RR*RR)*dsqr1 + 1./4.*dd*dd*dsqr1*(dab*onebythree - (RR*RR)*dsqr1));
       dX = dX + dot(mu,EForce[ip]);
+      // PVec3(dX);
     }
+    // if we want to save the velocities and positions without external shear flow.
+    // vec2y(rhs, dX, itracer+ntracer);
     dX = dX + ext_flow(Rtracer, time);
     vec2y(rhs, dX, itracer);
   }
@@ -136,6 +147,7 @@ void eval_rhs_tr(double time,double EForceArr[],double y[],double y_tr[],double 
 void ext_force(int floc,vec2* EForce,double time){
   vec2 FF0;
   if(iext_force){
+    cout << "coming?" << endl;
     FF0.x = 0;
     FF0.y = -FFY0*sin(omega*time);
     if (floc>=0 && floc<Np){
@@ -144,41 +156,33 @@ void ext_force(int floc,vec2* EForce,double time){
     else{
       cout << "Location of the external force is wrong." <<endl;
       cout << "Exiting" << endl;
-      exit(1); 
+      exit(1);
     }
   }
 }
 /**************************/
 vec2 ext_flow(vec2 R_ip, double time){
   vec2 dR;
+  double Ts=40;
   switch(iext_flow){
     case 1:
-      if (sin(omega*time)>=0){
-        for (int ip = 0; ip < Np; ++ip){
-          dR.x = dR.x + ShearRate*(height-R_ip.y)*ceil(sin(omega*time));
-        }
-      }
-      else{
-         for (int ip = 0; ip < Np; ++ip){
-          dR.x = dR.x + ShearRate*(height-R_ip.y)*floor(sin(omega*time));
-        }
-      }
-      break;
+    if (sin(omega*time)>=0){
+        dR.x = dR.x + ShearRate*(height-R_ip.y)*ceil(sin(omega*time));
+    }
+    else{
+        dR.x = dR.x + ShearRate*(height-R_ip.y)*floor(sin(omega*time));
+    }
+    break;
     case 2:
-      for (int ip = 0; ip < Np; ++ip){
-        double Ts = 40;
-        // NOT SO GOOD WAY TO WRITE LIKE THIS
-        if (time<Ts*(1/ShearRate)){
-          dR.x = dR.x + ShearRate*(R_ip.y);
-        }else{
-          dR.x = dR.x + ShearRate*(R_ip.y)*sin(omega*(time-Ts*(1/ShearRate)));
-        }
+      // NOT SO GOOD WAY TO WRITE LIKE THIS
+      if (time<Ts*(1/ShearRate)){
+        dR.x = dR.x + ShearRate*(R_ip.y);
+      }else{
+        dR.x = dR.x + ShearRate*(R_ip.y)*sin(omega*(time-Ts*(1/ShearRate)));
       }
       break; 
     case 3:
-      for(int ip=0; ip<Np;ip++){
-        dR.x = dR.x + ShearRate*(height-R_ip.y)*sin(omega*time);
-      }
+      dR.x = dR.x + ShearRate*(height-R_ip.y)*sin(omega*time);
       break;
   }
   return dR;
@@ -190,7 +194,7 @@ vec3 ext_flow(vec3 R3d, double time){
   vec3 dR;
   R2d.x = R3d.y;
   R2d.y = R3d.z;
-  
+  //
   R2d = ext_flow(R2d,time);
   dR.x = 0;
   dR.y = R2d.x;
@@ -208,15 +212,12 @@ void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
     double d_rij;
     vec2 rij;
     mu_ii = dab2b2*mu0;       // dab2b2 is the unit 2 dimensional tensor. It is defined in module/2b2Tens file.
-    // PTens2(mu_ii);
-    // rij = R[j]-R[i] and d_rij is just the norm of this value.
     for (int ip = 0; ip < Np; ++ip){
       // The mu_ij in the next line represents the mobility tensor when j is equal to i and in 
-      // response to that the "for loop" is started from ip+1 .
+      // response to that the "for loop" is started from ip+1.
       dX[ip] = dX[ip] + dot(mu_ii, EForce[ip]);
       for (int jp = ip+1; jp < Np; ++jp){
         GetRij(X, ip, jp, &d_rij, &rij);
-        // cout << d_rij << endl;
         double c1 = 1/(8*M_PI*viscosity*d_rij);
         double dsqr1 = 1./(d_rij*d_rij);
         mu_ij = c1*(dab2b2 + (rij*rij)*dsqr1 + 1./2.*dd*dd*dsqr1*(dab2b2*onebythree - (rij*rij)*dsqr1));
@@ -243,27 +244,112 @@ void getub(double *bk, vec2 *uk, int kp, vec2 X[]){
   *uk =dX/bb;
 }
 /**************************/
-// void getub(double *bk, vec2 *uk, vec2 X, vec2 Xpos){
-//   vec2 dX = Xpos-X;
-//   // dX = y2vec2(y,kp+1)-y2vec2(y,kp);
-//   // dX.x = y[2*kp+2] - y[2*kp];
-//   // dX.y = y[2*kp+3] - y[2*kp+1];
-
-//   double bb = norm(dX);
-//   *bk = bb;
-//   *uk = dX/bb;
-// }
-/**************************/
-void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa){
-  // This function calculates the force at every node which is a function of X, time.
-  vec2 ukm2(0.,0.), ukm1(0.,0.), uk(0.,0.), ukp1(0.,0.), Xzero(0.,0.), dX(0.,0.);
-  double bkm2, bkm1, bk, bkp1;
-  vec2 FF = *add_FF;             
-  // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
-  //vec2 FF;
+vec2 extension_force(int kp, vec2 X[], double time){
+  vec2 FF;
+  vec2 ukm1(0.,0.), uk(0.,0.), Xzero(0.,0.), dX(0.,0.), Xone(0.,0.);
+  double y_zero[2] = {0.,0.};
+  double y_one[2] = {0.,0.};
+  double bkm1,bk;
   if (bcb==0){
     // If the bottom point is fixed, then it can not move.
-    Xzero.x=0.; Xzero.y=0.;      
+    Xzero.x=0.; Xzero.y=0.;
+  }else if(bcb==2){
+    // We define the coordinates for clamped boundary condition also.
+    Xzero.x=0; Xzero.y=0;
+    calc_Xone(y_one,y_zero,time);
+    Xone.x = y_one[0]; Xone.y = y_one[1];
+  }
+  switch(kp){
+    case 0:
+      getub(&bk, &uk, kp, X);
+      if (bcb==0){
+          dX = X[kp-1+1]-Xzero;
+          bkm1 = norm(dX);
+          ukm1=dX/bkm1;
+      }
+      else if(bcb==1){}
+      else if(bcb==2){
+        dX = X[0]-Xone;
+        bkm1 = norm(dX);
+        ukm1=dX/bkm1;
+      }
+      else{
+        cout << "Boundary condition at bottom not implemented." << endl;
+        cout << "Exiting" << endl;
+        exit(1);
+      }
+      break;     
+
+    case Np-1:
+      if(bct==1){
+        getub(&bkm1, &ukm1, kp-1, X);
+      }
+      else{
+        cout << "Boundary condition at Np==NN not implemented." << endl;
+        cout << "Exiting" << endl;
+        exit(1);
+      }
+      break;
+
+    default:
+      getub(&bkm1, &ukm1, kp-1, X);
+      getub(&bk, &uk, kp, X);      
+      break;
+  }
+  // FF = extension_force(ukm1,uk,bkm1,bk);
+  FF = (uk*(bk-aa) - ukm1*(bkm1-aa))*HH/aa;
+  return FF; 
+}
+/**************************/
+// vec2 extension_force(vec2 ukm1, vec2 uk, double bkm1, double bk){
+//   vec2 FF;
+//   FF = (uk*(bk-aa) - ukm1*(bkm1-aa))*HH/aa;
+//   return FF;
+// }
+/**************************/
+// vec2 bending_force(vec2 ukm2, vec2 ukm1, vec2 uk, vec2 ukp1, double bkm2, double bkm1, double bk, double bkp1){
+//   vec2 FF;
+//   if(bk<tiny){
+//     FF =  ukm2/bkm1- (ukm1/bkm1)*( dot(ukm1,uk) ) ;
+//   }
+//   else if(bkm1<tiny){
+//     FF =  (uk/bk)* dot(uk,ukp1)  - (ukm1+ukp1)/bk ;
+//   }
+//   else{
+//     FF = ( (uk+ukm2)/(bkm1+tiny) - (ukm1+ukp1)/(bk+tiny)
+//        + (uk/(bk+tiny))*( dot(uk,ukm1) + dot(uk,ukp1) )
+//        - (ukm1/(bkm1+tiny))*( dot(ukm1,uk) + dot(ukm1,ukm2) )
+//       );
+//   }
+//   FF = FF*AA/aa;
+//   return FF;
+// }
+/**************************/
+void calc_Xone(double *Xone, double *Xzero, double time){
+  Xone[0] = Xzero[0] + aa*cos(omega*time);
+  Xone[1] = Xzero[1] + aa*sin(omega*time);
+}
+/**************************/
+void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa, double time){
+  // This function calculates the force at every node which is a function of X, time.
+  vec2 ukm2(0.,0.), ukm1(0.,0.), uk(0.,0.), ukp1(0.,0.), Xzero(0.,0.), dX(0.,0.), Xone(0.,0.);
+  double bkm2 = 0.;
+  double bkm1 = 0.;
+  double bk = 0.;
+  double bkp1 = 0.;
+  vec2 FF = *add_FF;
+  double y_zero[2] = {0.,0.};
+  double y_one[2] = {0.,0.};          
+  // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
+  //vec2 FF;
+  if(bcb==0){
+    // If the bottom point is fixed, then it can not move.
+    Xzero.x=0.; Xzero.y=0.;
+  }else if(bcb==2){
+    // We define the coordinates for clamped boundary condition also.
+    Xzero.x=0; Xzero.y=0;
+    calc_Xone(y_one,y_zero,time);
+    Xone.x = y_one[0]; Xone.y = y_one[1];
   }
   /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be 
   fixed in general. But for some cases like the implementation of the taylor experiment, 
@@ -281,28 +367,24 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
       if (bcb==0){
-          dX = X[kp-1+1]-Xzero;
-          bkm1 = norm(dX);
-          // cout << bkm1 << endl;
-          ukm1=dX/bkm1;
-          FF = ( (uk)/bkm1 - (ukm1+ukp1)/bk
-               + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
-               - (ukm1/bkm1)*( dot(ukm1,uk) )
-               );
-          FF = FF*AA/aa;
-          // Add an extra term for inextensibility constraint
-          FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa; 
-          // cout << FF.z << endl;
-          *add_FF = FF;
-          // *add_SS = (kp+1)*bkm1;
+        dX = X[kp-1+1]-Xzero;
+        bkm1 = norm(dX);
+        ukm1=dX/bkm1;
       }
       else if(bcb==1){
-          FF = ( (uk/bk)*( dot(uk,ukp1) )  - (ukp1)/bk ); 
-          FF = FF*AA/aa;
-          // Add an extra term for inextensibility constraint
-          FF = FF + (uk*(bk-aa))*HH/aa; 
-          // cout << FF.z << endl;
-          *add_FF = FF;
+        FF = ( (uk/bk)*( dot(uk,ukp1) )  - (ukp1)/bk ); 
+        FF = FF*AA/aa;
+        // Add an extra term for inextensibility constraint
+        FF = FF + (uk*(bk-aa))*HH/aa; 
+      }
+      else if (bcb==2){
+        dX = X[0]-Xone;
+        bkm1 = norm(dX);
+        ukm1=dX/bkm1;
+        //
+        dX = Xone-Xzero;
+        bkm2 = norm(dX);
+        ukm2=dX/bkm2;
       }
       else{
         cout << "Boundary condition at bottom not implemented." << endl;
@@ -310,34 +392,28 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
         exit(1);
       }
       *add_kappasqr=0.;
-      break;     
-
+      break;
     case 1:
       getub(&bkm1, &ukm1, kp-1, X);
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
       if (bcb==0){
-          dX = X[kp-2+1]-Xzero;
-          bkm2 = norm(dX);
-          ukm2 = dX/bkm2;
-          FF = (  (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
-              + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
-              - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
-              );
-          FF = FF*(AA/aa);
-          // cout << FF.z << endl;
-          FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa) )*HH/aa;   // Inextensibility constraint
-          *add_FF = FF;
-      }
-      else if(bcb==1){
-          FF = ( (uk)/bkm1 - (ukm1+ukp1)/bk
+        dX = X[kp-2+1]-Xzero;
+        bkm2 = norm(dX);
+        ukm2 = dX/bkm2;
+      }else if(bcb==1){
+        FF = ( (uk)/bkm1 - (ukm1+ukp1)/bk
               + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
               - (ukm1/bkm1)*( dot(ukm1,uk) )
               );
-          FF = FF*(AA/aa);
-          // cout << FF.z << endl;
-          FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;   // Inextensibility constraint
-          *add_FF = FF;
+        FF = FF*(AA/aa);
+        // cout << FF.z << endl;
+        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;   // Inextensibility constraint
+      }
+      else if(bcb==2){
+        dX = X[0]-Xone;
+        bkm2 = norm(dX);
+        ukm2=dX/bkm2;
       }
       else{
         cout << "Boundary condition at Np==1 not implemented." << endl;
@@ -345,48 +421,35 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
         exit(1);
       }
       *add_kappasqr=0.;
-      // *add_SS = (kp+1)*bkm1;      
       break;
-
     case Np-2:
       if(bct==1){
         getub(&bkm2, &ukm2, kp-2, X);
         getub(&bkm1, &ukm1, kp-1, X);
         getub(&bk, &uk, kp, X);
+        *add_kappasqr=0.;
         FF = (     (uk+ukm2)/bkm1 - (ukm1)/bk
             + (uk/bk)*( dot(uk,ukm1))
             - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
             );    
         FF = FF*(AA/aa);
-        // cout << bk << endl;
-        // cout << FF.z << endl;
         FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint 
-        // cout << FF.z << endl;
-        *add_kappasqr=0.;
-        *add_FF = FF;
-      }else{
+      }
+      else{
         cout << "Boundary condition at Np==NN-1 not implemented." << endl;
         cout << "Exiting" << endl;
         exit(1);
       }
-      // *add_SS = (kp+1)*bkm1;
       break;
-
     case Np-1:
       if(bct==1){
         getub(&bkm2, &ukm2, kp-2, X);
         getub(&bkm1, &ukm1, kp-1, X);
-    
-        FF = (     (ukm2)/bkm1
-          - (ukm1/bkm1)*( dot(ukm1,ukm2) )
-          );
-        FF = FF*(AA/aa);
-        // cout << bkm1 << endl;
-        // cout << FF.y << endl;
-        FF = FF - (ukm1*(bkm1-aa))*HH/aa;
-        // cout << FF.y << endl;
         *add_kappasqr=0.;
-        *add_FF = FF;
+        //
+        FF = ((ukm2)/bkm1 - (ukm1/bkm1)*( dot(ukm1,ukm2) ));
+        FF = FF*(AA/aa);
+        FF = FF - (ukm1*(bkm1-aa))*HH/aa;
       }
       else{
         cout << "Boundary condition at Np==NN not implemented." << endl;
@@ -394,24 +457,26 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa)
         exit(1);
       }
       break;
-
     default:
       getub(&bkm2, &ukm2, kp-2, X);
       getub(&bkm1, &ukm1, kp-1, X);
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
+      if (flag_kappa){
+        *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
+      }
       FF = ( (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
           + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );
       FF = FF*(AA/aa);
       FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint
-      if (flag_kappa){
-        *add_kappasqr=2.*(1.- dot(uk,ukm1))/(aa*aa);
-      }
-      *add_FF = FF;
       break;
   }
+  // cout < "\t" ;
+  // FF = bending_force(ukm2,ukm1,uk,ukp1,bkm2,bkm1,bk,bkp1)
+  //     +extension_force(ukm1,uk,bkm1,bk);
+  *add_FF = FF;
 }
 /****************************************************/
 void iniconf(double *y){
@@ -420,9 +485,10 @@ void iniconf(double *y){
   double k = 2;            // determines the frequency for initial configuration
   double CurvLength = 0;   // determines the total length of the curve
   string l;
-  double theta=0;
-  double vdis=0;           // Define a parameter called middle point in model.h
-                           // that will take care of everything
+  double theta= (double)M_PI/2;
+  // double theta = 0;
+  double vdis=2*aa;           // Define a parameter called middle point in model.h
+  // double vdis=0;                         // that will take care of everything
   ifstream myfile;
   double ch;
   int cnt=0;
@@ -455,11 +521,11 @@ void iniconf(double *y){
       // In this case we implement the initial configuration for GI Taylor experiment. 
       // i.e. a straight rod which has length equal to the height of the box and free to move from bottom.
       for (int ip = 0; ip < Np; ++ip){
-          R[ip].x = (aa*double(ip)-vdis*height)*sin(theta);
-          R[ip].y = (aa*double(ip)-vdis*height)*cos(theta);
-          // cout << R[ip].z << endl ;
-          y[2*ip] = R[ip].x;
-          y[2*ip+1] = R[ip].y;
+        R[ip].x = (aa*double(ip)+vdis)*sin(theta);
+        R[ip].y = (aa*double(ip)+vdis)*cos(theta);
+        //
+        y[2*ip] = R[ip].x;
+        y[2*ip+1] = R[ip].y;
       }
       break;
     case 2:
@@ -493,25 +559,29 @@ void iniconf(double *y){
 /****************************************************/
 void iniconf_tr(double *y_tr){
   int const ndim_tr = ntracer*ptracer;
+  double Ymin = 0;
+  double Ymax = (double)height/2;
+  double Zmin = 0;
+  double Zmax = (double)height/4;
   int ntracerY = (int) sqrt(ntracer);
   for (int itracer = 0; itracer < ntracer; ++itracer){
-    y_tr[itracer*ptracer] = 0.01;                                              
+    y_tr[itracer*ptracer] = 0.01;                                         
     // X coordinate of tracer particles
   }
   for (int itracerY = 0; itracerY < ntracerY; ++itracerY ){
     for (int itracerZ = 0; itracerZ < ntracerY; ++itracerZ){
       int itracer = ntracerY*itracerZ + itracerY;
-      y_tr[itracer*ptracer+1] =  itracerY*height*2/ntracerY-height;            
+      y_tr[itracer*ptracer+1] =  itracerY*(Ymax-Ymin)/ntracerY+Ymin;            
       // Y coordinate of tracer particles
-      y_tr[itracer*ptracer+2] =  itracerZ*height/ntracerY;                     
+      y_tr[itracer*ptracer+2] =  itracerZ*(Zmax-Zmin)/ntracerY+Zmin;                   
       // Z coordinate of tracer particles
     }
   }
   int left_tracer = ntracer - ntracerY*ntracerY;
   // cout << left_tracer << endl;
   for (int itracer = 0; itracer < left_tracer; ++itracer){
-    y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+1] = (double) rand()/RAND_MAX*height*2-height;
-    y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+2] = (double) rand()/RAND_MAX*height;
+    y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+1] = (double) rand()/RAND_MAX*(Ymax-Ymin)+Ymin;
+    y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+2] = (double) rand()/RAND_MAX*(Zmax-Zmin)+Zmin;
   }
   // print(y_tr,ndim_tr);
 }
@@ -592,7 +662,6 @@ void vec2y(double *y, vec2 XX, int ip){
   y[2*ip] = XX.x;
   y[2*ip+1] = XX.y;
 }
-
 /********************************************/
 void vec2y(double *y, vec3 XX, int ip){
   y[3*ip] = XX.x;

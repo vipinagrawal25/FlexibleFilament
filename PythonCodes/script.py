@@ -25,7 +25,7 @@ Thing7 = "MSD_no_trans"
 Thing8 = "SqrtCurvature"
 Thing9 = "TracerVelocity"
 
-Things = [Thing1, Thing8]
+Things = [Thing1]
 
 Xtracer2 = [0.01,0,0.5]
 Xtracer9 = [0.01,1.2,0.5]

@@ -51,6 +51,13 @@ void print(double *arr, int nn){
   cout << endl;
 }
 /*-----------------------------------------------*/
+// void print(vec2 *arr, int nn){
+//   for (int in = 0; in < nn; ++in){
+//       cout << arr[in].x << "\t";
+//       cout << arr[in].y << "\n";
+//   }
+// }
+/*-----------------------------------------------*/
 void add(double *added, double *arr1, double *arr2, int nn ){
   for (int ii = 0; ii < nn; ++ii){
     added[ii] = arr1[ii] + arr2[ii];

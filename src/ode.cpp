@@ -129,7 +129,7 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   double bi[6] = {2825./27648.,0,18575./48384,13525./55296.,277./14336.,0.25};
   if (ldiagnos){flag_kappa = true;}
   else{flag_kappa = false;}
-  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
+  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS,EForceArr);
   for(idim=0;idim<ndim;idim++){
       temp[idim]=y[idim]+k1[idim]*dt*aij[1][0];
   }
@@ -163,15 +163,16 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
     temp[idim] = y[idim] + dt*(bi[0]*k1[idim] + bi[1]*k2[idim] + bi[2]*k3[idim] + bi[3]*k4[idim] 
                          + bi[4]*k5[idim] +  bi[5]*k6[idim]);
     ynew[idim] = y[idim] + dt*(bistar[0]*k1[idim] + bistar[1]*k2[idim] + bistar[2]*k3[idim] 
-                         + bistar[3]*k4[idim] + bistar[4]*k5[idim] +  bistar[5]*k6[idim]);
+                            +  bistar[3]*k4[idim] + bistar[4]*k5[idim] +  bistar[5]*k6[idim]);
     temp_error = abs(temp[idim]-ynew[idim]);
     error=max(temp_error,error);
   }
   error=error+tiny;
+  // cout << error << endl;
   if (error<tol_dt){
     *add_time=time+dt;
     for (int idim = 0; idim < ndim; ++idim){
-      y[idim]=ynew[idim];                     // Accept the step
+      y[idim]=ynew[idim];                               // Accept the step
       vel[idim]=k1[idim];
     }
     s = epsilon*pow((tol_dt/error),0.20);
@@ -285,4 +286,3 @@ void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* a
     DP54(ndim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], &EForceArr[0], ldiagnos);
   }
 }
-/* ----------------- */
