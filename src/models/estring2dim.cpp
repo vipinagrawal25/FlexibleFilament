@@ -144,6 +144,7 @@ void ext_force(vec2* EForce, double* y, double time){
 }
 /**************************/
 vec2 ext_flow(vec2 R_ip, double time){
+  omega = 2*M_PI/period;
   vec2 dR;
   double Ts=40;
   switch(iext_flow){
@@ -312,30 +313,37 @@ void calc_Xconstrain(vec2* Xcons, double time){
     case 1:
       // points on circle
       for(int i = 0; i < nconstrain; ++i){
-        Xcons[i].x = (height/2 +  aa*(loc_con[i]-loc_con[0]))*cos(omega*time);
-        Xcons[i].y = (height/2 +  aa*(loc_con[i]-loc_con[0]))*sin(omega*time);
+        Xcons[i].x = (height/2 +  aa*(loc_con[i]-loc_con[0]))*cos(angularVel*time);
+        Xcons[i].y = (height/2 +  aa*(loc_con[i]-loc_con[0]))*sin(angularVel*time);
       }
       break;
     case 2:
       // points on figure '8'
       for (int i = 0; i < nconstrain; ++i){
-        Xcons[i].x = (height +  aa*(loc_con[i]-loc_con[0]))*cos(omega*time);
-        Xcons[i].y = (height +  aa*(loc_con[i]-loc_con[0]))*cos(omega*time)*sin(omega*time);
+        Xcons[i].x = (height +  aa*(loc_con[i]-loc_con[0]))*cos(angularVel*time);
+        Xcons[i].y = (height +  aa*(loc_con[i]-loc_con[0]))*cos(angularVel*time)*sin(angularVel*time);
       }
     }
+    case 3:
+      // Theta should be a triangular wave.
+      theta = 4*M_PI*abs(time/period - floor(time/period+0.5))
+      for (int i = 0; i < nconstrain; ++i){
+        Xcons[i].x = (height/2 +  aa*(loc_con[i]-loc_con[0]))*cos(theta);
+        Xcons[i].y = (height/2 +  aa*(loc_con[i]-loc_con[0]))*sin(theta);
+      }
 }
 /**************************/
 void calc_yone(double *yone, double time){
   double yzero[2];
   calc_yzero(yzero,time);
-  yone[0] = yzero[0] + aa*cos(omega*time);
-  yone[1] = yzero[1] + aa*sin(omega*time);
+  yone[0] = yzero[0] + aa*cos(angularVel*time);
+  yone[1] = yzero[1] + aa*sin(angularVel*time);
   // print(yone,2);
 }
 /**************************/
 void calc_yzero(double *yzero, double time){
-  yzero[0] = height/2*cos(omega*time);
-  yzero[1] = height/2*sin(omega*time);
+  yzero[0] = height/2*cos(angularVel*time);
+  yzero[1] = height/2*sin(angularVel*time);
 }
 /**************************/
 void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa, double time){
