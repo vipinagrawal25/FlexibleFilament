@@ -107,3 +107,9 @@ void downScale(double *yscaled, double *y, int factor, int nn ){
     yscaled[in] = y[in*factor];
   }
 }
+/*-----------------------------------------------*/
+void zeros(double *yzero, int ndim){
+  yzero[0]=0;
+  yzero[1]=0;
+}
+/*-----------------------------------------------*/

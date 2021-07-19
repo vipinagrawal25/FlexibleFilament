@@ -25,6 +25,8 @@ int main(){
   double CurvSqr[Np],SS[Np];
   double time,time_prev,timer_global;
   double y_tr[ndim_tr],vel_tr[ndim_tr];
+  double yzero[2],yone[2];
+  double velzero[2] = {0.,0.};
   int filenumber;
   string lastline;
   int ldiagnos=0;
@@ -48,7 +50,14 @@ int main(){
   //
   ofstream outfile;
   outfile.open("output/var0.txt");
-  wData(&outfile,&outfile,y,vel);                                           // Code it in your model.cpp
+  if (bcb==2){
+    calc_yone(yone,time);
+    calc_yzero(yzero,time);
+    //
+    wData(&outfile,&outfile,yzero,velzero,time,1,pp);
+    wData(&outfile,&outfile,yone,velzero,time,1,pp);
+  }
+  wData(&outfile,&outfile,y,vel);                                     // Code it in your model.cpp
   outfile.close();
   //
   if(itracer){
@@ -57,7 +66,7 @@ int main(){
     eval_rhs_tr(time,EForceArr,y,y_tr,vel_tr);
     //
     outfile.open("output/tracer0.txt");
-    wData(&outfile,&outfile,y_tr,vel_tr,time,ntracer,ptracer);              // Code it in your model.cpp
+    wData(&outfile,&outfile,y_tr,vel_tr,time,ntracer,ptracer);         // Code it in your model.cpp
     outfile.close();
   }
   //
@@ -97,6 +106,12 @@ int main(){
       //
       string l = "output/var" + to_string(filenumber) + ".txt";
       outfile.open(l, ios::out);
+      if (bcb==2){
+        calc_yzero(yzero,time);
+        calc_yone(yone,time);
+        wData(&outfile,&outfile,yzero,velzero,time,1,pp);
+        wData(&outfile,&outfile,yone,velzero,time,1,pp);
+      }
       wData(&outfile,&outfile,y,vel);
       outfile.close();
       //
@@ -111,9 +126,9 @@ int main(){
       outfile_curvature << time << '\t' ;
       outfile_time << time;
       for (int ip = 0; ip < Np; ++ip){
-        /* Non-dimensionalizing the co-ordinate with respect to the height of the rod*/
+        /* Non-dimensionalizing the co-ordinate with respect to the height of the rod */
         outfile_curvature << CurvSqr[ip]*aa*aa << '\t';
-       /*Square of curvature is non-dimensionalized with the multiplication 
+       /*Square of curvature is non-dimensionalized with the multiplication
           of square of bead distance */
         outfile_SS << SS[ip]/SS[Np-1] << '\t';
       }

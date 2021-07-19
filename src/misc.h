@@ -16,6 +16,7 @@ void substract(double *subsed, double *arr1, double *arr2, int nn);
 double norm(double *y, int nn );
 double norm(const double *y, int nn );
 void downScale(double *yscaled, double *y, int factor, int nn );
+void zeros(double *yzero, int ndim);
 // void print(vec2 *arr, int nn);
 /* -----------------------------------------------*/
 #endif

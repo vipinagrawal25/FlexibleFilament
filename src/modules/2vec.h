@@ -38,12 +38,14 @@ vec2::vec2(double a, double b){
   x =  a;
   y =  b;
 }
+/*---------------------------------------*/
 vec2 vec2::operator+(vec2 param){
   vec2 temp;
   temp.x = x+param.x;
   temp.y = y+param.y;
   return(temp);
 }
+/*---------------------------------------*/
 vec2 vec2::operator-(vec2 param){
   vec2 temp;
   temp.x = x-param.x;
@@ -106,7 +108,6 @@ vec2 dot(Tens2b2 a, vec2 b){
   vec2 temp;
   temp.x = (a.xx)*(b.x)+(a.xy)*(b.y);
   temp.y = (a.yx)*(b.x)+(a.yy)*(b.y);
-
   return (temp);
 }
 /*---------------------------------------*/

@@ -25,52 +25,27 @@ void GetRij(vec2 X[], int i, int j, double *Distance, vec2 *rij);
 void drag(vec2 X[], vec2 dX[], vec2 EForce[]);
 vec2 y2vec2(double *y,int ip);
 vec3 y2vec3(double *y,int ip);
-void ext_force(int floc,vec2* EForce,double time);
+void ext_force(vec2* EForce,double *y,double time);
 void vec2y(double *y, vec2 XX, int ip);
 void vec2y(double *y, vec3 XX, int ip);
 vec3 ext_flow(vec3 R3d, double time);
 vec2 ext_flow(vec2 R, double time);
-// vec2 extension_force(vec2 ukm1, vec2 uk, double bkm1, double bk);
-// vec2 extension_force(int ip, vec2 y[]);
-// vec2 bending_force(vec2 ukm2, vec2 ukm1, vec2 uk, vec2 ukp1, double bkm2, double bkm1, double bk, double bkp1);
-void calc_Xone(double *Xone, double *Xzero, double time);
+void calc_Xconstrain(vec2* Xcons, double time);
 /**************************/
 // Global variables to the file.
 /* save the coordinates of first two points to go back and forth from kappa to y.
    first 4 points for points before map iteration and last 4 points for after map iteration. */
 double y_start[2*pp] = {0.,0.,0.,aa};
 string cc;
+double Error=0;
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
-  vec2 R[Np],dR[Np],EForce_ip,EForce[Np];
-  // R is the position of the beads.
-  // double CurvSqr[Np];
-  double kappasqr;
-  double onebythree = 1./3.;
-  SS[0] = 0;                    // Initializing the material co-ordinate
-  for (int ip=0;ip<Np;ip++){
-    R[ip].x=y[2*ip];
-    R[ip].y=y[2*ip+1];
-  }
-  for (int ip=0;ip<Np;ip++){
-    dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa, time);
-    EForce[ip] = EForce_ip;
-  }
-  // Is the string forced at some points?
-  // Implement it here.
-  ext_force(floc,EForce,time);
-  drag(R, dR, EForce);
-  for (int ip = 0; ip < Np; ++ip){
-    dR[ip]=dR[ip]+ext_flow(R[ip],time);
-  }
-  for (int ip=0;ip<Np;ip++){
-    rhs[2*ip]=dR[ip].x;
-    rhs[2*ip+1]=dR[ip].y;
-  }
+  double EForceArr[ndim];
+  eval_rhs(time,y,rhs,flag_kappa,CurvSqr,SS,EForceArr,0);
 }
 /**************************/
 void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[], 
-              double EForceArr[]){
+              double EForceArr[], bool iEforceArr){
   vec2 R[Np],dR[Np],EForce_ip,FF0,EForce[Np];
   // R is the position of the beads.
   // double CurvSqr[Np];
@@ -93,14 +68,18 @@ void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double Curv
     CurvSqr[ip]=kappasqr;
   }
   // Is the string forced at some points? Implement it here.
-  ext_force(floc,EForce,time);
+  if (iext_force){
+    ext_force(EForce,y,time); 
+  }
   drag(R, dR, EForce);
   for (int ip = 0; ip < Np; ++ip){
     dR[ip]=dR[ip]+ext_flow(R[ip],time);
   }
   for (int ip=0;ip<Np;ip++){
-    EForceArr[2*ip] = EForce[ip].x;
-    EForceArr[2*ip+1] = EForce[ip].y;
+    if (iEforceArr){
+      EForceArr[2*ip] = EForce[ip].x;
+      EForceArr[2*ip+1] = EForce[ip].y;
+    }
     rhs[2*ip]=dR[ip].x;
     rhs[2*ip+1]=dR[ip].y;
   }
@@ -118,7 +97,7 @@ void eval_rhs_tr(double time, double EForceArr[], double y[], double y_tr[], dou
     EForce[ip].x = 0;
     EForce[ip].y = EForceArr[2*ip]-FF.x;
     EForce[ip].z = EForceArr[2*ip+1]-FF.y;
-  }  
+  }
   double d_RR,c1,dsqr1;
   Tens2 mu;
   double onebythree = 1./3.;
@@ -144,20 +123,23 @@ void eval_rhs_tr(double time, double EForceArr[], double y[], double y_tr[], dou
   }
 }
 /**************************/
-void ext_force(int floc,vec2* EForce,double time){
-  vec2 FF0;
-  if(iext_force){
-    cout << "coming?" << endl;
-    FF0.x = 0;
-    FF0.y = -FFY0*sin(omega*time);
-    if (floc>=0 && floc<Np){
-      EForce[floc] = EForce[floc]-FF0;
-    }
-    else{
-      cout << "Location of the external force is wrong." <<endl;
-      cout << "Exiting" << endl;
-      exit(1);
-    }
+void ext_force(vec2* EForce, double* y, double time){
+  vec2 Xghost[nconstrain],XX;
+  double GG = 5000;
+  switch(iext_force){
+    case 1:
+      // Peskin way to implement the boundary condition.
+      calc_Xconstrain(Xghost,time);
+      for (int i = 0; i < nconstrain; ++i){
+        XX = y2vec2(y,loc_con[i]);
+        EForce[i] = EForce[i] - (XX-Xghost[i])*GG;
+        // if(Error<norm(XX-Xghost[i])/norm(XX) && i==0){
+        //   Error = norm(XX-Xghost[i])/norm(XX);
+        // }
+      }
+      // PVec2(XX);
+      // PVec2(Xghost[1]);
+      break;
   }
 }
 /**************************/
@@ -211,7 +193,7 @@ void drag(vec2 X[], vec2 dX[], vec2 EForce[]){
     Tens2b2 mu_ij, mu_ii;
     double d_rij;
     vec2 rij;
-    mu_ii = dab2b2*mu0;       // dab2b2 is the unit 2 dimensional tensor. It is defined in module/2b2Tens file.
+    mu_ii = dab2b2*mu0;       // dab``2b2 is the unit 2 dimensional tensor. It is defined in module/2b2Tens file.
     for (int ip = 0; ip < Np; ++ip){
       // The mu_ij in the next line represents the mobility tensor when j is equal to i and in 
       // response to that the "for loop" is started from ip+1.
@@ -247,8 +229,8 @@ void getub(double *bk, vec2 *uk, int kp, vec2 X[]){
 vec2 extension_force(int kp, vec2 X[], double time){
   vec2 FF;
   vec2 ukm1(0.,0.), uk(0.,0.), Xzero(0.,0.), dX(0.,0.), Xone(0.,0.);
-  double y_zero[2] = {0.,0.};
-  double y_one[2] = {0.,0.};
+  double yzero[2] = {0.,0.};
+  double yone[2] = {0.,0.};
   double bkm1,bk;
   if (bcb==0){
     // If the bottom point is fixed, then it can not move.
@@ -256,8 +238,8 @@ vec2 extension_force(int kp, vec2 X[], double time){
   }else if(bcb==2){
     // We define the coordinates for clamped boundary condition also.
     Xzero.x=0; Xzero.y=0;
-    calc_Xone(y_one,y_zero,time);
-    Xone.x = y_one[0]; Xone.y = y_one[1];
+    calc_yone(yone,time);
+    Xone.x = yone[0]; Xone.y = yone[1];
   }
   switch(kp){
     case 0:
@@ -278,7 +260,7 @@ vec2 extension_force(int kp, vec2 X[], double time){
         cout << "Exiting" << endl;
         exit(1);
       }
-      break;     
+      break;
 
     case Np-1:
       if(bct==1){
@@ -325,9 +307,35 @@ vec2 extension_force(int kp, vec2 X[], double time){
 //   return FF;
 // }
 /**************************/
-void calc_Xone(double *Xone, double *Xzero, double time){
-  Xone[0] = Xzero[0] + aa*cos(omega*time);
-  Xone[1] = Xzero[1] + aa*sin(omega*time);
+void calc_Xconstrain(vec2* Xcons, double time){
+  switch(iconstrain){
+    case 1:
+      // points on circle
+      for(int i = 0; i < nconstrain; ++i){
+        Xcons[i].x = (height/2 +  aa*(loc_con[i]-loc_con[0]))*cos(omega*time);
+        Xcons[i].y = (height/2 +  aa*(loc_con[i]-loc_con[0]))*sin(omega*time);
+      }
+      break;
+    case 2:
+      // points on figure '8'
+      for (int i = 0; i < nconstrain; ++i){
+        Xcons[i].x = (height +  aa*(loc_con[i]-loc_con[0]))*cos(omega*time);
+        Xcons[i].y = (height +  aa*(loc_con[i]-loc_con[0]))*cos(omega*time)*sin(omega*time);
+      }
+    }
+}
+/**************************/
+void calc_yone(double *yone, double time){
+  double yzero[2];
+  calc_yzero(yzero,time);
+  yone[0] = yzero[0] + aa*cos(omega*time);
+  yone[1] = yzero[1] + aa*sin(omega*time);
+  // print(yone,2);
+}
+/**************************/
+void calc_yzero(double *yzero, double time){
+  yzero[0] = height/2*cos(omega*time);
+  yzero[1] = height/2*sin(omega*time);
 }
 /**************************/
 void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa, double time){
@@ -338,46 +346,49 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
   double bk = 0.;
   double bkp1 = 0.;
   vec2 FF = *add_FF;
-  double y_zero[2] = {0.,0.};
-  double y_one[2] = {0.,0.};          
+  double yzero[2] = {0.,0.};
+  double yone[2] = {0.,0.};
   // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
   //vec2 FF;
-  if(bcb==0){
-    // If the bottom point is fixed, then it can not move.
-    Xzero.x=0.; Xzero.y=0.;
-  }else if(bcb==2){
-    // We define the coordinates for clamped boundary condition also.
-    Xzero.x=0; Xzero.y=0;
-    calc_Xone(y_one,y_zero,time);
-    Xone.x = y_one[0]; Xone.y = y_one[1];
-  }
   /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be 
   fixed in general. But for some cases like the implementation of the taylor experiment, 
   we want this to be free. For this I am implementing Xzero based on the configuration. 
   Since finally with this function we just want to calculate the force on particular node. 
   So we can just change the way we calculate force on 1st and 2nd node for different configuration.*/
-
   /* One thing should be noted that now the expression inside case 0 and case 1 would change depending upon 
   the configuration. Suppose if XZero is taken as the fixed point, then we dont need to calculate F^{0} 
   but only F^{1} which would be implemented in case 0 because Xzero is the bottom most point for 
   which we dont care to calculate the force and X[0] is the first point being implemented in case 0. 
-  Though for a different configuration these things should be changed.*/
+  Though for a different configuration these things should be changed. */
   switch(kp){
     case 0:
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
       if (bcb==0){
+        Xzero.x=0.; Xzero.y=0.;
         dX = X[kp-1+1]-Xzero;
         bkm1 = norm(dX);
         ukm1=dX/bkm1;
+        //
+        FF = (  (uk)/bkm1 - (ukm1+ukp1)/bk
+             + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
+             - (ukm1/bkm1)*( dot(ukm1,uk) )
+             );
+        FF = FF*AA/aa;
+        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa; 
       }
       else if(bcb==1){
-        FF = ( (uk/bk)*( dot(uk,ukp1) )  - (ukp1)/bk ); 
+        FF =  (uk/bk)*dot(uk,ukp1)  - (ukp1)/bk ;
         FF = FF*AA/aa;
         // Add an extra term for inextensibility constraint
-        FF = FF + (uk*(bk-aa))*HH/aa; 
+        FF = FF + (uk*(bk-aa))*HH/aa;
       }
       else if (bcb==2){
+        calc_yzero(yzero,time);
+        calc_yone(yone,time);
+        Xone.x = yone[0]; Xone.y = yone[1];
+        Xzero.x = yzero[0]; Xzero.y = yzero[1];
+        //
         dX = X[0]-Xone;
         bkm1 = norm(dX);
         ukm1=dX/bkm1;
@@ -385,6 +396,13 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
         dX = Xone-Xzero;
         bkm2 = norm(dX);
         ukm2=dX/bkm2;
+        //
+        FF = ( (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
+          + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
+          - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
+          );
+        FF = FF*(AA/aa);
+        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;      // Inextensibility constraint
       }
       else{
         cout << "Boundary condition at bottom not implemented." << endl;
@@ -398,9 +416,17 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
       getub(&bk, &uk, kp, X);
       getub(&bkp1, &ukp1, kp+1, X);
       if (bcb==0){
+        Xzero.x=0.; Xzero.y=0.;
         dX = X[kp-2+1]-Xzero;
         bkm2 = norm(dX);
         ukm2 = dX/bkm2;
+        //
+        FF = ( (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
+          + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
+          - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
+          );
+        FF = FF*(AA/aa);
+        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;        // Inextensibility constraint
       }else if(bcb==1){
         FF = ( (uk)/bkm1 - (ukm1+ukp1)/bk
               + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
@@ -408,12 +434,22 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
               );
         FF = FF*(AA/aa);
         // cout << FF.z << endl;
-        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;   // Inextensibility constraint
+        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;        // Inextensibility constraint
       }
       else if(bcb==2){
+        calc_yone(yone,time);
+        Xone.x = yone[0]; Xone.y = yone[1];
+        //
         dX = X[0]-Xone;
         bkm2 = norm(dX);
         ukm2=dX/bkm2;
+        //
+        FF = ( (uk+ukm2)/bkm1 - (ukm1+ukp1)/bk
+          + (uk/bk)*( dot(uk,ukm1) + dot(uk,ukp1) )
+          - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
+          );
+        FF = FF*(AA/aa);
+        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;          // Inextensibility constraint
       }
       else{
         cout << "Boundary condition at Np==1 not implemented." << endl;
@@ -447,7 +483,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
         getub(&bkm1, &ukm1, kp-1, X);
         *add_kappasqr=0.;
         //
-        FF = ((ukm2)/bkm1 - (ukm1/bkm1)*( dot(ukm1,ukm2) ));
+        FF = (ukm2)/bkm1 - (ukm1/bkm1)*dot(ukm1,ukm2) ;
         FF = FF*(AA/aa);
         FF = FF - (ukm1*(bkm1-aa))*HH/aa;
       }
@@ -470,12 +506,9 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );
       FF = FF*(AA/aa);
-      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;    // Inextensibility constraint
+      FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;          // Inextensibility constraint
       break;
   }
-  // cout < "\t" ;
-  // FF = bending_force(ukm2,ukm1,uk,ukp1,bkm2,bkm1,bk,bkp1)
-  //     +extension_force(ukm1,uk,bkm1,bk);
   *add_FF = FF;
 }
 /****************************************************/
@@ -485,10 +518,12 @@ void iniconf(double *y){
   double k = 2;            // determines the frequency for initial configuration
   double CurvLength = 0;   // determines the total length of the curve
   string l;
-  double theta= (double)M_PI/2;
-  // double theta = 0;
-  double vdis=2*aa;           // Define a parameter called middle point in model.h
-  // double vdis=0;                         // that will take care of everything
+  // double theta= (double)M_PI/2;
+  double theta = 0;
+  // double vdis=2*aa;           // Define a parameter called middle point in model.h
+  double inidis=0;        // that will take care of everything
+  //
+  vec2 Xcons[nconstrain];
   ifstream myfile;
   double ch;
   int cnt=0;
@@ -521,8 +556,8 @@ void iniconf(double *y){
       // In this case we implement the initial configuration for GI Taylor experiment. 
       // i.e. a straight rod which has length equal to the height of the box and free to move from bottom.
       for (int ip = 0; ip < Np; ++ip){
-        R[ip].x = (aa*double(ip)+vdis)*sin(theta);
-        R[ip].y = (aa*double(ip)+vdis)*cos(theta);
+        R[ip].x = (aa*double(ip)+inidis)*sin(theta);
+        R[ip].y = (aa*double(ip)+inidis)*cos(theta);
         //
         y[2*ip] = R[ip].x;
         y[2*ip+1] = R[ip].y;
@@ -530,31 +565,40 @@ void iniconf(double *y){
       break;
     case 2:
       // Santillian's experiment
-    // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at 
+      // In this case, we want to study the dynamics of a rod which is kept in the direction of the flow at 
       // origin.  The rod should be deviated a little bit from origin in starting.
-        for (int ip = 0; ip < Np; ++ip){
-          R[ip].x = aa*(double(ip+1))-height*0.5;
-          R[ip].y = aa*sin(M_PI*k*aa*double(ip+1)/height);
-          if (ip>0){
-            CurvLength = CurvLength + norm(R[ip] - R[ip-1]);
-              // cout << CurvLength << endl;
-          }
-          else{
-            CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y));
-          }
-          y[2*ip] = R[ip].x;
-          y[2*ip+1] = R[ip].y;
+      for (int ip = 0; ip < Np; ++ip){
+        R[ip].x = aa*(double(ip+1))-height*0.5;
+        R[ip].y = aa*sin(M_PI*k*aa*double(ip+1)/height);
+        if (ip>0){
+          CurvLength = CurvLength + norm(R[ip] - R[ip-1]);
+            // cout << CurvLength << endl;
+        }
+        else{
+          CurvLength = CurvLength + sqrt((R[ip].x)*(R[ip].x)+(R[ip].y)*(R[ip].y));
+        }
+        y[2*ip] = R[ip].x;
+        y[2*ip+1] = R[ip].y;
       }
       for (int ip = 0; ip < Np; ++ip){
-          y[2*ip+1] = R[ip].y/CurvLength;
+        y[2*ip+1] = R[ip].y/CurvLength;
       }
       break;
+    case 3:
+      calc_Xconstrain(Xcons,0);
+      for(int ip = 0; ip < Np; ++ip){
+        R[ip].x = (aa*double(ip)+Xcons[0].x)*cos(theta);
+        R[ip].y = (aa*double(ip)+Xcons[0].y)*sin(theta);
+        //
+        y[2*ip] = R[ip].x;
+        y[2*ip+1] = R[ip].y;
+      }
+    break;
     default:
-      cout << "# We have not implemented this initial configuration." << endl
+      cout << "# We have not implemented the initial configuration:" << "\t" << niniconf << endl
            << "# EXITING" << endl;
       break;
   }
-  // iniconf_tr(y);
 }
 /****************************************************/
 void iniconf_tr(double *y_tr){

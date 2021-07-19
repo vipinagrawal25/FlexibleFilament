@@ -13,7 +13,6 @@ metadata = dict(title='Movie Test', artist='Matplotlib',
 writer = FFMpegWriter(fps=30, metadata=metadata)
 fig=plt.figure()
 height=1
-
 #####################################################
 def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap,symbol='.'):
 	# ax = fig.add_subplot(2,1,1, projection='3d')
