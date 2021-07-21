@@ -6,6 +6,8 @@
 #include "constant.h"
 using namespace std;
 /*********************************/
+double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], k7[ndim], ynew[ndim];
+/*********************************/
 // void euler(double *y,double* vel, double time,double dt){
 //   double  k1[ndim];
 //   int idim;
@@ -49,7 +51,6 @@ void rnkt4(double *y,double *add_time, double* add_dt){
 /*********************************/
 void rnkt4(unsigned int ndim, double *y, double *vel, double *add_time, double *add_dt, double* CurvSqr, 
            double* SS, double ldiagnos){
-  double temp[ndim],k1[ndim],k2[ndim],k3[ndim],k4[ndim];
   int idim;
   double dt = *add_dt;
   double time = *add_time;
@@ -93,7 +94,7 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
             double* SS,double *EForceArr, double ldiagnos){
   // Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
   // add_time is the address of time and the same goes for dt as well.
-  double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, ynew[ndim];
+  double s;
   int idim ;
   double error,temp_error;
   double dt = *add_dt;
@@ -192,7 +193,7 @@ void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* a
   // high order integration.
   // Details could be found in Numerical recipes book and a short description on the link: 
   // https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method
-  double temp[ndim], s,k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], k7[ndim], ynew[ndim];
+  double s;
   double error,temp_error;
   int idim ;
   double dt = *add_dt;

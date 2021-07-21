@@ -144,7 +144,7 @@ void ext_force(vec2* EForce, double* y, double time){
 }
 /**************************/
 vec2 ext_flow(vec2 R_ip, double time){
-  omega = 2*M_PI/period;
+  double omega = 2*M_PI/period;
   vec2 dR;
   double Ts=40;
   switch(iext_flow){
@@ -323,14 +323,14 @@ void calc_Xconstrain(vec2* Xcons, double time){
         Xcons[i].x = (height +  aa*(loc_con[i]-loc_con[0]))*cos(angularVel*time);
         Xcons[i].y = (height +  aa*(loc_con[i]-loc_con[0]))*cos(angularVel*time)*sin(angularVel*time);
       }
-    }
     case 3:
       // Theta should be a triangular wave.
-      theta = 4*M_PI*abs(time/period - floor(time/period+0.5))
+      double theta = 4*M_PI*abs(time/period - floor(time/period+0.5));
       for (int i = 0; i < nconstrain; ++i){
         Xcons[i].x = (height/2 +  aa*(loc_con[i]-loc_con[0]))*cos(theta);
         Xcons[i].y = (height/2 +  aa*(loc_con[i]-loc_con[0]))*sin(theta);
       }
+    }
 }
 /**************************/
 void calc_yone(double *yone, double time){
@@ -410,7 +410,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
           - (ukm1/bkm1)*( dot(ukm1,ukm2) + dot(ukm1,uk) )
           );
         FF = FF*(AA/aa);
-        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;      // Inextensibility constraint
+        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;            // Inextensibility constraint
       }
       else{
         cout << "Boundary condition at bottom not implemented." << endl;
@@ -528,7 +528,7 @@ void iniconf(double *y){
   string l;
   // double theta= (double)M_PI/2;
   double theta = 0;
-  // double vdis=2*aa;           // Define a parameter called middle point in model.h
+  // double vdis=2*aa;     // Define a parameter called middle point in model.h
   double inidis=0;        // that will take care of everything
   //
   vec2 Xcons[nconstrain];
@@ -538,12 +538,36 @@ void iniconf(double *y){
   switch(niniconf){
     case -1:
       myfile.open(datafile);
-      myfile >> ch;
-      while(myfile >> ch){y[cnt]=ch;cnt++;}
+      // myfile >> ch;
+      while(myfile >> ch){cnt++;}
+      myfile.close();
       cout << "# Number of elements read: " << cnt << endl;
       if(cnt==Np){}
-      else if(cnt==ndim){memcpy(y_start,y,2*pp*sizeof(double));}
-      else{ cout << "# Initial point is not right." << endl; }
+      else if(cnt==ndim){
+        cnt=0;
+        myfile.open(datafile);
+        while(myfile >> ch){y[cnt]=ch;cnt++;}
+        memcpy(y_start,y,2*pp*sizeof(double));
+        myfile.close();
+      }
+      else if(cnt==pp*ndim){
+        cout << datafile[0] << endl;
+        myfile.open(datafile);
+        for(int idim = 0; idim < Np; ++idim){
+          for (int ip = 0; ip < pp; ++ip){
+            myfile >> y[idim*pp+ip];
+          }
+          for (int ip = 0; ip < pp; ++ip){
+            myfile >> ch;
+          }
+        }
+        memcpy(y_start,y,2*pp*sizeof(double));
+        myfile.close();
+      }
+      else{
+        cout << "# Initial point is not right." << endl;
+        exit(1);
+      }
       myfile.close();
       break;
     case 0:
@@ -663,11 +687,8 @@ void write_param( string fname ){
             << "aa = " << aa << endl
             << "dd = " << dd << endl
             << "viscosity = " << viscosity << endl
-            << "Z0 = " << Z0 << endl
-            << "Famp = " << FFY0 << endl
-            << "sigma = " << sigma << endl
             << "ShearRate = " << ShearRate << endl
-            << "omega = " << omega << endl
+            << "Period = " << period << endl
             << "AA = " << AA << endl
             << "HH = " << HH << endl
             << "bcb = " << bcb << endl
