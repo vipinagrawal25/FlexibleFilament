@@ -18,7 +18,6 @@ public:
   Tens2 inline operator-(Tens2);
   Tens2 inline operator*(double);
   Tens2 inline operator/(double);
-
 private:
 };
 

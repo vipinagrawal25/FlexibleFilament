@@ -80,6 +80,64 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
       exit(1);
   }
 }
+/********************************************/
+void rData(double *y,string fname, int Npt, int ppt){
+  double num;
+  ifstream myfile;
+  //
+  double ndimt = Npt*ppt;
+  switch(rDataMeth){
+    case 1:
+      myfile.open(fname);
+      while(fptr >> ch){cnt++;}
+      myfile.close();
+      cout << "# Number of elements read: " << cnt << endl;
+      if(cnt==Npt){}
+      else if(cnt==ndimt){
+        cnt=0;
+        myfile.open(datafile);
+        while(myfile >> ch){y[cnt]=ch;cnt++;}
+        myfile.close();
+      }
+      else if(cnt==pp*ndim){
+        myfile.open(datafile);
+        for(int idim = 0; idim < Npt; ++idim){
+          for (int ip = 0; ip < ppt; ++ip){
+            myfile >> y[idimt*ppt+ip];
+          }
+          for (int ip = 0; ip < pp; ++ip){
+            myfile >> num;
+          }
+        }
+        myfile.close();
+      break;
+    // case 2:
+    //   if(){
+    //     l = "data/";
+    //     l.append(filename);
+    //   }else{
+    //     l=filename;
+    //   }
+    //   while( getline(myfile,token) ){
+    //     line=token;
+    //     getline(myfile,token);          // Dumping this: #---------
+    //   }
+    //   // Now convert all the tab separated entries to array.
+    //   iss.str(line);
+    //   // getline(iss, token, '\t');        // First entry is time, delete that.
+    //   for (int idim = 0; idim < ndimt; ++idim){
+    //     getline(iss, token, '\t');       // Get next token.
+    //     y[idim]=stod(token);            // Convert to double and store it in y.
+    //   }
+    //   myfile.close();
+    //   break;
+    default:
+      cout << "Hey, your choice of writing data does not exist. "
+              "If you want a new way, Code function: wData( double y[], string filename) "
+              "in model.cpp file." << endl;
+      exit(1);
+  }
+}
 /*-----------------------------------------------*/
 // Wrapper function for wData, in case y and vel contains multiple rows.
 // We do not pass the file pointer, but the fname.
@@ -140,60 +198,5 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
 //     *fptr >> num;
 //     *fptr >> num;
 //     *fptr >> num;
-//   }
-// }
-/********************************************/
-// void rData(ofstream *fptr, int Npt, int ppt){
-//   string line,token;
-//   double num;
-//   istringstream iss;
-
-//   double ndimt = Npt*ppt;
-//   switch(rDataMeth){
-//     case 1:
-//       if(IsPathExist("output")){
-//         l = "output/";
-//         l.append(filename);
-//       }else{
-//         l=filename;
-//       }
-//       myfile.open(l,ifstream::in);
-//       num=0.0;
-//       for(int ip = 0; ip < Npt; ++ip){
-//         for (int jp = 0; jp < ppt; ++jp){
-//           myfile >> y[2*ip+jp];
-//         }
-//         // Now just throw away next two/three numbers as they contain values of velocity.
-//         for (int jp = 0; jp < ppt; ++jp){
-//           myfile >> num;
-//         }
-//       }
-//       myfile.close();
-//       break;
-//     case 2:
-//       if(IsPathExist("data")){
-//         l = "data/";
-//         l.append(filename);
-//       }else{
-//         l=filename;
-//       }
-//       while( getline(myfile,token) ){
-//         line=token;
-//         getline(myfile,token);          // Dumping this: #---------
-//       }
-//       // Now convert all the tab separated entries to array.
-//       iss.str(line);
-//       // getline(iss, token, '\t');        // First entry is time, delete that.
-//       for (int idim = 0; idim < ndimt; ++idim){
-//         getline(iss, token, '\t');       // Get next token.
-//         y[idim]=stod(token);            // Convert to double and store it in y.
-//       }
-//       myfile.close();
-//       break;
-//     default:
-//       cout << "Hey, your choice of writing data does not exist. "
-//               "If you want a new way, Code function: wData( double y[], string filename) "
-//               "in model.cpp file." << endl;
-//       exit(1);
 //   }
 // }

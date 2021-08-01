@@ -68,9 +68,8 @@ void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double Curv
     CurvSqr[ip]=kappasqr;
   }
   // Is the string forced at some points? Implement it here.
-  if (iext_force){
-    ext_force(EForce,y,time); 
-  }
+  
+  ext_force(EForce,y,time); 
   drag(R, dR, EForce);
   for (int ip = 0; ip < Np; ++ip){
     dR[ip]=dR[ip]+ext_flow(R[ip],time);
@@ -89,10 +88,6 @@ void eval_rhs_tr(double time, double EForceArr[], double y[], double y_tr[], dou
   int ndim_tr=ntracer*ptracer;
   vec3 dX, RR, EForce[Np], Rtracer;
   vec2 FF(0.,0.), R[Np];
-  for (int ip=0;ip<Np;ip++){
-    R[ip].x=y[2*ip];
-    R[ip].y=y[2*ip+1];
-  }
   for (int ip = 0; ip < Np; ++ip){
     EForce[ip].x = 0;
     EForce[ip].y = EForceArr[2*ip]-FF.x;
@@ -107,8 +102,9 @@ void eval_rhs_tr(double time, double EForceArr[], double y[], double y_tr[], dou
     dX.z = 0;
     Rtracer = y2vec3(y_tr, itracer);
     for (int ip = 0; ip < Np; ++ip){
-      RR = Rtracer - y2vec3(y,ip);
-      // PVec3(RR);
+      RR.x = Rtracer.x;
+      RR.y = Rtracer.y - y[2*ip];
+      RR.z = Rtracer.z - y[2*ip+1];
       d_RR = norm(RR);
       c1 = 1/(8*M_PI*viscosity*d_RR);
       dsqr1 = 1./(d_RR*d_RR);
@@ -124,22 +120,15 @@ void eval_rhs_tr(double time, double EForceArr[], double y[], double y_tr[], dou
 }
 /**************************/
 void ext_force(vec2* EForce, double* y, double time){
-  vec2 Xghost[nconstrain],XX;
-  double GG = 5000;
-  switch(iext_force){
-    case 1:
-      // Peskin way to implement the boundary condition.
-      calc_Xconstrain(Xghost,time);
-      for (int i = 0; i < nconstrain; ++i){
-        XX = y2vec2(y,loc_con[i]);
-        EForce[i] = EForce[i] - (XX-Xghost[i])*GG;
-        // if(Error<norm(XX-Xghost[i])/norm(XX) && i==0){
-        //   Error = norm(XX-Xghost[i])/norm(XX);
-        // }
-      }
-      // PVec2(XX);
-      // PVec2(Xghost[1]);
-      break;
+  vec2 Xghost[np_cons],XX;
+  double GG = 10000;
+  if (icons){
+    calc_Xconstrain(Xghost,time);
+    // PVec2(Xghost[0]);
+    for (int i = 0; i < np_cons; ++i){
+      XX = y2vec2(y,loc_con[i]);
+      EForce[loc_con[i]] = EForce[loc_con[i]] - (XX-Xghost[i])*GG;
+    }
   }
 }
 /**************************/
@@ -307,33 +296,46 @@ vec2 extension_force(int kp, vec2 X[], double time){
 //   FF = FF*AA/aa;
 //   return FF;
 // }
+/***********************/
+double square_wave(double time,double period){
+  int s;
+  double sw;
+  s = floor(2*time/period);
+  sw = (double)-2*(s%2)+1;
+  return sw;
+}
 /**************************/
 void calc_Xconstrain(vec2* Xcons, double time){
-  switch(iconstrain){
+  double inidis = 0;
+  // double period = 2*M_PI/omega;
+  switch(icons){
     case 1:
       // points on circle
-      for(int i = 0; i < nconstrain; ++i){
-        Xcons[i].x = (height/2 +  aa*(loc_con[i]-loc_con[0]))*cos(angularVel*time);
-        Xcons[i].y = (height/2 +  aa*(loc_con[i]-loc_con[0]))*sin(angularVel*time);
+      for(int i = 0; i < np_cons; ++i){
+        Xcons[i].x = (inidis +  aa/height*(loc_con[i]-loc_con[0]))*cos(angularVel*time);
+        Xcons[i].y = (inidis +  aa/height*(loc_con[i]-loc_con[0]))*sin(angularVel*time);
       }
       break;
     case 2:
       // points on figure '8'
-      for (int i = 0; i < nconstrain; ++i){
+      for (int i = 0; i < np_cons; ++i){
         Xcons[i].x = (height +  aa*(loc_con[i]-loc_con[0]))*cos(angularVel*time);
         Xcons[i].y = (height +  aa*(loc_con[i]-loc_con[0]))*cos(angularVel*time)*sin(angularVel*time);
       }
     case 3:
-      // Theta should be a triangular wave.
-      double theta = 4*M_PI*abs(time/period - floor(time/period+0.5));
-      for (int i = 0; i < nconstrain; ++i){
-        Xcons[i].x = (height/2 +  aa*(loc_con[i]-loc_con[0]))*cos(theta);
-        Xcons[i].y = (height/2 +  aa*(loc_con[i]-loc_con[0]))*sin(theta);
+      // angularVel*time should change its direction.
+      // double theta = 4*M_PI*abs(time/period - floor(time/period+0.5));
+      double theta = angularVel*time*square_wave(time,period);
+      for (int i = 0; i < np_cons; ++i){
+        Xcons[i].x = (inidis +  aa/height*(loc_con[i]-loc_con[0]))*cos(theta);
+        Xcons[i].y = (inidis +  aa/height*(loc_con[i]-loc_con[0]))*sin(theta);
       }
+      break;
     }
 }
 /**************************/
 void calc_yone(double *yone, double time){
+  double angularVel = 2*M_PI/period;
   double yzero[2];
   calc_yzero(yzero,time);
   yone[0] = yzero[0] + aa*cos(angularVel*time);
@@ -342,6 +344,7 @@ void calc_yone(double *yone, double time){
 }
 /**************************/
 void calc_yzero(double *yzero, double time){
+  double angularVel = 2*M_PI/period;
   yzero[0] = height/2*cos(angularVel*time);
   yzero[1] = height/2*sin(angularVel*time);
 }
@@ -383,7 +386,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
              - (ukm1/bkm1)*( dot(ukm1,uk) )
              );
         FF = FF*AA/aa;
-        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa; 
+        FF = FF - (ukm1*(bkm1-aa) - uk*(bk-aa))*HH/aa;
       }
       else if(bcb==1){
         FF =  (uk/bk)*dot(uk,ukp1)  - (ukp1)/bk ;
@@ -520,6 +523,25 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
   *add_FF = FF;
 }
 /****************************************************/
+void iniconf(double *y, double *aTime){
+  int itn = (int) time/tdiag;
+  cout << itn << endl;
+  string fname;
+  if (FileExists('output/var' + to_string(itn) + '.txt')){
+    fname = 'output/var' + to_string(itn) + '.txt';
+  }
+  else if(FileExists(var+to_string(itn) + '.txt')){
+    fname = var+to_string(itn) + '.txt';
+  }
+  else{
+    cout << "# Input file does not exist for time = " << time << endl;
+    cout << "# I shall start the simulation from time = 0" << endl;
+    *aTime = 0;
+  }
+  rData(y,fname);
+  exit(1);
+}
+/****************************************************/
 void iniconf(double *y){
   // Merge all three cases into 1;
   vec2 R[Np];              // R is the position of the beads.
@@ -528,47 +550,48 @@ void iniconf(double *y){
   string l;
   // double theta= (double)M_PI/2;
   double theta = 0;
-  // double vdis=2*aa;     // Define a parameter called middle point in model.h
-  double inidis=0;        // that will take care of everything
+  // double vdis=2*aa;      // Define a parameter called middle point in model.h
+  double inidis=0;          // that will take care of everything
   //
-  vec2 Xcons[nconstrain];
+  vec2 Xcons[np_cons];
   ifstream myfile;
   double ch;
   int cnt=0;
   switch(niniconf){
     case -1:
-      myfile.open(datafile);
-      // myfile >> ch;
-      while(myfile >> ch){cnt++;}
-      myfile.close();
-      cout << "# Number of elements read: " << cnt << endl;
-      if(cnt==Np){}
-      else if(cnt==ndim){
-        cnt=0;
-        myfile.open(datafile);
-        while(myfile >> ch){y[cnt]=ch;cnt++;}
-        memcpy(y_start,y,2*pp*sizeof(double));
-        myfile.close();
-      }
-      else if(cnt==pp*ndim){
-        cout << datafile[0] << endl;
-        myfile.open(datafile);
-        for(int idim = 0; idim < Np; ++idim){
-          for (int ip = 0; ip < pp; ++ip){
-            myfile >> y[idim*pp+ip];
-          }
-          for (int ip = 0; ip < pp; ++ip){
-            myfile >> ch;
-          }
-        }
-        memcpy(y_start,y,2*pp*sizeof(double));
-        myfile.close();
-      }
-      else{
-        cout << "# Initial point is not right." << endl;
-        exit(1);
-      }
-      myfile.close();
+      // myfile.open(datafile);
+      // // myfile >> ch;
+      // while(myfile >> ch){cnt++;}
+      // myfile.close();
+      // cout << "# Number of elements read: " << cnt << endl;
+      // if(cnt==Np){}
+      // else if(cnt==ndim){
+      //   cnt=0;
+      //   myfile.open(datafile);
+      //   while(myfile >> ch){y[cnt]=ch;cnt++;}
+      //   memcpy(y_start,y,2*pp*sizeof(double));
+      //   myfile.close();
+      // }
+      // else if(cnt==pp*ndim){
+      //   cout << datafile[0] << endl;
+      //   myfile.open(datafile);
+      //   for(int idim = 0; idim < Np; ++idim){
+      //     for (int ip = 0; ip < pp; ++ip){
+      //       myfile >> y[idim*pp+ip];
+      //     }
+      //     for (int ip = 0; ip < pp; ++ip){
+      //       myfile >> ch;
+      //     }
+      //   }
+      //   memcpy(y_start,y,2*pp*sizeof(double));
+      //   myfile.close();
+      // }
+      // else{
+      //   cout << "# Initial point is not right." << endl;
+      //   exit(1);
+      // }
+      // myfile.close();
+      rData(y,datafile);
       break;
     case 0:
       y[0]=0;
@@ -579,7 +602,7 @@ void iniconf(double *y){
         CurvLength += norm(R[ip]-R[ip-1]);
         y[2*ip] = R[ip].x;
         y[2*ip+1] = R[ip].y;
-      } 
+      }
       for (int idim = 0; idim < ndim; ++idim){
         y[idim] = y[idim]*height/CurvLength;
       }
@@ -618,13 +641,35 @@ void iniconf(double *y){
       break;
     case 3:
       calc_Xconstrain(Xcons,0);
-      for(int ip = 0; ip < Np; ++ip){
-        R[ip].x = (aa*double(ip)+Xcons[0].x)*cos(theta);
-        R[ip].y = (aa*double(ip)+Xcons[0].y)*sin(theta);
-        //
-        y[2*ip] = R[ip].x;
-        y[2*ip+1] = R[ip].y;
+      for (int ip_cons = 0; ip_cons < np_cons; ++ip_cons){
+        R[loc_con[ip_cons]] = Xcons[ip_cons];
       }
+      if(norm(R[loc_con[np_cons-1]] - R[loc_con[0]]) < aa*loc_con[np_cons-1] - aa*loc_con[0]){
+         k = height/(aa*loc_con[np_cons-1] - aa*loc_con[0]);
+      }
+      //
+      for (int ip = 0; ip < Np; ++ip){
+        R[ip].x = double(ip)/(loc_con[np_cons-1]-loc_con[0]);
+        R[ip].y = sin(M_PI*k*R[ip].x);
+        if (ip>0){
+          CurvLength = CurvLength + norm(R[ip] - R[ip-1]);
+        }
+      }
+      //
+      while(abs(CurvLength-height) > 0.01){
+        for (int ip = 0; ip < Np; ++ip){
+          R[ip].y = R[ip].y*pow((height/CurvLength),1.732);
+          R[ip].x = R[ip].x;
+          y[2*ip]= R[ip].x;
+          y[2*ip+1] = R[ip].y;
+        }
+        CurvLength = 0;
+        for (int ip = 1; ip < Np; ++ip){
+          CurvLength = CurvLength + norm(R[ip] - R[ip-1]);
+        }
+      }
+      // print(y,ndim);
+      // exit(1);
     break;
     default:
       cout << "# We have not implemented the initial configuration:" << "\t" << niniconf << endl
@@ -635,10 +680,10 @@ void iniconf(double *y){
 /****************************************************/
 void iniconf_tr(double *y_tr){
   int const ndim_tr = ntracer*ptracer;
-  double Ymin = 0;
-  double Ymax = (double)height/2;
+  double Ymin = -1*height/8;
+  double Ymax = (double)height/8;
   double Zmin = 0;
-  double Zmax = (double)height/4;
+  double Zmax = (double)height;
   int ntracerY = (int) sqrt(ntracer);
   for (int itracer = 0; itracer < ntracer; ++itracer){
     y_tr[itracer*ptracer] = 0.01;                                         
@@ -654,7 +699,6 @@ void iniconf_tr(double *y_tr){
     }
   }
   int left_tracer = ntracer - ntracerY*ntracerY;
-  // cout << left_tracer << endl;
   for (int itracer = 0; itracer < left_tracer; ++itracer){
     y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+1] = (double) rand()/RAND_MAX*(Ymax-Ymin)+Ymin;
     y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+2] = (double) rand()/RAND_MAX*(Zmax-Zmin)+Zmin;
@@ -700,7 +744,7 @@ void write_param( string fname ){
             << "niniconf = " << niniconf << endl
             << "KK = " << HH*dd*dd/AA << endl
             << "MuBar = "<<  8*M_PI*viscosity*ShearRate*pow(height,4)/AA << endl;
-  paramfile.close();  
+  paramfile.close();
 }
 /********************************************/
 void straightline(vec2 *Tngt, vec2 *Nrml, char dirn = 'y'){

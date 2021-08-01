@@ -14,11 +14,13 @@ writer = FFMpegWriter(fps=30, metadata=metadata)
 fig=plt.figure()
 height=1
 #####################################################
-def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap,symbol='.'):
+def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap,symbol='.',colors=[],colormap='gnuplot'):
 	# ax = fig.add_subplot(2,1,1, projection='3d')
-	ax.plot(Yaxis,Xaxis,Zaxis,symbol) 
+	if colors==[]:
+		colors = ones(Xaxis.shape[0])
+	ax.plot(Yaxis,Xaxis,Zaxis,symbol)
 	# ax.set_xlim(-1, 1)
-	ax.set_ylim(-1, 1)
+	ax.set_xlim(-0.2, 0.2)
 	ax.set_zlim(0,height)
 	plt.title(str(tsnap))
 	ax.set_xlabel('Y direction',fontsize=12)
@@ -26,10 +28,10 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap,symbol='.'):
 	ax.set_zlabel('Z direction',fontsize=12)
 	ax.grid(True)
 #####################################################
-def MakePlot2D(ax,Xaxis,Yaxis,tsnap,symbol):
+def MakePlot2D(ax,Xaxis,Yaxis,tsnap,symbol='.'):
 	# ax.subplot(2,1,2)
-	ax.set_xlim(-1.2,4)
-	ax.set_ylim(-0.3,1.3)
+	ax.set_xlim(-2,2)
+	ax.set_ylim(-2,2)
 	ax.plot(Xaxis,Yaxis,symbol)
 	plt.title(str(tsnap))
 	# plt.hold(False)
@@ -38,7 +40,7 @@ def MakePlot2D(ax,Xaxis,Yaxis,tsnap,symbol):
 def GetCoordinate(arr,dim,nparticles=256):
 	row,col = arr.shape
 	xx = zeros(row)
-	if col==6 or col==3:					#It means that the simulation was run in 3 dimension
+	if col==6 or col==3:						#It means that the simulation was run in 3 dimension
 		xx=arr[0:nparticles,0]
 		yy=arr[0:nparticles,1]
 		zz=arr[0:nparticles,2]
@@ -68,7 +70,7 @@ def MultiFileMovie(FILE='output',dim=3):
 	nrowcol=time.shape
 	nsnap=nrowcol[0]
 	with writer.saving(fig,"movie.mp4", 100):
-		for isnap in range(1,nsnap,1):
+		for isnap in range(0,nsnap,1):
 	 		dd=loadtxt(FILE+'/var'+str(isnap)+'.txt')
 	 		xx,yy,zz=GetCoordinate(dd,dim)
 	 		if dim==2:

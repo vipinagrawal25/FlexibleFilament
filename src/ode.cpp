@@ -183,6 +183,11 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
     s = epsilon*pow((tol_dt/error),0.25);
     if (s<truncationmin){s=truncationmin;}
     *add_dt = s*dt;
+    if (isnan(*add_dt)){
+      cout << "#time-step is not a number." << endl;
+      exit(1);
+    }
+    // cout << *add_dt << endl;
     rnkf45(ndim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], &EForceArr[0], ldiagnos);
   }
 }

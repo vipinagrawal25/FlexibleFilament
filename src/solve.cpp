@@ -40,11 +40,17 @@ int main(){
   // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt 
   // time for a particular value of AA.
   check_param();
-  
-  filenumber = 1;
-  time = 0;
+  //
+  if (time){
+    // read data from output/time.txt
+    // Let's just say that we are saving data as the same interval as earlier.
+    iniconf(y,&time);
+  }
+  if (time==0){
+    iniconf(y);
+  }
   // Deleting contents of the folder and creating folder again.
-  iniconf(y);
+  // exit(1);
   eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS,EForceArr);
   //
   system("exec mkdir output");
@@ -158,9 +164,6 @@ int main(){
 //----------------------------
 }
 /********************************************/
-void pre_evolve(){
-
-}
 // if(niniconf==-1){
 //   filenumber = lastfile+1;
 //   // -----------------------------------------------

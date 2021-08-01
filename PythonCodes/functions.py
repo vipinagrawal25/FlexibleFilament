@@ -21,9 +21,6 @@ def curvatureplot(FILE='output',omega=3,length=1,tmin=0,tmax=-1):
 	IndexAxis = arange(Np)
 	heightAxis = dd[tmin:tmax,1:Np+1]
 	
-	# heightAxis = ndimage.rotate(heightAxis,90)
-	# imshow(heightAxis,cmap=plt.cm.gray)
-	# colorbar()
 	(IndexAxis,X) = meshgrid(IndexAxis, timeAxis)
 	fig = figure()
 	ax = fig.add_subplot(111)
