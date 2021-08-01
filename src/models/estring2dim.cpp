@@ -530,8 +530,8 @@ void iniconf(double *y, double *aTime){
   if (FileExists('output/var' + to_string(itn) + '.txt')){
     fname = 'output/var' + to_string(itn) + '.txt';
   }
-  else if(FileExists(var+to_string(itn) + '.txt')){
-    fname = var+to_string(itn) + '.txt';
+  else if(FileExists('var'+to_string(itn) + '.txt')){
+    fname = 'var'+to_string(itn) + '.txt';
   }
   else{
     cout << "# Input file does not exist for time = " << time << endl;

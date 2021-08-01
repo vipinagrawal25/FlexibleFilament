@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include "constant.h"
+#include "input.h"
 #include <sstream>
 #include <string>
 #include "misc.h"
@@ -81,15 +81,17 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
   }
 }
 /********************************************/
-void rData(double *y,string fname, int Npt, int ppt){
-  double num;
+void rData(double *y,string fname, int Npt, int ppt)
+{
+  double ch;
+  int cnt=0;
   ifstream myfile;
   //
   double ndimt = Npt*ppt;
   switch(rDataMeth){
     case 1:
       myfile.open(fname);
-      while(fptr >> ch){cnt++;}
+      while(myfile >> ch){cnt++;}
       myfile.close();
       cout << "# Number of elements read: " << cnt << endl;
       if(cnt==Npt){}
@@ -103,13 +105,14 @@ void rData(double *y,string fname, int Npt, int ppt){
         myfile.open(datafile);
         for(int idim = 0; idim < Npt; ++idim){
           for (int ip = 0; ip < ppt; ++ip){
-            myfile >> y[idimt*ppt+ip];
+            myfile >> y[idim*ppt+ip];
           }
           for (int ip = 0; ip < pp; ++ip){
-            myfile >> num;
+            myfile >> ch;
           }
         }
         myfile.close();
+      }
       break;
     // case 2:
     //   if(){

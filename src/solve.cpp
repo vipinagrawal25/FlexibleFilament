@@ -41,6 +41,7 @@ int main(){
   // time for a particular value of AA.
   check_param();
   //
+  time = start_time;
   if (time){
     // read data from output/time.txt
     // Let's just say that we are saving data as the same interval as earlier.
@@ -56,13 +57,13 @@ int main(){
   system("exec mkdir output");
   ofstream outfile;
   outfile.open("output/var0.txt");
-  if (bcb==2){
-    calc_yone(yone,time);
-    calc_yzero(yzero,time);
-    //
-    wData(&outfile,&outfile,yzero,velzero,time,1,pp);
-    wData(&outfile,&outfile,yone,velzero,time,1,pp);
-  }
+  // if (bcb==2){
+  //   calc_yone(yonetime);
+  //   calc_yzero(yzero,time);
+  //   //
+  //   wData(&outfile,&outfile,yzero,velzero,time,1,pp);
+  //   wData(&outfile,&outfile,yone,velzero,time,1,pp);
+  // }
   wData(&outfile,&outfile,y,vel);                                     // Code it in your model.cpp
   outfile.close();
   //
@@ -112,12 +113,12 @@ int main(){
       //
       string l = "output/var" + to_string(filenumber) + ".txt";
       outfile.open(l, ios::out);
-      if (bcb==2){
-        calc_yzero(yzero,time);
-        calc_yone(yone,time);
-        wData(&outfile,&outfile,yzero,velzero,time,1,pp);
-        wData(&outfile,&outfile,yone,velzero,time,1,pp);
-      }
+      // if (bcb==2){
+      //   calc_yzero(yzero,time);
+      //   calc_yone(yone,time);
+      //   wData(&outfile,&outfile,yzero,velzero,time,1,pp);
+      //   wData(&outfile,&outfile,yone,velzero,time,1,pp);
+      // }
       wData(&outfile,&outfile,y,vel);
       outfile.close();
       //
