@@ -25,7 +25,7 @@ char const UseRP = 'Y';						// N -- Local drag, Y -- Global drag
 double const bcb = 1;      					// Boundary condition at bottom, 0 - fixed, 1 - free, 2 - clamped.
 double const bct = 1;       				// Boundary condition at top. 1 - free.
 //
-int const icons = 3;  // 0 -- No constrain, 1 -- circle, 2 -- '8', // 3 -- circle changing dirn.
+int const icons = 3;  						// 0 -- No constrain, 1 -- circle, 2 -- '8', // 3 -- circle changing dirn.
 int const np_cons = 2;						// Number of points to constrain?
 int const loc_con[np_cons] = {0,Np-1};
 //
@@ -41,6 +41,7 @@ int const ptracer=3;
 /*----------------------------------------*/
 void iniconf(double *y); 	// The configuration number is defined for different
 							// Initial configuration into the system.
+void iniconf(double *y, double *aTime, double tdiag); 	
 void iniconf_tr(double *y_tr);
 void check_param();
 void write_param(string fname);

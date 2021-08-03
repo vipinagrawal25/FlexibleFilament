@@ -19,7 +19,7 @@ using namespace std;
 int main(){
   pid_t pid = getpid();
   cout << "# ID for this process is: " << pid << endl;
-  int ndim_tr = ntracer*ptracer;
+  int ndim_tr = np_tracer*pp_tracer;
   //
   double y[ndim],y_prev[ndim],vel[ndim],EForceArr[ndim];
   double CurvSqr[Np],SS[Np];
@@ -27,15 +27,17 @@ int main(){
   double y_tr[ndim_tr],vel_tr[ndim_tr];
   double yzero[2],yone[2];
   double velzero[2] = {0.,0.};
-  int filenumber;
+  int filenumber=1;
   string lastline;
   int ldiagnos=0;
   int tdiagnos = 1;
   // But these things are only for diagnostic purpose and it's too much hassle for someting that is not even 
   // important. So we wil keep it in the wrong way, as most of time this would give right result.
+  ofstream outfile;
   double dt_min = 10;
+  double dt = start_dt;
   //----------------------------
-  int itn=1; 
+  int itn=1;
   clock_t timer;
   // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt 
   // time for a particular value of AA.
@@ -45,7 +47,7 @@ int main(){
   if (time){
     // read data from output/time.txt
     // Let's just say that we are saving data as the same interval as earlier.
-    iniconf(y,&time);
+    iniconf(y,&time,tdiag);
   }
   if (time==0){
     iniconf(y);
@@ -55,17 +57,19 @@ int main(){
   eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS,EForceArr);
   //
   system("exec mkdir output");
-  ofstream outfile;
-  outfile.open("output/var0.txt");
-  // if (bcb==2){
-  //   calc_yone(yonetime);
-  //   calc_yzero(yzero,time);
-  //   //
-  //   wData(&outfile,&outfile,yzero,velzero,time,1,pp);
-  //   wData(&outfile,&outfile,yone,velzero,time,1,pp);
-  // }
-  wData(&outfile,&outfile,y,vel);                                     // Code it in your model.cpp
-  outfile.close();
+  //
+  if (ievolve_save){
+     outfile.open("output/var0.txt");
+      // if (bcb==2){
+      //   calc_yone(yonetime);
+      //   calc_yzero(yzero,time);
+      //   //
+      //   wData(&outfile,&outfile,yzero,velzero,time,1,pp);
+      //   wData(&outfile,&outfile,yone,velzero,time,1,pp);
+      // }
+      wData(&outfile,&outfile,y,vel);                                     // Code it in your model.cpp
+      outfile.close();
+  }
   //
   if(itracer){
     iniconf_tr(y_tr);
@@ -73,7 +77,7 @@ int main(){
     eval_rhs_tr(time,EForceArr,y,y_tr,vel_tr);
     //
     outfile.open("output/tracer0.txt");
-    wData(&outfile,&outfile,y_tr,vel_tr,time,ntracer,ptracer);         // Code it in your model.cpp
+    wData(&outfile,&outfile,y_tr,vel_tr,time,np_tracer,pp_tracer);         // Code it in your model.cpp
     outfile.close();
   }
   //
@@ -106,26 +110,28 @@ int main(){
     if (dt<dt_min){
       dt_min = dt;
     }
-    if (time+dt>=tdiag*filenumber && time<tdiag*filenumber){tdiagnos=1;}
+    if (time-start_time+dt>=tdiag*filenumber && time-start_time<tdiag*filenumber){tdiagnos=1;}
     else{tdiagnos=0;}
     // cout << time << endl;
-    if (time>=tdiag*filenumber){
+    if (time-start_time>=tdiag*filenumber){
       //
-      string l = "output/var" + to_string(filenumber) + ".txt";
-      outfile.open(l, ios::out);
+      if (ievolve_save){
+        string l = "output/var" + to_string(filenumber) + ".txt";
+        outfile.open(l, ios::out);
       // if (bcb==2){
       //   calc_yzero(yzero,time);
       //   calc_yone(yone,time);
       //   wData(&outfile,&outfile,yzero,velzero,time,1,pp);
       //   wData(&outfile,&outfile,yone,velzero,time,1,pp);
       // }
-      wData(&outfile,&outfile,y,vel);
-      outfile.close();
+        wData(&outfile,&outfile,y,vel);
+        outfile.close();
+      }
       //
       if(itracer){
         string l_tr = "output/tracer" + to_string(filenumber) + ".txt";
         outfile.open(l_tr, ios::out);
-        wData(&outfile,&outfile,y_tr,vel_tr,time,ntracer,ptracer);
+        wData(&outfile,&outfile,y_tr,vel_tr,time,np_tracer,pp_tracer);
         outfile.close();
       }
       //

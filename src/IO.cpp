@@ -1,11 +1,11 @@
 #include <iostream>
 #include <fstream>
-#include "input.h"
 #include <sstream>
 #include <string>
 #include "misc.h"
 #include "model.h"
 #include <iomanip>
+#include "input.h"
 using namespace std;
 /*-----------------------------------------------*/
 void wData(ofstream *fptr, double *y, double time, int Npt, int ppt){
@@ -38,7 +38,7 @@ void wData(ofstream *fptr, double *y, double time, int Npt, int ppt){
 }
 /*-----------------------------------------------*/
 void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double time,
-          int Npt, int ppt){
+           int Npt, int ppt){
   int ndimt = Npt*ppt;
   switch(wDataMeth){
     case 1:
@@ -82,7 +82,7 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
 }
 /********************************************/
 void rData(double *y,string fname, int Npt, int ppt)
-{
+{ 
   double ch;
   int cnt=0;
   ifstream myfile;
@@ -97,12 +97,12 @@ void rData(double *y,string fname, int Npt, int ppt)
       if(cnt==Npt){}
       else if(cnt==ndimt){
         cnt=0;
-        myfile.open(datafile);
+        myfile.open(fname);
         while(myfile >> ch){y[cnt]=ch;cnt++;}
         myfile.close();
       }
       else if(cnt==pp*ndim){
-        myfile.open(datafile);
+        myfile.open(fname);
         for(int idim = 0; idim < Npt; ++idim){
           for (int ip = 0; ip < ppt; ++ip){
             myfile >> y[idim*ppt+ip];

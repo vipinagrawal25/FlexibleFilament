@@ -85,7 +85,7 @@ void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double Curv
 }
 /**************************/
 void eval_rhs_tr(double time, double EForceArr[], double y[], double y_tr[], double rhs[]){
-  int ndim_tr=ntracer*ptracer;
+  int ndim_tr=np_tracer*pp_tracer;
   vec3 dX, RR, EForce[Np], Rtracer;
   vec2 FF(0.,0.), R[Np];
   for (int ip = 0; ip < Np; ++ip){
@@ -96,11 +96,11 @@ void eval_rhs_tr(double time, double EForceArr[], double y[], double y_tr[], dou
   double d_RR,c1,dsqr1;
   Tens2 mu;
   double onebythree = 1./3.;
-  for (int itracer = 0; itracer < ntracer; ++itracer){
+  for (int ip_tracer = 0; ip_tracer < np_tracer; ++ip_tracer){
     dX.x = 0;
     dX.y = 0;
     dX.z = 0;
-    Rtracer = y2vec3(y_tr, itracer);
+    Rtracer = y2vec3(y_tr, ip_tracer);
     for (int ip = 0; ip < Np; ++ip){
       RR.x = Rtracer.x;
       RR.y = Rtracer.y - y[2*ip];
@@ -113,9 +113,9 @@ void eval_rhs_tr(double time, double EForceArr[], double y[], double y_tr[], dou
       // PVec3(dX);
     }
     // if we want to save the velocities and positions without external shear flow.
-    // vec2y(rhs, dX, itracer+ntracer);
+    // vec2y(rhs, dX, ip_tracer+np_tracer);
     dX = dX + ext_flow(Rtracer, time);
-    vec2y(rhs, dX, itracer);
+    vec2y(rhs, dX, ip_tracer);
   }
 }
 /**************************/
@@ -331,6 +331,11 @@ void calc_Xconstrain(vec2* Xcons, double time){
         Xcons[i].y = (inidis +  aa/height*(loc_con[i]-loc_con[0]))*sin(theta);
       }
       break;
+    case 4:
+      for (int i = 0; i < np_cons; ++i){
+        Xcons[i].x = (inidis +  aa/height*(loc_con[i]-loc_con[0]))*cos(theta);
+        Xcons[i].y = (inidis +  aa/height*(loc_con[i]-loc_con[0]))*sin(theta);
+      }
     }
 }
 /**************************/
@@ -523,23 +528,23 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
   *add_FF = FF;
 }
 /****************************************************/
-void iniconf(double *y, double *aTime){
-  int itn = (int) time/tdiag;
+void iniconf(double *y, double *aTime, double tdiag){
+  int itn = (int) ((*aTime)/tdiag);
   cout << itn << endl;
   string fname;
-  if (FileExists('output/var' + to_string(itn) + '.txt')){
-    fname = 'output/var' + to_string(itn) + '.txt';
+  if (FileExists("output/var"+ to_string(itn) + ".txt")){
+    fname = "output/var" + to_string(itn) + ".txt";
   }
-  else if(FileExists('var'+to_string(itn) + '.txt')){
-    fname = 'var'+to_string(itn) + '.txt';
+  else if(FileExists("var" + to_string(itn) + ".txt")){
+    fname = "var"+ to_string(itn) + ".txt";
   }
   else{
-    cout << "# Input file does not exist for time = " << time << endl;
-    cout << "# I shall start the simulation from time = 0" << endl;
+    cout << "# Input file does not exist for time = " << *aTime << endl;
+    cout << "# I shall start the simulation from time = 0 " << endl;
     *aTime = 0;
+    exit(1);
   }
   rData(y,fname);
-  exit(1);
 }
 /****************************************************/
 void iniconf(double *y){
@@ -553,11 +558,24 @@ void iniconf(double *y){
   // double vdis=2*aa;      // Define a parameter called middle point in model.h
   double inidis=0;          // that will take care of everything
   //
-  vec2 Xcons[np_cons];
+  vec2 Xcons[np_cons],XX;
   ifstream myfile;
   double ch;
   int cnt=0;
   switch(niniconf){
+    case -2:
+      // To give perturbation to the filament.
+      rData(y,datafile);
+      print(y,Np,pp);
+      cout << endl;
+      // add perturbation to the file.
+      for (int ip = 0; ip < Np; ++ip){
+        XX = y2vec2(y,ip);
+        XX.x = XX.x + 5*aa*sin(M_PI*k*aa*double(ip)/height);
+        vec2y(y, XX, ip);
+      }
+      print(y,Np,pp);
+      break;
     case -1:
       // myfile.open(datafile);
       // // myfile >> ch;
@@ -679,31 +697,65 @@ void iniconf(double *y){
 }
 /****************************************************/
 void iniconf_tr(double *y_tr){
-  int const ndim_tr = ntracer*ptracer;
-  double Ymin = -1*height/8;
-  double Ymax = (double)height/8;
-  double Zmin = 0;
-  double Zmax = (double)height;
-  int ntracerY = (int) sqrt(ntracer);
-  for (int itracer = 0; itracer < ntracer; ++itracer){
-    y_tr[itracer*ptracer] = 0.01;                                         
-    // X coordinate of tracer particles
+  int const ndim_tr = np_tracer*pp_tracer;
+  double Ymin,Ymax,Zmin,Zmax,rr,theta,radius;
+  int np_tracerR,np_tracerTh,np_tracerY,left_tracer,ip_tracer;
+  vec3 cc(0.02,0.0,height/2);
+  switch(itracer){
+    case 1:
+      Ymin = -1*height/8;
+      Ymax = (double)height/8;
+      Zmin = 0;
+      Zmax = (double)height;
+      np_tracerY = (int) sqrt(np_tracer);
+      for (int itracer = 0; itracer < np_tracer; ++itracer){
+        y_tr[itracer*pp_tracer] = 0.01;                                         
+        // X coordinate of tracer particles
+      }
+      for (int itracerY = 0; itracerY < np_tracerY; ++itracerY ){
+        for (int itracerZ = 0; itracerZ < np_tracerY; ++itracerZ){
+          ip_tracer = np_tracerY*itracerZ + itracerY;
+          y_tr[ip_tracer*pp_tracer+1] =  itracerY*(Ymax-Ymin)/np_tracerY+Ymin;
+          // Y coordinate of tracer particles
+          y_tr[ip_tracer*pp_tracer+2] =  itracerZ*(Zmax-Zmin)/np_tracerY+Zmin;
+          // Z coordinate of tracer particles
+        }
+      }
+      left_tracer = np_tracer - np_tracerY*np_tracerY;
+      for (int ip_tracer = 0; ip_tracer < left_tracer; ++ip_tracer){
+        y_tr[np_tracerY*np_tracerY*pp_tracer+pp_tracer*ip_tracer+1] = (double) rand()/RAND_MAX*(Ymax-Ymin)+Ymin;
+        y_tr[np_tracerY*np_tracerY*pp_tracer+pp_tracer*ip_tracer+2] = (double) rand()/RAND_MAX*(Zmax-Zmin)+Zmin;
+      }
+      break;
+    case 2:
+      rr = height/8;    // radius of the circle
+      np_tracerR = (int) sqrt(np_tracer/4);   // dividing diameter and theta into equal parts.
+      np_tracerTh = (int) np_tracer/np_tracerR;
+      //
+      for (int ip_tracer = 0; ip_tracer < np_tracer; ++ip_tracer){
+        y_tr[ip_tracer*pp_tracer] = cc.x;
+        // X coordinate of tracer particles
+      }
+      ip_tracer = 0;
+      for (int itracerR = 0; itracerR < np_tracerR; ++itracerR){
+        for (int itracerTh = 0; itracerTh < np_tracerTh; ++itracerTh){
+          theta = 2*M_PI*itracerTh/np_tracerTh;
+          y_tr[ip_tracer*pp_tracer+1] = cc.y + rr*(itracerR+1)/np_tracerR*cos(theta);
+          y_tr[ip_tracer*pp_tracer+2] = cc.z + rr*(itracerR+1)/np_tracerR*sin(theta);
+          ip_tracer = ip_tracer+1;
+        }
+      }
+      left_tracer = np_tracer - np_tracerR*np_tracerTh;
+      for (int itracer = 0; itracer < left_tracer; ++itracer){
+        theta = 2*M_PI*rand()/RAND_MAX;
+        radius = rr*rand()/RAND_MAX;
+        y_tr[np_tracerR*np_tracerTh*pp_tracer+pp_tracer*itracer+1] = cc.y + radius*cos(theta);
+        y_tr[np_tracerR*np_tracerTh*pp_tracer+pp_tracer*itracer+2] = cc.z + radius*sin(theta);
+      }
+      break;
+    default:
+      break;
   }
-  for (int itracerY = 0; itracerY < ntracerY; ++itracerY ){
-    for (int itracerZ = 0; itracerZ < ntracerY; ++itracerZ){
-      int itracer = ntracerY*itracerZ + itracerY;
-      y_tr[itracer*ptracer+1] =  itracerY*(Ymax-Ymin)/ntracerY+Ymin;            
-      // Y coordinate of tracer particles
-      y_tr[itracer*ptracer+2] =  itracerZ*(Zmax-Zmin)/ntracerY+Zmin;                   
-      // Z coordinate of tracer particles
-    }
-  }
-  int left_tracer = ntracer - ntracerY*ntracerY;
-  for (int itracer = 0; itracer < left_tracer; ++itracer){
-    y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+1] = (double) rand()/RAND_MAX*(Ymax-Ymin)+Ymin;
-    y_tr[ntracerY*ntracerY*ptracer+ptracer*itracer+2] = (double) rand()/RAND_MAX*(Zmax-Zmin)+Zmin;
-  }
-  // print(y_tr,ndim_tr);
 }
 /********************************************/
 void GetRij(vec2 R[], int i, int j, double *Distance, vec2 *rij){
