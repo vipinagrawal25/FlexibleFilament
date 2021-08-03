@@ -203,8 +203,8 @@ __device__ vec3 ext_force( int kelement, vec3 R, double tau,
 }
 
 /* -----------------------------------------------------------------------------------*/  
-__device__ vec3 ext_flow( int kelement, vec3 R, double tau,
-                          struct MPARAM *param  ){
+__device__ vec3 ext_flow(int kelement, vec3 R, double tau,
+                         struct MPARAM *param ){
   int iext_flow = (*param).iext_flow;
   double ShearRate = (*param).ShearRate;
   double omega = (*param).omega;

@@ -127,7 +127,7 @@ bool newton_krylov(void func(double*), double Xini[], double gx[], int dim,
   AA.f_display = func;
   eps=eps_temp;
   double Err=1;
-
+  //
   VectorXd Xstar = Map<VectorXd>( Xini, dim,1 );
   VectorXd deltaX =  VectorXd::Zero(dim);
   VectorXd bb(dim); 

@@ -4,15 +4,15 @@
 compile=g++ -I ${ES}/lib -O2 -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11
 exec=ode
 default:
-	${compile} -o ${exec}.exe ode.cpp IO.cpp solve.cpp model.cpp
+	${compile} -o ${exec}.exe IO.cpp misc.cpp ode.cpp solve.cpp model.cpp
 clean:
 	rm -f *.o *.exe
 map_dyn:
 	${compile} -o ${exec}.exe IO.cpp misc.cpp ode.cpp NewtonKrylov.cpp MapDyn.cpp MapSolve.cpp model.cpp
 # 	${compile} -o ${exec}.exe IO.cpp misc.cpp NewtonKrylov.cpp MapDyn.cpp MapSolve.cpp model.cpp
-
 test1:
 	${compile} -o ${exec}.exe misc.cpp NewtonKrylov.cpp model.cpp test1.cpp MapDyn.cpp
-
 curv2y:
 	${compile} -o ${exec}.exe misc.cpp model.cpp test.cpp
+tracer:
+	${compile} -o ${exec}.exe misc.cpp model.cpp test_tracer.cpp

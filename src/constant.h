@@ -5,8 +5,6 @@
 #define time_tol 1.e-9
 #define err_tol 1.e-2
 // #define delta 1.e-2
-#define wDataMeth 1
-#define rDataMeth 1
 #define tiny 1.e-15
 #define SysType "continuous"
 //--------------------------//

@@ -21,9 +21,6 @@ def curvatureplot(FILE='output',omega=3,length=1,tmin=0,tmax=-1):
 	IndexAxis = arange(Np)
 	heightAxis = dd[tmin:tmax,1:Np+1]
 	
-	# heightAxis = ndimage.rotate(heightAxis,90)
-	# imshow(heightAxis,cmap=plt.cm.gray)
-	# colorbar()
 	(IndexAxis,X) = meshgrid(IndexAxis, timeAxis)
 	fig = figure()
 	ax = fig.add_subplot(111)
@@ -192,42 +189,7 @@ def PowerSpec(hh,Delta,deali=True):
         HH = HH[0:int(0.65*HH.size)]
     
     return ff, HH, Pxx
-
-# def FindPeaks(function,facTh=0.1,neighbours=2):
-# 	if neighbours==2:
-# 		pks = where((function[2:-2] > function[0:-4]) * (function[2:-2] > function[1:-3]) 
-# 	              * (function[2:-2] > function[3:-1])  * (function[2:-2] > function[4:]))[0] + 2
-# 	else:
-# 		pks = where((function[1:-1] > function[0:-2]) * (function[1:-1] > function[2:]) )[0] + 1
-	
-# 	MaxFunc = max(function)
-# 	threshold = facTh*MaxFunc
-# 	pks2 = []
-# 	peaks=[]
-# 	# if ( (function[1]>function[0])*(function[1]>function[2]) ):
-# 	#     peaks.append(1)
-# 	for ipk in pks:
-# 	    if (function[ipk]> threshold):
-# 	        pks2.append(ipk)
-# 	pksdiff=diff(pks2)
-
-# 	ind=0
-# 	while ind<pksdiff.size:
-# 		if pksdiff[ind]==2:
-# 			while pksdiff[ind]==2:
-				
-# 				ind=ind+1
-# 		ind=ind+1
-
-# 	for ind in range(0,pksdiff.size):
-# 		if pksdiff[ind]==2:
-
-# 		else:
-# 			peaks.append(pks2[ind-1])
-
-
-# 	return peaks
-
+    
 def CurvatureSign(kappasqr,yy,zz,eps):
 	# kappasqr[kappasqr<th*max(kappasqr)]=0
 	NN=yy.size
@@ -383,7 +345,6 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
     	position = zeros([NN,3])
     	vel_abs = zeros([NN,3])
     	Vtracer = zeros([ndiag,3])
-    	
     	for fnumber in range(1,ndiag):
     		print(fnumber)
     		file = loadtxt(Folder+'var'+str(fnumber)+'.txt')
@@ -412,7 +373,6 @@ def VtraceTimeSer(Folder='output/',Xtracer=[0.01,0,0.5],code='CPU',sigma=1.5):
     			vel_abs[iN,1]=dd_vel[fnumber,3*iN+2]
     			vel_abs[iN,2]=dd_vel[fnumber,3*iN+3]
     		Vtracer[fnumber-1,:]=vel_tracer(position,vel_abs,time[fnumber],Xtracer,height=height,sigma=sigma)
-    		
     print("I am done")
     return time, Vtracer
 

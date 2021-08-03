@@ -1,5 +1,5 @@
-#ifndef FILE_3vec_SEEN
-#define FILE_3vec_SEEN
+#ifndef FILE_2vec_SEEN
+#define FILE_2vec_SEEN
 /*---------------------------------------*/
 #include <iostream>
 #include<math.h>
@@ -38,13 +38,14 @@ vec2::vec2(double a, double b){
   x =  a;
   y =  b;
 }
-
+/*---------------------------------------*/
 vec2 vec2::operator+(vec2 param){
   vec2 temp;
   temp.x = x+param.x;
   temp.y = y+param.y;
   return(temp);
 }
+/*---------------------------------------*/
 vec2 vec2::operator-(vec2 param){
   vec2 temp;
   temp.x = x-param.x;
@@ -64,7 +65,6 @@ Tens2b2 vec2::operator*(vec2 param)
     // This is a direct product of 2 vectors. Assuming vec2 a column vector with 3 entries
     // then this operator defines w = uv' (Where v' is the transpose of the matrix.)
     // It should be noted that this product is not commutative.
-
     Tens2b2 temp;
     temp.xx = x*(param.x);
     temp.xy = x*(param.y);
@@ -108,8 +108,18 @@ vec2 dot(Tens2b2 a, vec2 b){
   vec2 temp;
   temp.x = (a.xx)*(b.x)+(a.xy)*(b.y);
   temp.y = (a.yx)*(b.x)+(a.yy)*(b.y);
+  return (temp);
+}
+/*---------------------------------------*/
+vec2 dot(vec2 a, Tens2b2 b){
+  vec2 temp;
+  temp.x = (a.x)*(b.xx)+(a.x)*(b.xy);
+  temp.y = (a.y)*(b.yx)+(a.y)*(b.yy);
 
   return (temp);
 }
 /*---------------------------------------*/
+void PVec2(vec2 a){
+  cout<<a.x<<"\t"<<a.y<<"\n";
+}
 #endif /* !FILE_2vec_SEEN */

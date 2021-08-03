@@ -13,7 +13,7 @@ double SqEr(double Arr1[], double Arr2[],int nn){
   return error;
 }
 /*-----------------------------------------------*/
-bool IsPathExist(const std::string &s){
+bool FileExists(const std::string &s){
   struct stat buffer;
   return (stat (s.c_str(), &buffer) == 0);
 }
@@ -26,7 +26,7 @@ bool IsPathExist(const std::string &s){
 //     return value*(-1);
 //   }
 // }
-/******************************************************/
+/*----------------------------------------------*/
 void __attribute__((weak)) check_param(){
   cout << "I believe all your model parameters are physical. Otherwise, define function: "
           "void check_param() in model.cpp file" << endl;
@@ -50,6 +50,22 @@ void print(double *arr, int nn){
   }
   cout << endl;
 }
+/*-----------------------------------------------*/
+void print(double *arr, int nn, int pp){
+  for (int in = 0; in < nn; ++in){
+    for (int ip = 0; ip < pp; ++ip){
+      cout << arr[in*pp+ip] << "\t";
+    }
+    cout << endl;
+  }
+}
+/*-----------------------------------------------*/
+// void print(vec2 *arr, int nn){
+//   for (int in = 0; in < nn; ++in){
+//       cout << arr[in].x << "\t";
+//       cout << arr[in].y << "\n";
+//   }
+// }
 /*-----------------------------------------------*/
 void add(double *added, double *arr1, double *arr2, int nn ){
   for (int ii = 0; ii < nn; ++ii){
@@ -95,8 +111,14 @@ double norm(const double *y, int nn ){
 //   }
 // }
 /*-----------------------------------------------*/
-double downScale(double *yscaled, double *y, int factor, int nn ){
+void downScale(double *yscaled, double *y, int factor, int nn ){
   for (int in = 0; in < nn/factor; ++in){
     yscaled[in] = y[in*factor];
   }
 }
+/*-----------------------------------------------*/
+void zeros(double *yzero, int ndim){
+  yzero[0]=0;
+  yzero[1]=0;
+}
+/*-----------------------------------------------*/

@@ -87,7 +87,7 @@ void get_yall(double ytrans_all[], double yall[], double time[]){
   int mapdim = MM.mapdim;
   int period = MM.period;
   double fytrans[mapdim],fy[ndim];
-  memcpy(fy,yall,ndim*sizeof(double));
+  memcpy(fy,yall,ndim*sizeof(double));d
   MM.time=0;
   cout << "# Starting map iteration " << endl;
   for (int iter = 0; iter < period-1; ++iter){
