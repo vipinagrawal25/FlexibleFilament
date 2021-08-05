@@ -307,6 +307,7 @@ double square_wave(double time,double period){
 /**************************/
 void calc_Xconstrain(vec2* Xcons, double time){
   double inidis = 0;
+  double theta;
   // double period = 2*M_PI/omega;
   switch(icons){
     case 1:
@@ -325,7 +326,7 @@ void calc_Xconstrain(vec2* Xcons, double time){
     case 3:
       // angularVel*time should change its direction.
       // double theta = 4*M_PI*abs(time/period - floor(time/period+0.5));
-      double theta = angularVel*time*square_wave(time,period);
+      theta = angularVel*time*square_wave(time,period);
       for (int i = 0; i < np_cons; ++i){
         Xcons[i].x = (inidis +  aa/height*(loc_con[i]-loc_con[0]))*cos(theta);
         Xcons[i].y = (inidis +  aa/height*(loc_con[i]-loc_con[0]))*sin(theta);
@@ -334,8 +335,11 @@ void calc_Xconstrain(vec2* Xcons, double time){
     case 4:
       for (int i = 0; i < np_cons; ++i){
         Xcons[i].x = inidis+0;
-        Xcons[i].y = indis+aa*loc_con[i];
+        Xcons[i].y = inidis+aa*loc_con[i];
       }
+      break;
+    default:
+      break;
     }
 }
 /**************************/
@@ -365,7 +369,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
   double yzero[2] = {0.,0.};
   double yone[2] = {0.,0.};
   // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
-  //vec2 FF;
+  // vec2 FF;
   /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be 
   fixed in general. But for some cases like the implementation of the taylor experiment, 
   we want this to be free. For this I am implementing Xzero based on the configuration. 
