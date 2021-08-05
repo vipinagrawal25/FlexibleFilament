@@ -333,8 +333,8 @@ void calc_Xconstrain(vec2* Xcons, double time){
       break;
     case 4:
       for (int i = 0; i < np_cons; ++i){
-        Xcons[i].x = (inidis +  aa/height*(loc_con[i]-loc_con[0]))*cos(theta);
-        Xcons[i].y = (inidis +  aa/height*(loc_con[i]-loc_con[0]))*sin(theta);
+        Xcons[i].x = inidis+0;
+        Xcons[i].y = indis+aa*loc_con[i];
       }
     }
 }

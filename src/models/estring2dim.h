@@ -13,32 +13,32 @@ double const aa = height/(double)(Np-1); 	// distance between two nodes.
 double const dd = 0.005; 					// diameter of the filament.
 											// The particles would also have same diameter. 
 double const viscosity = 10;				// Equivalent to kinematic viscosity of glycerin
-double const Z0=0.;		 					// If we want the bottom point of the filament to be fixed.
-double const FFY0 = 0;	  					// Amplitude of the force.
 double const ShearRate = 2;
 double const angularVel = 3;  
 double const period = 2*M_PI/3;
-double const AA = 1.5*pow(10,-5)*pow(height,4)*5;
+double const AA = 1.5*pow(10,-5)*pow(height,4)*10;
 double const HH = 16*AA/(dd*dd);			// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
 char const UseRP = 'Y';						// N -- Local drag, Y -- Global drag
 /* BC Not needed in Peskin way*/
 double const bcb = 1;      					// Boundary condition at bottom, 0 - fixed, 1 - free, 2 - clamped.
 double const bct = 1;       				// Boundary condition at top. 1 - free.
 //
-int const icons = 3;  						// 0 -- No constrain, 1 -- circle, 2 -- '8', // 3 -- circle changing dirn.
+int const icons = 0;						// 0 -- No constrain, 1 -- circle, 2 -- '8'.
 int const np_cons = 2;						// Number of points to constrain?
-int const loc_con[np_cons] = {0,Np-1};
+int const loc_con[np_cons] = {0,1};
 //
 int const iext_force = 0; 					// 0 -- No force, 1 means Peskin way to clamp points
-int const floc[2] = {0,Np-1};				// External force location
-int const iext_flow = 0; 	/* External flow: 1->shear rate changes as step function. 3-> Sine type shear rate. */
-int const niniconf = 3;    	/* Configuration of the system at t = 0. 0 -> sine perturbation in the filament.
-							 1 -> Straight filament, 2-> , -1 -> read from a file*/
-string const datafile = "";	// If you want to read input from some file, Mention the file number.
-int const itracer=0;						// Do you want to put tracer particles in the system?
-int const ntracer=256;
-int const ptracer=3;
-/*----------------------------------------*/
+int const floc[2] = {0,1};					// External force location
+int const iext_flow = 3;   					/* External flow: 1->shear rate changes as step function.
+						  					   3-> Sine type shear rate.*/
+int const niniconf = 1;    	 				/* Configuration of the system at t = 0. 0 -> sine perturbation in 
+											the  filament. 1 -> Straight filament, 2-> , -1 -> read from a file*/
+int const ievolve_save=0;
+string const datafile = "sol1";				// If you want to read input from some file, Mention the file name.
+int const itracer=2;						// 0 -> No tracers, 1 -> tracers on square lattice, 3 -> tracer on circular lattice? 
+int const np_tracer=1024;
+int const pp_tracer=3;
+/* ----------------------------------------*/
 void iniconf(double *y); 	// The configuration number is defined for different
 							// Initial configuration into the system.
 void iniconf(double *y, double *aTime, double tdiag); 	
