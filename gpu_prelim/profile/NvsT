@@ -1,0 +1,11 @@
+16   0.518 
+32   0.774
+64   1.675
+128  5.030 (2.841 )
+256  10.037 (5.360 ) 
+512  20.278 
+1024 19.855 
+2046 56.148 
+# numbers in the brackes are 
+# when we go to 2d launching of
+# threads for NN > 128

@@ -9,10 +9,8 @@ mkdir -p src/modules
 ln -s $ES/src/modules/*.h src/modules/ 
 cp $ES/Makefile .
 cp $ES/input.h .
-mkdir -p PythonCodes
-ln -s $ES/PythonCodes/*.py PythonCodes/
-ln -s $ES/PythonCodes/*.ipynb PythonCodes/
 mkdir -p hosts
-ln -s $ES/host host
-echo "copied Makefile and input.h.."
+ln -s $ES/hosts/* hosts/
+
+echo "copied Makefile, input.h.. and GPU code"
 echo " Now modify them accroding to your problem."
