@@ -26,6 +26,7 @@ double const bct = 1;       				// Boundary condition at top. 1 - free.
 int const icons = 0;						// 0 -- No constrain, 1 -- circle, 2 -- '8'.
 int const np_cons = 2;						// Number of points to constrain?
 int const loc_con[np_cons] = {0,1};
+//
 int const iext_force = 0; 					// 0 -- No force, 1 means Peskin way to clamp points
 int const floc[2] = {0,1};					// External force location
 int const iext_flow = 3;   					/* External flow: 1->shear rate changes as step function.
@@ -34,8 +35,8 @@ int const niniconf = 1;    	 				/* Configuration of the system at t = 0. 0 -> s
 											the  filament. 1 -> Straight filament, 2-> , -1 -> read from a file*/
 int const ievolve_save=0;
 string const datafile = "sol1";				// If you want to read input from some file, Mention the file name.
-int const itracer=1;						// 0 -> No tracers, 1 -> tracers on square lattice, 3 -> tracer on circular lattice? 
-int const np_tracer=2500;
+int const itracer=2;						// 0 -> No tracers, 1 -> tracers on square lattice, 3 -> tracer on circular lattice? 
+int const np_tracer=1024;
 int const pp_tracer=3;
 /* ----------------------------------------*/
 void iniconf(double *y); 	// The configuration number is defined for different
