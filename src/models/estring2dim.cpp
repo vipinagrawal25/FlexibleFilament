@@ -8,10 +8,10 @@
 #include <string>
 #include <math.h>
 #include "constant.h"
-#include "IO.h"
+#include "io.h"
 #include <memory.h>
 #include "misc.h"
-#include "MapDyn.h"
+#include "mapdyn.h"
 /**************************/
 using namespace std;
 /**************************/
