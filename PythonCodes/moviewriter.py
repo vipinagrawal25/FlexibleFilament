@@ -27,7 +27,6 @@ fig=plt.figure()
 height=1
 #####################################################
 def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap,symbol='.',colors=[],colormap='gnuplot'):
-# >>>>>>> NewtonKrylov
 	# ax = fig.add_subplot(2,1,1, projection='3d')
 	if colors==[]:
 		colors = ones(Xaxis.shape[0])
@@ -43,18 +42,10 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap,symbol='.',colors=[],colormap='gnuplot
 #####################################################
 def MakePlot2D(ax,Xaxis,Yaxis,tsnap,symbol='.'):
 	# ax.subplot(2,1,2)
-# <<<<<<< HEAD
-# 	# ax.set_xlim(-1,2*height)
-# 	ax.set_ylim(-1,1.3)
-
-# 	ax.plot(Xaxis,Yaxis,'o-')
-# 	plt.title(str(time[isnap]))
-# =======
-	ax.set_xlim(-2,2)
-	ax.set_ylim(-2,2)
+	ax.set_xlim(-0.3,2.5)
+	ax.set_ylim(-0.3,1.5)
 	ax.plot(Xaxis,Yaxis,symbol)
 	plt.title(str(tsnap))
-# >>>>>>> NewtonKrylov
 	# plt.hold(False)
 	# ax.grid(True)
 #####################################################

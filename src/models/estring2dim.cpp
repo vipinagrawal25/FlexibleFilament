@@ -121,7 +121,7 @@ void eval_rhs_tr(double time, double EForceArr[], double y[], double y_tr[], dou
 /**************************/
 void ext_force(vec2* EForce, double* y, double time){
   vec2 Xghost[np_cons],XX;
-  double GG = 10000;
+  double GG = 5000;
   if (icons){
     calc_Xconstrain(Xghost,time);
     // PVec2(Xghost[0]);
@@ -666,12 +666,12 @@ void iniconf(double *y){
       for (int ip_cons = 0; ip_cons < np_cons; ++ip_cons){
         R[loc_con[ip_cons]] = Xcons[ip_cons];
       }
-      if(norm(R[loc_con[np_cons-1]] - R[loc_con[0]]) < aa*loc_con[np_cons-1] - aa*loc_con[0]){
-         k = height/(aa*loc_con[np_cons-1] - aa*loc_con[0]);
+      if( norm(R[loc_con[np_cons-1]] - R[loc_con[0]]) < aa*loc_con[np_cons-1] - aa*loc_con[0]){
+         k = height/(tiny + aa*loc_con[np_cons-1] - aa*loc_con[0]);
       }
       //
       for (int ip = 0; ip < Np; ++ip){
-        R[ip].x = double(ip)/(loc_con[np_cons-1]-loc_con[0]);
+        R[ip].x = double(ip)/(tiny+loc_con[np_cons-1]-loc_con[0]);
         R[ip].y = sin(M_PI*k*R[ip].x);
         if (ip>0){
           CurvLength = CurvLength + norm(R[ip] - R[ip-1]);
@@ -690,8 +690,6 @@ void iniconf(double *y){
           CurvLength = CurvLength + norm(R[ip] - R[ip-1]);
         }
       }
-      // print(y,ndim);
-      // exit(1);
     break;
     default:
       cout << "# We have not implemented the initial configuration:" << "\t" << niniconf << endl
