@@ -39,6 +39,8 @@ double y_start[2*pp] = {0.,0.,0.,aa};
 string cc;
 double Error=0;
 /**************************/
+
+/**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
   double EForceArr[ndim];
   eval_rhs(time,y,rhs,flag_kappa,CurvSqr,SS,EForceArr,0);
@@ -67,8 +69,7 @@ void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double Curv
     EForce[ip] = EForce_ip;
     CurvSqr[ip]=kappasqr;
   }
-  // Is the string forced at some points? Implement it here.
-  
+  // Is the string forced at some points? Implement it here. 
   ext_force(EForce,y,time); 
   drag(R, dR, EForce);
   for (int ip = 0; ip < Np; ++ip){
