@@ -52,7 +52,7 @@ int pre_diag( double **DIAG , double **dev_diag, MPARAM PARAM ){
 /*---------------------------------------------------------------------------------*/
 void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   MPARAM *temp;
-  double height = 1.28;  
+  double height = 1.28;
   (*PARAM).height = height;
   (*PARAM).aa = height/(double)(NN-1);
   // distance between two nodes.
@@ -107,7 +107,7 @@ void set_param( MPARAM *PARAM, MPARAM **dev_param ){
   BUG.lstop = 0;
   strcpy(BUG.message, " No bug yet" );
   cudaMemcpy( dev_bug, &BUG, size_CRASH, cudaMemcpyHostToDevice); */
-/* ------------------------------------------------------------------------------*/
+/* ------------------------------------------------------------------------------ */
 __host__ void write_param( MPARAM *PARAM, char *fname ){
   FILE *pout ;
   pout = fopen ( fname, "w" );
