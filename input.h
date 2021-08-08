@@ -6,7 +6,7 @@ double const start_dt = 1.e-5;
 double const TMAX = 1.;
 double const TotalFiles = 50;
 double const tdiag=TMAX/TotalFiles;	/*This decides after how much time interval the file should be saved.*/
-int const wDataMeth = 1;	 /Writind data methos -> 1 for saving each snap in different file
+int const wDataMeth = 1;	 // Writind data methos -> 1 for saving each snap in different file
 int const rDataMeth = 1;						//	  2 for PSI in one file and velocity in another file.
 double const start_time = 0;
 /* ----------------------------------------*/

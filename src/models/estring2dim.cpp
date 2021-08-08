@@ -11,7 +11,7 @@
 #include "IO.h"
 #include <memory.h>
 #include "misc.h"
-#include "MapDyn.h"
+#include "mapdyn.h"
 /**************************/
 using namespace std;
 /**************************/
