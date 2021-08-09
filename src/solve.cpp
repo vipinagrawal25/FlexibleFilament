@@ -8,7 +8,7 @@
 #include "input.h"
 #include <sys/stat.h>
 #include "constant.h"
-#include "IO.h"
+#include "io.h"
 #include "misc.h"
 #include <fstream>
 #include <unistd.h>

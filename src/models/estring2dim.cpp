@@ -8,7 +8,7 @@
 #include <string>
 #include <math.h>
 #include "constant.h"
-#include "IO.h"
+#include "io.h"
 #include <memory.h>
 #include "misc.h"
 #include "mapdyn.h"
