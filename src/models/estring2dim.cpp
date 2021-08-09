@@ -38,15 +38,10 @@ void calc_Xconstrain(vec2* Xcons, double time);
 double y_start[2*pp] = {0.,0.,0.,aa};
 string cc;
 double Error=0;
-MParam param;       // Defining param varibale of MParam type.
+MParam param;
 /**************************/
 void set_param(){
-  read_param();
-}
-/**************************/
-void read_param(){
-  ifstream paramfile;
-  paramfile.open("rparam.txt");
+  
 }
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){

@@ -3,8 +3,6 @@
 #include "math.h"
 #include <string>
 /**************************/
-using namespace std;
-/* ----------------------------------------*/
 struct MParam{
 	double height;		// height of the box we are doing simulations in.
 	unsigned int Np;	// total number of points on the rod.
@@ -40,9 +38,9 @@ struct MParam{
 	int np_tracer ;
 	int pp_tracer ;
 }
-/* ----------------------------------------*/
+/**************************/
 extern MParam param;
-/* ----------------------------------------*/
+/**************************/
 void iniconf(double *y); 	// The configuration number is defined for different
 							// Initial configuration into the system.
 void iniconf(double *y, double *aTime, double tdiag); 	
@@ -61,3 +59,4 @@ void calc_yzero(double *yzero, double time);
 void set_param();
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */
+/* ----------------------------------------*/
