@@ -48,6 +48,7 @@ int main(){
     // read data from output/time.txt
     // Let's just say that we are saving data as the same interval as earlier.
     iniconf(y,&time,tdiag);
+    filenumber = (int) (time/tdiag);
   }
   if (time==0){
     iniconf(y);
@@ -95,6 +96,10 @@ int main(){
   fstream outfile_SS("output/material_point.txt", ios::app);
   timer = clock();
   timer_global = timer/CLOCKS_PER_SEC;
+  if (time>0){
+    outfile_time << endl;
+    outfile_curvature << endl;
+  }
   while(time < TMAX){
     //euler(pdim,&y[irb],time-dt,dt);
     //rnkt2(pdim,&y[irb],time-dt,dt);
@@ -110,10 +115,10 @@ int main(){
     if (dt<dt_min){
       dt_min = dt;
     }
-    if (time-start_time+dt>=tdiag*filenumber && time-start_time<tdiag*filenumber){tdiagnos=1;}
+    if (time+dt>=tdiag*filenumber && time<tdiag*filenumber){tdiagnos=1;}
     else{tdiagnos=0;}
     // cout << time << endl;
-    if (time-start_time>=tdiag*filenumber){
+    if (time>=tdiag*filenumber){
       //
       if (ievolve_save){
         string l = "output/var" + to_string(filenumber) + ".txt";
@@ -141,8 +146,8 @@ int main(){
       for (int ip = 0; ip < Np; ++ip){
         /* Non-dimensionalizing the co-ordinate with respect to the height of the rod */
         outfile_curvature << CurvSqr[ip]*aa*aa << '\t';
-       /*Square of curvature is non-dimensionalized with the multiplication
-          of square of bead distance */
+        /*Square of curvature is non-dimensionalized with the multiplication
+          of square of bead distance. */
         outfile_SS << SS[ip]/SS[Np-1] << '\t';
       }
       /*---------------------------------- */

@@ -82,8 +82,8 @@ def MSD_plot(FILE='',omega=1.5):
 	plt.savefig('MSD_cycle.eps')
 	plt.show()
 
-# This function calculates Mean square displacement and substracts the translation of the rod after every cycle if there is any.
-# For this, basically I substract the co-ordinate of middle point.
+# This function calculates Mean square displacement and substracts the translation of the rod after every cycle 
+# if there is any. For this, basically I substract the co-ordinate of middle point.
 def MSD_no_trans(FILE='',omega=3):
 	tt = loadtxt(FILE+'output/time.txt')
 	dd_ini = loadtxt(FILE+'output/var0.txt')
@@ -137,16 +137,6 @@ def Energy(AA,HH,FILE='output'):
 			BE[i] = BE[i]+AA/aa*ddBE[i,j]
 			SE[i] = SE[i]+HH/(2*aa)*(ddSE[i,j-1]-aa*(j-1))**2
 			# TE[i] = BE[i]+SE[i]
-	#
-	# fig,ax = plt.subplots()
-	# plt.plot(time,BE)
-	# ax.plot(SE,label='Stretching Energy')
-	# ax.plot(TE,label='Total Energy')
-	
-	# plt.xlabel('time')
-	# plt.title('Bending Energy')
-	# plt.savefig('Energy.eps')
-	# plt.show()
 	return time,BE,SE
 
 def LeebyL(Np,Folder='output'):
@@ -194,10 +184,6 @@ def CurvatureSign(kappasqr,yy,zz,eps):
 	# kappasqr[kappasqr<th*max(kappasqr)]=0
 	NN=yy.size
 	firstIn=2
-	# for iN in range(NN):
-	# 	if kappasqr[iN]>0:
-	# 		firstIn=iN+2
-	# 		break;
 	
 	sign=zeros(NN)
 	znew=zeros(NN)
@@ -212,8 +198,8 @@ def CurvatureSign(kappasqr,yy,zz,eps):
 	# MidP=int(NN/2)
 	# ynew=ynew-(ynew[MidP]+(znew-znew[MidP])*(ynew[MidP+1]-ynew[MidP-1])/(znew[MidP+1]-znew[MidP-1]))
 
-	# Assign sign based on the slope in starting. Remember first two points have zero curvature so just go two more points
-	# to make sure slope calculation is right and implement it.
+	# Assign sign based on the slope in starting. Remember first two points have zero curvature so just go two 
+	#more points to make sure slope calculation is right and implement it.
 
 	ynewdiff=diff(yy)
 	znewdiff=diff(zz)
@@ -226,30 +212,6 @@ def CurvatureSign(kappasqr,yy,zz,eps):
 	cpdiff=diff(cp)
 	cpdiff[cpdiff<0]=-1
 	cpdiff[cpdiff>0]=1
-
-	# while sum(cp[0:firstIn])==0:
-	# 	firstIn=firstIn+1
-	# 	# print(firstIn)
-
-	# sign[0:firstIn]=sum(cp[0:firstIn])/sum(abs(cp[0:firstIn]))
-
-	# # Now initial sign has been defined. we can change the sign whenever double derivative i.e. kappasqr->0
-	# dips=where((kappasqr[firstIn:-1] < kappasqr[firstIn-1:-2]) * (kappasqr[firstIn:-1] < kappasqr[firstIn+1:]) )[0] + firstIn
-	# # Sign should continue till the first minimum is hit
-	# if dips.size>0:
-	# 	sign[firstIn:dips[0]+1]=sign[firstIn-1]
-	# else:
-	# 	sign[firstIn:]=sign[firstIn-1]
-	# # Now let's change the sign alternatively if minimum is below some epsilon value
-	# for index in range(1,dips.size):
-	# 	if kappasqr[dips[index]]<eps:
-	# 		sign[dips[index-1]+1:dips[index]+1]=-sign[dips[index-1]]
-	# 	else:
-	# 		sign[dips[index-1]+1:dips[index]+1]=sign[dips[index-1]]
-	# # Sign should just continue after the last minimum
-	# if dips.size>0:
-	# 	sign[dips[-1]+1:]=-sign[dips[-1]]
-	# # Multiply signs to the absolute value of kappasqr
 	sign[2:NN-1]=cpdiff
 	return sign
 
@@ -279,7 +241,7 @@ def GetCurv(Folder='output/',code='CPU',dim=3,wDataMeth=1):
 			tangent=diff(position,axis=0)
 			for iN in range(NN-1):
 				tangent[iN,:]=tangent[iN,:]/sqrt( tangent[iN,0]**2 + tangent[iN,1]**2 )
-			kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])  		
+			kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])
 	elif (code == 'GPU'):
 		dd=loadtxt(Folder+"PSI")
 		zz=zeros(NN)
@@ -325,11 +287,10 @@ def vel_tracer(dd,vel_abs,time,Xtracer,wave='sine',height=1.28,ShearRate=2,sigma
     
     for i in range(0,NN):
         Xi = Xtracer-dd[i,:] 
-        XiXj = outer(Xi,Xi)                    # XiXj second order tensor
+        XiXj = outer(Xi,Xi)                    	# XiXj second order tensor
         rr = linalg.norm(Xi)
-        GG = (dij/rr + XiXj/(rr**3))           # Green's function for the current point
-        del2G = (dij/(rr**3) - 3*XiXj/(rr**5)) # Double derivative of Green's function
-        
+        GG = (dij/rr + XiXj/(rr**3))           	# Green's function for the current point
+        del2G = (dij/(rr**3) - 3*XiXj/(rr**5)) 	# Double derivative of Green's function
         Vtracer =  Vtracer + 3*dia/8*tensordot(vel_ins[i,:],GG,axes=1) + (dia**3)/32*tensordot(vel_ins[i,:],del2G,axes=1)
     return Vtracer
 

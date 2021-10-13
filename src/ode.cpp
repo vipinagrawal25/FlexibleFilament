@@ -94,19 +94,16 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
             double* SS,double *EForceArr, double ldiagnos){
   // Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
   // add_time is the address of time and the same goes for dt as well.
-// <<<<<<< HEAD
 // 	double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, yold[ndim];
 // 	int idim ;
 // 	double error = 0;
 // 	double dt = *add_dt;
 //   double tol_dt = pow(10,-6);
-// =======
   double s;
   int idim ;
   double error,temp_error;
   double dt = *add_dt;
   double tol_dt = 1.e-6;
-// >>>>>>> NewtonKrylov
   bool flag_kappa;
   double time = *add_time;
   double epsilon = 0.84;
@@ -124,6 +121,7 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   // };
   // double bistar[6] = {16./135.,0,6656./12825,28561./56430,-9./50,2./55};
   // double bi[6] = {25./216.,0,1408./2565.,2197./4104.,-1./5.,0};
+  //
   //Cash-Karp Parameters for evolution
   double ci[6] = {0,0.2,0.3,0.6,1.,7./8} ;
   double aij[6][5] = {
@@ -148,7 +146,6 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   //
   for(idim=0;idim<ndim;idim++){
     temp[idim]=y[idim]+(aij[2][0]*k1[idim]+aij[2][1]*k2[idim])*dt;
-// <<<<<<< HEAD
 //  	}
 //  	eval_rhs(time+ci[2]*dt,temp,k3, flag_kappa, CurvSqr, SS);
 
@@ -183,18 +180,13 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
 //   if (error<tiny)
 //   {
 //       Delta = 10;
-// =======
-// >>>>>>> NewtonKrylov
   }
   eval_rhs(time+ci[2]*dt,temp,k3, flag_kappa, CurvSqr, SS);
   //
   for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim]+ (aij[3][0]*k1[idim]+aij[3][1]*k2[idim]+aij[3][2]*k3[idim])*dt ;
   }
-// <<<<<<< HEAD
-
 //   s = epsilon*pow(Delta,0.25);
-  
 //   if (Delta>=0.5)
 //   {
 //       *add_time = time + dt;
@@ -203,13 +195,11 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
 //           s=truncationmax;
 //       }
 //       *add_dt = s*dt;
-// =======
   eval_rhs(time+ci[3]*dt, temp, k4, flag_kappa, CurvSqr, SS);
   //
   for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim] + aij[4][0]*dt*k1[idim] + aij[4][1]*k2[idim]*dt + aij[4][2]*k3[idim]*dt + 
                   aij[4][3]*k4[idim]*dt ;
-// >>>>>>> NewtonKrylov
   }
   eval_rhs(time+ci[4]*dt, temp, k5, flag_kappa, CurvSqr, SS);
   //
@@ -228,7 +218,6 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
     error=max(temp_error,error);
   }
   error=error+tiny;
-  // cout << error << endl;
   if (error<tol_dt){
     *add_time=time+dt;
     for (int idim = 0; idim < ndim; ++idim){
@@ -246,7 +235,6 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
       cout << "#time-step is not a number." << endl;
       exit(1);
     }
-    // cout << *add_dt << endl;
     rnkf45(ndim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], &EForceArr[0], ldiagnos);
   }
 }

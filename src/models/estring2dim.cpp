@@ -156,6 +156,9 @@ vec2 ext_flow(vec2 R_ip, double time){
     case 3:
       dR.x = dR.x + ShearRate*(height-R_ip.y)*sin(omega*time);
       break;
+    case 4:
+      dR.x = dR.x + ShearRate*R_ip.y;
+      break;
   }
   return dR;
 }
@@ -272,30 +275,6 @@ vec2 extension_force(int kp, vec2 X[], double time){
   FF = (uk*(bk-aa) - ukm1*(bkm1-aa))*HH/aa;
   return FF; 
 }
-/**************************/
-// vec2 extension_force(vec2 ukm1, vec2 uk, double bkm1, double bk){
-//   vec2 FF;
-//   FF = (uk*(bk-aa) - ukm1*(bkm1-aa))*HH/aa;
-//   return FF;
-// }
-/**************************/
-// vec2 bending_force(vec2 ukm2, vec2 ukm1, vec2 uk, vec2 ukp1, double bkm2, double bkm1, double bk, double bkp1){
-//   vec2 FF;
-//   if(bk<tiny){
-//     FF =  ukm2/bkm1- (ukm1/bkm1)*( dot(ukm1,uk) ) ;
-//   }
-//   else if(bkm1<tiny){
-//     FF =  (uk/bk)* dot(uk,ukp1)  - (ukm1+ukp1)/bk ;
-//   }
-//   else{
-//     FF = ( (uk+ukm2)/(bkm1+tiny) - (ukm1+ukp1)/(bk+tiny)
-//        + (uk/(bk+tiny))*( dot(uk,ukm1) + dot(uk,ukp1) )
-//        - (ukm1/(bkm1+tiny))*( dot(ukm1,uk) + dot(ukm1,ukm2) )
-//       );
-//   }
-//   FF = FF*AA/aa;
-//   return FF;
-// }
 /***********************/
 double square_wave(double time,double period){
   int s;
@@ -554,7 +533,7 @@ void iniconf(double *y, double *aTime, double tdiag){
 void iniconf(double *y){
   // Merge all three cases into 1;
   vec2 R[Np];              // R is the position of the beads.
-  double k = 2;            // determines the frequency for initial configuration
+  double k = 1;            // determines the frequency for initial configuration
   double CurvLength = 0;   // determines the total length of the curve
   string l;
   // double theta= (double)M_PI/2;
@@ -614,6 +593,7 @@ void iniconf(double *y){
       // }
       // myfile.close();
       rData(y,datafile);
+      print(y,Np,pp);
       break;
     case 0:
       y[0]=0;
@@ -844,7 +824,6 @@ void y2kappa(double kappa[], double y[]){
   double bk, bkm1;
   // memcpy(y_start,y_start+2*pp,2*pp*sizeof(double));
   // memcpy(y_start+2*pp,y,4*sizeof(double));
-  int iorbit = MM.iorbit;
   vec2 uk,ukm1;
   if(bcb==1){
     kappa[0]=0;

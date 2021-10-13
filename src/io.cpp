@@ -81,8 +81,7 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
   }
 }
 /********************************************/
-void rData(double *y,string fname, int Npt, int ppt)
-{
+void rData(double *y,string fname, int Npt, int ppt){
   double ch;
   int cnt=0;
   ifstream myfile;

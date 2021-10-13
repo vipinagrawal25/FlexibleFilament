@@ -1,10 +1,9 @@
 // 1) Use template to pass a type of structure. Let's say that the function GG(y,MV)
 // typename of second argument can be passed using typenamen and template.
-
 // This file implements Matrix-free Newton Krylov method of findign zeros using GMRES. 
 // We use predefined Eigen library and define a wrapper class to use GMRES in a matrix-free way.
-
 // We should make templates like JacobEig function.
+/*---------------------------------------------------------------------------- */
 #include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -96,7 +95,7 @@ bool newton_krylov(void func(double*), double Xini[], int dim,
   // AA.f_display = func;
   // double Err=1;
   // VectorXd Xstar = Map<VectorXd>( Xini, dim, 1 );
-  // // Map<VectorXd> Xstar(Xini,dim);           // Converting double to VectorXd
+  // // Map<VectorXd> Xstar(Xini,dim);              // Converting double to VectorXd
   // VectorXd deltaX(dim),bb(dim);
   // double *bbdoub;
   // int itry=0;

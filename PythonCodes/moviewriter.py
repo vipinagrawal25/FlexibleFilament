@@ -10,18 +10,6 @@ import sys
 FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Movie Test', artist='Matplotlib',
                 comment='Movie support!')
-# <<<<<<< HEAD
-# writer = FFMpegWriter(fps=10, metadata=metadata)
-
-# fig = plt.figure()
-# # ax1=fig.add_subplot(1,1,1,projection='3d')
-# ax2=fig.add_subplot(1,1,1)
-
-# FILE = 'output'
-# height = 2
-
-# def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,isnap):
-# =======
 writer = FFMpegWriter(fps=30, metadata=metadata)
 fig=plt.figure()
 height=1
@@ -42,17 +30,15 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap,symbol='.',colors=[],colormap='gnuplot
 #####################################################
 def MakePlot2D(ax,Xaxis,Yaxis,tsnap,symbol='.'):
 	# ax.subplot(2,1,2)
-	ax.set_xlim(-0.3,2.5)
-	ax.set_ylim(-0.3,1.5)
+	ax.set_xlim(-0.2,2)
+	ax.set_ylim(-0.2,1.5)
 	ax.plot(Xaxis,Yaxis,symbol)
 	plt.title(str(tsnap))
-	# plt.hold(False)
-	# ax.grid(True)
 #####################################################
 def GetCoordinate(arr,dim,nparticles=256):
 	row,col = arr.shape
 	xx = zeros(row)
-	if col==6 or col==3:						#It means that the simulation was run in 3 dimension
+	if col==6 or col==3:								# It means that the simulation was run in 3 dimension
 		xx=arr[0:nparticles,0]
 		yy=arr[0:nparticles,1]
 		zz=arr[0:nparticles,2]
@@ -86,7 +72,7 @@ def MultiFileMovie(FILE='output',dim=3):
 	 		dd=loadtxt(FILE+'/var'+str(isnap)+'.txt')
 	 		xx,yy,zz=GetCoordinate(dd,dim)
 	 		if dim==2:
-	 			MakePlot2D(ax,yy,zz,time[isnap],'o')
+	 			MakePlot2D(ax,yy,zz,time[isnap],'o-')
 	 		else:
 	 			MakePlot3D(ax,xx,yy,zz,time[isnap],'o')
 	 		writer.grab_frame()
@@ -207,13 +193,10 @@ def SingleFileMovie(FILE='data/PSI',dim=2, output="data/movie.mp4"):
 				xx[icol]=dd[irow,3*icol+1]
 				yy[icol]=dd[irow,3*icol+2]
 				zz[icol]=dd[irow,3*icol+3]
-
 			if dim==2:
 				MakePlot2D(ax,xx,zz,time)
 			else:
 				MakePlot3D(ax,yy,xx,zz,time)
-
 			writer.grab_frame()
 			ax.clear()
 			print('plot = ' + str(irow)+ 'Done')
-# >>>>>>> NewtonKrylov
