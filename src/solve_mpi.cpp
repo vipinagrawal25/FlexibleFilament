@@ -183,6 +183,10 @@ int main(int argc, char** argv){
   MPI_Finalize();
 }
 /********************************************/
-void read_param(){
+void read_param(string param_name){
+  ifstream myfile;
+  myfile.open(param_name);
+  myfile>>sigma;
+  myfile>>facAA;
   
 }
