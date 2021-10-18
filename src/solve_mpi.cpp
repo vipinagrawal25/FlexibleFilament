@@ -17,6 +17,8 @@
 /********************************************/
 using namespace std;
 /* ----------------------------------------*/
+void read_param(string param_name);
+/* ----------------------------------------*/
 int main(int argc, char** argv){
   /*-------------MPI part starts-------------------------*/
   MPI_Init(&argc, &argv);
@@ -31,13 +33,16 @@ int main(int argc, char** argv){
   int name_len;
   MPI_Get_processor_name(processor_name, &name_len);
   /*-------------MPI part ends-------------------------*/
-  string run_dir = "run" + to_string(world_rank) + "/";
-  read_param()
+  string run_dir = "run" + to_string(world_rank+1) + "/";
+  cout << run_dir << endl;
   pid_t pid = getpid();
   cout << "# ID for this process is: " << pid << endl;
   int ndim_tr = np_tracer*pp_tracer;
   //
-  double y[ndim],y_prev[ndim],vel[ndim],EForceArr[ndim];
+  double y[ndim],y_prev[ndim],vel[ndim],EForceArr[ndim],sigma,facAA;
+  //
+  read_param(run_dir+"rparam.txt");
+  //
   double CurvSqr[Np],SS[Np];
   double time,time_prev,timer_global;
   double y_tr[ndim_tr],vel_tr[ndim_tr];
@@ -72,7 +77,7 @@ int main(int argc, char** argv){
   // exit(1);
   eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS,EForceArr);
   //
-  system("exec mkdir "+run_dir+"output");
+  system( ("exec mkdir "+run_dir+"output").c_str() );
   //
   if (ievolve_save){
      outfile.open(run_dir + "output/var0.txt");
@@ -184,9 +189,10 @@ int main(int argc, char** argv){
 }
 /********************************************/
 void read_param(string param_name){
+  cout << param_name << endl;
   ifstream myfile;
   myfile.open(param_name);
   myfile>>sigma;
   myfile>>facAA;
-  
+  cout << "sigma = " << sigma << "; facAA = " << facAA << endl;
 }

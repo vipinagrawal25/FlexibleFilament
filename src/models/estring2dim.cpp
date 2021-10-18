@@ -37,6 +37,7 @@ void calc_Xconstrain(vec2* Xcons, double time);
    first 4 points for points before map iteration and last 4 points for after map iteration. */
 double y_start[2*pp] = {0.,0.,0.,aa};
 string cc;
+double sigma, facAA;
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
   double EForceArr[ndim];

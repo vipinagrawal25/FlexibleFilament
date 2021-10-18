@@ -3,6 +3,7 @@
 # CFLAGS=-pg -O3
 compile=g++ -I ${ES}/lib -O2 -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11
 exec=ode
+compile_mpi=mpic++ -I ${ES}/lib -O2 -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11
 default:
 	${compile} -o ${exec}.exe io.cpp misc.cpp ode.cpp solve.cpp model.cpp
 clean:
@@ -16,3 +17,5 @@ curv2y:
 	${compile} -o ${exec}.exe misc.cpp model.cpp test.cpp
 tracer:
 	${compile} -o ${exec}.exe misc.cpp model.cpp test_tracer.cpp
+MPI:
+	${compile_mpi} -o ${exec}.exe io.cpp misc.cpp ode.cpp solve_mpi.cpp model.cpp

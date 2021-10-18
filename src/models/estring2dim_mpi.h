@@ -3,6 +3,9 @@
 #include "math.h"
 #include <string>
 /**************************/
+extern double sigma;
+extern double facAA;
+/**************************/
 double const height = 1.28;					// height of the box we are doing simulations in.
 unsigned int const Np= 256;					// total number of points on the rod.
 unsigned int const pp= 2;
@@ -13,8 +16,8 @@ double const dd = 0.005; 					// diameter of the filament.
 double const viscosity = 10;				// Equivalent to kinematic viscosity of glycerin
 double const ShearRate = 2;
 double const angularVel = 3;
-double const period = 2*M_PI/(3);
-double const AA = 1.5*pow(10,-5)*pow(height,4)*10;
+double const period = 2*M_PI/(sigma*ShearRate);
+double const AA = 1.5*pow(10,-5)*pow(height,4)*facAA;
 double const HH = 16*AA/(dd*dd);			// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
 char const UseRP = 'Y';						// N -- Local drag, Y -- Global drag
 /* BC Not needed in Peskin way*/
@@ -40,7 +43,7 @@ int const pp_tracer=3;
 /**************************/
 void iniconf(double *y); 	// The configuration number is defined for different
 							// Initial configuration into the system.
-void iniconf(double *y, double *aTime, double tdiag); 	
+void iniconf(double *y, double *aTime, double tdiag);
 void iniconf_tr(double *y_tr);
 void check_param();
 void write_param(std::string fname);
