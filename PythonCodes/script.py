@@ -11,8 +11,6 @@ length=1.28
 sigma=0.75
 ShearRate=2
 omega = ShearRate*sigma
-# TMAX= 15;
-# Totalfiles=2000;
 
 # This is an array of things that you want to calculate.
 Thing1 = "Movie"
@@ -52,7 +50,7 @@ for i in range(0,len(Things)):
 	elif Things[i]=="MSD_no_trans":
 		MSD_no_trans()
 	elif Things[i]=="SqrtCurvature":
-		GetCurv(dim=2)
+		GetCurv(dim=2,wDataMeth=1)
 	elif Things[i]=="TracerVelocity":
 		Vtracer=VtraceTimeSer(sigma=0.75,Xtracer=Xtracer9)
 		NP.save('output/Vtracer9.npy',Vtracer)

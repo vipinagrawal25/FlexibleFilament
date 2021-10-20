@@ -24,3 +24,6 @@ dynamics_multirun:
 	(echo "I will compile myself to compute fixed points or periodic orbits for given bounday condition.\n";\
 	 ln -sf hosts/${HOST} host; cd src/;ln -sf ../${folder}/${MODEL}.h model.h;ln -sf models/${MODEL}.cpp\
 	 model.cpp; make map_dyn exec=${exec}; mv ${exec}.exe ../${folder}; echo "Compilation completed.")
+mpi:
+	(ln -sf hosts/${HOST} host; cd src/;ln -sf models/${MODEL}_mpi.h model.h;ln -sf models/${MODEL}.cpp model.cpp;\
+	 ln -sf ../input_mpi.h input.h; make MPI exec=${exec}; mv ${exec}.exe ..)

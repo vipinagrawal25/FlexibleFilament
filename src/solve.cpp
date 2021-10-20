@@ -17,7 +17,6 @@
 using namespace std;
 /* ----------------------------------------*/
 int main(){
-  set_param();
   pid_t pid = getpid();
   cout << "# ID for this process is: " << pid << endl;
   int ndim_tr = np_tracer*pp_tracer;

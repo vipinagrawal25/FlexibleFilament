@@ -17,6 +17,12 @@
 /********************************************/
 using namespace std;
 /* ----------------------------------------*/
+void read_param(string param_name);
+void read_evolve(string fname);
+/* ----------------------------------------*/
+double period, AA, HH, TMAX;
+int TotalFiles;
+/* ----------------------------------------*/
 int main(int argc, char** argv){
   /*-------------MPI part starts-------------------------*/
   MPI_Init(&argc, &argv);
@@ -31,13 +37,17 @@ int main(int argc, char** argv){
   int name_len;
   MPI_Get_processor_name(processor_name, &name_len);
   /*-------------MPI part ends-------------------------*/
-  string run_dir = "run" + to_string(world_rank) + "/";
-  read_param()
+  string run_dir = "run" + to_string(world_rank+1) + "/";
+  cout << run_dir << endl;
   pid_t pid = getpid();
   cout << "# ID for this process is: " << pid << endl;
   int ndim_tr = np_tracer*pp_tracer;
   //
-  double y[ndim],y_prev[ndim],vel[ndim],EForceArr[ndim];
+  double y[ndim],y_prev[ndim],vel[ndim],EForceArr[ndim],sigma,facAA;
+  //
+  read_param(run_dir+"rparam.txt");
+  read_evolve(run_dir+"revolve.txt");
+  //
   double CurvSqr[Np],SS[Np];
   double time,time_prev,timer_global;
   double y_tr[ndim_tr],vel_tr[ndim_tr];
@@ -47,6 +57,7 @@ int main(int argc, char** argv){
   string lastline;
   int ldiagnos=0;
   int tdiagnos = 1;
+  double tdiag = TMAX/TotalFiles;
   // But these things are only for diagnostic purpose and it's too much hassle for someting that is not even 
   // important. So we wil keep it in the wrong way, as most of time this would give right result.
   ofstream outfile;
@@ -72,7 +83,7 @@ int main(int argc, char** argv){
   // exit(1);
   eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS,EForceArr);
   //
-  system("exec mkdir "+run_dir+"output");
+  system( ("exec mkdir "+run_dir+"output").c_str() );
   //
   if (ievolve_save){
      outfile.open(run_dir + "output/var0.txt");
@@ -170,6 +181,7 @@ int main(int argc, char** argv){
       tdiagnos=0;
       itn=itn+1;
     }
+    exit(1);
   }
   timer_global = clock()/CLOCKS_PER_SEC - timer_global;
   outfile_time.close();
@@ -181,4 +193,28 @@ int main(int argc, char** argv){
   cout << "Minimum value of dt: " << dt_min << endl;  
   //----------------------------
   MPI_Finalize();
+}
+/********************************************/
+void read_param(string fname){
+  double sigma, facAA;
+  ifstream myfile;
+  myfile.open(fname);
+  myfile>>sigma;
+  myfile>>facAA;
+  // setting up the parameters //
+  period = 2*M_PI/(sigma*ShearRate);
+  AA = 1.5*pow(10,-5)*pow(height,4)*facAA;
+  HH = 16*AA/(dd*dd);
+  //
+  cout << "sigma = " << sigma << "; facAA = " << facAA << endl;
+  myfile.close();
+}
+/********************************************/
+void read_evolve(string fname){
+  ifstream myfile;
+  myfile.open(fname);
+  myfile>>TMAX;
+  myfile>>TotalFiles;
+  cout << "TMAX = " << TMAX << "; TotalFiles = " << TotalFiles << endl;
+  myfile.close();
 }
