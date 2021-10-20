@@ -3,8 +3,9 @@
 #include "math.h"
 #include <string>
 /**************************/
-extern double sigma;
-extern double facAA;
+extern double period;
+extern double AA;
+extern double HH;
 /**************************/
 double const height = 1.28;					// height of the box we are doing simulations in.
 unsigned int const Np= 256;					// total number of points on the rod.
@@ -16,10 +17,10 @@ double const dd = 0.005; 					// diameter of the filament.
 double const viscosity = 10;				// Equivalent to kinematic viscosity of glycerin
 double const ShearRate = 2;
 double const angularVel = 3;
-double const period = 2*M_PI/(sigma*ShearRate);
-double const AA = 1.5*pow(10,-5)*pow(height,4)*facAA;
-double const HH = 16*AA/(dd*dd);			// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
-char const UseRP = 'Y';						// N -- Local drag, Y -- Global drag
+// double const period = 2*M_PI/(sigma*ShearRate);
+// double const AA = 
+// double const HH = 16*AA/(dd*dd);			// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
+char const UseRP = 'N';						// N -- Local drag, Y -- Global drag
 /* BC Not needed in Peskin way*/
 double const bcb = 1;      					// Boundary condition at bottom, 0 - fixed, 1 - free, 2 - clamped.
 double const bct = 1;       				// Boundary condition at top. 1 - free.
@@ -35,9 +36,9 @@ int const floc[fnp] = {0,1};					// External force location
 int const iext_flow = 3;   /* External flow: 1->shear rate changes as step function. 3-> Sine type shear rate.*/
 int const niniconf = 1;    /* Configuration of the system at t = 0. 0 -> sine perturbation in  the  filament. 
 							1 -> Straight filament, 2-> , -1 -> read from a file*/
-int const ievolve_save=0;
+int const ievolve_save=1;
 std::string const datafile = "sol1";				// If you want to read input from some file, Mention the file name.
-int const itracer=2;						// 0 -> No tracers, 1 -> tracers on square lattice, 3 -> tracer on circular lattice? 
+int const itracer=0;						// 0 -> No tracers, 1 -> tracers on square lattice, 3 -> tracer on circular lattice? 
 int const np_tracer=1024;
 int const pp_tracer=3;
 /**************************/

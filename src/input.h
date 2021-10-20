@@ -1,1 +1,1 @@
-../input.h
+../input_mpi.h

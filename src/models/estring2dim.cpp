@@ -37,7 +37,6 @@ void calc_Xconstrain(vec2* Xcons, double time);
    first 4 points for points before map iteration and last 4 points for after map iteration. */
 double y_start[2*pp] = {0.,0.,0.,aa};
 string cc;
-double sigma, facAA;
 /**************************/
 void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
   double EForceArr[ndim];
@@ -367,6 +366,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
   vec2 FF = *add_FF;
   double yzero[2] = {0.,0.};
   double yone[2] = {0.,0.};
+  cout << "period = " << period <<"; AA = " << AA << "; HH = " << HH << endl;
   // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
   // vec2 FF;
   /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be 

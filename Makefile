@@ -26,4 +26,4 @@ dynamics_multirun:
 	 model.cpp; make map_dyn exec=${exec}; mv ${exec}.exe ../${folder}; echo "Compilation completed.")
 mpi:
 	(ln -sf hosts/${HOST} host; cd src/;ln -sf models/${MODEL}_mpi.h model.h;ln -sf models/${MODEL}.cpp model.cpp;\
-	 ln -sf ../input.h .; make MPI exec=${exec}; mv ${exec}.exe ..)
+	 ln -sf ../input_mpi.h input.h; make MPI exec=${exec}; mv ${exec}.exe ..)

@@ -11,8 +11,6 @@ length=1.28
 sigma=0.75
 ShearRate=2
 omega = ShearRate*sigma
-# TMAX= 15;
-# Totalfiles=2000;
 
 # This is an array of things that you want to calculate.
 Thing1 = "Movie"
@@ -25,15 +23,11 @@ Thing7 = "MSD_no_trans"
 Thing8 = "SqrtCurvature"
 Thing9 = "TracerVelocity"
 
-Things = [Thing1]
+Things = [Thing8]
 
 Xtracer2 = [0.01,0,0.5]
 Xtracer9 = [0.01,1.2,0.5]
 
-# figure=MSD_plot(step=1)
-# show(figure)
-# plt.savefig('MSD_complete.png', dpi=400)
-# close()
 for i in range(0,len(Things)):
 	if Things[i] == "movie" or Things[i] == "Movie":
 		MOVIE.MultiFileMovie(FILE='output',dim=2)
@@ -57,21 +51,7 @@ for i in range(0,len(Things)):
 	elif Things[i]=="MSD_no_trans":
 		MSD_no_trans()
 	elif Things[i]=="SqrtCurvature":
-		GetCurv()
+		GetCurv(dim=2,wDataMeth=1)
 	elif Things[i]=="TracerVelocity":
 		Vtracer=VtraceTimeSer(sigma=0.75,Xtracer=Xtracer9)
 		NP.save('output/Vtracer9.npy',Vtracer)
-		
-# BendE = BendingEnergy(A=0.00006,FILE='data/curvature.txt')
-# plt.plot(BendE)
-# plt.savefig('data/BendE.png',dpi=300)
-
-# StretchE = StretchEnergy(HH=39.4,FILE='data/material_point.txt')
-# plt.figure()
-# plt.plot(StretchE)
-# plt.savefig('data/StretchE.png',dpi=300)
-
-# TotalE=BendE+StretchE
-# plt.figure()
-# plt.plot(TotalE)
-# plt.savefig('data/TotalE.png',dpi=300)

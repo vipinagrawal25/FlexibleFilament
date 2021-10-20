@@ -18,6 +18,10 @@
 using namespace std;
 /* ----------------------------------------*/
 void read_param(string param_name);
+void read_evolve(string fname);
+/* ----------------------------------------*/
+double period, AA, HH, TMAX;
+int TotalFiles;
 /* ----------------------------------------*/
 int main(int argc, char** argv){
   /*-------------MPI part starts-------------------------*/
@@ -42,6 +46,7 @@ int main(int argc, char** argv){
   double y[ndim],y_prev[ndim],vel[ndim],EForceArr[ndim],sigma,facAA;
   //
   read_param(run_dir+"rparam.txt");
+  read_evolve(run_dir+"revolve.txt");
   //
   double CurvSqr[Np],SS[Np];
   double time,time_prev,timer_global;
@@ -52,6 +57,7 @@ int main(int argc, char** argv){
   string lastline;
   int ldiagnos=0;
   int tdiagnos = 1;
+  double tdiag = TMAX/TotalFiles;
   // But these things are only for diagnostic purpose and it's too much hassle for someting that is not even 
   // important. So we wil keep it in the wrong way, as most of time this would give right result.
   ofstream outfile;
@@ -175,6 +181,7 @@ int main(int argc, char** argv){
       tdiagnos=0;
       itn=itn+1;
     }
+    exit(1);
   }
   timer_global = clock()/CLOCKS_PER_SEC - timer_global;
   outfile_time.close();
@@ -188,11 +195,26 @@ int main(int argc, char** argv){
   MPI_Finalize();
 }
 /********************************************/
-void read_param(string param_name){
-  cout << param_name << endl;
+void read_param(string fname){
+  double sigma, facAA;
   ifstream myfile;
-  myfile.open(param_name);
+  myfile.open(fname);
   myfile>>sigma;
   myfile>>facAA;
+  // setting up the parameters //
+  period = 2*M_PI/(sigma*ShearRate);
+  AA = 1.5*pow(10,-5)*pow(height,4)*facAA;
+  HH = 16*AA/(dd*dd);
+  //
   cout << "sigma = " << sigma << "; facAA = " << facAA << endl;
+  myfile.close();
+}
+/********************************************/
+void read_evolve(string fname){
+  ifstream myfile;
+  myfile.open(fname);
+  myfile>>TMAX;
+  myfile>>TotalFiles;
+  cout << "TMAX = " << TMAX << "; TotalFiles = " << TotalFiles << endl;
+  myfile.close();
 }
