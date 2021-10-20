@@ -33,31 +33,18 @@ int const floc[fnp] = {0,1};					// External force location
 int const iext_flow = 3;   /* External flow: 1->shear rate changes as step function. 3-> Sine type shear rate.*/
 int const niniconf = 1;    /* Configuration of the system at t = 0. 0 -> sine perturbation in  the  filament. 
 							1 -> Straight filament, 2-> , -1 -> read from a file*/
-<<<<<<< HEAD
-int const ievolve_save=0;
-string const datafile = "sol1";				// If you want to read input from some file, Mention the file name.
-int const itracer=2;						// 0 -> No tracers, 1 -> tracers on square lattice, 3 -> tracer on circular lattice? 
-=======
 int const ievolve_save=1;
 std::string const datafile = "sol1";				// If you want to read input from some file, Mention the file name.
 int const itracer=0;						// 0 -> No tracers, 1 -> tracers on square lattice, 3 -> tracer on circular lattice? 
->>>>>>> MPI
 int const np_tracer=1024;
 int const pp_tracer=3;
 /**************************/
 void iniconf(double *y); 	// The configuration number is defined for different
 							// Initial configuration into the system.
-<<<<<<< HEAD
-void iniconf(double *y, double *aTime, double tdiag); 	
-void iniconf_tr(double *y_tr);
-void check_param();
-void write_param(string fname);
-=======
 void iniconf(double *y, double *aTime, double tdiag);
 void iniconf_tr(double *y_tr);
 void check_param();
 void write_param(std::string fname);
->>>>>>> MPI
 void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]);
 void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[],
 			 				double EForceArr[], bool iEforceArr=1);
@@ -67,10 +54,6 @@ void pre_next_iter(double *y, double *y_trans);
 void eval_rhs_tr(double time,double EForceArr[],double y[],double y_tr[],double rhs[]);
 void calc_yone(double *yone, double time);
 void calc_yzero(double *yzero, double time);
-<<<<<<< HEAD
-void set_param();
-=======
->>>>>>> MPI
 /* ----------------------------------------*/
 #endif /* !FILE_ESTRING_SEEN */
 /* ----------------------------------------*/
