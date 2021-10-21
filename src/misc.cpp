@@ -122,3 +122,14 @@ void zeros(double *yzero, int ndim){
   yzero[1]=0;
 }
 /*-----------------------------------------------*/
+double abs(double temp){
+  double temp_abs;
+  if(temp<0){
+    temp_abs = temp*(-1);
+  }
+  else{
+    temp_abs=temp;
+  }
+  return temp_abs;
+}
+/*-----------------------------------------------*/

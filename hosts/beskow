@@ -1,1 +1,1 @@
-compile=cc –O2 –openmp -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11
+compile=cc –openmp -O3 -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11
