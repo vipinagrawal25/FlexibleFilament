@@ -9,6 +9,7 @@ mkdir -p src/modules
 ln -s $ES/src/modules/*.h src/modules/ 
 cp $ES/Makefile .
 cp $ES/input.h .
+cp $ES/input_mpi.h .
 mkdir -p hosts
 ln -s $ES/hosts/* hosts/
 
