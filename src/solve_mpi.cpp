@@ -37,10 +37,14 @@ int main(int argc, char** argv){
   int name_len;
   MPI_Get_processor_name(processor_name, &name_len);
   /*-------------MPI part ends-------------------------*/
+  fstream outfile_terminal(run_dir+"terminal.out", ios::app);
+  fstream outfile_time(run_dir+"output/time.txt", ios::app);
+  fstream outfile_curvature(run_dir+"output/curvature.txt", ios::app);
+  fstream outfile_SS(run_dir+"output/material_point.txt", ios::app);
+  //
   string run_dir = "run" + to_string(world_rank+1) + "/";
-  cout << run_dir << endl;
   pid_t pid = getpid();
-  cout << "# ID for this process is: " << pid << endl;
+  outfile_terminal << "# ID for this process is: " << pid << endl;
   int ndim_tr = np_tracer*pp_tracer;
   //
   double y[ndim],y_prev[ndim],vel[ndim],EForceArr[ndim],sigma,facAA;
@@ -87,13 +91,6 @@ int main(int argc, char** argv){
   //
   if (ievolve_save){
      outfile.open(run_dir + "output/var0.txt");
-      // if (bcb==2){
-      //   calc_yone(yonetime);
-      //   calc_yzero(yzero,time);
-      //   //
-      //   wData(&outfile,&outfile,yzero,velzero,time,1,pp);
-      //   wData(&outfile,&outfile,yone,velzero,time,1,pp);
-      // }
       wData(&outfile,&outfile,y,vel);                                     // Code it in your model.cpp
       outfile.close();
   }
@@ -107,7 +104,6 @@ int main(int argc, char** argv){
     wData(&outfile,&outfile,y_tr,vel_tr,time,np_tracer,pp_tracer);         // Code it in your model.cpp
     outfile.close();
   }
-  //
   // Initializing curv square and ss. It won't depend on the configuration number.
   // Call a diagnostic function for all these things. Save names in model file.
   for (int ip = 0; ip < Np; ++ip){
@@ -117,40 +113,26 @@ int main(int argc, char** argv){
   /* Opening every file again in mode. This thing does not depend on configuration number and that's why 
      it is outside the loop */
   // fstream outfile_MSD("MSD.txt", ios::app);
-  fstream outfile_time(run_dir+"output/time.txt", ios::app);
-  fstream outfile_curvature(run_dir+"output/curvature.txt", ios::app);
-  fstream outfile_SS(run_dir+"output/material_point.txt", ios::app);
   timer = clock();
   timer_global = timer/CLOCKS_PER_SEC;
   while(time < TMAX){
-    //euler(pdim,&y[irb],time-dt,dt);
-    //rnkt2(pdim,&y[irb],time-dt,dt);
-    // rnkt4(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
     memcpy(y_prev,y,ndim*sizeof(double));
     time_prev = time;
     rnkf45(ndim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], EForceArr,tdiagnos);
     if (itracer){
       euler_tr(ndim_tr,y_prev,y_tr,vel_tr,time_prev,dt,EForceArr);
     }
-    // DP54(pdim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], tdiagnos);
-    // cout << time << endl;
     if (dt<dt_min){
       dt_min = dt;
     }
     if (time-start_time+dt>=tdiag*filenumber && time-start_time<tdiag*filenumber){tdiagnos=1;}
     else{tdiagnos=0;}
-    // cout << time << endl;
+    //
     if (time-start_time>=tdiag*filenumber){
       //
       if (ievolve_save){
         string l = run_dir+"output/var" + to_string(filenumber) + ".txt";
         outfile.open(l, ios::out);
-      // if (bcb==2){
-      //   calc_yzero(yzero,time);
-      //   calc_yone(yone,time);
-      //   wData(&outfile,&outfile,yzero,velzero,time,1,pp);
-      //   wData(&outfile,&outfile,yone,velzero,time,1,pp);
-      // }
         wData(&outfile,&outfile,y,vel);
         outfile.close();
       }
@@ -177,7 +159,7 @@ int main(int argc, char** argv){
       outfile_time << endl;
       outfile_SS << endl;
       filenumber = filenumber+1;
-      cout<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<TMAX<<"\n";
+      outfile_terminal<<"Done, time="<<time << "\t dt=" << dt <<"\t TMAX="<<TMAX<<"\n";
       tdiagnos=0;
       itn=itn+1;
     }
@@ -187,10 +169,11 @@ int main(int argc, char** argv){
   outfile_time.close();
   outfile_curvature.close();
   outfile_SS.close();
+  outfile_terminal.close();
   //
-  cout << "Total number of iteration: " << itn << endl;
-  cout << "Total time elapsed: " << timer_global << "s" << endl;
-  cout << "Minimum value of dt: " << dt_min << endl;  
+  outfile_terminal << "Total number of iteration: " << itn << endl;
+  outfile_terminal << "Total time elapsed: " << timer_global << "s" << endl;
+  outfile_terminal << "Minimum value of dt: " << dt_min << endl;  
   //----------------------------
   MPI_Finalize();
 }
@@ -206,7 +189,7 @@ void read_param(string fname){
   AA = 1.5*pow(10,-5)*pow(height,4)*facAA;
   HH = 16*AA/(dd*dd);
   //
-  cout << "sigma = " << sigma << "; facAA = " << facAA << endl;
+  outfile_terminal << "sigma = " << sigma << "; facAA = " << facAA << endl;
   myfile.close();
 }
 /********************************************/
@@ -215,6 +198,6 @@ void read_evolve(string fname){
   myfile.open(fname);
   myfile>>TMAX;
   myfile>>TotalFiles;
-  cout << "TMAX = " << TMAX << "; TotalFiles = " << TotalFiles << endl;
+  outfile_terminal << "TMAX = " << TMAX << "; TotalFiles = " << TotalFiles << endl;
   myfile.close();
 }
