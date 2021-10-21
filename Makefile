@@ -4,7 +4,7 @@ MODEL=estring2dim
 #MODEL=particle_in_mag
 CUDA=nocuda
 folder=output
-HOST=norlx65
+HOST=norlx65_mpi
 exec=ode
 # ---------------------------------------------------------------------
 default:

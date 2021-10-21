@@ -19,4 +19,4 @@ curv2y:
 tracer:
 	${compile} -o ${exec}.exe misc.cpp model.cpp test_tracer.cpp
 MPI:
-	${compile_mpi} -o ${exec}.exe io.cpp misc.cpp ode.cpp solve_mpi.cpp model.cpp
+	${compile} -o ${exec}.exe io.cpp misc.cpp ode.cpp solve_mpi.cpp model.cpp

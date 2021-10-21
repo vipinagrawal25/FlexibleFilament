@@ -1,0 +1,1 @@
+compile=mpic++ -I ${ES}/lib -O2 -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11
