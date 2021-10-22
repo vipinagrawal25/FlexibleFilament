@@ -25,6 +25,7 @@ int TotalFiles;
 /* ----------------------------------------*/
 int main(int argc, char** argv){
   /*-------------MPI part starts-------------------------*/
+  int first_folder=1;
   MPI_Init(&argc, &argv);
   // Get the number of processes
   int world_size;
@@ -37,12 +38,14 @@ int main(int argc, char** argv){
   int name_len;
   MPI_Get_processor_name(processor_name, &name_len);
   /*-------------MPI part ends-------------------------*/
+  string run_dir = "run" + to_string(world_rank+first_folder) + "/";
+  cout << "# I have access to " + run_dir << endl;
+  //
   fstream outfile_terminal(run_dir+"terminal.out", ios::app);
   fstream outfile_time(run_dir+"output/time.txt", ios::app);
   fstream outfile_curvature(run_dir+"output/curvature.txt", ios::app);
   fstream outfile_SS(run_dir+"output/material_point.txt", ios::app);
   //
-  string run_dir = "run" + to_string(world_rank+1) + "/";
   pid_t pid = getpid();
   outfile_terminal << "# ID for this process is: " << pid << endl;
   int ndim_tr = np_tracer*pp_tracer;
@@ -163,8 +166,9 @@ int main(int argc, char** argv){
       tdiagnos=0;
       itn=itn+1;
     }
-    exit(1);
   }
+  //
+  MPI_Barrier(MPI_COMM_WORLD);
   timer_global = clock()/CLOCKS_PER_SEC - timer_global;
   outfile_time.close();
   outfile_curvature.close();
@@ -189,7 +193,7 @@ void read_param(string fname){
   AA = 1.5*pow(10,-5)*pow(height,4)*facAA;
   HH = 16*AA/(dd*dd);
   //
-  outfile_terminal << "sigma = " << sigma << "; facAA = " << facAA << endl;
+  cout << "sigma = " << sigma << "; facAA = " << facAA << endl;
   myfile.close();
 }
 /********************************************/
@@ -198,6 +202,6 @@ void read_evolve(string fname){
   myfile.open(fname);
   myfile>>TMAX;
   myfile>>TotalFiles;
-  outfile_terminal << "TMAX = " << TMAX << "; TotalFiles = " << TotalFiles << endl;
+  cout << "TMAX = " << TMAX << "; TotalFiles = " << TotalFiles << endl;
   myfile.close();
 }

@@ -17,7 +17,7 @@ double const dd = 0.005; 					// diameter of the filament.
 double const viscosity = 10;				// Equivalent to kinematic viscosity of glycerin
 double const ShearRate = 2;
 double const angularVel = 3;
-char const UseRP = 'Y';						// N -- Local drag, Y -- Global drag
+char const UseRP = 'N';						// N -- Local drag, Y -- Global drag
 /* BC Not needed in Peskin way*/
 double const bcb = 1;      					// Boundary condition at bottom, 0 - fixed, 1 - free, 2 - clamped.
 double const bct = 1;       				// Boundary condition at top. 1 - free.

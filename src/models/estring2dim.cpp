@@ -344,7 +344,6 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
   vec2 FF = *add_FF;
   double yzero[2] = {0.,0.};
   double yone[2] = {0.,0.};
-  cout << "period = " << period <<"; AA = " << AA << "; HH = " << HH << endl;
   // Since I am passing the address of force in add_FF and the same goes for Kapppsqr
   // vec2 FF;
   /* Here the problem is that Xzero has been taken as the first point of the rod and which is claimed to be 
