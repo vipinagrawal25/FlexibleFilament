@@ -18,7 +18,6 @@ double norm(double *y, int nn );
 double norm(const double *y, int nn );
 void downScale(double *yscaled, double *y, int factor, int nn );
 void zeros(double *yzero, int ndim);
-double abs(double temp);
 // void print(vec2 *arr, int nn);
 /* -----------------------------------------------*/
 #endif
