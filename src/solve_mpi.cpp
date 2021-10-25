@@ -41,6 +41,7 @@ int main(int argc, char** argv){
   string run_dir = "run" + to_string(world_rank+first_folder) + "/";
   cout << "# I have access to " + run_dir << endl;
   //
+  system( ("exec mkdir "+run_dir+"output").c_str() );
   fstream outfile_terminal(run_dir+"terminal.out", ios::app);
   fstream outfile_time(run_dir+"output/time.txt", ios::app);
   fstream outfile_curvature(run_dir+"output/curvature.txt", ios::app);
@@ -89,8 +90,6 @@ int main(int argc, char** argv){
   // Deleting contents of the folder and creating folder again.
   // exit(1);
   eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS,EForceArr);
-  //
-  system( ("exec mkdir "+run_dir+"output").c_str() );
   //
   if (ievolve_save){
      outfile.open(run_dir + "output/var0.txt");
@@ -167,8 +166,6 @@ int main(int argc, char** argv){
       itn=itn+1;
     }
   }
-  //
-  MPI_Barrier(MPI_COMM_WORLD);
   timer_global = clock()/CLOCKS_PER_SEC - timer_global;
   outfile_time.close();
   outfile_curvature.close();
@@ -179,6 +176,8 @@ int main(int argc, char** argv){
   outfile_terminal << "Total time elapsed: " << timer_global << "s" << endl;
   outfile_terminal << "Minimum value of dt: " << dt_min << endl;  
   //----------------------------
+  MPI_Barrier(MPI_COMM_WORLD);
+  //
   MPI_Finalize();
 }
 /********************************************/

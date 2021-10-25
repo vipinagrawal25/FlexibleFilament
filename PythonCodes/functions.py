@@ -258,6 +258,50 @@ def GetCurv(Folder='output/',code='CPU',dim=3,wDataMeth=1):
 			# kappa[isnap,1:NN+1]=sqrt(curvsqr[isnap,:])*CurvatureSign(curvsqr[isnap,:],yy,zz,eps)
 	savetxt(Folder+'kappa.txt',kappa,fmt='%.5e')
 
+def GetCurv2(Folder='output/',code='CPU',dim=3,wDataMeth=1):
+	# This function will take the square root of curvature. Sign of the final thing would be decided
+	# by double derivative of the position vector. If the function is convex, curvature can be negative
+	# else the curvature would be positive.
+	dd=loadtxt('revolve.txt')
+	# time=dd[:,0]
+	nsnap = int(dd[1])
+	# print(nsnap)
+	NN=256
+	kappa=zeros([nsnap,NN+1])
+	# kappa[:,0]=time
+	tangent=zeros([NN-1,2])
+	position=zeros([NN,2])
+	if (code=='CPU'):
+		for isnap in range(1,nsnap):
+			kappa[isnap,0]=nsnap/50;
+			dd = loadtxt(Folder+'var'+str(isnap)+'.txt')
+			if wDataMeth==1 and dim==3:
+				position=dd[:,1:3]
+			elif wDataMeth==1 and dim==2:
+				position=dd[:,0:2]
+			elif wDataMeth==2 and dim==2:
+				position[:,0] = dd[2::4]
+				position[:,1] = dd[4::4]
+			tangent=diff(position,axis=0)
+			for iN in range(NN-1):
+				tangent[iN,:]=tangent[iN,:]/sqrt( tangent[iN,0]**2 + tangent[iN,1]**2 )
+			kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])
+	elif (code == 'GPU'):
+		dd=loadtxt(Folder+"PSI")
+		zz=zeros(NN)
+		yy=zeros(NN)
+		for isnap in range(1,nsnap):
+			for iN in range(0,NN):
+				yy[iN] = dd[isnap,3*iN+1]
+				zz[iN] = dd[isnap,3*iN+3]
+			tangent[:,0]=diff(yy)
+			tangent[:,1]=diff(zz)
+			for iN in range(NN-1):
+				tangent[iN,:]=tangent[iN,:]/sqrt( tangent[iN,0]**2 + tangent[iN,1]**2 )
+			kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])    		
+			# kappa[isnap,1:NN+1]=sqrt(curvsqr[isnap,:])*CurvatureSign(curvsqr[isnap,:],yy,zz,eps)
+	savetxt(Folder+'kappa.txt',kappa,fmt='%.5e')
+
 def SineTransform(dd,length=1.28,dia=0.005):
     NN=dd.size
     CurvSine=1/NN*dst(dd,type=1)
@@ -271,7 +315,6 @@ def vel_tracer(dd,vel_abs,time,Xtracer,wave='sine',height=1.28,ShearRate=2,sigma
     vel_amb = zeros([NN,3])
     tracer_amb = zeros(3)
     omega=ShearRate*sigma
-    
     if wave=='sine':
     	for i in range(0,NN):
         	vel_amb[i,1] = ShearRate*(height-dd[i,2])*sin(omega*time)

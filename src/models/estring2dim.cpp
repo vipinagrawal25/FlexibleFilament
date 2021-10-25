@@ -655,7 +655,7 @@ void iniconf(double *y){
         }
       }
       //
-      while(abs(CurvLength-height) > 0.01){
+      while(absolute(CurvLength-height) > 0.01){
         for (int ip = 0; ip < Np; ++ip){
           R[ip].y = R[ip].y*pow((height/CurvLength),1.732);
           R[ip].x = R[ip].x;

@@ -18,14 +18,14 @@ bool FileExists(const std::string &s){
   return (stat (s.c_str(), &buffer) == 0);
 }
 /*-----------------------------------------------*/
-// template<typename T>
-// T abs(T value){
-//   if (value>=0){
-//     return value;
-//   }else{
-//     return value*(-1);
-//   }
-// }
+template<typename T>
+T absolute(T value){
+  if (value>=0){
+    return value;
+  }else{
+    return value*(-1);
+  }
+}
 /*----------------------------------------------*/
 void __attribute__((weak)) check_param(){
   cout << "I believe all your model parameters are physical. Otherwise, define function: "
