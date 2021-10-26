@@ -2,7 +2,7 @@
 #ifndef FILE_MAPDYN_SEEN
 #define FILE_MAPDYN_SEEN
 // #include "main.cu"
-#define MaxIter 128000
+#define MaxIter 1280
 #include <Eigen/Core>
 /*--------------------------------------------------*/
 struct MV{
@@ -13,7 +13,7 @@ struct MV{
   bool istab;		// Do you want to calculate the stability of the orbit?
   // bool irel_orb;
   int mapdim;
-  string guess_space;
+  std::string guess_space;
   // int ndiag;
   // int ldiag;
 };

@@ -320,18 +320,18 @@ void calc_Xconstrain(vec2* Xcons, double time){
 }
 /**************************/
 void calc_yone(double *yone, double time){
-  double angularVel = 2*M_PI/period;
+  double omega = 2*M_PI/period;
   double yzero[2];
   calc_yzero(yzero,time);
-  yone[0] = yzero[0] + aa*cos(angularVel*time);
-  yone[1] = yzero[1] + aa*sin(angularVel*time);
+  yone[0] = yzero[0] + aa*cos(omega*time);
+  yone[1] = yzero[1] + aa*sin(omega*time);
   // print(yone,2);
 }
 /**************************/
 void calc_yzero(double *yzero, double time){
-  double angularVel = 2*M_PI/period;
-  yzero[0] = height/2*cos(angularVel*time);
-  yzero[1] = height/2*sin(angularVel*time);
+  double omega = 2*M_PI/period;
+  yzero[0] = height/2*cos(omega*time);
+  yzero[1] = height/2*sin(omega*time);
 }
 /**************************/
 void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa, double time){

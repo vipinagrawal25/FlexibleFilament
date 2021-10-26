@@ -11,7 +11,8 @@ using namespace std;
 void wData(ofstream *fptr, double *y, double time, int Npt, int ppt){
   // If we do not want to write velocity in a file.
   int ndimt = Npt*ppt;
-  switch(wDataMeth){
+  int wDataMeth_t=2;
+  switch(wDataMeth_t){
     case 1:
       for(int ip = 0; ip < Npt; ++ip){
         for (int jp = 0; jp < ppt; ++jp){
@@ -59,7 +60,6 @@ void wData(ofstream *fptr, ofstream *fptr_vel, double *y, double *vel, double ti
         *fptr << '\n';
       }
       break;
-
     case 2:
       (*fptr) << setprecision(15) << time << "\t";
       (*fptr_vel) << setprecision(15) << time << "\t";
@@ -87,6 +87,7 @@ void rData(double *y,string fname, int Npt, int ppt){
   ifstream myfile;
   //
   double ndimt = Npt*ppt;
+  // cout << wDataMeth << endl;
   switch(rDataMeth){
     case 1:
       myfile.open(fname);
@@ -100,7 +101,7 @@ void rData(double *y,string fname, int Npt, int ppt){
         while(myfile >> ch){y[cnt]=ch;cnt++;}
         myfile.close();
       }
-      else if(cnt==pp*ndim){
+      else if(cnt==pp*ndimt){
         myfile.open(fname);
         for(int idim = 0; idim < Npt; ++idim){
           for (int ip = 0; ip < ppt; ++ip){

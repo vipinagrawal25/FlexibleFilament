@@ -50,7 +50,7 @@ for i in range(0,len(Things)):
 	elif Things[i]=="MSD_no_trans":
 		MSD_no_trans()
 	elif Things[i]=="SqrtCurvature":
-		GetCurv2(dim=2,wDataMeth=1)
+		GetCurv(dim=3,wDataMeth=1)
 	elif Things[i]=="TracerVelocity":
 		Vtracer=VtraceTimeSer(sigma=0.75,Xtracer=Xtracer9)
 		NP.save('output/Vtracer9.npy',Vtracer)

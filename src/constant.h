@@ -3,7 +3,7 @@
 //---------------------------//
 #define TimeScheme "rnkf45"
 #define time_tol 1.e-9
-#define err_tol 1.e-2
+#define err_tol 2.e-2
 // #define delta 1.e-2
 #define tiny 1.e-12
 #define SysType "continuous"

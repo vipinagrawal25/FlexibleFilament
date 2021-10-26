@@ -42,7 +42,7 @@ void assign_map_param(){
   /* Set up parameters for map iteration */
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
-  MM.period = 8.;
+  MM.period = 4.;
   MM.iorbit = 2.;     // 0 if you already have the orbit,
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
@@ -155,6 +155,7 @@ bool periodic_orbit(double ytrans_all[], double fytrans[],
       for (int itry = 0; itry < MaxTry; ++itry){
         cout << "# Starting next try:" << itry << endl;
         get_yall(ytrans_all,fytrans,yall,fy,time);
+        // print(yall,period*ndim);
         if(norm(fytrans,mapdim)<err_tol*mapdim*10){Error = SqEr(fytrans,ytrans_all,mapdim)/(err_tol*mapdim);}
         else{Error = SqEr(fytrans,ytrans_all,mapdim)/norm(fytrans,mapdim);}
         cout << "# Error= " << Error << endl;
@@ -338,7 +339,7 @@ void map_one_iter(double *y){
 /*-----------------------------------------------*/
 // function to find out whether given initial condition is a periodic orbit or not?
 bool IsOrbit(double y[]){
-  int mapdim = MM.mapdim; 
+  int mapdim = MM.mapdim;
   double fy[mapdim];
   memcpy(fy,y,mapdim*sizeof(double));
   map_multiple_iter(fy);
