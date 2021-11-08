@@ -27,6 +27,7 @@ int main(){
   // important. So we wil keep it in the wrong way, as most of time this would give right result.
   double dt_min = 10;
   double dt = start_dt;
+  int tdiagnos = 1;
   //----------------------------
   int itn=1;
   clock_t timer;
@@ -36,8 +37,8 @@ int main(){
   time = start_time;
   iniconf(y);
   // Deleting contents of the folder and creating folder again.
-  eval_rhs(rhs,y,time,EForceArr,1);
-  if(!FileExists("output") && wDataMeth==1){system("exec mkdir output");}
+  eval_rhs(vel,y,time,EForceArr,1);
+  if(!FileExists("output")){system("exec mkdir output");}
   //
   if(wDataMeth==1){  
     outfile.open("output/var0.txt");
@@ -60,7 +61,7 @@ int main(){
     memcpy(y_prev,y,ndim*sizeof(double));
     time_prev = time;
     //
-    rnkf45(ndim, &y[0], &vel[0], &time, &dt, EForceArr, tdiagnos);
+    rnkf45(ndim, y, vel, &time, &dt, EForceArr, tdiagnos);
     if (dt<dt_min){
       dt_min = dt;
     }

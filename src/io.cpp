@@ -8,7 +8,7 @@
 #include "constant.h"
 using namespace std;
 /*-----------------------------------------------*/
-void wData(ofstream *fptr, double *y, double time, int Npt, int ppt, int wDataMeth){
+void wData(ofstream *fptr, double *y, double time, int Npt, int ppt){
   // If we do not want to write velocity in a file.
   int ndimt = Npt*ppt;
   switch(wDataMeth){

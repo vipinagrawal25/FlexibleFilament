@@ -24,14 +24,14 @@ void eval_rhs(double rhs[], double y[], double time){
 //   }
 // }
 /*********************************/
-void euler_tr(unsigned int ndim_tr,double *y, double *y_tr, double* vel_tr, double time, double dt,
-              double *EForceArr){
-  int idim;
-  eval_rhs_tr(time,EForceArr,y,y_tr,vel_tr);
-  for(idim=0;idim<ndim_tr;idim++){
-    y_tr[idim]=y_tr[idim]+vel_tr[idim]*dt;
-  }
-}
+// void euler_tr(unsigned int ndim_tr,double *y, double *y_tr, double* vel_tr, double time, double dt,
+//               double *EForceArr){
+//   int idim;
+//   eval_rhs_tr(time,EForceArr,y,y_tr,vel_tr);
+//   for(idim=0;idim<ndim_tr;idim++){
+//     y_tr[idim]=y_tr[idim]+vel_tr[idim]*dt;
+//   }
+// }
 /*********************************/
 // void rnkt2(double *y,double* vel,double time,double dt){
 //   double  temp[ndim],k1[ndim],k2[ndim];
@@ -95,7 +95,8 @@ void rnkf45(double *y, double *add_time, double* add_dt){
   rnkf45(ndim,&y[0],&vel[0],add_time,add_dt,&EForceArr[0],ldiagnos);
 }
 /*********************************/
-void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double *EForceArr, double ldiagnos){
+void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double *EForceArr, 
+            double ldiagnos){
 // Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
 // add_time is the address of time and the same goes for dt as well.
 // 	double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, yold[ndim];
