@@ -45,8 +45,8 @@ int main(){
     wData(&outfile,&outfile,y,vel);                                     //Code it in your model.cpp
     outfile.close();
   }else if(wDataMeth==2){
-    outfile.open("PSI");
-    outfile_vel.open("VEL");
+    outfile.open("PSI", ios::out);
+    outfile_vel.open("VEL", ios::out);
     wData(&outfile,&outfile_vel,y,vel);                                     //Code it in your model.cpp
   }
   /*Opening every file again in mode. This thing does not depend on configuration number and that's why 
@@ -71,10 +71,10 @@ int main(){
       if (wDataMeth==1){
         string l = "output/var" + to_string(filenumber) + ".txt";
         outfile.open(l, ios::out);
-        wData(&outfile,&outfile,y,vel);
+        wData(&outfile,&outfile,y,vel,time);
         outfile.close();
       }else if(wDataMeth==2){
-        wData(&outfile,&outfile_vel,y,vel);
+        wData(&outfile,&outfile_vel,y,vel,time);
       }
       /* Call a function to write both diagnostic variable.*/
       outfile_time << time;

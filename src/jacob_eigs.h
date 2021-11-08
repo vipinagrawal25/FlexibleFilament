@@ -144,7 +144,7 @@ private:
 // }
 // /*--------------------------------------------------------------------------*/
 template<int const SelectionRule>
-bool jacob_eigvalvec(VectorXcd *eigval, MatrixXcd *eigvec, int neigs, int ndim,void func(double*), 
+bool jacob_eigvalvec(VectorXcd *eigval, MatrixXcd *eigvec, int neigs, int ndim, void func(double*), 
                      double Xini[], double eps_rel=1.e-4){
   JdotX op;
   op.Xstar = Xini;
