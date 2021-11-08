@@ -6,6 +6,7 @@ import matplotlib.pyplot as P
 #%matplotlib notebook
 from importlib import reload
 import h5py
+from stripack import trmesh
 import FuncMC2d as F
 #-----------------------------
 P.rc('font',size=22)
@@ -23,8 +24,20 @@ Np=64
 #print(rrini)
 #F.MC_surf(Np,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=1000,kBT=1.,
 #          dfac=Np,interactive=True)
-F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=1000,kBT=1.,
-          dfac=Np,interactive=True)
+rr = F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=1000,kBT=1.,
+                     dfac=Np,interactive=False)
+lats = rr[:,0]-np.pi/2
+lons = rr[:,1]
+print('max longitude=',(np.abs(lons)).max())
+print('min latitude=',(np.abs(lats)).max()-np.pi/2)
+P.plot(lons, lats,'*')
+P.grid(True)
+P.show()
+print('lat(min,max)',np.min(lats),np.max(lats))
+print(np.pi/2)
+print("MC done, now doing triangulation")
+tri = trmesh(lons, lats)
+print(tri)
 #fig = P.figure()
 #ax = fig.add_subplot(111)
 #ax = F.plot_pos(ax,rr,rr)

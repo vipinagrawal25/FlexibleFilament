@@ -42,6 +42,7 @@ def MC_surf(N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
         else:
             print('Run over, go home')
             break
+    return rr
 #-----------------------------------------#
 def inidist(N,Lone=2*np.pi,Ltwo=np.pi,metric='cart'):
     if metric == 'cart':
@@ -54,7 +55,7 @@ def inidist(N,Lone=2*np.pi,Ltwo=np.pi,metric='cart'):
     return rrini
 #-----------------------------------------#
 def rand_sph(N):
-    ran = np.zeros([N,2])
+    ran = np.zeros([N,2],dtype='double')
     # the first two points are always at the two poles
     ran[0,0]=0
     ran[0,1]=0
@@ -127,21 +128,20 @@ def increment_cart(rr,kp,Lone=2*np.pi, Ltwo=2*np.pi,dfac=64):
 def increment_sph(rr,kp,ntry=10,dfac=64):
 #        print(kp)
     th0 = rr[kp,0]
-    for itry in range(ntry) :
-        dth = (np.pi/dfac)*np.random.uniform(low=-1,high=1.)
-        th1 = th0+dth
-        if th1 < np.pi or th1 > 0 :
-            break
-        else:
-            if itry == ntry-1:
-                print(ntry,' tries failed to move a particle..quiting')
-                quit()
+    th1 = get_rand_th1(th0,dfac=dfac)
     phi0 = rr[kp,1]
     dphi = (2*np.pi/dfac)*np.random.uniform(low=-1,high=1.)
     phi1 = pbc(phi0+dphi,2*np.pi)
     rr[kp,0] = th1
     rr[kp,1]= phi1
     return rr
+#-----------------------------------------#
+def get_rand_th1(th0,dfac=32,ntry=10):
+    dth = (np.pi/dfac)*np.random.uniform(low=-1,high=1.)
+    th1 = th0+dth
+    if th1 > np.pi or th1 < 0 :
+            get_rand_th1(th0)
+    return th1
 #-----------------------------------------#
 def pbc(x,Lmax):
     if x > Lmax :
@@ -243,7 +243,7 @@ def En(rr,kp,metric='cart'):
             E = E + ee
     return E
 #---------------------------------------------#
-def LenardJonesRep(R,epsilon=1e-10,sigma=1.):
+def LenardJonesRep(R,epsilon=1e-8,sigma=0.2):
     if R == 0:
         print('zero relative distance betn two particles! quiting')
         quit()
