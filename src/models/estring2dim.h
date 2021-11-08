@@ -33,7 +33,7 @@ int const iext_flow = 3;   /* External flow: 1->shear rate changes as step funct
 int const niniconf = 1;    /* Configuration of the system at t = 0. 0 -> sine perturbation in  the  filament. 
 							1 -> Straight filament, 2-> , -1 -> read from a file*/
 int const ievolve_save=0;
-std::string const datafile = "sol1";				// If you want to read input from some file, Mention the file name.
+std::string const datafile = "sol1";		// If you want to read input from some file, Mention the file name.
 int const itracer=2;						// 0 -> No tracers, 1 -> tracers on square lattice, 3 -> tracer on circular lattice? 
 int const np_tracer=1024;
 int const pp_tracer=3;

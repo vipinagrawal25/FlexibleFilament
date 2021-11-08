@@ -14,7 +14,7 @@ using namespace Eigen;
 using namespace std;
 // /*****************************************************************/
 static double compute_eps(double Xstar[], const double x_in[], int nn, double eps_rel);
-// // template<int const SelectionRule, int neigs, int ndim, typename T>
+// template<int const SelectionRule, int neigs, int ndim, typename T>
 // // bool jacob_eigvalvec(double eigval[], double eigvec[][ndim], void func(double*, T*),
 // //                      double Xini[], T *TV);
 

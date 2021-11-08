@@ -602,7 +602,6 @@ void wPSI ( double PSI[], double VEL[] ,double tau){
   fp << tau << "\t" ;
   fp_vel << tau << "\t";
   for ( int ichain = 0; ichain< ndim; ichain++ ){ 
-    // fprintf( fp, "%lf\t", PSI[ichain] );
     fp << PSI[ichain] << "\t" ;
     fp_vel << VEL[ichain] << "\t";
   }

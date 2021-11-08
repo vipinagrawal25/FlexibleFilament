@@ -5,14 +5,13 @@
 #include "misc.h"
 #include "model.h"
 #include <iomanip>
-#include "input.h"
+#include "constant.h"
 using namespace std;
 /*-----------------------------------------------*/
-void wData(ofstream *fptr, double *y, double time, int Npt, int ppt){
+void wData(ofstream *fptr, double *y, double time, int Npt, int ppt, int wDataMeth){
   // If we do not want to write velocity in a file.
   int ndimt = Npt*ppt;
-  int wDataMeth_t=2;
-  switch(wDataMeth_t){
+  switch(wDataMeth){
     case 1:
       for(int ip = 0; ip < Npt; ++ip){
         for (int jp = 0; jp < ppt; ++jp){
@@ -87,8 +86,6 @@ void rData(double *y,string fname, int Npt, int ppt){
   ifstream myfile;
   //
   double ndimt = Npt*ppt;
-  // cout << rDataMeth << endl;
-
   switch(rDataMeth){
     case 1:
       if (FileExists(fname)==false){

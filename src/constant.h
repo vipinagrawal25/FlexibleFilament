@@ -4,11 +4,11 @@
 #define TimeScheme "rnkf45"
 #define time_tol 1.e-9
 #define err_tol 2.e-2
-// #define delta 1.e-2
 #define tiny 1.e-12
 #define SysType "continuous"
 #define ievolve_save 1
-#define wDataMeth 1
+#define wDataMeth 2
+#define rDataMeth 2
 //--------------------------//
 #endif
 /*  TimeScheme: You can choose Euler, rnkt2, rnkt4, rnkf45(adaptive runge-kutta scheme), 

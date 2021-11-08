@@ -1,6 +1,6 @@
 # Makefile for compiling the ode-solver in cpp 
 # ---------------------------------------------------------------------
-MODEL=estring2dim
+MODEL=shell
 #MODEL=particle_in_mag
 CUDA=nocuda
 folder=output

@@ -22,6 +22,7 @@ int main(){
   double y[ndim],y_prev[ndim],vel[ndim],EForceArr[ndim];
   double time,time_prev,timer_global;
   int filenumber=1;
+  ofstream outfile, outfile_vel;
   // But these things are only for diagnostic purpose and it's too much hassle for someting that is not even 
   // important. So we wil keep it in the wrong way, as most of time this would give right result.
   double dt_min = 10;
@@ -32,26 +33,21 @@ int main(){
   // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt 
   // time for a particular value of AA.
   check_param();
-  //
   time = start_time;
-  if (time){
-    // read data from output/time.txt
-    // Let's just say that we are saving data as the same interval as earlier.
-    iniconf(y,&time,tdiag);
-    filenumber = (int) (time/tdiag);
-  }
-  if (time==0){
-    iniconf(y);
-  }
+  iniconf(y);
   // Deleting contents of the folder and creating folder again.
-  // exit(1);
-  eval_rhs();
+  eval_rhs(rhs,y,time,EForceArr,1);
+  if(!FileExists("output") && wDataMeth==1){system("exec mkdir output");}
   //
-  system("exec mkdir output");
-  //
-  outfile.open("output/var0.txt");
-  wData(&outfile,&outfile,y,vel);                                     // Code it in your model.cpp
-  outfile.close();
+  if(wDataMeth==1){  
+    outfile.open("output/var0.txt");
+    wData(&outfile,&outfile,y,vel);                                     //Code it in your model.cpp
+    outfile.close();
+  }else if(wDataMeth==2){
+    outfile.open("PSI");
+    outfile_vel.open("VEL");
+    wData(&outfile,&outfile_vel,y,vel);                                     //Code it in your model.cpp
+  }
   /*Opening every file again in mode. This thing does not depend on configuration number and that's why 
     it is outside the loop */
   fstream outfile_time("output/time.txt", ios::app);
@@ -63,18 +59,22 @@ int main(){
   while(time < TMAX){
     memcpy(y_prev,y,ndim*sizeof(double));
     time_prev = time;
-
-    rnkf45(ndim, &y[0], &vel[0], &time, &dt, &CurvSqr[0], &SS[0], endlForceArr,tdiagnos);
+    //
+    rnkf45(ndim, &y[0], &vel[0], &time, &dt, EForceArr, tdiagnos);
     if (dt<dt_min){
       dt_min = dt;
     }
     if (time+dt>=tdiag*filenumber && time<tdiag*filenumber){tdiagnos=1;}
     else{tdiagnos=0;}
     if (time>=tdiag*filenumber){
-      string l = "output/var" + to_string(filenumber) + ".txt";
-      outfile.open(l, ios::out);
-      wData(&outfile,&outfile,y,vel);
-      outfile.close();
+      if (wDataMeth==1){
+        string l = "output/var" + to_string(filenumber) + ".txt";
+        outfile.open(l, ios::out);
+        wData(&outfile,&outfile,y,vel);
+        outfile.close();
+      }else if(wDataMeth==2){
+        wData(&outfile,&outfile_vel,y,vel);
+      }
       /* Call a function to write both diagnostic variable.*/
       outfile_time << time;
       filenumber = filenumber+1;
@@ -82,6 +82,10 @@ int main(){
       tdiagnos=0;
       itn=itn+1;
     }
+  }
+  if(wDataMeth==2){
+    outfile.close();
+    outfile_vel.close();
   }
   timer_global = clock()/CLOCKS_PER_SEC - timer_global;
   outfile_time.close();
