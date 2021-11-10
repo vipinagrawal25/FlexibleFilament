@@ -894,31 +894,31 @@ void kappa2y(double y[], double kappa[]){
     vec2y(y,XX,ip);
   }
   // Is it physical?
-  bool isphysical=1;
-  double d_rij;
-  vec2 X1;
-  vec2 X2;
-  for (int ip = 0; ip < Np; ++ip){
-    for (int jp = ip+1; jp < Np; ++jp){
-       X1 = y2vec2(y,ip);
-       X2 = y2vec2(y,jp);
-       d_rij = norm(X1-X2);
-       if (d_rij<dd/2){
-         isphysical=0;
-         break;
-       }
-    }
-    if (isphysical==0){
-      break;
-    }
-  }
-  if (isphysical==0){
-    cout << "# I am halving the curvature to take a physical NK step." << endl;
-    for (int ip = 0; ip < Np; ++ip){
-      kappa[ip] = kappa[ip]/2;
-    }
-    kappa2y(y,kappa);
-  }
+  // bool isphysical=1;
+  // double d_rij;
+  // vec2 X1;
+  // vec2 X2;
+  // for (int ip = 0; ip < Np; ++ip){
+  //   for (int jp = ip+1; jp < Np; ++jp){
+  //      X1 = y2vec2(y,ip);
+  //      X2 = y2vec2(y,jp);
+  //      d_rij = norm(X1-X2);
+  //      if (d_rij<dd/2){
+  //        isphysical=0;
+  //        break;
+  //      }
+  //   }
+  //   if (isphysical==0){
+  //     break;
+  //   }
+  // }
+  // if (isphysical==0){
+  //   cout << "# I am halving the curvature to take a physical NK step." << endl;
+  //   for (int ip = 0; ip < Np; ++ip){
+  //     kappa[ip] = kappa[ip]/2;
+  //   }
+  //   kappa2y(y,kappa);
+  // }
   // cc = "previous";
 }
 /********************************************/
