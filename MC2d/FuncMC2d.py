@@ -140,7 +140,8 @@ def get_rand_th1(th0,dfac=32,ntry=10):
     dth = (np.pi/dfac)*np.random.uniform(low=-1,high=1.)
     th1 = th0+dth
     if th1 > np.pi or th1 < 0 :
-            get_rand_th1(th0)
+        #print(th0,dth,th1)
+        th1 = get_rand_th1(th0)
     return th1
 #-----------------------------------------#
 def pbc(x,Lmax):
@@ -254,3 +255,42 @@ def LenardJonesRep(R,epsilon=1e-8,sigma=0.2):
             V = epsilon*(sigma/R)**12
     return V
 #---------------------------------------------#
+def print_xyz(lats,lons,fname='ini_sph',radius=1.):
+    phi = lons
+    theta = lats+np.pi/2
+    x=radius*np.sin(theta)*np.cos(phi)
+    y=radius*np.sin(theta)*np.sin(phi)
+    z=radius*np.cos(theta)
+    hf = h5py.File(fname+'.h5','w')
+    hf.create_dataset('x',data=x)
+    hf.create_dataset('y',data=y)
+    hf.create_dataset('z',data=z)
+    hf.close()
+#------------------------------------
+def lat_lon_list(tri):
+    print(tri.lst)
+    print(tri.lptr)
+    print(tri.lend)
+    # we go over the number of particles
+    nptr=1
+    for ip in range(tri.npts):
+        end_ptr = tri.lend[ip]
+        kp = tri.lst[nptr-1]
+        nptr = tri.lptr[nptr-1]
+        print("=================================")
+        print('particle,end_ptr',kp,end_ptr)
+        print("=================================")
+        print('Its neighbours are:')
+        iter1 = 0
+        for iter1 in range(8):
+            kp = tri.lst[nptr-1]
+            print('particle,iter1',kp,iter1)
+            nptr = tri.lptr[nptr-1]
+            if nptr == end_ptr:
+                break
+#------------------------------------
+def lat_lon_neighbour(tri,k):
+    # print the latitude and longitude of the kth node and its 6 neighbours
+    print(tri.lats[k],tri.lons[k])
+    n1 = tri.lst[tri.lptr[k]]
+        

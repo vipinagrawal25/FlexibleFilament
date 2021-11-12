@@ -19,7 +19,7 @@ P.rc('xtick.minor',visible=True,size=4,width=1)
 P.rc('ytick.major',size=8,width=2)
 P.rc('ytick.minor',visible=True,size=4,width=1)
 #---------------------------------------------#
-Np=64
+Np=6
 #rrini = F.rand_sph(Np)
 #print(rrini)
 #F.MC_surf(Np,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=1000,kBT=1.,
@@ -37,7 +37,10 @@ print('lat(min,max)',np.min(lats),np.max(lats))
 print(np.pi/2)
 print("MC done, now doing triangulation")
 tri = trmesh(lons, lats)
-print(tri)
+print(dir(tri))
+F.lat_lon_list(tri)
+#print('writing x,y,z coordinates to a hdf5 file')
+#F.print_xyz(lats,lons,fname='ini_sph',radius=1.)
 #fig = P.figure()
 #ax = fig.add_subplot(111)
 #ax = F.plot_pos(ax,rr,rr)
