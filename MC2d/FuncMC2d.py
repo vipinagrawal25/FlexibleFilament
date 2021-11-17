@@ -1,3 +1,4 @@
+from __future__ import division
 import os as os
 import pencil_old as pc
 import numpy as np
@@ -8,6 +9,72 @@ from mpl_toolkits.axes_grid.inset_locator import (inset_axes, InsetPosition, mar
 from scipy.interpolate import interp1d
 from numpy import linalg as LA
 import h5py
+import plotly as pl
+import plotly.graph_objs as go
+import matplotlib.cm as cm
+from scipy.spatial import Delaunay
+from scipy.spatial import SphericalVoronoi, geometric_slerp
+from mpl_toolkits.mplot3d import proj3d
+#import plotly as py
+#from plotly.graph_objs import *
+#import plotly.tools as tls
+#-----------------------------------------#
+def SphVoronoi(rr,R=1,lplot=True):
+    Np = np.shape(rr)[0]
+    xyz = np.zeros([Np,3])
+    for ip in range(Np):
+        tht = rr[ip,0]
+        phi = rr[ip,1]
+        x = R*np.sin(tht)*np.cos(phi)
+        y = R*np.sin(tht)*np.sin(phi)
+        z = R*np.cos(tht)
+        xyz[ip] = np.array([x,y,z])
+    sv = SphericalVoronoi(xyz,radius=R)
+    if lplot:
+        plot_voronoi(xyz,sv)
+    return sv
+#-----------------------------------------#
+def plot_voronoi(points,sv):
+    t_vals = np.linspace(0, 1, 2000)
+    fig = P.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    # plot the unit sphere for reference (optional)
+    u = np.linspace(0, 2 * np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+    x = np.outer(np.cos(u), np.sin(v))
+    y = np.outer(np.sin(u), np.sin(v))
+    z = np.outer(np.ones(np.size(u)), np.cos(v))
+    ax.plot_surface(x, y, z, color='y', alpha=0.05)
+    # plot generator points
+    ax.scatter(points[2:, 0], points[2:, 1], points[2:, 2], c='r')
+    # plot Voronoi vertices
+    ax.scatter(sv.vertices[:, 0], sv.vertices[:, 1], sv.vertices[:, 2],
+                   c='g')
+    #ax.axhline(0.5, ls=':')
+    ax.scatter(points[0:2, 0], points[0:2, 1], points[0:2, 2], c='k')
+    for region in sv.regions:
+        n = len(region)
+        for i in range(n):
+            start = sv.vertices[region][i]
+            end = sv.vertices[region][(i + 1) % n]
+            print(i)
+            print(start)
+            print(end)
+            result = geometric_slerp(start, end, t_vals)
+            ax.plot(result[..., 0],
+                    result[..., 1],
+                    result[..., 2],
+                    c='k')
+    ax.azim = 10
+    ax.elev = 40
+    _ = ax.set_xticks([])
+    _ = ax.set_yticks([])
+    _ = ax.set_zticks([])
+    #fig.set_size_inches(4, 4)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    P.show()
 #-----------------------------------------#
 def MC_surf(N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
             interactive=True,dfac=64):
@@ -272,25 +339,236 @@ def lat_lon_list(tri):
     print(tri.lptr)
     print(tri.lend)
     # we go over the number of particles
-    nptr=1
+    """ We assume the algorithm works in the following way:
+    First start randomly with one node. Then go to all the neighbours 
+    of that node. The pointer lend tells you when to stop. Once you
+    stop assume that the place you stop is your next node and go around
+    listing its neighbours. But in this way, every pair of particles 
+    should appear only once """
+    node_ptr=1
     for ip in range(tri.npts):
         end_ptr = tri.lend[ip]
-        kp = tri.lst[nptr-1]
-        nptr = tri.lptr[nptr-1]
+        kp = tri.lst[node_ptr-1]
+        neigh_ptr = tri.lptr[node_ptr-1]
         print("=================================")
         print('particle,end_ptr',kp,end_ptr)
         print("=================================")
         print('Its neighbours are:')
         iter1 = 0
         for iter1 in range(8):
-            kp = tri.lst[nptr-1]
-            print('particle,iter1',kp,iter1)
-            nptr = tri.lptr[nptr-1]
-            if nptr == end_ptr:
+            jp = tri.lst[neigh_ptr-1]
+            print('particle,iter1',jp,iter1)
+            if neigh_ptr == end_ptr:
+                node_ptr = neigh_ptr
                 break
+            neigh_ptr = tri.lptr[neigh_ptr-1]
+
+
 #------------------------------------
 def lat_lon_neighbour(tri,k):
     # print the latitude and longitude of the kth node and its 6 neighbours
     print(tri.lats[k],tri.lons[k])
     n1 = tri.lst[tri.lptr[k]]
-        
+#--------------------------------
+def func_moebius():
+    u=np.linspace(0,2*np.pi, 24)
+    v=np.linspace(-1,1, 8)
+    u,v=np.meshgrid(u,v)
+    u=u.flatten()
+    v=v.flatten()
+
+    #evaluate the parameterization at the flattened u and v
+    tp=1+0.5*v*np.cos(u/2.)
+    x=tp*np.cos(u)
+    y=tp*np.sin(u)
+    z=0.5*v*np.sin(u/2.)
+
+    #define 2D points, as input data for the Delaunay triangulation of U
+    points2D=np.vstack([u,v]).T
+    tri = Delaunay(points2D)#triangulate the rectangle U
+    return x,y,z,tri
+#------------------------------------------
+def map_z2color(zval, colormap, vmin, vmax):
+    #map the normalized value zval to a corresponding color in the colormap
+
+    if vmin>vmax:
+        raise ValueError('incorrect relation between vmin and vmax')
+    t=(zval-vmin)/float((vmax-vmin))#normalize val
+    R, G, B, alpha=colormap(t)
+    return 'rgb('+'{:d}'.format(int(R*255+0.5))+','+'{:d}'.format(int(G*255+0.5))+\
+           ','+'{:d}'.format(int(B*255+0.5))+')'
+#-----------------------------------
+def map_z2color(zval, colormap, vmin, vmax):
+    #map the normalized value zval to a corresponding color in the colormap
+
+    if vmin>vmax:
+        raise ValueError('incorrect relation between vmin and vmax')
+    t=(zval-vmin)/float((vmax-vmin))#normalize val
+    R, G, B, alpha=colormap(t)
+    return 'rgb('+'{:d}'.format(int(R*255+0.5))+','+'{:d}'.format(int(G*255+0.5))+\
+           ','+'{:d}'.format(int(B*255+0.5))+')'
+#---------------------------------
+#To plot the triangles on a surface, we set in Plotly Mesh3d the lists of x, y, respectively z- coordinates of the vertices, and the lists of indices, i, j, k, for x, y, z coordinates of all vertices:
+#-------------------------------------------------------
+def tri_indices(simplices):
+    #simplices is a numpy array defining the simplices of the triangularization
+    #returns the lists of indices i, j, k
+
+    return ([triplet[c] for triplet in simplices] for c in range(3))
+#--------------------------------------------------------------
+def plotly_trisurf(x, y, z, simplices, colormap=cm.RdBu, plot_edges=None):
+    #x, y, z are lists of coordinates of the triangle vertices
+    #simplices are the simplices that define the triangularization;
+    #simplices  is a numpy array of shape (no_triangles, 3)
+    #insert here the  type check for input data
+
+    points3D=np.vstack((x,y,z)).T
+    tri_vertices=map(lambda index: points3D[index], simplices)# vertices of the surface triangles     
+    zmean=[np.mean(tri[:,2]) for tri in tri_vertices ]# mean values of z-coordinates of 
+                                                      #triangle vertices
+    min_zmean=np.min(zmean)
+    max_zmean=np.max(zmean)
+    facecolor=[map_z2color(zz,  colormap, min_zmean, max_zmean) for zz in zmean]
+    I,J,K=tri_indices(simplices)
+
+    triangles=go.Mesh3d(x=x,
+                     y=y,
+                     z=z,
+                     facecolor=facecolor,
+                     i=I,
+                     j=J,
+                     k=K,
+                     name=''
+                    )
+
+    if plot_edges is None:# the triangle sides are not plotted 
+        return [triangles]
+    else:
+        #define the lists Xe, Ye, Ze, of x, y, resp z coordinates of edge end points for each triangle
+        #None separates data corresponding to two consecutive triangles
+        lists_coord=[[[T[k%3][c] for k in range(4)]+[ None]   for T in tri_vertices]  for c in range(3)]
+        Xe, Ye, Ze=[np.ufunc.reduce(lambda x,y: x+y, lists_coord[k]) for k in range(3)]
+
+        #define the lines to be plotted
+        lines=go.Scatter3d(x=Xe,
+                        y=Ye,
+                        z=Ze,
+                        mode='lines',
+                        line=dict(color= 'rgb(50,50,50)', width=1.5)
+               )
+        return [triangles, lines]
+#------------------------------------
+def triang_moebius():
+    x,y,z,tri=func_moebius()
+    data1=plotly_trisurf(x,y,z, tri.simplices, colormap=cm.RdBu, plot_edges=True)
+    axis = dict(
+        showbackground=True,
+        backgroundcolor="rgb(230, 230,230)",
+        gridcolor="rgb(255, 255, 255)",
+        zerolinecolor="rgb(255, 255, 255)",
+    )
+    layout = go.Layout(
+        title='Moebius band triangulation',
+        width=800,
+        height=800,
+        scene=dict(
+            xaxis=dict(axis),
+            yaxis=dict(axis),
+            zaxis=dict(axis),
+            aspectratio=dict(
+                x=1,
+                y=1,
+                z=0.5
+            ),
+        )
+    )
+    fig1 = go.Figure(data=data1, layout=layout)
+
+    py.iplot(fig1, filename='Moebius-band-trisurf')
+#------------------------------------------------------
+def sphere(theta, phi): 
+    x=np.cos(phi)*np.cos(theta)
+    y=np.cos(phi)*np.sin(theta)
+    z=np.sin(phi)  
+    return x,y,z
+#------------------------------------------------------
+def barycentric(n):
+    return [(i/n,j/n, 1-(i+j)/n) for i in range(n,-1, -1) for j in range(n-i, -1, -1)]
+#------------------------------------------------------
+def triangles(n, point):
+    triplets=[]
+    i=0
+    j=1
+    for nr in range(1,n+1):
+        for k in range(nr):
+            triplets.append([point[i], point[j], point[j+1]])
+            i+=1
+            j+=1
+        j+=1
+    return triplets
+#------------------------------------------------------
+def divide_sides(t):
+    pts=[t[k] for k in range(3)]+[t[0]]
+    for k in range(1, 7, 2):
+        m=int((k-1)/2)
+        pts.insert(k, (t[m]+t[(m+1)%3])/2)
+    return pts
+#------------------------------------------------------
+def line_pts(tri, surface, color='#0000A0'):
+    # tri is the list of triangulation sub-triangles
+    # surface is the function implementing a surface parameterization
+    lines = []
+    for t in tri:
+        pts=divide_sides(t)
+        coords=zip(*[surface(pts[k][0], pts[k][1]) for k in range(7)])
+        lines.append(Scatter3d(x=coords[0], 
+                               y=coords[1],
+                               z=coords[2], 
+                               mode='lines', 
+                               line=Line(color=color,  
+                                         width=5)))
+    return lines
+#------------------------------------------------------
+def triang_sph():
+    theta=np.linspace(0,2*np.pi,40)
+    phi=np.linspace(-np.pi/2, np.pi/2, 30)
+    theta,phi=np.meshgrid(theta,phi)
+    x,y,z=sphere(theta,phi)
+    A=np.array([0, np.pi/12])
+    B=np.array([np.pi/3, np.pi/12])
+    C=np.array([np.pi/4, 7*np.pi/16])
+    T=[A,B,C]# Parametric triangle of vertices A,B,C
+    cartesian_coords=lambda  T, w: w[0]*T[0]+w[1]*T[1]+w[2]*T[2]
+    n=8
+    bar=barycentric(n)
+    pts_tri=[cartesian_coords(T, w) for w in bar]#list of triangulation points
+    tri=triangles(n, pts_tri)#list of sub-triangles in T
+    trace = Surface(
+        z=z, 
+        x=x,  
+        y=y,   
+        colorscale='Viridis',
+    )
+    axis = dict(
+        showbackground=True, 
+        backgroundcolor="rgb(230, 230,230)",
+        gridcolor="rgb(255, 255, 255)",      
+        zerolinecolor="rgb(255, 255, 255)",  
+    )
+    
+    data = Data([trace]+line_pts(tri, sphere))#plot both the sphere as a Surface object and the triangular wireframe
+    layout = Layout(
+        title='Triangular wireframe on  sphere',
+        width=700,
+        height=700,
+        scene=Scene(  
+            xaxis=XAxis(axis),
+            yaxis=YAxis(axis), 
+            zaxis=ZAxis(axis), 
+        ),
+        showlegend=False
+    )
+    
+    fig1 = Figure(data=data, layout=layout)
+    py.plot(fig1, filename='triangular-wireplot-2')
+#-----------------------------------------
