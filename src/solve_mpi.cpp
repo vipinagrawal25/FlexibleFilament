@@ -19,6 +19,7 @@ using namespace std;
 /* ----------------------------------------*/
 void read_param(string param_name);
 void read_evolve(string fname);
+void write_param(string fname);
 /* ----------------------------------------*/
 double period, AA, HH, TMAX;
 int TotalFiles;
@@ -55,6 +56,7 @@ int main(int argc, char** argv){
   //
   read_param(run_dir+"rparam.txt");
   read_evolve(run_dir+"revolve.txt");
+  write_param(run_dir+"wevolve.txt");
   //
   double CurvSqr[Np],SS[Np];
   double time,time_prev,timer_global;
@@ -201,4 +203,8 @@ void read_evolve(string fname){
   myfile>>TotalFiles;
   cout << "TMAX = " << TMAX << "; TotalFiles = " << TotalFiles << endl;
   myfile.close();
+}
+/********************************************/
+void  __attribute__((weak)) write_param( string fname ){
+  cout << "The user has not implmented way to write data!!!" << endl;
 }

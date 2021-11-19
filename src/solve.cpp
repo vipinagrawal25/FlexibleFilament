@@ -14,6 +14,8 @@
 #include <unistd.h>
 #include <memory.h>
 /********************************************/
+void write_param(string fname);
+/********************************************/
 using namespace std;
 /* ----------------------------------------*/
 int main(){
@@ -42,6 +44,7 @@ int main(){
   // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt 
   // time for a particular value of AA.
   check_param();
+  write_param("wevolve.txt");
   //
   time = start_time;
   if (time){
@@ -174,4 +177,8 @@ int main(){
   // cout << "The average change in the length of the rod is: " << sqrt(MSElen)/itn << endl;
 // cout << filenumber-1 << endl;
 //----------------------------
+}
+/********************************************/
+void  __attribute__((weak)) write_param( string fname ){
+  cout << "The user has not implmented way to write data!!!" << endl;
 }

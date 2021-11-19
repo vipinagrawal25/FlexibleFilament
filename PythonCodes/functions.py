@@ -184,7 +184,6 @@ def CurvatureSign(kappasqr,yy,zz,eps):
 	# kappasqr[kappasqr<th*max(kappasqr)]=0
 	NN=yy.size
 	firstIn=2
-	
 	sign=zeros(NN)
 	znew=zeros(NN)
 	# First shift everything by the linear line joining the first and last line.
@@ -194,13 +193,10 @@ def CurvatureSign(kappasqr,yy,zz,eps):
 		znew[iN] = zz[0]+(zz[-1]-zz[0])*iN/NN
 	ff = interp1d(zz,yy)
 	ynew=ff(znew)
-
 	# MidP=int(NN/2)
 	# ynew=ynew-(ynew[MidP]+(znew-znew[MidP])*(ynew[MidP+1]-ynew[MidP-1])/(znew[MidP+1]-znew[MidP-1]))
-
 	# Assign sign based on the slope in starting. Remember first two points have zero curvature so just go two 
 	#more points to make sure slope calculation is right and implement it.
-
 	ynewdiff=diff(yy)
 	znewdiff=diff(zz)
 	vectors=zeros([NN-1,2])
@@ -208,7 +204,6 @@ def CurvatureSign(kappasqr,yy,zz,eps):
 	vectors[:,1]=znewdiff
 	vectors=vectors/sqrt(vectors[:,0]**2+vectors[:,1]**2)
 	cp=cross(vectors[0:-1],vectors[1:])
-
 	cpdiff=diff(cp)
 	cpdiff[cpdiff<0]=-1
 	cpdiff[cpdiff>0]=1
@@ -223,6 +218,7 @@ def GetCurv(Folder='output/',code='CPU',dim=3,wDataMeth=1):
 	time=dd[:,0]
 	nrowcol=dd.shape
 	nsnap = nrowcol[0]
+	print(nsnap)
 	NN=nrowcol[1]-1
 	kappa=zeros([nsnap,NN+1])
 	kappa[:,0]=time
@@ -265,7 +261,7 @@ def GetCurv2(Folder='output/',code='CPU',dim=3,wDataMeth=1):
 	dd=loadtxt('revolve.txt')
 	# time=dd[:,0]
 	nsnap = int(dd[1])
-	# print(nsnap)
+	print(nsnap)
 	NN=256
 	kappa=zeros([nsnap,NN+1])
 	# kappa[:,0]=time

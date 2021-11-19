@@ -764,6 +764,7 @@ void write_param( string fname ){
             << "viscosity = " << viscosity << endl
             << "ShearRate = " << ShearRate << endl
             << "Period = " << period << endl
+            << "Omega = " << 2*M_PI/period << endl
             << "AA = " << AA << endl
             << "HH = " << HH << endl
             << "bcb = " << bcb << endl
