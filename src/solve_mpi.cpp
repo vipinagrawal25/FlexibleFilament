@@ -56,7 +56,7 @@ int main(int argc, char** argv){
   //
   read_param(run_dir+"rparam.txt");
   read_evolve(run_dir+"revolve.txt");
-  write_param(run_dir+"wevolve.txt");
+  write_param(run_dir+"wparam.txt");
   //
   double CurvSqr[Np],SS[Np];
   double time,time_prev,timer_global;

@@ -10,7 +10,7 @@ import sys
 FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Movie Test', artist='Matplotlib',
                 comment='Movie support!')
-writer = FFMpegWriter(fps=30, metadata=metadata)
+writer = FFMpegWriter(fps=300, metadata=metadata)
 fig=plt.figure()
 height=1
 #####################################################
@@ -30,10 +30,10 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap,symbol='.',colors=[],colormap='gnuplot
 #####################################################
 def MakePlot2D(ax,Xaxis,Yaxis,tsnap,symbol='.'):
 	# ax.subplot(2,1,2)
-	ax.set_xlim(-0.2,2)
-	ax.set_ylim(-0.2,1.5)
+	ax.set_xlim(1.5,-0.5)
+	ax.set_ylim(0.5,-0.5)
 	ax.plot(Xaxis,Yaxis,symbol)
-	plt.title(str(tsnap))
+	plt.title(str(int(tsnap*10)/100))
 #####################################################
 def GetCoordinate(arr,dim,nparticles=256):
 	row,col = arr.shape
@@ -69,7 +69,7 @@ def MultiFileMovie(FILE='output',dim=3):
 	nsnap=nrowcol[0]
 	with writer.saving(fig,"movie.mp4", 100):
 		for isnap in range(0,nsnap,1):
-	 		dd=loadtxt(FILE+'/var'+str(isnap)+'.txt')
+	 		dd=loadtxt(FILE+'/position'+str(isnap)+'.txt')
 	 		xx,yy,zz=GetCoordinate(dd,dim)
 	 		if dim==2:
 	 			MakePlot2D(ax,yy,zz,time[isnap],'o-')
