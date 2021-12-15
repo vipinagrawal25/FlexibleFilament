@@ -168,6 +168,9 @@ int main(int argc, char** argv){
       itn=itn+1;
     }
   }
+  // Make a file to let the world know that you are done with the code //
+  fstream outfile_done("done", ios::out);
+  //
   MPI_Barrier(MPI_COMM_WORLD);
   //
   outfile_terminal << "Total number of iteration: " << itn << endl;
