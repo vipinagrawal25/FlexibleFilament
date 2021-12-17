@@ -1,5 +1,5 @@
 import os as os
-import pencil_old as pc
+# import pencil_old as pc
 import numpy as np
 import matplotlib.pyplot as P
 #from mpl_toolkits.axes_grid.inset_locator import (inset_axes, InsetPosition, mark_inset)
@@ -21,7 +21,7 @@ P.rc('ytick.minor',visible=True,size=4,width=1)
 #---------------------------------------------#
 #F.triang_moebius()
 #F.triang_sph()
-Np=16
+Np=4
 rrini = F.rand_sph(Np)
 print(rrini)
 #F.MC_surf(Np,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=1000,kBT=1.,
@@ -29,6 +29,10 @@ print(rrini)
 rr = F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=1000,kBT=1.,
                      dfac=Np,interactive=False)
 sv = F.SphVoronoi(rr)
+cn_NNL,NNL = F.nearest_neighbour(sv)
+print("Nearst neighbour list: ")
+print(NNL)
+# print("Area = "+str(np.sum(sv.calculate_areas())))
 #lats = rr[:,0]-np.pi/2
 #lons = rr[:,1]
 #print('max longitude=',(np.abs(lons)).max())
@@ -40,12 +44,12 @@ sv = F.SphVoronoi(rr)
 #print(np.pi/2)
 #print("MC done, now doing triangulation")
 #tri = trmesh(lons, lats)
+
 #print(dir(tri))
 #F.lat_lon_list(tri)
 #print('writing x,y,z coordinates to a hdf5 file')
 #F.print_xyz(lats,lons,fname='ini_sph',radius=1.)
-#fig = P.figure()
-#ax = fig.add_subplot(111)
-#ax = F.plot_pos(ax,rr,rr)
-#P.show()
-
+fig = P.figure()
+ax = fig.add_subplot(111)
+ax = F.plot_pos(ax,rr,rr)
+P.show()

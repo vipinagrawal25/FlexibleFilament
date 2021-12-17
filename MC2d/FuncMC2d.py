@@ -1,6 +1,6 @@
 from __future__ import division
 import os as os
-import pencil_old as pc
+# import pencil_old as pc
 import numpy as np
 import matplotlib.pyplot as P
 from mpl_toolkits.axes_grid.inset_locator import (inset_axes, InsetPosition, mark_inset)
@@ -15,9 +15,17 @@ import matplotlib.cm as cm
 from scipy.spatial import Delaunay
 from scipy.spatial import SphericalVoronoi, geometric_slerp
 from mpl_toolkits.mplot3d import proj3d
-#import plotly as py
-#from plotly.graph_objs import *
-#import plotly.tools as tls
+#-----------------------------------------#
+def nearest_neighbour(sv,Np=0):
+    if (~Np):
+        Np = len(sv.regions)
+    n_NNL = [len(region) for region in sv.regions]
+    cn_NNL = np.zeros(Np+1,dtype=int)
+    cn_NNL[1:] = np.cumsum(n_NNL)
+    NNL = np.zeros(cn_NNL[-1],dtype=int)
+    for ip in range(Np):
+        NNL[cn_NNL[ip]:cn_NNL[ip+1]] = np.array(sv.regions[ip])
+    return cn_NNL,NNL
 #-----------------------------------------#
 def SphVoronoi(rr,R=1,lplot=True):
     Np = np.shape(rr)[0]
@@ -48,18 +56,18 @@ def plot_voronoi(points,sv):
     # plot generator points
     ax.scatter(points[2:, 0], points[2:, 1], points[2:, 2], c='r')
     # plot Voronoi vertices
-    ax.scatter(sv.vertices[:, 0], sv.vertices[:, 1], sv.vertices[:, 2],
-                   c='g')
+    #ax.scatter(sv.vertices[:, 0], sv.vertices[:, 1], sv.vertices[:, 2], c='g')
     #ax.axhline(0.5, ls=':')
     ax.scatter(points[0:2, 0], points[0:2, 1], points[0:2, 2], c='k')
-    for region in sv.regions:
+    ax.scatter(sv.points[:, 0],sv.points[:, 1], points[:, 2], c='g')
+    for region in sv._simplices:
         n = len(region)
         for i in range(n):
-            start = sv.vertices[region][i]
-            end = sv.vertices[region][(i + 1) % n]
-            print(i)
-            print(start)
-            print(end)
+            start = sv.points[region][i]
+            end = sv.points[region][(i + 1) % n]
+            # print(i)
+            # print(start)
+            # print(end)
             result = geometric_slerp(start, end, t_vals)
             ax.plot(result[..., 0],
                     result[..., 1],
@@ -168,7 +176,7 @@ def MC_step(rr,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
             rr[kp,0]=xrem
             rr[kp,1]=yrem
     E = tot_energy(rr,metric=metric)
-    print(rr[0,0],rr[1,0])
+    # print(rr[0,0],rr[1,0])
     return rr,move,E
 #-----------------------------------------#
 def rand_increment(rr,kp,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',dfac=64):
