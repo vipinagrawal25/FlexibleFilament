@@ -21,17 +21,26 @@ P.rc('ytick.minor',visible=True,size=4,width=1)
 #---------------------------------------------#
 #F.triang_moebius()
 #F.triang_sph()
-Np=4
+Np=8
 rrini = F.rand_sph(Np)
 print(rrini)
 #F.MC_surf(Np,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=1000,kBT=1.,
 #          dfac=Np,interactive=True)
 rr = F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=1000,kBT=1.,
                      dfac=Np,interactive=False)
+# hf=h5py.File("fin_pos.h5","r")
+# rr=np.array(hf.get('rr'))
+# hf.close()
 sv = F.SphVoronoi(rr)
-cn_NNL,NNL = F.nearest_neighbour(sv)
-print("Nearst neighbour list: ")
-print(NNL)
+# F.calc_tris(sv)
+# F.calc_trinrml(sv)
+F.assign_newmems(sv);
+print(F.normal(sv,0))
+print(sv.points[0])
+# print(F.normal(sv,1))
+# cn_NNL,NNL = F.nearest_neighbour(sv)
+# print("Nearst neighbour list: ")
+# print(NNL)
 # print("Area = "+str(np.sum(sv.calculate_areas())))
 #lats = rr[:,0]-np.pi/2
 #lons = rr[:,1]
@@ -49,7 +58,7 @@ print(NNL)
 #F.lat_lon_list(tri)
 #print('writing x,y,z coordinates to a hdf5 file')
 #F.print_xyz(lats,lons,fname='ini_sph',radius=1.)
-fig = P.figure()
-ax = fig.add_subplot(111)
-ax = F.plot_pos(ax,rr,rr)
-P.show()
+# fig = P.figure()
+# ax = fig.add_subplot(111)
+# ax = F.plot_pos(ax,rr,rr)
+# P.show()

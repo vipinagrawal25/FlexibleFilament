@@ -16,6 +16,66 @@ from scipy.spatial import Delaunay
 from scipy.spatial import SphericalVoronoi, geometric_slerp
 from mpl_toolkits.mplot3d import proj3d
 #-----------------------------------------#
+def assign_newmems(sv):
+    calc_tris(sv)
+    calc_trinrmls(sv)
+#-----------------------------------------#
+# REQUIREMENTS: sv.tris is assigned and defined if not call make_tris function first
+def get_tri(sv,point):
+    if 'tris' in dir(sv):
+        return sv.tris[sv.cntris[point]:sv.cntris[point+1]]
+    else:
+        print("# tris(triangles for a given point) is not a member of SphericalVoronoi object. Assign it by calling calc_tris function.")
+        print("# Anyway I am doing it for you now.")
+        calc_tris(sv)
+        return sv.tris[sv.cntris[point]:sv.cntris[point+1]]
+#-----------------------------------------#
+def calc_tris(sv):
+    sces = sv._simplices
+    Np = len(sv.points)
+    # it stores the number of triangle for a given point.
+    ntris = np.zeros(Np,dtype=int);
+    for ices in sces:
+        for ipnt in ices:
+            ntris[ipnt]=ntris[ipnt]+1
+    cntris=np.zeros(Np+1,dtype=int)
+    cntris[1:]=np.cumsum(ntris)
+    tris=np.zeros(cntris[-1],dtype=int)
+    ind_tris=np.zeros(Np,dtype=int)
+    trcount=0;
+    for ices in sces:
+        for ipnt in ices:
+            tris[cntris[ipnt]+ind_tris[ipnt]]=trcount
+            ind_tris[ipnt]=ind_tris[ipnt]+1
+        trcount=trcount+1
+    sv.tris=tris
+    sv.cntris=cntris
+#-----------------------------------------#
+# the function computes the normal for all the triangles and stores them in sv object.
+def calc_trinrmls(sv):
+    sces=sv._simplices
+    points=sv.points
+    trinrmls=np.zeros([len(sces),3])
+    trcount=0
+    for ices in sces:
+        trinrmls[trcount,:]=np.cross(points[ices[0]]-points[ices[1]],points[ices[1]]-points[ices[2]])
+        trinrmls[trcount,:]=trinrmls[trcount,:]/LA.norm(trinrmls[trcount,:])
+        trcount=trcount+1
+    sv.trinrmls=trinrmls
+    # return np.cross(sv.)
+# #-----------------------------------------#
+# Given coordinates of a point, what is the normal?
+# Ans: it's sum of all the normals neighbouring the point
+# REQUIREMENTS: sv.tris,sv.trinrmls is assigned and defined if not call make_tris,calc_trinrmls functions first.
+def normal(sv,point):
+    tris_point=get_tri(sv,point)
+    print(tris_point)
+    nrml = np.zeros(3)
+    for itri in tris_point:
+        nrml = nrml+sv.trinrmls[itri]
+    nrml=nrml/LA.norm(nrml)
+    return nrml
+#-----------------------------------------#
 def nearest_neighbour(sv,Np=0):
     if (~Np):
         Np = len(sv.regions)
@@ -416,7 +476,8 @@ def map_z2color(zval, colormap, vmin, vmax):
     return 'rgb('+'{:d}'.format(int(R*255+0.5))+','+'{:d}'.format(int(G*255+0.5))+\
            ','+'{:d}'.format(int(B*255+0.5))+')'
 #---------------------------------
-#To plot the triangles on a surface, we set in Plotly Mesh3d the lists of x, y, respectively z- coordinates of the vertices, and the lists of indices, i, j, k, for x, y, z coordinates of all vertices:
+#To plot the triangles on a surface, we set in Plotly Mesh3d the lists of x, y, respectively z- coordinates of the 
+#vertices, and the lists of indices, i, j, k, for x, y, z coordinates of all vertices:
 #-------------------------------------------------------
 def tri_indices(simplices):
     #simplices is a numpy array defining the simplices of the triangularization
@@ -552,9 +613,9 @@ def triang_sph():
     pts_tri=[cartesian_coords(T, w) for w in bar]#list of triangulation points
     tri=triangles(n, pts_tri)#list of sub-triangles in T
     trace = Surface(
-        z=z, 
-        x=x,  
-        y=y,   
+        z=z,
+        x=x,
+        y=y,
         colorscale='Viridis',
     )
     axis = dict(
@@ -563,8 +624,8 @@ def triang_sph():
         gridcolor="rgb(255, 255, 255)",      
         zerolinecolor="rgb(255, 255, 255)",  
     )
-    
-    data = Data([trace]+line_pts(tri, sphere))#plot both the sphere as a Surface object and the triangular wireframe
+    data = Data([trace]+line_pts(tri, sphere))
+    # plot both the sphere as a Surface object and the triangular wireframe
     layout = Layout(
         title='Triangular wireframe on  sphere',
         width=700,
