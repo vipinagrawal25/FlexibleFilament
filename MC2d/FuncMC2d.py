@@ -17,7 +17,7 @@ from scipy.spatial import SphericalVoronoi, geometric_slerp
 from mpl_toolkits.mplot3d import proj3d
 #-----------------------------------------#
 def assign_newmems(sv):
-    calc_tris(sv)
+    sv.tris,sv.cntris=list_to_arr(sv.regions)
     calc_trinrmls(sv)
 #-----------------------------------------#
 # REQUIREMENTS: sv.tris is assigned and defined if not call make_tris function first
@@ -27,8 +27,21 @@ def get_tri(sv,point):
     else:
         print("# tris(triangles for a given point) is not a member of SphericalVoronoi object. Assign it by calling calc_tris function.")
         print("# Anyway I am doing it for you now.")
-        calc_tris(sv)
+        sv.tris,sv.cntris=list_to_arr(sv.regions)
         return sv.tris[sv.cntris[point]:sv.cntris[point+1]]
+#-----------------------------------------#
+def list_to_arr(lst):
+    Np=len(lst)
+    nelement = np.zeros(Np,dtype=int);
+    for ip in range(Np):
+        nelement[ip] = len(lst[ip])
+    cnelement=np.zeros(Np+1,dtype=int)
+    cnelement[1:]=np.cumsum(nelement)
+    arr=np.zeros(cnelement[-1],dtype=int)
+    trcount=0
+    for ip in range(Np):
+        arr[cnelement[ip]:cnelement[ip+1]]=lst[ip]
+    return arr,cnelement
 #-----------------------------------------#
 def calc_tris(sv):
     sces = sv._simplices
@@ -63,7 +76,7 @@ def calc_trinrmls(sv):
         trcount=trcount+1
     sv.trinrmls=trinrmls
     # return np.cross(sv.)
-# #-----------------------------------------#
+#-----------------------------------------#
 # Given coordinates of a point, what is the normal?
 # Ans: it's sum of all the normals neighbouring the point
 # REQUIREMENTS: sv.tris,sv.trinrmls is assigned and defined if not call make_tris,calc_trinrmls functions first.

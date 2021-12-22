@@ -23,20 +23,19 @@ P.rc('ytick.minor',visible=True,size=4,width=1)
 #F.triang_sph()
 Np=8
 rrini = F.rand_sph(Np)
-print(rrini)
+# WritePos(rrini,fname='ini_pos')
+# print(rrini)
 #F.MC_surf(Np,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=1000,kBT=1.,
 #          dfac=Np,interactive=True)
-rr = F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=1000,kBT=1.,
-                     dfac=Np,interactive=False)
+# rr = F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=1000,kBT=1.,
+#                      dfac=Np,interactive=False)
 # hf=h5py.File("fin_pos.h5","r")
 # rr=np.array(hf.get('rr'))
 # hf.close()
-sv = F.SphVoronoi(rr)
-# F.calc_tris(sv)
-# F.calc_trinrml(sv)
+sv = F.SphVoronoi(rrini)
 F.assign_newmems(sv);
-print(F.normal(sv,0))
-print(sv.points[0])
+print(sv.regions)
+print(sv.tris)
 # print(F.normal(sv,1))
 # cn_NNL,NNL = F.nearest_neighbour(sv)
 # print("Nearst neighbour list: ")
