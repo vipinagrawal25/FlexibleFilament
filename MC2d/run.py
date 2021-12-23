@@ -12,12 +12,10 @@ import FuncMC2d as F
 P.style.use('matplotlibrc')
 
 ## moved all the styling to matplotlibrc
-
 #---------------------------------------------#
 with open(r'input.yaml') as file:
     """input for the run"""
     inp = yaml.load(file, Loader=yaml.FullLoader)
-
 #F.triang_moebius() 
 #F.triang_sph()
 
