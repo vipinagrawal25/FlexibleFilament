@@ -57,6 +57,7 @@ int main(int argc, char** argv){
   read_param(run_dir+"rparam.txt");
   read_evolve(run_dir+"revolve.txt");
   write_param(run_dir+"wparam.txt");
+  exit(1);
   //
   double CurvSqr[Np],SS[Np];
   double time,time_prev,timer_global;
@@ -186,16 +187,18 @@ int main(int argc, char** argv){
 /********************************************/
 void read_param(string fname){
   double sigma, facAA;
+  string datafile;
   ifstream myfile;
   myfile.open(fname);
   myfile>>sigma;
   myfile>>facAA;
+  myfile>>datafile;
   // setting up the parameters //
   period = 2*M_PI/(sigma*ShearRate);
   AA = 1.5*pow(10,-5)*pow(height,4)*facAA;
   HH = 16*AA/(dd*dd);
   //
-  cout << "sigma = " << sigma << "; facAA = " << facAA << endl;
+  cout << "sigma = " << sigma << ";\tfacAA = " << facAA << ";\tdatafile = "<< datafile <<endl;
   myfile.close();
 }
 /********************************************/
