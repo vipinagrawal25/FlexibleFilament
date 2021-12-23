@@ -6,36 +6,49 @@ import matplotlib.pyplot as P
 #%matplotlib notebook
 from importlib import reload
 import h5py
+import yaml
 #from stripack import trmesh
 import FuncMC2d as F
-#-----------------------------
-P.rc('font',size=22)
-P.rc('figure',figsize=(8,6))
-P.rc('figure.constrained_layout',use=True)
-P.rc('xtick',direction='in')
-P.rc('ytick',direction='in')
-P.rc('xtick.major',size=8,width=2)
-P.rc('xtick.minor',visible=True,size=4,width=1)
-P.rc('ytick.major',size=8,width=2)
-P.rc('ytick.minor',visible=True,size=4,width=1)
+P.style.use('matplotlibrc')
+
+## moved all the styling to matplotlibrc
+
 #---------------------------------------------#
-#F.triang_moebius()
+with open(r'input.yaml') as file:
+    """input for the run"""
+    inp = yaml.load(file, Loader=yaml.FullLoader)
+
+#F.triang_moebius() 
 #F.triang_sph()
-Np=8
+
+Np=inp['num_particles']
+
 rrini = F.rand_sph(Np)
-# WritePos(rrini,fname='ini_pos')
-# print(rrini)
-#F.MC_surf(Np,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=1000,kBT=1.,
-#          dfac=Np,interactive=True)
-# rr = F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=1000,kBT=1.,
-#                      dfac=Np,interactive=False)
-# hf=h5py.File("fin_pos.h5","r")
-# rr=np.array(hf.get('rr'))
-# hf.close()
-sv = F.SphVoronoi(rrini)
+
+debug = inp['debug']
+
+if(debug):
+    F.WritePos(rrini,fname='ini_pos')
+
+if(inp['do_montecarlo']):
+    rr = F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=1000,kBT=1.,
+                                 dfac=Np,interactive=False)
+else:
+    rr = rrini
+
+if(inp['read_ini_particle']):
+    hf=h5py.File("fin_pos.h5","r")
+    rr=np.array(hf.get('rr'))
+    hf.close()
+
+
+sv = F.SphVoronoi(rr)
 F.assign_newmems(sv);
-print(sv.regions)
-print(sv.tris)
+if(debug):
+    print(type(sv))
+    print(sv.regions)
+    print(sv.tris)
+
 # print(F.normal(sv,1))
 # cn_NNL,NNL = F.nearest_neighbour(sv)
 # print("Nearst neighbour list: ")
@@ -57,7 +70,7 @@ print(sv.tris)
 #F.lat_lon_list(tri)
 #print('writing x,y,z coordinates to a hdf5 file')
 #F.print_xyz(lats,lons,fname='ini_sph',radius=1.)
-# fig = P.figure()
-# ax = fig.add_subplot(111)
-# ax = F.plot_pos(ax,rr,rr)
-# P.show()
+#fig = P.figure()
+#ax = fig.add_subplot(111)
+#ax = F.plot_pos(ax,rr,rr)
+#P.show()
