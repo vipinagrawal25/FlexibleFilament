@@ -21,12 +21,13 @@ with open(r'input.yaml') as file:
 
 Np=inp['num_particles']
 
-rrini = F.rand_sph(Np)
-
 debug = inp['debug']
-
-if(debug):
-    F.WritePos(rrini,fname='ini_pos')
+if debug:
+    rrini = np.loadtxt('initial_rrini.dat')
+    np.savetxt('initial_rrini.dat', rrini)
+else:
+    rrini = F.rand_sph(Np)
+    np.savetxt('initial_rrini.dat', rrini)
 
 if(inp['do_montecarlo']):
     rr = F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=1000,kBT=1.,
@@ -43,9 +44,21 @@ if(inp['read_ini_particle']):
 sv = F.SphVoronoi(rr)
 F.assign_newmems(sv);
 if(debug):
-    print(type(sv))
-    print(sv.regions)
-    print(sv.tris)
+    np.savetxt('positions.txt', sv.points)
+    lsimples = len(sv._simplices)
+    print(lsimples)
+    nsimplices = np.asarray([], dtype=np.int32)
+    for scles in sv._simplices:
+        nscles = np.sort(scles)
+        nsimplices = np.hstack([nsimplices, nscles])
+        nsimplices = np.hstack([nsimplices, [nscles[1], nscles[2], nscles[0]]])
+        nsimplices = np.hstack([nsimplices, [nscles[2], nscles[0], nscles[1]]])
+        nsimplices = np.hstack([nsimplices, [nscles[0], nscles[2], nscles[1]]])
+        nsimplices = np.hstack([nsimplices, [nscles[1], nscles[0], nscles[2]]])
+        nsimplices = np.hstack([nsimplices, [nscles[2], nscles[1], nscles[0]]])
+    nsimpl = nsimplices.reshape(lsimples*6, 3)
+    nsimpl = sorted(nsimpl, key=lambda x: (x[0], x[1]))
+    F.print_neighbors_(sv, Np)
 
 # print(F.normal(sv,1))
 # cn_NNL,NNL = F.nearest_neighbour(sv)

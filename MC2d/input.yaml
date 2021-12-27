@@ -1,7 +1,7 @@
 # Input for the program run.py
 # In the main put all the print statements under if (debug)
 
-num_particles : 8
+num_particles : 16
 debug : True
 do_montecarlo : False
 read_ini_particle : False

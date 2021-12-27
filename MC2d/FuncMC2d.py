@@ -20,6 +20,37 @@ def assign_newmems(sv):
     sv.tris,sv.cntris=list_to_arr(sv.regions)
     calc_trinrmls(sv)
 #-----------------------------------------#
+def print_neighbors_(sv, NP):
+    lsimples = len(sv._simplices)
+    nsimplices = np.asarray([], dtype=np.int32)
+    for scles in sv._simplices:
+        nscles = np.sort(scles)
+        nsimplices = np.hstack([nsimplices, nscles])
+        nsimplices = np.hstack([nsimplices, [nscles[1], nscles[2], nscles[0]]])
+        nsimplices = np.hstack([nsimplices, [nscles[2], nscles[0], nscles[1]]])
+        nsimplices = np.hstack([nsimplices, [nscles[0], nscles[2], nscles[1]]])
+        nsimplices = np.hstack([nsimplices, [nscles[1], nscles[0], nscles[2]]])
+        nsimplices = np.hstack([nsimplices, [nscles[2], nscles[1], nscles[0]]])
+    nsimpl = nsimplices.reshape(lsimples*6, 3)
+    nsimpl = np.asarray(sorted(nsimpl, key=lambda x: (x[0], x[1])))
+    r1 = nsimpl[:,0]
+    r2 = nsimpl[:,1]
+    r3 = nsimpl[:,2]
+    print("Num neighbors")
+    for i in range(0, NP):
+        print(int(len(r1[r1==i])/2))
+
+    print("neighbors index")
+    for i in range(0, len(r2), 2):
+        print(r2[i])
+
+    print("adjecent neighbors index")
+    for i in range(0, len(r3), 1):
+        print(r3[i])
+
+
+
+
 # REQUIREMENTS: sv.tris is assigned and defined if not call make_tris function first
 def get_tri(sv,point):
     if 'tris' in dir(sv):
@@ -100,7 +131,7 @@ def nearest_neighbour(sv,Np=0):
         NNL[cn_NNL[ip]:cn_NNL[ip+1]] = np.array(sv.regions[ip])
     return cn_NNL,NNL
 #-----------------------------------------#
-def SphVoronoi(rr,R=1,lplot=True):
+def SphVoronoi(rr,R=1,lplot=False):
     Np = np.shape(rr)[0]
     xyz = np.zeros([Np,3])
     for ip in range(Np):
@@ -132,7 +163,7 @@ def plot_voronoi(points,sv):
     #ax.scatter(sv.vertices[:, 0], sv.vertices[:, 1], sv.vertices[:, 2], c='g')
     #ax.axhline(0.5, ls=':')
     ax.scatter(points[0:2, 0], points[0:2, 1], points[0:2, 2], c='k')
-    ax.scatter(sv.points[:, 0],sv.points[:, 1], points[:, 2], c='g')
+    # ax.scatter(sv.points[:, 0],sv.points[:, 1], points[:, 2], c='g')
     for region in sv._simplices:
         n = len(region)
         for i in range(n):
