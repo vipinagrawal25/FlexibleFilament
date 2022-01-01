@@ -36,17 +36,17 @@ def print_neighbors_(sv, NP):
     r1 = nsimpl[:,0]
     r2 = nsimpl[:,1]
     r3 = nsimpl[:,2]
-    print("Num neighbors")
-    for i in range(0, NP):
-        print(int(len(r1[r1==i])/2))
+    # print("Num neighbors")
+    # for i in range(0, NP):
+    #     print(int(len(r1[r1==i])/2))
 
-    print("neighbors index")
-    for i in range(0, len(r2), 2):
-        print(r2[i])
+    # print("neighbors index")
+    # for i in range(0, len(r2), 2):
+    #     print(r2[i])
 
-    print("adjecent neighbors index")
-    for i in range(0, len(r3), 1):
-        print(r3[i])
+    # print("adjecent neighbors index")
+    # for i in range(0, len(r3), 1):
+    #     print(r3[i])
 
 
 

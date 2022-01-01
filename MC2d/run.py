@@ -15,10 +15,9 @@ P.style.use('matplotlibrc')
 #---------------------------------------------#
 with open(r'input.yaml') as file:
     """input for the run"""
-    inp = yaml.load(file, Loader=yaml.FullLoader)
+    inp = yaml.load(file)
 #F.triang_moebius() 
 #F.triang_sph()
-
 Np=inp['num_particles']
 
 debug = inp['debug']
@@ -44,20 +43,6 @@ if(inp['read_ini_particle']):
 sv = F.SphVoronoi(rr)
 F.assign_newmems(sv);
 if(debug):
-    np.savetxt('positions.txt', sv.points)
-    lsimples = len(sv._simplices)
-    print(lsimples)
-    nsimplices = np.asarray([], dtype=np.int32)
-    for scles in sv._simplices:
-        nscles = np.sort(scles)
-        nsimplices = np.hstack([nsimplices, nscles])
-        nsimplices = np.hstack([nsimplices, [nscles[1], nscles[2], nscles[0]]])
-        nsimplices = np.hstack([nsimplices, [nscles[2], nscles[0], nscles[1]]])
-        nsimplices = np.hstack([nsimplices, [nscles[0], nscles[2], nscles[1]]])
-        nsimplices = np.hstack([nsimplices, [nscles[1], nscles[0], nscles[2]]])
-        nsimplices = np.hstack([nsimplices, [nscles[2], nscles[1], nscles[0]]])
-    nsimpl = nsimplices.reshape(lsimples*6, 3)
-    nsimpl = sorted(nsimpl, key=lambda x: (x[0], x[1]))
     F.print_neighbors_(sv, Np)
 
 # print(F.normal(sv,1))
