@@ -9,18 +9,47 @@ from mpl_toolkits.axes_grid.inset_locator import (inset_axes, InsetPosition, mar
 from scipy.interpolate import interp1d
 from numpy import linalg as LA
 import h5py
-import plotly as pl
-import plotly.graph_objs as go
+# import plotly as pl
+# import plotly.graph_objs as go
 import matplotlib.cm as cm
 from scipy.spatial import Delaunay
 from scipy.spatial import SphericalVoronoi, geometric_slerp
 from mpl_toolkits.mplot3d import proj3d
+from dataclasses import dataclass
+#-----------------------------------------
+@dataclass
+class MESH:
+    Np: int
+    R: object
+    cumlst: object
+    node_neighbour: object
+    bond_neighbour: object
+    #
+    def dis(self,i,j):
+        return np.linalg.norm(self.R[i]-self.R[j])
+    def bend_Ei(self,i):
+        length = np.zeros(self.cumlst[i+1]-self.cumlst[i])
+        for j in range():
+#-----------------------------------------
+def neighbours(sv):
+    simpl=sorted_simplices(sv)
+    r1=simpl[:,0]
+    r2=simpl[:,1]
+    r3=simpl[:,2]
+    Np=len(sv.points)
+    lst=np.zeros(Np,dtype=int)
+    cumlst=np.zeros(Np+1,dtype=int)
+    for i in range(0, Np):
+        lst[i]=len(r1[r1==i])/2
+    cumlst[1:] = np.cumsum(lst)
+    node_neighbour = np.zeros(cumlst[-1],dtype=int)
+    bond_neighbour = np.zeros(cumlst[-1],dtype=tuple)
+    for i in range(0, cumlst[-1], 1):
+        node_neighbour[i]=r2[2*i]
+        bond_neighbour[i]=(r3[2*i],r3[2*i+1])
+    return cumlst,node_neighbour,bond_neighbour
 #-----------------------------------------#
-def assign_newmems(sv):
-    sv.tris,sv.cntris=list_to_arr(sv.regions)
-    calc_trinrmls(sv)
-#-----------------------------------------#
-def print_neighbors_(sv, NP):
+def sorted_simplices(sv):
     lsimples = len(sv._simplices)
     nsimplices = np.asarray([], dtype=np.int32)
     for scles in sv._simplices:
@@ -33,24 +62,35 @@ def print_neighbors_(sv, NP):
         nsimplices = np.hstack([nsimplices, [nscles[2], nscles[1], nscles[0]]])
     nsimpl = nsimplices.reshape(lsimples*6, 3)
     nsimpl = np.asarray(sorted(nsimpl, key=lambda x: (x[0], x[1])))
-    r1 = nsimpl[:,0]
-    r2 = nsimpl[:,1]
-    r3 = nsimpl[:,2]
-    # print("Num neighbors")
-    # for i in range(0, NP):
-    #     print(int(len(r1[r1==i])/2))
+    return nsimpl
+# #-----------------------------------------#
+# def print_neighbors_(sv):
+#     lsimples = len(sv._simplices)
+#     nsimplices = np.asarray([], dtype=np.int32)
+#     for scles in sv._simplices:
+#         nscles = np.sort(scles)
+#         nsimplices = np.hstack([nsimplices, nscles])
+#         nsimplices = np.hstack([nsimplices, [nscles[1], nscles[2], nscles[0]]])
+#         nsimplices = np.hstack([nsimplices, [nscles[2], nscles[0], nscles[1]]])
+#         nsimplices = np.hstack([nsimplices, [nscles[0], nscles[2], nscles[1]]])
+#         nsimplices = np.hstack([nsimplices, [nscles[1], nscles[0], nscles[2]]])
+#         nsimplices = np.hstack([nsimplices, [nscles[2], nscles[1], nscles[0]]])
+#     nsimpl = nsimplices.reshape(lsimples*6, 3)
+#     nsimpl = np.asarray(sorted(nsimpl, key=lambda x: (x[0], x[1])))
+#     r1 = nsimpl[:,0]
+#     r2 = nsimpl[:,1]
+#     r3 = nsimpl[:,2]
+#     print("Num neighbors")
+#     for i in range(0, len(sv.points)):
+#         print(int(len(r1[r1==i])/2))
 
-    # print("neighbors index")
-    # for i in range(0, len(r2), 2):
-    #     print(r2[i])
+#     print("neighbors index")
+#     for i in range(0, len(r2), 2):
+#         print(r2[i])
 
-    # print("adjecent neighbors index")
-    # for i in range(0, len(r3), 1):
-    #     print(r3[i])
-
-
-
-
+#     print("adjecent neighbors index")
+#     for i in range(0, len(r3), 1):
+#         print(r3[i])
 # REQUIREMENTS: sv.tris is assigned and defined if not call make_tris function first
 def get_tri(sv,point):
     if 'tris' in dir(sv):
