@@ -18,40 +18,65 @@ from mpl_toolkits.mplot3d import proj3d
 from dataclasses import dataclass
 #-----------------------------------------
 class MESH:
-    def __init__(self,Np,R,BB,cmlst,node_nbr,bond_nbr):
+    def __init__(self,Np,R,BB,HH,cmlst,node_nbr,bond_nbr):
         self.Np=int(Np)
         self.R=R
         self.BB=BB
-        self.cmlst=np.array(cmlst).astype(np.int32)
+        self.HH=HH
+        self.cmlst=np.array(cmlst).astype(np.int)
         self.node_nbr=np.array(node_nbr).astype(np.int)
         self.bond_nbr = np.array(bond_nbr).astype(tuple)
+        self.lij0=self.lengths()
+    #
+    def lengths(self):
+        R=self.R
+        Np=self.Np
+        lengs=np.zeros(self.cmlst[-1],dtype=np.double)
+        for i in range(Np):
+            start=self.cmlst[i]
+            end=self.cmlst[i+1]
+            count=0
+            for j in self.node_nbr[start:end]:
+                lengs[start+count]=LA.norm(R[i]-R[j])
+                count=count+1
+        return lengs
+    #
     def cot(self,i,j,k):
         # angle theta for triangle ijk
         R=self.R
         rik=R[i]-R[k]
         rjk=R[j]-R[k]
-        return np.inner(rik,rjk)/np.linalg.norm(np.cross(rik,rjk))
-    def bend_Ei(self,i):
+        # dotP=np.inner(rik,rjk)/(LA.norm(rjk)*LA.norm(rik))
+        # return dotP/np.sqrt(1-dotP*dotP)
+        return np.inner(rik,rjk)/LA.norm(np.cross(rik,rjk))
+    #
+    def energy(self,i):
         BB=self.BB
+        HH=self.HH
+        R=self.R
+        lij0=self.lij0
         start=self.cmlst[i]
         end=self.cmlst[i+1]
         # print(type(self.node_nbr[start:end]))
         count=0
         sigma_i=0
-        cot_times_rij==np.zeros(3)
+        cot_times_rij=np.zeros(3)
+        stretchE=0
         for j in self.node_nbr[start:end]:
-            k=self.bond_nbr[count][0]
-            kprime=self.bond_nbr[count][1]
+            k=self.bond_nbr[start+count][0]
+            kprime=self.bond_nbr[start+count][1]
             cot_sum=0.5*(self.cot(i,j,k)+self.cot(i,j,kprime))
             #
             rij=R[i]-R[j]
-            sigma_i=sigma_i+np.inner(rij,rij)*cot_sum[i]
+            sigma_i=sigma_i+np.inner(rij,rij)*cot_sum
             cot_times_rij=cot_times_rij+cot_sum*rij
+            #
+            stretchE=stretchE+(LA.norm(rij)-lij0[start+count])**2
+            #
             count=count+1
         cot_times_rij2=np.inner(cot_times_rij,cot_times_rij)
         sigma_i=sigma_i/4
-        bend_Ei=0.5*BB*(1/sigma_i)*cot_times_rij2
-        return bend_Ei
+        return 0.5*BB*(1/sigma_i)*cot_times_rij2+0.5*HH*stretchE
 #-----------------------------------------
 # @dataclass
 # class MESH:
@@ -67,9 +92,9 @@ class MESH:
 #         R=self.R
 #         rik=R[i]-R[k]
 #         rjk=R[j]-R[k]
-#         return np.inner(rik,rjk)/np.linalg.norm(np.cross(rik,rjk))
+#         return np.inner(rik,rjk)/LA.norm(np.cross(rik,rjk))
 #     def dis(self,i,j):
-#         return np.linalg.norm(self.R[i]-self.R[j])
+#         return LA.norm(self.R[i]-self.R[j])
 #-----------------------------------------
 def neighbours(sv):
     simpl=sorted_simplices(sv)
