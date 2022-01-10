@@ -17,19 +17,59 @@ from scipy.spatial import SphericalVoronoi, geometric_slerp
 from mpl_toolkits.mplot3d import proj3d
 from dataclasses import dataclass
 #-----------------------------------------
-@dataclass
 class MESH:
-    Np: int
-    R: object
-    cumlst: object
-    node_neighbour: object
-    bond_neighbour: object
-    #
-    def dis(self,i,j):
-        return np.linalg.norm(self.R[i]-self.R[j])
+    def __init__(self,Np,R,BB,cmlst,node_nbr,bond_nbr):
+        self.Np=int(Np)
+        self.R=R
+        self.BB=BB
+        self.cmlst=np.array(cmlst).astype(np.int32)
+        self.node_nbr=np.array(node_nbr).astype(np.int)
+        self.bond_nbr = np.array(bond_nbr).astype(tuple)
+    def cot(self,i,j,k):
+        # angle theta for triangle ijk
+        R=self.R
+        rik=R[i]-R[k]
+        rjk=R[j]-R[k]
+        return np.inner(rik,rjk)/np.linalg.norm(np.cross(rik,rjk))
     def bend_Ei(self,i):
-        length = np.zeros(self.cumlst[i+1]-self.cumlst[i])
-        for j in range():
+        BB=self.BB
+        start=self.cmlst[i]
+        end=self.cmlst[i+1]
+        # print(type(self.node_nbr[start:end]))
+        count=0
+        sigma_i=0
+        cot_times_rij==np.zeros(3)
+        for j in self.node_nbr[start:end]:
+            k=self.bond_nbr[count][0]
+            kprime=self.bond_nbr[count][1]
+            cot_sum=0.5*(self.cot(i,j,k)+self.cot(i,j,kprime))
+            #
+            rij=R[i]-R[j]
+            sigma_i=sigma_i+np.inner(rij,rij)*cot_sum[i]
+            cot_times_rij=cot_times_rij+cot_sum*rij
+            count=count+1
+        cot_times_rij2=np.inner(cot_times_rij,cot_times_rij)
+        sigma_i=sigma_i/4
+        bend_Ei=0.5*BB*(1/sigma_i)*cot_times_rij2
+        return bend_Ei
+#-----------------------------------------
+# @dataclass
+# class MESH:
+#     Np: int
+#     R: np.double
+#     BB: np.double
+#     cmlst: np.int
+#     node_nbr: np.int
+#     bond_nbr: np.int
+#     #
+#     def cot(self,i,j,k):
+#         # angle theta for triangle ijk
+#         R=self.R
+#         rik=R[i]-R[k]
+#         rjk=R[j]-R[k]
+#         return np.inner(rik,rjk)/np.linalg.norm(np.cross(rik,rjk))
+#     def dis(self,i,j):
+#         return np.linalg.norm(self.R[i]-self.R[j])
 #-----------------------------------------
 def neighbours(sv):
     simpl=sorted_simplices(sv)

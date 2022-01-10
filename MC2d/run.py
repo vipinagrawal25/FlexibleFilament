@@ -40,7 +40,7 @@ if(inp['read_ini_particle']):
     rr=np.array(hf.get('rr'))
     hf.close()
 sv = F.SphVoronoi(rr)
-cumlst,node_neighbour,bond_neighbour=F.neighbours(sv)
+cmlst,node_neighbour,bond_neighbour=F.neighbours(sv)
 #
-mesh=MESH(Np,sv.points,cumlst,node_neighbour,bond_neighbour)
-print(mesh.dis(1,2))
+mesh=MESH(Np=Np,R=sv.points,BB=1,cmlst=cmlst,node_nbr=node_neighbour,bond_nbr=bond_neighbour)
+mesh.bend_Ei(0)
