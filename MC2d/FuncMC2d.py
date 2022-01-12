@@ -93,10 +93,72 @@ class MESH:
         start=self.cmlst[i]
         end=self.cmlst[i+1]
         #
-        bendE=bend_energy(self,i)
+        bendE=self.bend_energy(i)
         for j in self.node_nbr[start:end]:
-            bendE=bendE+bend_energy(self,j)
+            bendE=bendE+self.bend_energy(j)
         return bendE
+    #
+    def tot_energy(self):
+        energy=0
+        for i in range(self.Np):
+            energy=energy+self.bend_energy(i)+0.5*self.stretch_energy(i)
+        return energy
+#-----------------------------------------
+def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
+    Np=mesh.Np
+    move = 0
+    for iter in range(maxiter):
+        """ Choose a random integer between 0 and N-1 """
+        kp = np.random.randint(low=0,high=Np)
+        Eini=mesh.bend_energy_nbr(kp)+mesh.stretch_energy(kp)
+        # Eini = En(rr,kp,metric=metric)
+        Rrem = mesh.R[kp].copy()
+        rand_increment_mesh(mesh,kp)
+        Efin=mesh.bend_energy_nbr(kp)+mesh.stretch_energy(kp)
+        # Efin = En(rr,kp,metric=metric)
+        dE = Efin-Eini
+        print(dE)
+        Accept = Metropolis(dE,kBT)
+        if Accept:
+            move = move+1
+        else:
+            mesh.R[kp]=Rrem.copy()
+    E = mesh.tot_energy()
+    # print(rr[0,0],rr[1,0])
+    return move,E
+#-----------------------------------------
+def rand_increment_mesh(mesh,kp,rr=1,dfac=64):
+    mesh.R[kp] = mesh.R[kp] + (rr/dfac)*np.random.uniform(low=-1,high=1,size=3)
+#-----------------------------------------
+def MC_mesh(mesh,maxiter=100,kBT=1.,interactive=True,dfac=64):
+    Np=mesh.Np
+    # cont=True
+   
+    Eini = mesh.tot_energy()
+    print('Eini/Np=' + str(Eini/Np))
+    # if interactive:
+    #     fig = P.figure()
+    #     ax = fig.add_subplot(111)
+    #     ax.plot(rr[:,0],rr[:,1],'o',color='C0')
+    move,Efin = MC_step_mesh(mesh,maxiter=maxiter,kBT=kBT,dfac=dfac)
+    print('MC steps',maxiter)
+    print('accepted moves',move)
+    print('Efin/Np=',Efin/Np)
+
+        # if interactive:
+        #     ax.plot(rr[:,0],rr[:,1],'*',color='C3')
+        #     P.show()
+        #     answer=input('continue(Y) ? ')
+        #     if answer != 'Y':
+        #         cont = False
+        #         print('Run over, go home')
+        #     else:
+        #         print('another', maxiter, 'MC steps')
+        #         P.close()
+        # else:
+        #     print('Run over, go home')
+        #     break
+    return mesh
 #-----------------------------------------
 # @dataclass
 # class MESH:
