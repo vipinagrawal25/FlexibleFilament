@@ -9,7 +9,9 @@ import h5py
 import yaml
 #from stripack import trmesh
 import FuncMC2d as F
+import dump_visit as dv
 from FuncMC2d import MESH
+
 P.style.use('matplotlibrc')
 #
 ## moved all the styling to matplotlibrc
@@ -43,7 +45,18 @@ if(inp['read_ini_particle']):
 sv = F.SphVoronoi(rr)
 cmlst,node_neighbour,bond_neighbour=F.neighbours(sv)
 #
-mesh=MESH(Np=Np,R=sv.points,BB=1,HH=1,cmlst=cmlst,node_nbr=node_neighbour,bond_nbr=bond_neighbour)
+
+mesh=MESH(Np=Np,
+        R=sv.points,
+        BB=1,
+        HH=1,
+        cmlst=cmlst,
+        node_nbr=node_neighbour,
+        bond_nbr=bond_neighbour)
 #
+
+dv.dump_visit('initial_points.vtk', mesh.R, sv._simplices)
+
 mesh=F.MC_mesh(mesh,maxiter=1000,kBT=1.,interactive=True,dfac=64)
-print(mesh)
+
+dv.dump_visit('final_points.vtk', mesh.R, sv._simplices)
