@@ -50,8 +50,29 @@ class MESH:
         # return dotP/np.sqrt(1-dotP*dotP)
         return np.inner(rik,rjk)/LA.norm(np.cross(rik,rjk))
     #
-    def energy(self,i):
+    def bend_energy(self,i):
         BB=self.BB
+        R=self.R
+        start=self.cmlst[i]
+        end=self.cmlst[i+1]
+        #
+        sigma_i=0
+        cot_times_rij=np.zeros(3)
+        count=0
+        for j in self.node_nbr[start:end]:
+            rij=R[i]-R[j]
+            k=self.bond_nbr[start+count][0]
+            kprime=self.bond_nbr[start+count][1]
+            cot_sum=0.5*(self.cot(i,j,k)+self.cot(i,j,kprime))
+            sigma_i=sigma_i+np.inner(rij,rij)*cot_sum
+            cot_times_rij=cot_times_rij+cot_sum*rij
+            #
+            count=count+1
+        cot_times_rij2=np.inner(cot_times_rij,cot_times_rij)
+        sigma_i=sigma_i/4
+        return 0.5*BB*(1/sigma_i)*cot_times_rij2
+    #
+    def stretch_energy(self,i):
         HH=self.HH
         R=self.R
         lij0=self.lij0
@@ -59,24 +80,23 @@ class MESH:
         end=self.cmlst[i+1]
         # print(type(self.node_nbr[start:end]))
         count=0
-        sigma_i=0
-        cot_times_rij=np.zeros(3)
         stretchE=0
         for j in self.node_nbr[start:end]:
-            k=self.bond_nbr[start+count][0]
-            kprime=self.bond_nbr[start+count][1]
-            cot_sum=0.5*(self.cot(i,j,k)+self.cot(i,j,kprime))
-            #
             rij=R[i]-R[j]
-            sigma_i=sigma_i+np.inner(rij,rij)*cot_sum
-            cot_times_rij=cot_times_rij+cot_sum*rij
-            #
             stretchE=stretchE+(LA.norm(rij)-lij0[start+count])**2
-            #
             count=count+1
-        cot_times_rij2=np.inner(cot_times_rij,cot_times_rij)
-        sigma_i=sigma_i/4
-        return 0.5*BB*(1/sigma_i)*cot_times_rij2+0.5*HH*stretchE
+        return 0.5*HH*stretchE
+    #
+    def bend_energy_nbr(self,i):
+        BB=self.BB
+        R=self.R
+        start=self.cmlst[i]
+        end=self.cmlst[i+1]
+        #
+        bendE=bend_energy(self,i)
+        for j in self.node_nbr[start:end]:
+            bendE=bendE+bend_energy(self,j)
+        return bendE
 #-----------------------------------------
 # @dataclass
 # class MESH:

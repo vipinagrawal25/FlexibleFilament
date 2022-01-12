@@ -346,8 +346,6 @@ bool IsOrbit(double y[]){
   double Error=0;
   if(norm(fy,mapdim)<err_tol*mapdim*10){Error = SqEr(fy,y,mapdim)/(err_tol*mapdim);}
   else{Error = SqEr(fy,y,mapdim)/norm(fy,mapdim);}
-  // cout << "SqEr(fy,y,mapdim) =" << SqEr(fy,y,mapdim) << endl;
-  // cout << "norm(fy,mapdim)" << norm(fy,mapdim) << endl;
   cout << "# Error= " << Error << endl;
   return 1;
   if (Error<err_tol){

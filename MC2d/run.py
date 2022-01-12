@@ -44,4 +44,4 @@ sv = F.SphVoronoi(rr)
 cmlst,node_neighbour,bond_neighbour=F.neighbours(sv)
 #
 mesh=MESH(Np=Np,R=sv.points,BB=1,HH=1,cmlst=cmlst,node_nbr=node_neighbour,bond_nbr=bond_neighbour)
-print(np.asarray([mesh.energy(i) for i in range(Np)]).sum())
+print(np.asarray([mesh.bend_energy(i) for i in range(Np)]).sum() - 8*np.pi)
