@@ -27,6 +27,8 @@ class MESH:
         self.node_nbr=np.array(node_nbr).astype(np.int)
         self.bond_nbr = np.array(bond_nbr).astype(tuple)
         self.lij0=self.lengths()
+        self.radius=1
+        self.sp_curv=2/self.radius
     #
     def lengths(self):
         R=self.R
@@ -68,9 +70,10 @@ class MESH:
             cot_times_rij=cot_times_rij+cot_sum*rij
             #
             count=count+1
-        cot_times_rij2=np.inner(cot_times_rij,cot_times_rij)
         sigma_i=sigma_i/4
-        return 0.5*BB*(1/sigma_i)*cot_times_rij2
+        curv=(1/sigma_i)*LA.norm(cot_times_rij)
+        curv0=self.sp_curv
+        return 0.5*BB*sigma_i*(curv-curv0)**2
     #
     def stretch_energy(self,i):
         HH=self.HH
@@ -99,10 +102,14 @@ class MESH:
         return bendE
     #
     def tot_energy(self):
-        energy=0
+        beE=0
+        stE=0
         for i in range(self.Np):
-            energy=energy+self.bend_energy(i)+0.5*self.stretch_energy(i)
-        return energy
+            beE=beE+self.bend_energy(i)
+            stE=stE++0.5*self.stretch_energy(i)
+        print("beE=",beE)
+        print("stE=",stE)
+        return beE+stE
 #-----------------------------------------
 def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
     Np=mesh.Np
@@ -602,7 +609,7 @@ def En(rr,kp,metric='cart'):
             xj = rr[j,0]
             yj = rr[j,1]
             ds =  distance2d(xk,yk,xj,yj,metric=metric)
-            ee = LenardJonesRep(ds)
+            ee = LenardJonesRep(ds,epsilon=0.05)
             #print(j,ds,ee)
             E = E + ee
     return E

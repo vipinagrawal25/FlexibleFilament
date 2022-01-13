@@ -47,15 +47,19 @@ cmlst,node_neighbour,bond_neighbour=F.neighbours(sv)
 #
 mesh=MESH(Np=Np,
         R=sv.points,
-        BB=1,
+        BB=2.5,
         HH=1,
         cmlst=cmlst,
         node_nbr=node_neighbour,
         bond_nbr=bond_neighbour)
+avlij0 = np.mean(mesh.lij0)
+YY=inp['facH']*0.05/(avlij0*avlij0)
+mesh.HH=YY*np.sqrt(3)/2
+print(mesh.HH)
 #
 dv.dump_visit('initial_points.vtk', mesh.R, sv._simplices)
 with open('energy.dat', "w") as file:
     for i in range(100):
         mesh,E=F.MC_mesh(mesh,maxiter=10000,kBT=1.,interactive=True,dfac=64)
         dv.dump_visit('output/var'+str(i).zfill(4)+'.vtk', mesh.R, sv._simplices)
-        file.write("%d  %15.8f \n" %(i, E))
+        file.write("%d %15.8f \n" %(i, E))

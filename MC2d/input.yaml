@@ -4,3 +4,4 @@ num_particles : 4096
 debug : True
 do_montecarlo : False
 read_ini_particle : False
+facH : 577
