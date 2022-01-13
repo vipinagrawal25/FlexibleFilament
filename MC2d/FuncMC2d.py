@@ -117,7 +117,6 @@ def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
         Efin=mesh.bend_energy_nbr(kp)+mesh.stretch_energy(kp)
         # Efin = En(rr,kp,metric=metric)
         dE = Efin-Eini
-        print(dE)
         Accept = Metropolis(dE,kBT)
         if Accept:
             move = move+1
@@ -133,7 +132,6 @@ def rand_increment_mesh(mesh,kp,rr=1,dfac=64):
 def MC_mesh(mesh,maxiter=100,kBT=1.,interactive=True,dfac=64):
     Np=mesh.Np
     # cont=True
-   
     Eini = mesh.tot_energy()
     print('Eini/Np=' + str(Eini/Np))
     # if interactive:
@@ -141,10 +139,9 @@ def MC_mesh(mesh,maxiter=100,kBT=1.,interactive=True,dfac=64):
     #     ax = fig.add_subplot(111)
     #     ax.plot(rr[:,0],rr[:,1],'o',color='C0')
     move,Efin = MC_step_mesh(mesh,maxiter=maxiter,kBT=kBT,dfac=dfac)
-    print('MC steps',maxiter)
+    print('MC steps', maxiter)
     print('accepted moves',move)
     print('Efin/Np=',Efin/Np)
-
         # if interactive:
         #     ax.plot(rr[:,0],rr[:,1],'*',color='C3')
         #     P.show()
@@ -158,7 +155,7 @@ def MC_mesh(mesh,maxiter=100,kBT=1.,interactive=True,dfac=64):
         # else:
         #     print('Run over, go home')
         #     break
-    return mesh
+    return mesh,Efin
 #-----------------------------------------
 # @dataclass
 # class MESH:

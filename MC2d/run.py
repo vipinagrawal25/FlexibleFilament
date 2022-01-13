@@ -25,8 +25,8 @@ Np=inp['num_particles']
 #
 debug = inp['debug']
 if debug:
-    rrini = np.loadtxt('initial_rrini.dat')
-    np.savetxt('initial_rrini.dat', rrini)
+    rrini = np.loadtxt('final_rrini.dat')
+    # np.savetxt('initial_rrini.dat', rrini)
 else:
     rrini = F.rand_sph(Np)
     np.savetxt('initial_rrini.dat', rrini)
@@ -45,7 +45,6 @@ if(inp['read_ini_particle']):
 sv = F.SphVoronoi(rr)
 cmlst,node_neighbour,bond_neighbour=F.neighbours(sv)
 #
-
 mesh=MESH(Np=Np,
         R=sv.points,
         BB=1,
@@ -54,9 +53,9 @@ mesh=MESH(Np=Np,
         node_nbr=node_neighbour,
         bond_nbr=bond_neighbour)
 #
-
 dv.dump_visit('initial_points.vtk', mesh.R, sv._simplices)
-
-mesh=F.MC_mesh(mesh,maxiter=1000,kBT=1.,interactive=True,dfac=64)
-
-dv.dump_visit('final_points.vtk', mesh.R, sv._simplices)
+with open('energy.dat', "w") as file:
+    for i in range(100):
+        mesh,E=F.MC_mesh(mesh,maxiter=10000,kBT=1.,interactive=True,dfac=64)
+        dv.dump_visit('output/var'+str(i).zfill(4)+'.vtk', mesh.R, sv._simplices)
+        file.write("%d  %15.8f \n" %(i, E))
