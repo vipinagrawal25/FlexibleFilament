@@ -11,7 +11,7 @@ import yaml
 import FuncMC2d as F
 import dump_visit as dv
 from FuncMC2d import MESH
-
+#
 P.style.use('matplotlibrc')
 #
 ## moved all the styling to matplotlibrc
@@ -19,7 +19,7 @@ P.style.use('matplotlibrc')
 with open(r'input.yaml') as file:
     """input for the run"""
     inp = yaml.full_load(file)
-#F.triang_moebius() 
+#F.triang_moebius()
 #F.triang_sph()
 Np=inp['num_particles']
 #
@@ -30,9 +30,12 @@ if debug:
 else:
     rrini = F.rand_sph(Np)
     np.savetxt('initial_rrini.dat', rrini)
-
-if(inp['do_montecarlo']):
-    rr = F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=1000,kBT=1.,
+#
+svini = F.SphVoronoi(rrini)
+dv.dump_visit('initial_rand_points.vtk', svini.points, svini._simplices)
+#
+if(inp['surface_montecarlo']):
+    rr = F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=10000,kBT=1.,
                                  dfac=Np,interactive=False)
     np.savetxt('final_rrini.dat', rr)
 else:
@@ -45,7 +48,6 @@ if(inp['read_ini_particle']):
 sv = F.SphVoronoi(rr)
 cmlst,node_neighbour,bond_neighbour=F.neighbours(sv)
 #
-
 mesh=MESH(Np=Np,
         R=sv.points,
         BB=1,
@@ -54,9 +56,8 @@ mesh=MESH(Np=Np,
         node_nbr=node_neighbour,
         bond_nbr=bond_neighbour)
 #
-
 dv.dump_visit('initial_points.vtk', mesh.R, sv._simplices)
-
-mesh=F.MC_mesh(mesh,maxiter=1000,kBT=1.,interactive=True,dfac=64)
-
+#
+mesh=F.MC_mesh(mesh,maxiter=10000,kBT=1.,interactive=True,dfac=64)
+#
 dv.dump_visit('final_points.vtk', mesh.R, sv._simplices)

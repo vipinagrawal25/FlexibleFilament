@@ -110,15 +110,17 @@ def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
     for iter in range(maxiter):
         """ Choose a random integer between 0 and N-1 """
         kp = np.random.randint(low=0,high=Np)
-        Eini=mesh.bend_energy_nbr(kp)+mesh.stretch_energy(kp)
+        Eini=denergy_kp(mesh,kp)
         # Eini = En(rr,kp,metric=metric)
         Rrem = mesh.R[kp].copy()
         rand_increment_mesh(mesh,kp)
-        Efin=mesh.bend_energy_nbr(kp)+mesh.stretch_energy(kp)
-        # Efin = En(rr,kp,metric=metric)
-        dE = Efin-Eini
-        print(dE)
-        Accept = Metropolis(dE,kBT)
+        Efin,do_mc=denergy_kp(mesh,kp)
+        if do_mc:
+            dE = Efin-Eini
+            print(dE)
+            Accept = Metropolis(dE,kBT)
+        else:
+            Accept=False
         if Accept:
             move = move+1
         else:
@@ -127,13 +129,36 @@ def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
     # print(rr[0,0],rr[1,0])
     return move,E
 #-----------------------------------------
+def denergy_kp(mesh,kp,lwall=True,zwall=-1-1/16):
+    if lwall:
+        zz=mesh.R[kp,2]
+        dz = zz - zwall
+        if(dz < 0e0):
+             # I can go ahead with evaluating the lj energy
+             LJener = LJ(dz)
+             eval_other_energies = True
+        else:
+            eval_other_energies = False
+            LJener = 0e0
+      if(eval_other_energies):
+    	 dE = (mesh.bend_energy_nbr(kp)
+              +mesh.stretch_energy(kp))    
+    return dE+LJener,eval_other_energies
+#-----------------------------------------
+def LJ(zz,sigma=1/32,zcut=1/8,eps_bot=4):
+    if zz>zcut:
+        pot=0
+    else:
+        sbyz6 = (sigma/zz)**6
+        pot = 4*eps_bot*(sbyz6**2-sbyz6)
+    return pot
+#-----------------------------------------
 def rand_increment_mesh(mesh,kp,rr=1,dfac=64):
     mesh.R[kp] = mesh.R[kp] + (rr/dfac)*np.random.uniform(low=-1,high=1,size=3)
 #-----------------------------------------
 def MC_mesh(mesh,maxiter=100,kBT=1.,interactive=True,dfac=64):
     Np=mesh.Np
     # cont=True
-   
     Eini = mesh.tot_energy()
     print('Eini/Np=' + str(Eini/Np))
     # if interactive:

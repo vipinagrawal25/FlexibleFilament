@@ -1,5 +1,5 @@
 import numpy as np
-
+#
 def dump_visit(infile, points, triangles):
     """
     Snippet to write data of a mesh in a specific
@@ -27,5 +27,3 @@ def dump_visit(infile, points, triangles):
                 +str(4*num_triangles) + '\n')
         for it, tri in enumerate(triangles):
             f.write("%d %d %d %d\n" %(3, tri[0], tri[1], tri[2]))
-
-    
