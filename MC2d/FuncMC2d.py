@@ -432,13 +432,15 @@ def rand_sph(N):
     ran[1,0]=np.pi
     ran[1,1]=0
     for ip in range(2,N):
-        rth = np.random.uniform(low=0.0,high=np.pi)
+        rth = np.arccos(np.random.uniform(low=-1.0,high=1.0))
         if rth==0:
-            rth = rth+ np.random.uniform(low=0.0,high=np.pi)
+            rth = rth+ np.arccos(np.random.uniform(low=-1.0,high=1.0)) 
+            #np.random.uniform(low=0.0,high=np.pi)
         if rth==np.pi:
-            rth = rth- np.random.uniform(low=0.0,high=np.pi)
+            rth = rth- np.arccos(np.random.uniform(low=-1.0,high=1.0)) 
+            #np.random.uniform(low=0.0,high=np.pi)
         ran[ip,0] = rth
-        ran[ip,1]=np.random.uniform(low=0.0,high=2*np.pi)
+        ran[ip,1] = np.random.uniform(low=0.0,high=2*np.pi)
     return ran
 #-----------------------------------------#
 def plot_pos(ax,rr,rrini):
