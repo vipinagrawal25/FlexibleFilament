@@ -2,5 +2,6 @@
 # In the main put all the print statements under if (debug)
 num_particles : 4096
 debug : False
-surface_montecarlo : True
+do_montecarlo : True
 read_ini_particle : False
+facH : 577

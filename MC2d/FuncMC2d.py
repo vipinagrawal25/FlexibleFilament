@@ -27,6 +27,8 @@ class MESH:
         self.node_nbr=np.array(node_nbr).astype(np.int)
         self.bond_nbr = np.array(bond_nbr).astype(tuple)
         self.lij0=self.lengths()
+        self.radius=1
+        self.sp_curv=2/self.radius
     #
     def lengths(self):
         R=self.R
@@ -68,9 +70,10 @@ class MESH:
             cot_times_rij=cot_times_rij+cot_sum*rij
             #
             count=count+1
-        cot_times_rij2=np.inner(cot_times_rij,cot_times_rij)
         sigma_i=sigma_i/4
-        return 0.5*BB*(1/sigma_i)*cot_times_rij2
+        curv=(1/sigma_i)*LA.norm(cot_times_rij)
+        curv0=self.sp_curv
+        return 0.5*BB*sigma_i*(curv-curv0)**2
     #
     def stretch_energy(self,i):
         HH=self.HH
@@ -99,10 +102,14 @@ class MESH:
         return bendE
     #
     def tot_energy(self):
-        energy=0
+        beE=0
+        stE=0
         for i in range(self.Np):
-            energy=energy+self.bend_energy(i)+0.5*self.stretch_energy(i)
-        return energy
+            beE=beE+self.bend_energy(i)
+            stE=stE++0.5*self.stretch_energy(i)
+        print("beE=",beE)
+        print("stE=",stE)
+        return beE+stE
 #-----------------------------------------
 def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
     Np=mesh.Np
@@ -166,10 +173,9 @@ def MC_mesh(mesh,maxiter=100,kBT=1.,interactive=True,dfac=64):
     #     ax = fig.add_subplot(111)
     #     ax.plot(rr[:,0],rr[:,1],'o',color='C0')
     move,Efin = MC_step_mesh(mesh,maxiter=maxiter,kBT=kBT,dfac=dfac)
-    print('MC steps',maxiter)
+    print('MC steps', maxiter)
     print('accepted moves',move)
     print('Efin/Np=',Efin/Np)
-
         # if interactive:
         #     ax.plot(rr[:,0],rr[:,1],'*',color='C3')
         #     P.show()
@@ -183,7 +189,7 @@ def MC_mesh(mesh,maxiter=100,kBT=1.,interactive=True,dfac=64):
         # else:
         #     print('Run over, go home')
         #     break
-    return mesh
+    return mesh,Efin
 #-----------------------------------------
 # @dataclass
 # class MESH:
@@ -400,12 +406,12 @@ def plot_voronoi(points,sv):
     ax.set_zlabel('z')
     P.show()
 #-----------------------------------------#
-def MC_surf(N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
+def MC_surf(rr,N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
             interactive=True,dfac=64):
-    rrini = inidist(N,Lone,Ltwo,metric=metric)
-    rr = rrini
-    print(rr[0,:])
-    WritePos(rr,fname='ini_pos')
+    # rrini = inidist(N,Lone,Ltwo,metric=metric)
+    # rr = rrini
+    # print(rr[0,:])
+    # WritePos(rr,fname='ini_pos')
     cont=True
     while cont:
         Eini = tot_energy(rr,metric=metric)
@@ -419,7 +425,7 @@ def MC_surf(N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
         print('MC steps',maxiter)
         print('accepted moves',move)
         print('Efin/N=',Efin/N)
-        WritePos(rr,fname='fin_pos')
+        # WritePos(rr,fname='fin_pos')
         if interactive:
             ax.plot(rr[:,0],rr[:,1],'*',color='C3')
             P.show()
@@ -453,13 +459,15 @@ def rand_sph(N):
     ran[1,0]=np.pi
     ran[1,1]=0
     for ip in range(2,N):
-        rth = np.random.uniform(low=0.0,high=np.pi)
+        rth = np.arccos(np.random.uniform(low=-1.0,high=1.0))
         if rth==0:
-            rth = rth+ np.random.uniform(low=0.0,high=np.pi)
+            rth = rth+ np.arccos(np.random.uniform(low=-1.0,high=1.0)) 
+            #np.random.uniform(low=0.0,high=np.pi)
         if rth==np.pi:
-            rth = rth- np.random.uniform(low=0.0,high=np.pi)
+            rth = rth- np.arccos(np.random.uniform(low=-1.0,high=1.0)) 
+            #np.random.uniform(low=0.0,high=np.pi)
         ran[ip,0] = rth
-        ran[ip,1]=np.random.uniform(low=0.0,high=2*np.pi)
+        ran[ip,1] = np.random.uniform(low=0.0,high=2*np.pi)
     return ran
 #-----------------------------------------#
 def plot_pos(ax,rr,rrini):
@@ -610,7 +618,7 @@ def cartesian_distance(x1,y1,x2,y2):
 #------------------------------------------#
 def tot_energy(rr,metric='cart'):
     """ The input rr is an array of size (2,N) where 
-N is the number of particle"""
+        N is the number of particle"""
     N=np.shape(rr)[0]
     E = 0
     for i in range(N):
@@ -630,7 +638,7 @@ def En(rr,kp,metric='cart'):
             xj = rr[j,0]
             yj = rr[j,1]
             ds =  distance2d(xk,yk,xj,yj,metric=metric)
-            ee = LenardJonesRep(ds)
+            ee = LenardJonesRep(ds,epsilon=0.05)
             #print(j,ds,ee)
             E = E + ee
     return E
