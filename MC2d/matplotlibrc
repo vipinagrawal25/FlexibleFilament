@@ -32,5 +32,4 @@ ytick.major.size    : 8
 ytick.minor.size    : 4
 ytick.major.width   : 2     
 ytick.minor.width   : 1
-ytick.labelsize     : 16.0      
-
+ytick.labelsize     : 16.0

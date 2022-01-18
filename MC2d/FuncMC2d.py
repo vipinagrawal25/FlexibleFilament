@@ -379,12 +379,12 @@ def plot_voronoi(points,sv):
     ax.set_zlabel('z')
     P.show()
 #-----------------------------------------#
-def MC_surf(N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
+def MC_surf(rr,N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
             interactive=True,dfac=64):
-    rrini = inidist(N,Lone,Ltwo,metric=metric)
-    rr = rrini
-    print(rr[0,:])
-    WritePos(rr,fname='ini_pos')
+    # rrini = inidist(N,Lone,Ltwo,metric=metric)
+    # rr = rrini
+    # print(rr[0,:])
+    # WritePos(rr,fname='ini_pos')
     cont=True
     while cont:
         Eini = tot_energy(rr,metric=metric)
@@ -398,7 +398,7 @@ def MC_surf(N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
         print('MC steps',maxiter)
         print('accepted moves',move)
         print('Efin/N=',Efin/N)
-        WritePos(rr,fname='fin_pos')
+        # WritePos(rr,fname='fin_pos')
         if interactive:
             ax.plot(rr[:,0],rr[:,1],'*',color='C3')
             P.show()
@@ -591,7 +591,7 @@ def cartesian_distance(x1,y1,x2,y2):
 #------------------------------------------#
 def tot_energy(rr,metric='cart'):
     """ The input rr is an array of size (2,N) where 
-N is the number of particle"""
+        N is the number of particle"""
     N=np.shape(rr)[0]
     E = 0
     for i in range(N):

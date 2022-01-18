@@ -11,8 +11,6 @@ import yaml
 import FuncMC2d as F
 import dump_visit as dv
 from FuncMC2d import MESH
-
-P.style.use('matplotlibrc')
 #
 ## moved all the styling to matplotlibrc
 #---------------------------------------------#
@@ -30,36 +28,41 @@ if debug:
 else:
     rrini = F.rand_sph(Np)
     np.savetxt('initial_rrini.dat', rrini)
-
 if(inp['do_montecarlo']):
-    rr = F.MC_surf(Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=1000,kBT=1.,
-                                 dfac=Np,interactive=False)
-    np.savetxt('final_rrini.dat', rr)
+    rr=rrini
+    sv=F.SphVoronoi(rr)
+    dv.dump_visit('output/rrini'+str(0).zfill(4)+'.vtk', sv.points, sv._simplices)
+    for i in range(1,100):
+        rr = F.MC_surf(rr,Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=10**4,kBT=1.,
+                             dfac=Np,interactive=False)
+        sv=F.SphVoronoi(rr)
+        dv.dump_visit('output/rrini'+str(i).zfill(4)+'.vtk', sv.points, sv._simplices)
+        np.savetxt('output/rrini'+str(i).zfill(4)+'.dat', rr)
 else:
     rr = rrini
 #
-if(inp['read_ini_particle']):
-    hf=h5py.File("fin_pos.h5","r")
-    rr=np.array(hf.get('rr'))
-    hf.close()
-sv = F.SphVoronoi(rr)
-cmlst,node_neighbour,bond_neighbour=F.neighbours(sv)
-#
-mesh=MESH(Np=Np,
-        R=sv.points,
-        BB=2.5,
-        HH=1,
-        cmlst=cmlst,
-        node_nbr=node_neighbour,
-        bond_nbr=bond_neighbour)
-avlij0 = np.mean(mesh.lij0)
-YY=inp['facH']*0.05/(avlij0*avlij0)
-mesh.HH=YY*np.sqrt(3)/2
-print(mesh.HH)
-#
-dv.dump_visit('initial_points.vtk', mesh.R, sv._simplices)
-with open('energy.dat', "w") as file:
-    for i in range(100):
-        mesh,E=F.MC_mesh(mesh,maxiter=10000,kBT=1.,interactive=True,dfac=64)
-        dv.dump_visit('output/var'+str(i).zfill(4)+'.vtk', mesh.R, sv._simplices)
-        file.write("%d %15.8f \n" %(i, E))
+# if(inp['read_ini_particle']):
+#     hf=h5py.File("fin_pos.h5","r")
+#     rr=np.array(hf.get('rr'))
+#     hf.close()
+# sv = F.SphVoronoi(rr)
+# cmlst,node_neighbour,bond_neighbour=F.neighbours(sv)
+# #
+# mesh=MESH(Np=Np,
+#         R=sv.points,
+#         BB=2.5,
+#         HH=1,
+#         cmlst=cmlst,
+#         node_nbr=node_neighbour,
+#         bond_nbr=bond_neighbour)
+# avlij0 = np.mean(mesh.lij0)
+# YY=inp['facH']*0.05/(avlij0*avlij0)
+# mesh.HH=YY*np.sqrt(3)/2
+# print(mesh.HH)
+# #
+# dv.dump_visit('initial_points.vtk', mesh.R, sv._simplices)
+# with open('energy.dat', "w") as file:
+#     for i in range(100):
+#         mesh,E=F.MC_mesh(mesh,maxiter=10000,kBT=1.,interactive=True,dfac=64)
+#         dv.dump_visit('output/var'+str(i).zfill(4)+'.vtk', mesh.R, sv._simplices)
+#         file.write("%d %15.8f \n" %(i, E))
