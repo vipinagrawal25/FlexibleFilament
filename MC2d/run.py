@@ -12,8 +12,7 @@ import FuncMC2d as F
 import dump_visit as dv
 from FuncMC2d import MESH
 #
-P.style.use('matplotlibrc')
-
+# P.style.use('matplotlibrc')
 #
 ## moved all the styling to matplotlibrc
 #---------------------------------------------#
@@ -31,16 +30,22 @@ if debug:
 else:
     rrini = F.rand_sph(Np)
     np.savetxt('initial_rrini.dat', rrini)
+#
 if(inp['do_montecarlo']):
     rr=rrini
+    rad=1
+    lopt=np.sqrt(8*np.pi*rad**2/(2*Np-4))
+    sigma=lopt/(2**(1/6))
     sv=F.SphVoronoi(rr)
     dv.dump_visit('output/rrini'+str(0).zfill(4)+'.vtk', sv.points, sv._simplices)
-    for i in range(1,100):
-        rr = F.MC_surf(rr,Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=10**4,kBT=1.,
-                             dfac=Np,interactive=False)
-        sv=F.SphVoronoi(rr)
-        dv.dump_visit('output/rrini'+str(i).zfill(4)+'.vtk', sv.points, sv._simplices)
-        np.savetxt('output/rrini'+str(i).zfill(4)+'.dat', rr)
+    with open('energy.dat', "w") as file:
+        for i in range(1,100):
+            rr,E = F.MC_surf(rr,Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=10**4,kBT=1.,
+                                 dfac=Np,interactive=False,sigma=sigma)
+            sv=F.SphVoronoi(rr)
+            dv.dump_visit('output/rrini'+str(i).zfill(4)+'.vtk', sv.points, sv._simplices)
+            np.savetxt('output/rrini'+str(i).zfill(4)+'.dat', rr)
+            file.write("%d %15.8f \n" %(i, E))
 else:
     rr = rrini
 #

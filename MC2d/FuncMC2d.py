@@ -147,17 +147,19 @@ def denergy_kp(mesh,kp,lwall=True,zwall=-1-1/16):
         else:
             eval_other_energies = False
             LJener = 0e0
-      if(eval_other_energies):
-    	 dE = (mesh.bend_energy_nbr(kp)
-              +mesh.stretch_energy(kp))    
+    if(eval_other_energies):
+        dE = (mesh.bend_energy_nbr(kp)
+            +mesh.stretch_energy(kp))    
     return dE+LJener,eval_other_energies
 #-----------------------------------------
-def LJ(zz,sigma=1/32,zcut=1/8,eps_bot=4):
+def LJ(zz,sigma=1/32,zcut=None,epsilon=4):
+    if zcut is None:
+        zcut=4*sigma
     if zz>zcut:
         pot=0
     else:
         sbyz6 = (sigma/zz)**6
-        pot = 4*eps_bot*(sbyz6**2-sbyz6)
+        pot = 4*epsilon*(sbyz6**2-sbyz6)
     return pot
 #-----------------------------------------
 def rand_increment_mesh(mesh,kp,rr=1,dfac=64):
@@ -407,11 +409,14 @@ def plot_voronoi(points,sv):
     P.show()
 #-----------------------------------------#
 def MC_surf(rr,N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
-            interactive=True,dfac=64):
+            interactive=True,dfac=64,sigma=None):
     # rrini = inidist(N,Lone,Ltwo,metric=metric)
     # rr = rrini
     # print(rr[0,:])
     # WritePos(rr,fname='ini_pos')
+    if sigma is None:
+        lopt=np.sqrt(8*np.pi*rad**2/(2*Np-4))
+        sigma=lopt/(2**(1/6))
     cont=True
     while cont:
         Eini = tot_energy(rr,metric=metric)
@@ -421,7 +426,7 @@ def MC_surf(rr,N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
             ax = fig.add_subplot(111)
             ax.plot(rr[:,0],rr[:,1],'o',color='C0')
         rr,move,Efin = MC_step(rr,Lone=Lone,Ltwo=Ltwo,metric=metric,
-                               maxiter=maxiter,kBT=kBT,dfac=dfac)
+                               maxiter=maxiter,kBT=kBT,dfac=dfac,sigma=sigma)
         print('MC steps',maxiter)
         print('accepted moves',move)
         print('Efin/N=',Efin/N)
@@ -437,9 +442,9 @@ def MC_surf(rr,N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
                 print('another', maxiter, 'MC steps')
                 P.close()
         else:
-            print('Run over, go home')
+            print('# Run over, go home')
             break
-    return rr
+    return rr,Efin/N
 #-----------------------------------------#
 def inidist(N,Lone=2*np.pi,Ltwo=np.pi,metric='cart'):
     if metric == 'cart':
@@ -479,7 +484,7 @@ def plot_pos(ax,rr,rrini):
     return ax
 #-----------------------------------------#
 def MC_step(rr,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
-            dfac=64):
+            dfac=64,sigma=None):
     N = np.shape(rr)[0]
     move = 0
     for iter in range(maxiter):
@@ -487,11 +492,11 @@ def MC_step(rr,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
         kp = np.random.randint(low=0,high=N)
         if metric=='sph':
             kp = np.random.randint(low=2,high=N)
-        Eini = En(rr,kp,metric=metric)
+        Eini = En(rr,kp,metric=metric,sigma=sigma)
         xrem = rr[kp,0]
         yrem = rr[kp,1]
         rr = rand_increment(rr,kp,Lone=Lone,Ltwo=Ltwo,dfac=dfac,metric=metric)
-        Efin = En(rr,kp,metric=metric)
+        Efin = En(rr,kp,metric=metric,sigma=sigma)
         dE = Efin-Eini
         Accept = Metropolis(dE,kBT)
         if Accept:
@@ -628,7 +633,7 @@ def tot_energy(rr,metric='cart'):
         E = E/2. # because every pair is counted twice
     return E
 #---------------------------------------------#
-def En(rr,kp,metric='cart'):
+def En(rr,kp,metric='cart',sigma=0.03750025344077796):
     N = np.shape(rr)[0]
     E = 0
     xk = rr[kp,0]
@@ -638,7 +643,7 @@ def En(rr,kp,metric='cart'):
             xj = rr[j,0]
             yj = rr[j,1]
             ds =  distance2d(xk,yk,xj,yj,metric=metric)
-            ee = LenardJonesRep(ds,epsilon=0.05)
+            ee = LJ(ds,epsilon=0.05,sigma=sigma)
             #print(j,ds,ee)
             E = E + ee
     return E
