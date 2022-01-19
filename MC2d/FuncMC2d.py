@@ -1,16 +1,11 @@
 from __future__ import division
 import os as os
-# import pencil_old as pc
 import numpy as np
 import matplotlib.pyplot as P
 from mpl_toolkits.axes_grid.inset_locator import (inset_axes, InsetPosition, mark_inset)
-#import matplotlib.ticker as mticker
-#from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 from scipy.interpolate import interp1d
 from numpy import linalg as LA
 import h5py
-# import plotly as pl
-# import plotly.graph_objs as go
 import matplotlib.cm as cm
 from scipy.spatial import Delaunay
 from scipy.spatial import SphericalVoronoi, geometric_slerp
@@ -18,18 +13,23 @@ from mpl_toolkits.mplot3d import proj3d
 from dataclasses import dataclass
 #-----------------------------------------
 class MESH:
-    def __init__(self,Np,R,BB,HH,cmlst,node_nbr,bond_nbr):
-        self.Np=int(Np)
-        self.R=R
-        self.BB=BB
-        self.HH=HH
-        self.cmlst=np.array(cmlst).astype(np.int)
-        self.node_nbr=np.array(node_nbr).astype(np.int)
-        self.bond_nbr = np.array(bond_nbr).astype(tuple)
-        self.lij0=self.lengths()
-        self.radius=1
-        self.sp_curv=2/self.radius
-    #
+    def __init__(self,BB,HH,
+                 sv=None,
+                 R=None,cmlst=None,node_nbr=None,bond_nbr=None):
+            if (R is None) or (cmlst is None) or (node_nbr is None) or (bond_nbr is None):
+                cmlst,node_nbr,bond_nbr=neighbours(sv)
+                R=sv.points
+            self.BB=BB
+            self.HH=HH
+            self.Np=R.shape[0]
+            self.R=R
+            self.cmlst=np.array(cmlst).astype(np.int)
+            self.node_nbr=np.array(node_nbr).astype(np.int)
+            self.bond_nbr = np.array(bond_nbr).astype(tuple)
+            self.lij0=self.lengths()
+            self.radius=1
+            self.sp_curv=2/self.radius
+#
     def lengths(self):
         R=self.R
         Np=self.Np
@@ -44,6 +44,7 @@ class MESH:
         return lengs
     #
     def cot(self,i,j,k):
+        #TODO: Compute cot angle by actual size of bonds.
         # angle theta for triangle ijk
         R=self.R
         rik=R[i]-R[k]
@@ -135,13 +136,12 @@ def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
     E = mesh.tot_energy()
     # print(rr[0,0],rr[1,0])
     return move,E
-
 #------------------------------
 def check_obtuse(points, triangles):
     """
     Takes the triangles and points as input and returns 
     an array of shape number of triangles 
-
+    #
     The output is 1 if one of the triangle is greater than
     90, and 0 if all the angle is acute (less than 90)
     """
@@ -149,34 +149,34 @@ def check_obtuse(points, triangles):
     isgt90 = np.zeros(np.shape(triangles)[0], 
             dtype=np.float64)
     piby2 = 0.5*np.pi
+    a_ij_ik=np.zeros(triangles.shape[0])
+    a_ji_jk=np.zeros(triangles.shape[0])
+    a_ki_kj=np.zeros(triangles.shape[0])
     for i, tris in enumerate(triangles):
         ri = points[tris[0]]
         rj = points[tris[1]]
         rk = points[tris[2]]
         rij = ri - rj
         rij = rij/LA.norm(rij)
-
+        #
         rik = ri - rk
         rik = rik/LA.norm(rik)
-
+        #
         rkj = rk - rj
         rkj = rkj/LA.norm(rkj)
-
-        a_ij_ik = np.arccos(np.inner(rij,rik))
-        a_ji_jk = np.arccos(np.inner(-rij,-rkj))
-        a_ki_kj = np.arccos(np.inner(-rik,rkj))
-
-        logic = ((a_ij_ik > piby2) or 
-                (a_ji_jk > piby2) or 
-                (a_ki_kj > piby2))
+        #
+        a_ij_ik[i] = np.arccos(np.inner(rij,rik))
+        a_ji_jk[i] = np.arccos(np.inner(-rij,-rkj))
+        a_ki_kj[i] = np.arccos(np.inner(-rik,rkj))
+        #
+        logic = ((a_ij_ik[i] > piby2) or 
+                (a_ji_jk[i] > piby2) or 
+                (a_ki_kj[i] > piby2))
         if(logic):
             isgt90[i] = 1e0
         # print (a_ij_ik, a_ji_jk, a_ki_kj)
         # print (a_ij_ik + a_ji_jk + a_ki_kj)
-
-    return isgt90
-
-
+    return isgt90,a_ij_ik,a_ji_jk,a_ki_kj
 #-----------------------------------------
 def denergy_kp(mesh,kp,lwall=True,zwall=-1-1/16):
     if lwall:
@@ -461,7 +461,7 @@ def MC_surf(rr,N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
         sigma=lopt/(2**(1/6))
     cont=True
     while cont:
-        Eini = tot_energy(rr,metric=metric)
+        Eini = tot_energy(rr,metric=metric,sigma=sigma)
         print('Eini/N=',Eini/N)
         if interactive:
             fig = P.figure()
@@ -546,7 +546,7 @@ def MC_step(rr,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
         else:
             rr[kp,0]=xrem
             rr[kp,1]=yrem
-    E = tot_energy(rr,metric=metric)
+    E = tot_energy(rr,metric=metric,sigma=sigma)
     # print(rr[0,0],rr[1,0])
     return rr,move,E
 #-----------------------------------------#
@@ -663,19 +663,19 @@ def cartesian_distance(x1,y1,x2,y2):
     ds = np.sqrt((x2-x1)**2 + (y2-y1)**2)
     return ds
 #------------------------------------------#
-def tot_energy(rr,metric='cart'):
+def tot_energy(rr,metric='cart',sigma=None):
     """ The input rr is an array of size (2,N) where 
         N is the number of particle"""
     N=np.shape(rr)[0]
     E = 0
     for i in range(N):
         #print(i)
-        Ei =  En(rr,i,metric='cart')
+        Ei =  En(rr,i,metric='cart',sigma=sigma)
         E = E + Ei
         E = E/2. # because every pair is counted twice
     return E
 #---------------------------------------------#
-def En(rr,kp,metric='cart',sigma=0.03750025344077796):
+def En(rr,kp,metric='cart',sigma=None):
     N = np.shape(rr)[0]
     E = 0
     xk = rr[kp,0]
@@ -684,8 +684,8 @@ def En(rr,kp,metric='cart',sigma=0.03750025344077796):
         if j != kp:
             xj = rr[j,0]
             yj = rr[j,1]
-            ds =  distance2d(xk,yk,xj,yj,metric=metric)
-            ee = LJ(ds,epsilon=0.05,sigma=sigma)
+            ds = distance2d(xk,yk,xj,yj,metric=metric)
+            ee = LJ(ds,epsilon=1e-20,sigma=sigma)
             #print(j,ds,ee)
             E = E + ee
     return E
@@ -741,8 +741,6 @@ def lat_lon_list(tri):
                 node_ptr = neigh_ptr
                 break
             neigh_ptr = tri.lptr[neigh_ptr-1]
-
-
 #------------------------------------
 def lat_lon_neighbour(tri,k):
     # print the latitude and longitude of the kth node and its 6 neighbours

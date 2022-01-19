@@ -11,6 +11,7 @@ import yaml
 import FuncMC2d as F
 import dump_visit as dv
 from FuncMC2d import MESH
+import math
 #
 # P.style.use('matplotlibrc')
 #
@@ -36,25 +37,21 @@ if(inp['do_montecarlo']):
     rad=1
     lopt=np.sqrt(8*np.pi*rad**2/(2*Np-4))
     sigma=lopt/(2**(1/6))
+    print("sigma=",sigma)
     sv=F.SphVoronoi(rr)
-    ang_indicator = F.check_obtuse(sv.points, sv._simplices)
-    print("number of obtuse angled triangle", ang_indicator.sum())
     dv.dump_visit('output/rrini'+str(0).zfill(4)+'.vtk', sv.points, sv._simplices)
-    dv.dump_visit_cells_scalar('output/rrini'+str(0).zfill(4)+'.vtk', 
-            sv._simplices, ang_indicator, 'is90')
-
     with open('energy.dat', "w") as file:
-        for i in range(1,100):
-            rr,E = F.MC_surf(rr,Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=10**4,kBT=1.,
+        for i in range(1,1000):
+            rr,E = F.MC_surf(rr,Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=10**(int(math.log10(Np))+1),kBT=1.,
                                  dfac=Np,interactive=False,sigma=sigma)
             sv=F.SphVoronoi(rr)
-            ang_indicator = F.check_obtuse(sv.points, sv._simplices)
-            print("number of obtuse angled triangle", ang_indicator.sum())
+            obtuse = F.check_obtuse(sv.points, sv._simplices)
+            mesh=MESH(BB=2.5,HH=1,sv=sv)
+            print("|avlij0-lopt|/lopt =",np.abs(np.mean(mesh.lij0)-lopt)/lopt, obtuse.sum())
             dv.dump_visit('output/rrini'+str(i).zfill(4)+'.vtk', sv.points, sv._simplices)
-            dv.dump_visit_cells_scalar('output/rrini'+str(i).zfill(4)+'.vtk', 
-                sv._simplices, ang_indicator, 'is90')
             np.savetxt('output/rrini'+str(i).zfill(4)+'.dat', rr)
-            file.write("%d %15.8f \n" %(i, E))
+            file.write("%d %15.8f %15.8f\n" %(i, E, np.sum(obtuse)))
+            file.flush()
 else:
     rr = rrini
 #
@@ -65,8 +62,7 @@ else:
 # sv = F.SphVoronoi(rr)
 # cmlst,node_neighbour,bond_neighbour=F.neighbours(sv)
 # #
-# mesh=MESH(Np=Np,
-#         R=sv.points,
+# mesh=MESH(R=sv.points,
 #         BB=2.5,
 #         HH=1,
 #         cmlst=cmlst,
