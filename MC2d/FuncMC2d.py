@@ -135,6 +135,48 @@ def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
     E = mesh.tot_energy()
     # print(rr[0,0],rr[1,0])
     return move,E
+
+#------------------------------
+def check_obtuse(points, triangles):
+    """
+    Takes the triangles and points as input and returns 
+    an array of shape number of triangles 
+
+    The output is 1 if one of the triangle is greater than
+    90, and 0 if all the angle is acute (less than 90)
+    """
+    # angle theta for triangle ijk
+    isgt90 = np.zeros(np.shape(triangles)[0], 
+            dtype=np.float64)
+    piby2 = 0.5*np.pi
+    for i, tris in enumerate(triangles):
+        ri = points[tris[0]]
+        rj = points[tris[1]]
+        rk = points[tris[2]]
+        rij = ri - rj
+        rij = rij/LA.norm(rij)
+
+        rik = ri - rk
+        rik = rik/LA.norm(rik)
+
+        rkj = rk - rj
+        rkj = rkj/LA.norm(rkj)
+
+        a_ij_ik = np.arccos(np.inner(rij,rik))
+        a_ji_jk = np.arccos(np.inner(-rij,-rkj))
+        a_ki_kj = np.arccos(np.inner(-rik,rkj))
+
+        logic = ((a_ij_ik > piby2) or 
+                (a_ji_jk > piby2) or 
+                (a_ki_kj > piby2))
+        if(logic):
+            isgt90[i] = 1e0
+        # print (a_ij_ik, a_ji_jk, a_ki_kj)
+        # print (a_ij_ik + a_ji_jk + a_ki_kj)
+
+    return isgt90
+
+
 #-----------------------------------------
 def denergy_kp(mesh,kp,lwall=True,zwall=-1-1/16):
     if lwall:
