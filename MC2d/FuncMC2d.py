@@ -11,14 +11,14 @@ from scipy.spatial import Delaunay
 from scipy.spatial import SphericalVoronoi, geometric_slerp
 from mpl_toolkits.mplot3d import proj3d
 from dataclasses import dataclass
+import math
 #-----------------------------------------
 class MESH:
-    def __init__(self,BB,HH,
-                 sv=None,
-                 R=None,cmlst=None,node_nbr=None,bond_nbr=None):
-            if (R is None) or (cmlst is None) or (node_nbr is None) or (bond_nbr is None):
-                cmlst,node_nbr,bond_nbr=neighbours(sv)
-                R=sv.points
+    def __init__(self,BB,HH,R,cells):
+            # if (R is None) or (cmlst is None) or (node_nbr is None) or (bond_nbr is None):
+            #     cmlst,node_nbr,bond_nbr=neighbours(sv.points,sv._simplices)
+            #     R=sv.points
+            cmlst,node_nbr,bond_nbr=neighbours(R,cells)
             self.BB=BB
             self.HH=HH
             self.Np=R.shape[0]
@@ -108,8 +108,8 @@ class MESH:
         for i in range(self.Np):
             beE=beE+self.bend_energy(i)
             stE=stE++0.5*self.stretch_energy(i)
-        print("beE=",beE)
-        print("stE=",stE)
+        # print("beE=",beE)
+        # print("stE=",stE)
         return beE+stE
 #-----------------------------------------
 def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
@@ -118,14 +118,13 @@ def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
     for iter in range(maxiter):
         """ Choose a random integer between 0 and N-1 """
         kp = np.random.randint(low=0,high=Np)
-        Eini=denergy_kp(mesh,kp)
+        Eini,do_mc=denergy_kp(mesh,kp,lwall=False)
         # Eini = En(rr,kp,metric=metric)
         Rrem = mesh.R[kp].copy()
         rand_increment_mesh(mesh,kp)
-        Efin,do_mc=denergy_kp(mesh,kp)
+        Efin,do_mc=denergy_kp(mesh,kp,lwall=False)
         if do_mc:
             dE = Efin-Eini
-            print(dE)
             Accept = Metropolis(dE,kBT)
         else:
             Accept=False
@@ -176,22 +175,23 @@ def check_obtuse(points, triangles):
             isgt90[i] = 1e0
         # print (a_ij_ik, a_ji_jk, a_ki_kj)
         # print (a_ij_ik + a_ji_jk + a_ki_kj)
-    return isgt90,a_ij_ik,a_ji_jk,a_ki_kj
+    return isgt90
 #-----------------------------------------
 def denergy_kp(mesh,kp,lwall=True,zwall=-1-1/16):
+    eval_other_energies=True
+    dE=0.0
+    LJener = 0.0
     if lwall:
         zz=mesh.R[kp,2]
         dz = zz - zwall
         if(dz < 0e0):
-             # I can go ahead with evaluating the lj energy
-             LJener = LJ(dz)
-             eval_other_energies = True
+            # I can go ahead with evaluating the lj energy
+            LJener = LJ(dz)
         else:
             eval_other_energies = False
-            LJener = 0e0
     if(eval_other_energies):
         dE = (mesh.bend_energy_nbr(kp)
-            +mesh.stretch_energy(kp))    
+            +mesh.stretch_energy(kp))
     return dE+LJener,eval_other_energies
 #-----------------------------------------
 def LJ(zz,sigma=1/32,zcut=None,epsilon=4):
@@ -207,8 +207,10 @@ def LJ(zz,sigma=1/32,zcut=None,epsilon=4):
 def rand_increment_mesh(mesh,kp,rr=1,dfac=64):
     mesh.R[kp] = mesh.R[kp] + (rr/dfac)*np.random.uniform(low=-1,high=1,size=3)
 #-----------------------------------------
-def MC_mesh(mesh,maxiter=100,kBT=1.,interactive=True,dfac=64):
+def MC_mesh(mesh,maxiter=None,kBT=1.,interactive=True,dfac=64):
     Np=mesh.Np
+    if maxiter is None:
+        maxiter=10**(int(math.log10(Np))+1)
     # cont=True
     Eini = mesh.tot_energy()
     print('Eini/Np=' + str(Eini/Np))
@@ -253,12 +255,12 @@ def MC_mesh(mesh,maxiter=100,kBT=1.,interactive=True,dfac=64):
 #     def dis(self,i,j):
 #         return LA.norm(self.R[i]-self.R[j])
 #-----------------------------------------
-def neighbours(sv):
-    simpl=sorted_simplices(sv)
+def neighbours(points,cells):
+    simpl=sorted_simplices(cells)
     r1=simpl[:,0]
     r2=simpl[:,1]
     r3=simpl[:,2]
-    Np=len(sv.points)
+    Np=len(points)
     lst=np.zeros(Np,dtype=int)
     cumlst=np.zeros(Np+1,dtype=int)
     for i in range(0, Np):
@@ -271,10 +273,10 @@ def neighbours(sv):
         bond_neighbour[i]=(r3[2*i],r3[2*i+1])
     return cumlst,node_neighbour,bond_neighbour
 #-----------------------------------------#
-def sorted_simplices(sv):
-    lsimples = len(sv._simplices)
+def sorted_simplices(cells):
+    lsimples = len(cells)
     nsimplices = np.asarray([], dtype=np.int32)
-    for scles in sv._simplices:
+    for scles in cells:
         nscles = np.sort(scles)
         nsimplices = np.hstack([nsimplices, nscles])
         nsimplices = np.hstack([nsimplices, [nscles[1], nscles[2], nscles[0]]])
