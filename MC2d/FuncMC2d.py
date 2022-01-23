@@ -536,11 +536,11 @@ def MC_step(rr,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
         kp = np.random.randint(low=0,high=N)
         if metric=='sph':
             kp = np.random.randint(low=2,high=N)
-        Eini = En(rr,kp,metric=metric,sigma=sigma)
+        Eini = En(rr,kp,Lone, Ltwo, metric=metric,sigma=sigma)
         xrem = rr[kp,0]
         yrem = rr[kp,1]
         rr = rand_increment(rr,kp,Lone=Lone,Ltwo=Ltwo,dfac=dfac,metric=metric)
-        Efin = En(rr,kp,metric=metric,sigma=sigma)
+        Efin = En(rr,kp,Lone, Ltwo, metric=metric,sigma=sigma)
         dE = Efin-Eini
         Accept = Metropolis(dE,kBT)
         if Accept:
@@ -631,17 +631,17 @@ def WritePos(rr,fname='pos'):
     hf.create_dataset('rr',data=rr)
     hf.close()
 #-----------------------------------------#
-def distance2d(x1,y1,x2,y2,metric='cart'):
+def distance2d(x1,y1,x2,y2,lenx, leny, metric='cart'):
     if metric == 'cart':
-        ds = cartesian_distance(x1,y2,x2,y2)
+        ds = cartesian_distance(x1,y1,x2,y2, lenx, leny)
     elif metric == 'sph':
-        ds = sph_distance(x1,y2,x2,y2)
+        ds = sph_distance(x1,y1,x2,y2)
     else:
         print('metric',metric,'not coded, exiting')
         quit()
     if ds == 0:
         print('distance is zero..')
-        print(x1,y2,x2,y2)
+        print(x1,y1,x2,y2)
         print('quiting')
         quit()
     return ds
@@ -661,8 +661,14 @@ def cart3d(th,phi):
     z = np.cos(th)
     return x,y,z
 #------------------------------------------#
-def cartesian_distance(x1,y1,x2,y2):
-    ds = np.sqrt((x2-x1)**2 + (y2-y1)**2)
+def cartesian_distance(x1,y1,x2,y2, lenx, leny):
+    dx = abs(x2 - x1)
+    if (dx > 0.5*lenx): 
+        dx = lenx - dx
+    dy = abs(y2 - y1)
+    if (dy > 0.5*leny): 
+        dy = leny - dy
+    ds = np.sqrt((dx)**2 + (dy)**2)
     return ds
 #------------------------------------------#
 def tot_energy(rr,metric='cart',sigma=None):
@@ -672,12 +678,12 @@ def tot_energy(rr,metric='cart',sigma=None):
     E = 0
     for i in range(N):
         #print(i)
-        Ei =  En(rr,i,metric='cart',sigma=sigma)
+        Ei =  En(rr,i, Lone, Ltwo, metric='cart',sigma=sigma)
         E = E + Ei
         E = E/2. # because every pair is counted twice
     return E
 #---------------------------------------------#
-def En(rr,kp,metric='cart',sigma=None):
+def En(rr,kp,lenx, leny, metric='cart',sigma=None):
     N = np.shape(rr)[0]
     E = 0
     xk = rr[kp,0]
@@ -686,7 +692,7 @@ def En(rr,kp,metric='cart',sigma=None):
         if j != kp:
             xj = rr[j,0]
             yj = rr[j,1]
-            ds = distance2d(xk,yk,xj,yj,metric=metric)
+            ds = distance2d(xk,yk,xj,yj, lenx, leny, metric=metric)
             ee = LJ(ds,epsilon=1e-20,sigma=sigma)
             #print(j,ds,ee)
             E = E + ee
