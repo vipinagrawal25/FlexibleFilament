@@ -287,35 +287,7 @@ def sorted_simplices(cells):
     nsimpl = nsimplices.reshape(lsimples*6, 3)
     nsimpl = np.asarray(sorted(nsimpl, key=lambda x: (x[0], x[1])))
     return nsimpl
-# #-----------------------------------------#
-# def print_neighbors_(sv):
-#     lsimples = len(sv._simplices)
-#     nsimplices = np.asarray([], dtype=np.int32)
-#     for scles in sv._simplices:
-#         nscles = np.sort(scles)
-#         nsimplices = np.hstack([nsimplices, nscles])
-#         nsimplices = np.hstack([nsimplices, [nscles[1], nscles[2], nscles[0]]])
-#         nsimplices = np.hstack([nsimplices, [nscles[2], nscles[0], nscles[1]]])
-#         nsimplices = np.hstack([nsimplices, [nscles[0], nscles[2], nscles[1]]])
-#         nsimplices = np.hstack([nsimplices, [nscles[1], nscles[0], nscles[2]]])
-#         nsimplices = np.hstack([nsimplices, [nscles[2], nscles[1], nscles[0]]])
-#     nsimpl = nsimplices.reshape(lsimples*6, 3)
-#     nsimpl = np.asarray(sorted(nsimpl, key=lambda x: (x[0], x[1])))
-#     r1 = nsimpl[:,0]
-#     r2 = nsimpl[:,1]
-#     r3 = nsimpl[:,2]
-#     print("Num neighbors")
-#     for i in range(0, len(sv.points)):
-#         print(int(len(r1[r1==i])/2))
-
-#     print("neighbors index")
-#     for i in range(0, len(r2), 2):
-#         print(r2[i])
-
-#     print("adjecent neighbors index")
-#     for i in range(0, len(r3), 1):
-#         print(r3[i])
-# REQUIREMENTS: sv.tris is assigned and defined if not call make_tris function first
+#--------------------------------------
 def get_tri(sv,point):
     if 'tris' in dir(sv):
         return sv.tris[sv.cntris[point]:sv.cntris[point+1]]
@@ -458,12 +430,13 @@ def MC_surf(rr,N,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
     # rr = rrini
     # print(rr[0,:])
     # WritePos(rr,fname='ini_pos')
+    print ("metric is", metric)
     if sigma is None:
         lopt=np.sqrt(8*np.pi*rad**2/(2*Np-4))
         sigma=lopt/(2**(1/6))
     cont=True
     while cont:
-        Eini = tot_energy(rr,metric=metric,sigma=sigma)
+        Eini = tot_energy(rr, Lone, Ltwo, metric=metric,sigma=sigma)
         print('Eini/N=',Eini/N)
         if interactive:
             fig = P.figure()
@@ -548,7 +521,7 @@ def MC_step(rr,Lone=2*np.pi,Ltwo=2*np.pi,metric='cart',maxiter=100,kBT=1.,
         else:
             rr[kp,0]=xrem
             rr[kp,1]=yrem
-    E = tot_energy(rr,metric=metric,sigma=sigma)
+    E = tot_energy(rr, Lone, Ltwo, metric=metric,sigma=sigma)
     # print(rr[0,0],rr[1,0])
     return rr,move,E
 #-----------------------------------------#
@@ -632,6 +605,8 @@ def WritePos(rr,fname='pos'):
     hf.close()
 #-----------------------------------------#
 def distance2d(x1,y1,x2,y2,lenx, leny, metric='cart'):
+
+    # print('my metric', metric)
     if metric == 'cart':
         ds = cartesian_distance(x1,y1,x2,y2, lenx, leny)
     elif metric == 'sph':
@@ -671,14 +646,14 @@ def cartesian_distance(x1,y1,x2,y2, lenx, leny):
     ds = np.sqrt((dx)**2 + (dy)**2)
     return ds
 #------------------------------------------#
-def tot_energy(rr,metric='cart',sigma=None):
+def tot_energy(rr,Lone, Ltwo, metric='cart',sigma=None):
     """ The input rr is an array of size (2,N) where 
         N is the number of particle"""
     N=np.shape(rr)[0]
     E = 0
     for i in range(N):
         #print(i)
-        Ei =  En(rr,i, Lone, Ltwo, metric='cart',sigma=sigma)
+        Ei =  En(rr,i, Lone, Ltwo, metric=metric,sigma=sigma)
         E = E + Ei
         E = E/2. # because every pair is counted twice
     return E
@@ -693,7 +668,7 @@ def En(rr,kp,lenx, leny, metric='cart',sigma=None):
             xj = rr[j,0]
             yj = rr[j,1]
             ds = distance2d(xk,yk,xj,yj, lenx, leny, metric=metric)
-            ee = LJ(ds,epsilon=1e-20,sigma=sigma)
+            ee = LenardJonesRep(ds,epsilon=1,sigma=sigma)
             #print(j,ds,ee)
             E = E + ee
     return E
@@ -703,10 +678,10 @@ def LenardJonesRep(R,epsilon=1e-8,sigma=0.2):
         print('zero relative distance betn two particles! quiting')
         quit()
     else:
-        if R > sigma:
-            V = 0
-        else:
-            V = epsilon*(sigma/R)**12
+        V = epsilon*(sigma/R)**12
+        # if R > sigma:
+            # V = 0
+        # else:
     return V
 #---------------------------------------------#
 def print_xyz(lats,lons,fname='ini_sph',radius=1.):
