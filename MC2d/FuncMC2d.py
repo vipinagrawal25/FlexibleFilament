@@ -12,6 +12,7 @@ from scipy.spatial import SphericalVoronoi, geometric_slerp
 from mpl_toolkits.mplot3d import proj3d
 from dataclasses import dataclass
 import math
+import ttisect as ttis
 #-----------------------------------------
 class MESH:
     def __init__(self,BB,HH,R,cells):
@@ -111,6 +112,21 @@ class MESH:
         # print("beE=",beE)
         # print("stE=",stE)
         return beE+stE
+#-----------------------------------------
+def mesh_intersect(points,cells):
+    """
+    Right now I am writing O(n^2) algorithm.
+    points=[N,3] as numpy double array
+    cells=[2N-4,3] as numpy integer array
+    """
+    N=points.shape[0]
+    Ntr=2*N-4
+    Nisect=0
+    for i in range(Ntr):
+        for j in range(i+1,Ntr):
+            Nisect+=ttis.tri_tri_isect(points[cells[i,0]],points[cells[i,1]],points[cells[i,2]],
+                                       points[cells[j,0]],points[cells[j,1]],points[cells[j,2]])
+    return Nisect
 #-----------------------------------------
 def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
     Np=mesh.Np

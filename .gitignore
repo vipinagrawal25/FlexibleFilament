@@ -1,3 +1,4 @@
 *.[oa]
 *.exe
 *__pycache__*
+MC2d/run.py
