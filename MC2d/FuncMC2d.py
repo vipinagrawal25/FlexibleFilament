@@ -113,7 +113,7 @@ class MESH:
         # print("stE=",stE)
         return beE+stE
 #-----------------------------------------
-def mesh_intersect(points,cells,Algo="Moller"):
+def mesh_intersect(points,cells,Algo="Guigue"):
     """
     Right now I am writing O(n^2) algorithm.
     points=[N,3] as numpy double array
@@ -124,9 +124,20 @@ def mesh_intersect(points,cells,Algo="Moller"):
     Nisect=0
     for i in range(Ntr):
         for j in range(i+1,Ntr):
-            Nisect+=ttis.tri_tri_isect(points[cells[i,0]],points[cells[i,1]],points[cells[i,2]],
+            nres=ttis.tri_tri_isect(points[cells[i,0]],points[cells[i,1]],points[cells[i,2]],
                                        points[cells[j,0]],points[cells[j,1]],points[cells[j,2]],
                                        Algo=Algo)
+            if nres==1:
+                print(points[cells[i,0],0],points[cells[i,0],1],points[cells[i,0],2])
+                print(points[cells[i,1],0],points[cells[i,1],1],points[cells[i,1],2])
+                print(points[cells[i,2],0],points[cells[i,2],1],points[cells[i,2],2])
+                #
+                print(points[cells[j,0],0],points[cells[j,0],1],points[cells[j,0],2])
+                print(points[cells[j,1],0],points[cells[j,1],1],points[cells[j,1],2])
+                print(points[cells[j,2],0],points[cells[j,2],1],points[cells[j,2],2])
+                #
+                # print("\n")
+                Nisect+=nres
     return Nisect
 #-----------------------------------------
 def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
