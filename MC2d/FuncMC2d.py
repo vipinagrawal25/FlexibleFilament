@@ -113,7 +113,7 @@ class MESH:
         # print("stE=",stE)
         return beE+stE
 #-----------------------------------------
-def mesh_intersect(points,cells):
+def mesh_intersect(points,cells,Algo="Moller"):
     """
     Right now I am writing O(n^2) algorithm.
     points=[N,3] as numpy double array
@@ -125,7 +125,8 @@ def mesh_intersect(points,cells):
     for i in range(Ntr):
         for j in range(i+1,Ntr):
             Nisect+=ttis.tri_tri_isect(points[cells[i,0]],points[cells[i,1]],points[cells[i,2]],
-                                       points[cells[j,0]],points[cells[j,1]],points[cells[j,2]])
+                                       points[cells[j,0]],points[cells[j,1]],points[cells[j,2]],
+                                       Algo=Algo)
     return Nisect
 #-----------------------------------------
 def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):

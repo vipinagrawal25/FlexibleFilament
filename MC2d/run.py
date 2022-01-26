@@ -31,8 +31,8 @@ if debug:
     # np.savetxt('initial_rrini.dat', rrini)
 else:
     if (inp['regular_lattice']):
-        points,cells=meshzoo.icosa_sphere(5)
-        print(F.mesh_intersect(points,cells))
+        points,cells=meshzoo.icosa_sphere(1)
+        print("Intersection = ",F.mesh_intersect(points,cells,Algo="Shen"))
         Np = points.shape[0]
         print("Np =",Np)
         exit()

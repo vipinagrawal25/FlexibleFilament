@@ -1,9 +1,10 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+os.chdir("../")
 import ttisect as T
-
-
+os.chdir("tests/")
+#-------------------------------#
 # define triangles
 # case -1
 # t1 = np.asarray([[0,0,0], [0,1,0], [1,0,0]], dtype=np.float64)
@@ -13,8 +14,8 @@ import ttisect as T
 # t1 = np.asarray([[0,0,0], [0,1,0], [1,0,0]], dtype=np.float64)
 # t2 = np.asarray([[0,0,0], [0,1,0], [-1,0,0]], dtype=np.float64)
 
-t1 = np.asarray([[0,0,0], [0,1,0], [1,0,0]], dtype=np.float64)
-t2 = np.asarray([[2,0,0], [2,1,0], [1,0,0]], dtype=np.float64)
+t1 = np.asarray([[0,0,0], [1,0,0], [0,1,0]], dtype=np.float64)
+t2 = np.asarray([[1,0,0], [0,1,0], [0,0,1]], dtype=np.float64)
 
 # t2 = t2 + 0.1
 # plot the triangles
