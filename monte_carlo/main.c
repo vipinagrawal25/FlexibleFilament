@@ -1,8 +1,10 @@
 #include "include/global.h"
 #include "include/subroutine.h"
-
 //*************************************************//
-
+int monte_carlo_3d(POSITION *pos, MESH mesh, 
+                double *lij_t0, MBRANE_para mbrane, 
+                MCpara mcpara);
+//*************************************************//          
 bool Metropolis(double DE, MCpara mcpara){
     bool yes;
     double rand;
@@ -32,8 +34,7 @@ double rand_inc_theta(double th0,
     /*    th1 = get_rand_th1(th0) */
     return dth;
 }
-
-int monte_carlo_surface(POSITION *pos, MESH mesh, 
+int monte_carlo_3d(POSITION *pos, MESH mesh, 
                 double *lij_t0, MBRANE_para mbrane, 
                 MCpara mcpara){
     int i, j, move;
@@ -110,7 +111,7 @@ int monte_carlo_surface(POSITION *pos, MESH mesh,
     return move;
 }
 
-int monte_carlo(POSITION *Pos, 
+int monte_carlo_surf2d(POSITION *Pos, 
         Neighbours *neib, LJpara para, 
         MCpara mcpara){
     int i, j, move;
@@ -196,82 +197,81 @@ int dump_config(POSITION *Pos, double len,
     return 1;
 }
 
-int thermalize(){
-    int i, iterations, num_moves;
-    double Ener;
-    char *conf;
-    POSITION *Pos;
-    Neighbours *neib;
-    LJpara  para;
-    MCpara mcpara;
-    FILE *fid;
+// int thermalize(){
+//     int i, iterations, num_moves;
+//     double Ener;
+//     char *conf;
+//     POSITION *Pos;
+//     Neighbours *neib;
+//     LJpara  para;
+//     MCpara mcpara;
+//     FILE *fid;
 
 
-   /* define all the paras */ 
+//    /* define all the paras */ 
 
-    para.N  = 5120;
-    para.len = 2*pi;
-    para.epsilon = 1;
-    /* para.sigma = para.len/sqrt((double)para.N); */
+//     para.N  = 5120;
+//     para.len = 2*pi;
+//     para.epsilon = 1;
+//     /* para.sigma = para.len/sqrt((double)para.N); */
 
-    para.sigma = sqrt(8*pi/(2*para.N-4));
-    para.r_cut = 4*para.sigma;
+//     para.sigma = sqrt(8*pi/(2*para.N-4));
+//     para.r_cut = 4*para.sigma;
 
-    // define the monte carlo parameters
-    mcpara.dfac  = 32;
-    mcpara.mc_iter = 10*para.N;
-    mcpara.kBT = 1;
-    mcpara.metric = "sph";
-    conf = "regular";
-
-
-
-    Pos = calloc(para.N, sizeof(POSITION));
-    neib = calloc(para.N, sizeof(Neighbours));
-
-    initialize_system(Pos, para, 
-            mcpara);
+//     // define the monte carlo parameters
+//     mcpara.dfac  = 32;
+//     mcpara.mc_iter = 10*para.N;
+//     mcpara.kBT = 1;
+//     mcpara.metric = "sph";
+//     conf = "regular";
 
 
-    printf("%lf  %lf \n", para.sigma, para.r_cut);
+
+//     Pos = calloc(para.N, sizeof(POSITION));
+//     neib = calloc(para.N, sizeof(Neighbours));
+
+//     initialize_system(Pos, para, 
+//             mcpara);
+
+
+//     printf("%lf  %lf \n", para.sigma, para.r_cut);
     
-    make_nlist_pf(Pos, neib,  para, mcpara.metric);
+//     make_nlist_pf(Pos, neib,  para, mcpara.metric);
 
-    /* I have the neighbour list now let's check them */
+//     /* I have the neighbour list now let's check them */
 
-    /* for(i=0; i<para.N; i++){ */
-        /* printf("%d\n", neib[i].cnt_ss); */
-    /* } */
+//      for(i=0; i<para.N; i++){ 
+//         /* printf("%d\n", neib[i].cnt_ss); */
+//     /* } */
 
-    Ener = pairlj_total_energy_pf(Pos,  para, 
-            mcpara.metric);
+//     Ener = pairlj_total_energy_pf(Pos,  para, 
+//             mcpara.metric);
 
-    iterations = 60000;
-    system("touch output/mc_log");
-    fid = fopen("output/mc_log", "a");
-    for(i=0; i<iterations; i++){
-        if(i%1000 == 0){
-            fprintf(stderr, " iter, AcceptedMoves, Energy: %d %d %g\n",
-                    i, num_moves, Ener);
-            dump_config(Pos,  para.len, i, para.N);
-        }
-        fprintf(fid, " %d %d %g\n",
-                i, num_moves, Ener);
-        fflush(fid);
-        num_moves = monte_carlo(Pos, neib, 
-                para, mcpara);
-        make_nlist_pf(Pos, neib,  para, mcpara.metric);
+//     iterations = 60000;
+//     system("touch output/mc_log");
+//     fid = fopen("output/mc_log", "a");
+//     for(i=0; i<iterations; i++){
+//         if(i%1000 == 0){
+//             fprintf(stderr, " iter, AcceptedMoves, Energy: %d %d %g\n",
+//                     i, num_moves, Ener);
+//             dump_config(Pos,  para.len, i, para.N);
+//         }
+//         fprintf(fid, " %d %d %g\n",
+//                 i, num_moves, Ener);
+//         fflush(fid);
+//         num_moves = monte_carlo_surf2d(Pos, neib, 
+//                 para, mcpara);
+//         make_nlist_pf(Pos, neib,  para, mcpara.metric);
 
-        Ener = pairlj_total_energy(Pos, neib, para, 
-                mcpara.metric);
-        /*       /1* "a comment"; *1/ */
-    }
-    fclose(fid);
-    free(Pos);
-    free(neib);
-    return 0;
-}
-
+//         Ener = pairlj_total_energy(Pos, neib, para, 
+//                 mcpara.metric);
+//         /*       /1* "a comment"; *1/ */
+//     }
+//     fclose(fid);
+//     free(Pos);
+//     free(neib);
+//     return 0;
+// }
 int main(int argc, char **argv[]){
     int i, iterations, num_moves;
     double Ener_s, Ener_b, Ener_t;
@@ -285,26 +285,22 @@ int main(int argc, char **argv[]){
     int *triangles;
     char outfile[89];
 
-
-
    /* define all the paras */ 
-
     mbrane.N  = 5120;
     mbrane.num_triangles = 2*mbrane.N - 4;
     mbrane.num_nbr = 3*mbrane.num_triangles; 
     mbrane.coef_bend = 577; 
     mbrane.coef_str = 1; 
     mbrane.radius = 1e0; 
-    
     /* Can estimate all the neighbours and triangles from num neighbours */ 
     /* to read from input */
 
-    mesh.cmlist = calloc(mbrane.N+1, sizeof(int));
-    mesh.node_nbr_list = calloc(mbrane.num_nbr, sizeof(int)); 
-    mesh.bond_nbr_list = calloc(mbrane.num_nbr, sizeof(int2));
-    lij_t0 = calloc(mbrane.num_nbr, sizeof(double)); 
-    triangles = calloc(mbrane.num_nbr, sizeof(int)); 
-    obtuse = calloc(mbrane.num_triangles, sizeof(double)); 
+    mesh.cmlist = (int *)calloc(mbrane.N+1, sizeof(int));
+    mesh.node_nbr_list = (int *)calloc(mbrane.num_nbr, sizeof(int)); 
+    mesh.bond_nbr_list = (int2 *)calloc(mbrane.num_nbr, sizeof(int2));
+    lij_t0 = (double *)calloc(mbrane.num_nbr, sizeof(double)); 
+    triangles = (int *)calloc(mbrane.num_nbr, sizeof(int)); 
+    obtuse = (double *)calloc(mbrane.num_triangles, sizeof(double)); 
     // define the monte carlo parameters
     
     mcpara.dfac  = 32;
@@ -313,7 +309,7 @@ int main(int argc, char **argv[]){
     mcpara.metric = "sph";
     mcpara.delta = sqrt(8*pi/(2*mbrane.N-4));
 
-    Pos = calloc(mbrane.N, sizeof(POSITION));
+    Pos = (POSITION *)calloc(mbrane.N, sizeof(POSITION));
 
     /* initialize_read_config(Pos, mesh, triangles, mbrane); */
 
@@ -351,21 +347,16 @@ int main(int argc, char **argv[]){
                     i, num_moves, Ener_t);
             fflush(fid);
         }
-        num_moves = monte_carlo_surface(Pos, mesh, 
+        num_moves = monte_carlo_3d(Pos, mesh, 
                 lij_t0, mbrane, mcpara);
         Ener_s =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
         Ener_b =  bending_energy_total(Pos, mesh, mbrane);
         Ener_t = Ener_s + Ener_b;
-
     }
     fclose(fid);
     free(Pos);
     free(lij_t0);
     free(mesh.node_nbr_list);
     free(mesh.bond_nbr_list);
-
     return 0;
-
-
 }
-

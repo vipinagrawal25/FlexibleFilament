@@ -113,7 +113,7 @@ class MESH:
         # print("stE=",stE)
         return beE+stE
 #-----------------------------------------
-def mesh_intersect(points,cells,Algo="Guigue"):
+def mesh_intersect(points,cells):
     """
     Right now I am writing O(n^2) algorithm.
     points=[N,3] as numpy double array
@@ -124,18 +124,20 @@ def mesh_intersect(points,cells,Algo="Guigue"):
     Nisect=0
     for i in range(Ntr):
         for j in range(i+1,Ntr):
-            nres=ttis.tri_tri_isect(points[cells[i,0]],points[cells[i,1]],points[cells[i,2]],
-                                       points[cells[j,0]],points[cells[j,1]],points[cells[j,2]],
-                                       Algo=Algo)
+            nres=ttis.tri_tri_intersect(points[cells[i,0]],points[cells[i,1]],points[cells[i,2]],
+                                       points[cells[j,0]],points[cells[j,1]],points[cells[j,2]])
             if nres==1:
-                print(points[cells[i,0],0],points[cells[i,0],1],points[cells[i,0],2])
-                print(points[cells[i,1],0],points[cells[i,1],1],points[cells[i,1],2])
-                print(points[cells[i,2],0],points[cells[i,2],1],points[cells[i,2],2])
-                #
-                print(points[cells[j,0],0],points[cells[j,0],1],points[cells[j,0],2])
-                print(points[cells[j,1],0],points[cells[j,1],1],points[cells[j,1],2])
-                print(points[cells[j,2],0],points[cells[j,2],1],points[cells[j,2],2])
-                #
+                print(points[cells[i]])
+                print(points[cells[j]])
+                print("\n")
+                # print(points[cells[i,0],0],points[cells[i,0],1],points[cells[i,0],2])
+                # print(points[cells[i,1],0],points[cells[i,1],1],points[cells[i,1],2])
+                # print(points[cells[i,2],0],points[cells[i,2],1],points[cells[i,2],2])
+                # #
+                # print(points[cells[j,0],0],points[cells[j,0],1],points[cells[j,0],2])
+                # print(points[cells[j,1],0],points[cells[j,1],1],points[cells[j,1],2])
+                # print(points[cells[j,2],0],points[cells[j,2],1],points[cells[j,2],2])
+                
                 # print("\n")
                 Nisect+=nres
     return Nisect
@@ -143,13 +145,14 @@ def mesh_intersect(points,cells,Algo="Guigue"):
 def MC_step_mesh(mesh,maxiter=100,kBT=1.,dfac=64):
     Np=mesh.Np
     move = 0
+    lopt=np.sqrt(8*np.pi*rad**2/(2*Np-4))
     for iter in range(maxiter):
         """ Choose a random integer between 0 and N-1 """
         kp = np.random.randint(low=0,high=Np)
         Eini,do_mc=denergy_kp(mesh,kp,lwall=False)
         # Eini = En(rr,kp,metric=metric)
         Rrem = mesh.R[kp].copy()
-        rand_increment_mesh(mesh,kp)
+        rand_increment_mesh(mesh,kp,rr=lopt)
         Efin,do_mc=denergy_kp(mesh,kp,lwall=False)
         if do_mc:
             dE = Efin-Eini
@@ -235,10 +238,14 @@ def LJ(zz,sigma=1/32,zcut=None,epsilon=4):
 def rand_increment_mesh(mesh,kp,rr=1,dfac=64):
     mesh.R[kp] = mesh.R[kp] + (rr/dfac)*np.random.uniform(low=-1,high=1,size=3)
 #-----------------------------------------
-def MC_mesh(mesh,maxiter=None,kBT=1.,interactive=True,dfac=64):
+def MC_mesh(mesh,maxiter=None,kBT=1.,interactive=True,dfac=64,rr=None):
     Np=mesh.Np
     if maxiter is None:
         maxiter=10**(int(math.log10(Np))+1)
+    # assign rr=lopt
+    if rr is None:
+        lopt=np.sqrt(8*np.pi*rad**2/(2*Np-4))
+        rr=lopt
     # cont=True
     Eini = mesh.tot_energy()
     print('Eini/Np=' + str(Eini/Np))
@@ -246,23 +253,23 @@ def MC_mesh(mesh,maxiter=None,kBT=1.,interactive=True,dfac=64):
     #     fig = P.figure()
     #     ax = fig.add_subplot(111)
     #     ax.plot(rr[:,0],rr[:,1],'o',color='C0')
-    move,Efin = MC_step_mesh(mesh,maxiter=maxiter,kBT=kBT,dfac=dfac)
+    move,Efin = MC_step_mesh(mesh,maxiter=maxiter,kBT=kBT,dfac=dfac,rr=rr)
     print('MC steps', maxiter)
     print('accepted moves',move)
     print('Efin/Np=',Efin/Np)
-        # if interactive:
-        #     ax.plot(rr[:,0],rr[:,1],'*',color='C3')
-        #     P.show()
-        #     answer=input('continue(Y) ? ')
-        #     if answer != 'Y':
-        #         cont = False
-        #         print('Run over, go home')
-        #     else:
-        #         print('another', maxiter, 'MC steps')
-        #         P.close()
-        # else:
-        #     print('Run over, go home')
-        #     break
+    # if interactive:
+    #     ax.plot(rr[:,0],rr[:,1],'*',color='C3')
+    #     P.show()
+    #     answer=input('continue(Y) ? ')
+    #     if answer != 'Y':
+    #         cont = False
+    #         print('Run over, go home')
+    #     else:
+    #         print('another', maxiter, 'MC steps')
+    #         P.close()
+    # else:
+    #     print('Run over, go home')
+    #     break
     return mesh,Efin
 #-----------------------------------------
 # @dataclass

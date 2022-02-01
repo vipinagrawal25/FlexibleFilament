@@ -31,8 +31,8 @@ if debug:
     # np.savetxt('initial_rrini.dat', rrini)
 else:
     if (inp['regular_lattice']):
-        points,cells=meshzoo.icosa_sphere(10)
-        print("Intersection = ",F.mesh_intersect(points,cells,Algo="Guigue"))
+        points,cells=meshzoo.icosa_sphere(1)
+        print("Intersection = ",F.mesh_intersect(points,cells))
         Np = points.shape[0]
         print("Np =",Np)
         exit()
@@ -93,7 +93,7 @@ with open('energy.dat', "w") as file:
     file.write("%d %15.8f %15.8f\n" %(0, 0.0, np.sum(obtuse)))
     file.flush()
     for i in range(1,10**(int(math.log10(Np)))):
-        mesh,E=F.MC_mesh(mesh,kBT=1.,interactive=True,dfac=64)
+        mesh,E=F.MC_mesh(mesh,kBT=1.,interactive=True,dfac=32,rr=lopt)
         obtuse = F.check_obtuse(mesh.R, cells)
         dv.dump_visit('output/var'+str(i).zfill(4)+'.vtk', mesh.R, cells)
         dv.dump_visit_cells_scalar('output/var'+str(i).zfill(4)+'.vtk', cells, obtuse, 

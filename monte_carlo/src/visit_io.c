@@ -1,6 +1,4 @@
 #include<stdio.h>
-
-
 void visit_vtk_io(double *points, 
         int *triangles, 
         int Np, char filename[], 

@@ -1,4 +1,3 @@
-
 #include "../include/global.h"
 #include "../include/subroutine.h"
 

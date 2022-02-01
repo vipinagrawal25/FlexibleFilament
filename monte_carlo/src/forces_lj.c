@@ -1,4 +1,3 @@
-
 #include "../include/global.h"
 #include "../include/subroutine.h"
  
@@ -212,7 +211,7 @@ void make_nlist(POSITION *Pos, Neighbours *neib,
 
 
 
-bool len_check_pf(POSITION s1, POSITION s2, 
+bool len_check_pf(POSITION s1, POSITION s2,
         double len, double new_rc, char *metric){
 
     double ds;
@@ -335,5 +334,3 @@ double pairlj_total_energy_pf(POSITION *Pos, LJpara para, char *metric){
     }
     return pe;
 }
-
-
