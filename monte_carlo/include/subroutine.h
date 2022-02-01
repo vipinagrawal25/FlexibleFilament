@@ -1,7 +1,6 @@
 #ifndef subroutine_h
 #define subroutine_h
 #include <iostream>
-#include <cstdlib>
 //forces_lj.c
 void make_nlist();
 void make_nlist_pf();
@@ -34,7 +33,7 @@ void identify_attractive_part(POSITION *pos,
 double stretch_energy_ipart(POSITION *pos, 
         int *node_nbr, double *lij_t0,
         int num_nbr, int idx, MBRANE_para para);
-double lj_bottom_surface(double zz, 
+double lj_bottom_surface(double zz,
         bool is_attractive, 
         double sur_pos, double eps, double sigma);
 double volume_enclosed_membrane(POSITION *pos, 
@@ -43,8 +42,9 @@ double volume_enclosed_membrane(POSITION *pos,
 
 //initialise.c
 void initialize_system();
+void initialize_eval_lij_t0(POSITION *Pos, MESH mesh, 
+        double *lij_t0, MBRANE_para para);
 void initialize_read_config();
-void initialize_eval_lij_t0();
 int randint(int n);
 //visit_io.c
 void visit_vtk_io(double *points, 

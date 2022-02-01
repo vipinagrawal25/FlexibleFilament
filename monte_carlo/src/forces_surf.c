@@ -1,4 +1,3 @@
-
 #include "../include/global.h"
 #include "../include/subroutine.h"
 
@@ -106,8 +105,7 @@ double bending_energy_ipart(POSITION *pos,
     } 
     sigma_i *= 0.25;
     double curvature = (1e0/sigma_i)*sqrt(inner_product(cot_times_rij, cot_times_rij));
-
-    bend_ener = 0.5*BB*sigma_i*(curvature - curv_t0);
+    bend_ener = 0.5*BB*sigma_i*(curvature - curv_t0)*(curvature - curv_t0);
     return bend_ener;
 }
 
@@ -225,19 +223,7 @@ double volume_enclosed_membrane(POSITION *pos,
         j = triangles[it+1];
         k = triangles[it+2];
         ri = pos[i]; rj = pos[j]; rk = pos[k];
-
-        /*ri.x = ri.x + 20; */
-        /*ri.y = ri.y + 20; */
-        /*ri.z = ri.z + 20; */
-
-        /*rj.x = rj.x + 20; */
-        /*rj.y = rj.y + 20; */
-        /*rj.z = rj.z + 20; */
-
-        /*rk.x = rk.x + 20; */
-        /*rk.y = rk.y + 20; */
-        /*rk.z = rk.z + 20; */
-
+        
         rij = Position_add(ri, rj, 1e0);
         rijk = Position_add(rij, rk, 1e0);
 
@@ -247,10 +233,8 @@ double volume_enclosed_membrane(POSITION *pos,
         rik = Position_add(rk , ri, -1e0);
         area = cross_product(rij, rik);
 
-        volume = volume + 0.5*abs(area.x*rijk.x + area.y*rijk.y + area.z*rijk.z);
-
+        volume = volume + 0.5*fabs(area.x*rijk.x + area.y*rijk.y + area.z*rijk.z);
     }
-
     return volume/3e0;
 };
 

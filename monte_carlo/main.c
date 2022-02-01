@@ -300,8 +300,8 @@ int main(int argc, char **argv[]){
     mbrane.N  = 5120;
     mbrane.num_triangles = 2*mbrane.N - 4;
     mbrane.num_nbr = 3*mbrane.num_triangles; 
-    mbrane.coef_bend = 2800.5; 
-    mbrane.coef_str = 2.85; 
+    mbrane.coef_bend = 2.5;
+    mbrane.coef_str = 28.5; 
     mbrane.radius = 1e0; 
     mbrane.pos_bot_wall = -1.0 - 0.05; //mbrane.sigma;
     mbrane.sigma = 0.05; 
@@ -314,40 +314,25 @@ int main(int argc, char **argv[]){
     mesh.cmlist = (int *)calloc(mbrane.N+1, sizeof(int));
     mesh.node_nbr_list = (int *)calloc(mbrane.num_nbr, sizeof(int)); 
     mesh.bond_nbr_list = (int2 *)calloc(mbrane.num_nbr, sizeof(int2));
-    lij_t0 = (double *)calloc(mbrane.num_nbr, sizeof(double)); 
+    lij_t0 = (double *)calloc(mbrane.num_nbr, sizeof(double));
     triangles = (int *)calloc(mbrane.num_nbr, sizeof(int)); 
     obtuse = (double *)calloc(mbrane.num_triangles, sizeof(double)); 
     is_attractive = (bool *)calloc(mbrane.N, sizeof(bool)); 
     // define the monte carlo parameters
-    
     mcpara.dfac  = 32;
     mcpara.mc_iter = 10*mbrane.N;
     mcpara.kBT = 1;
     mcpara.metric = "sph";
     mcpara.delta = sqrt(8*pi/(2*mbrane.N-4));
-
-
     Pos = (POSITION *)calloc(mbrane.N, sizeof(POSITION));
-
     /* initialize_read_config(Pos, mesh, triangles, mbrane); */
-    
     hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
             (int *) mesh.node_nbr_list, (int *) mesh.bond_nbr_list, 
             triangles, "input/input.h5" );
     identify_attractive_part(Pos, is_attractive, mbrane.N);
-
-
-
     fprintf(stderr, "Initialization check: %lf %lf %lf \n", Pos[i].x, Pos[i].y, Pos[i].z);
     fprintf(stderr, "Initialization check: %d %d %d \n", mesh.cmlist[i+2], mesh.cmlist[i]);
-    /* initialize_eval_lij_t0(Pos, mesh, lij_t0, mbrane); */
-
-    /* Ener_s =  stretch_energy_total(Pos, mesh, lij_t0, mbrane); */
-    /* Ener_b =  bending_energy_total(Pos, mesh, mbrane); */
-    /* Ener_t = Ener_s + Ener_b; */
-    vol_sph  = volume_enclosed_membrane(Pos, triangles, 
-            mbrane.num_triangles);
-
+    initialize_eval_lij_t0(Pos, mesh, lij_t0, mbrane);
     identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
     iterations = 60000;
     system("touch output/mc_log");
@@ -355,12 +340,13 @@ int main(int argc, char **argv[]){
     num_moves = 0;
     for(i=0; i<iterations; i++){
         if(i%10 == 0){
+            Ener_s =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
+            Ener_b =  bending_energy_total(Pos, mesh, mbrane);
+            Ener_t = Ener_s + Ener_b;
             vol_sph  = volume_enclosed_membrane(Pos, triangles, 
-                    mbrane.num_triangles);
-
-            fprintf(stderr, " iter, AcceptedMoves, Str_ener, bend_ener, volume: %d %d %g %g %g\n",
+                                                mbrane.num_triangles);
+            fprintf(stderr, "iter, AcceptedMoves, Str_ener, bend_ener, volume: %d %d %g %g %g\n",
                     i, num_moves, Ener_s, Ener_b, vol_sph);
-
             identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
             sprintf(outfile,"output/part_%05d.vtk",i);
             visit_vtk_io( (double *) Pos, triangles, 
@@ -369,17 +355,11 @@ int main(int argc, char **argv[]){
                     outfile, "is90");
             visit_vtk_io_point_data(is_attractive, mbrane.N,
                     outfile, "attr");
-
-
-            fprintf(fid, " %d %d %g %g\n",
-                    i, num_moves, Ener_t, Ener_s, vol_sph);
+            fprintf(fid, "%d %d %g %g %g\n",
+                    i, num_moves, Ener_s, Ener_b, vol_sph);
             fflush(fid);
         }
-        num_moves = monte_carlo_3d(Pos, mesh, 
-                lij_t0, is_attractive, mbrane, mcpara);
-        Ener_s =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
-        Ener_b =  bending_energy_total(Pos, mesh, mbrane);
-        Ener_t = Ener_s + Ener_b;
+        num_moves = monte_carlo_3d(Pos, mesh, lij_t0, is_attractive, mbrane, mcpara);
     }
     fclose(fid);
     free(Pos);

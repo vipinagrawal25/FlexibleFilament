@@ -10,6 +10,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <iostream>
+#include <cstdlib>
+
+using namespace std;
 
 #define pi 3.14159265358979
 #define R_del 0.05
@@ -63,5 +67,4 @@ typedef struct{
     double len;
     double r_cut;
 }LJpara;
-
 #endif
