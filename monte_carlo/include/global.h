@@ -37,6 +37,8 @@ typedef struct{
     double radius;
     double sigma, epsilon;
     double pos_bot_wall;
+    double coef_vol;
+    double av_bond_len;
     int N;
     int num_triangles;
     int num_nbr;

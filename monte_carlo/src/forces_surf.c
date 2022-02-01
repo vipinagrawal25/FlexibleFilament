@@ -58,7 +58,7 @@ double stretch_energy_ipart(POSITION *pos,
     int i,j;
 
     idx_ener = 0e0;
-    HH = para.coef_bend;
+    HH = para.coef_str/(para.av_bond_len*para.av_bond_len);
     for (i =0; i < num_nbr; i++){
         j = node_nbr[i];
         rij = Position_add(pos[idx], pos[j], -1e0);
