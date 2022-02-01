@@ -312,8 +312,7 @@ int main(int argc, char **argv[]){
     Pos = (POSITION *)calloc(mbrane.N, sizeof(POSITION));
 
     /* initialize_read_config(Pos, mesh, triangles, mbrane); */
-
-
+    
     hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
             (int *) mesh.node_nbr_list, (int *) mesh.bond_nbr_list, 
             triangles, "input/input.h5" );

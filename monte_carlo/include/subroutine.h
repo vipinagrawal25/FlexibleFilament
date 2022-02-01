@@ -53,4 +53,6 @@ void hdf5_io_read_config(double *Pos, int *cmlist,
         char input_file[]);
 //misc
 bool FileExists(const std::string &s);
+//util
+int 
 #endif
