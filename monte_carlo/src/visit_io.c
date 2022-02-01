@@ -22,7 +22,7 @@ void visit_vtk_io(double *points,
     fclose(fid);
 }
 
-void visit_vtk_io_points_data(double *data, 
+void visit_vtk_io_point_data(bool *data, 
         int Np, char filename[], 
         char dataname[]){
 
@@ -32,11 +32,15 @@ void visit_vtk_io_points_data(double *data,
 
     num_triangles = 2*Np - 4;
     fid = fopen(filename, "a");
-    fprintf(fid, "%s %d %s \n", "POINT_DATA", Np);
+    fprintf(fid, "%s %d \n", "POINT_DATA", Np);
     fprintf(fid, "%s %s %s \n", "SCALARS", dataname, "float 1");
     fprintf(fid, "%s \n", "LOOKUP_TABLE default ");
     for(i = 0; i< Np; i=i+1){
-        fprintf(fid, "%g \n", data[i]);
+        if(data[i]){
+            fprintf(fid, "%g \n", 1.0);
+        } else {
+            fprintf(fid, "%g \n", 0.0);
+        }
     }
     fclose(fid);
 }

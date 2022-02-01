@@ -29,9 +29,17 @@ double stretch_energy_total(POSITION *pos,
          MBRANE_para para);
 void identify_obtuse(POSITION *pos, int *triangles, 
        double *obtuse,  int N);
+void identify_attractive_part(POSITION *pos, 
+        bool *is_attractive, int N);
 double stretch_energy_ipart(POSITION *pos, 
         int *node_nbr, double *lij_t0,
         int num_nbr, int idx, MBRANE_para para);
+double lj_bottom_surface(double zz, 
+        bool is_attractive, 
+        double sur_pos, double eps, double sigma);
+double volume_enclosed_membrane(POSITION *pos, 
+        int *triangles, int num_triangles);
+ 
 
 //initialise.c
 void initialize_system();
@@ -43,7 +51,9 @@ void visit_vtk_io(double *points,
         int *triangles, 
         int Np, char filename[], 
         char dataname[]);
-void visit_vtk_io_points_data();
+void visit_vtk_io_point_data(bool *data, 
+        int Np, char filename[], 
+        char dataname[]);
 void visit_vtk_io_cell_data(double *data, 
         int Np, char filename[], 
         char dataname[]);

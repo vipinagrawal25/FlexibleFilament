@@ -35,6 +35,8 @@ typedef struct{
     double coef_bend;
     double coef_str;
     double radius;
+    double sigma, epsilon;
+    double pos_bot_wall;
     int N;
     int num_triangles;
     int num_nbr;
@@ -50,6 +52,7 @@ typedef struct{
     int *node_nbr_list;
     int2 *bond_nbr_list;
 }MESH;
+
 //
 typedef struct{
     int N;
@@ -58,4 +61,5 @@ typedef struct{
     double len;
     double r_cut;
 }LJpara;
+
 #endif

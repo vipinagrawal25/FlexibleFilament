@@ -180,6 +180,80 @@ double stretch_energy_total(POSITION *pos,
     return se;
  }
 
+double lj(double sqdr, double eps){
+    double r6;
+    r6 = sqdr*sqdr*sqdr;
+    return eps*(r6*(r6-1));
+}
+
+double lj_bottom_surface(double zz, 
+        bool is_attractive, 
+        double sur_pos, double eps, double sigma){
+
+    double inv_sqdz, ds;
+
+    if(is_attractive){
+        ds = sur_pos - zz;
+        inv_sqdz = sigma/(ds*ds);
+    }
+    return  lj(inv_sqdz, eps);
+}
+
+
+
+void identify_attractive_part(POSITION *pos, 
+        bool *is_attractive, int N){
+
+    int i; 
+    double theta, rr;
+    for(i= 0; i<N; i++){
+        theta = pi - acos(pos[i].z);
+        is_attractive[i] = theta < pi/6.0;
+    }
+}
+
+double volume_enclosed_membrane(POSITION *pos, 
+        int *triangles, int num_triangles){
+    int i, j, k, it;
+    double volume;
+    POSITION area, rk, ri, rj;
+    POSITION rij, rijk, rik;
+    double inp_r1, inp_r2, inp_r3;
+    volume = 0e0;
+    for (it = 0; it< 3*num_triangles; it=it+3){
+        i = triangles[it];
+        j = triangles[it+1];
+        k = triangles[it+2];
+        ri = pos[i]; rj = pos[j]; rk = pos[k];
+
+        /*ri.x = ri.x + 20; */
+        /*ri.y = ri.y + 20; */
+        /*ri.z = ri.z + 20; */
+
+        /*rj.x = rj.x + 20; */
+        /*rj.y = rj.y + 20; */
+        /*rj.z = rj.z + 20; */
+
+        /*rk.x = rk.x + 20; */
+        /*rk.y = rk.y + 20; */
+        /*rk.z = rk.z + 20; */
+
+        rij = Position_add(ri, rj, 1e0);
+        rijk = Position_add(rij, rk, 1e0);
+
+        rijk.x = rijk.x/3e0; rijk.y = rijk.y/3e0; rijk.z = rijk.z/3e0;
+
+        rij = Position_add(ri, rj, -1e0);
+        rik = Position_add(rk , ri, -1e0);
+        area = cross_product(rij, rik);
+
+        volume = volume + 0.5*abs(area.x*rijk.x + area.y*rijk.y + area.z*rijk.z);
+
+    }
+
+    return volume/3e0;
+};
+
 void identify_obtuse(POSITION *pos, int *triangles, 
        double *obtuse,  int N){
     double piby2;
