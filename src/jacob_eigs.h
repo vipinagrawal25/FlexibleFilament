@@ -204,7 +204,7 @@ bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*),
   op.f_display = func;
   op.nn = ndim;
   op.eps_rel = eps_rel;
-
+  //
   int ncv = min(2*neigs+1,ndim);
   GenEigsSolver< double, selectionRule, JdotX > eigs(&op, neigs, ncv);
   eigs.init();

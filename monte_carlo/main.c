@@ -44,13 +44,12 @@ double total_energy_mc_3d(POSITION *pos, MESH mesh,
     double E_stick;
     int cm_idx, num_nbr;
 
-
     num_nbr = mesh.cmlist[idx + 1] - mesh.cmlist[idx];
     cm_idx = mesh.cmlist[idx];
     E_b = bending_energy_ipart(pos, 
             (int *) (mesh.node_nbr_list + cm_idx),
             (int2 *) (mesh.bond_nbr_list + cm_idx), num_nbr, 
-            idx, mbrane);
+            idx, mbrane, is_attractive);
 
     E_b += bending_energy_ipart_neighbour(pos, 
             mesh, idx, mbrane);
@@ -301,7 +300,7 @@ int main(int argc, char **argv[]){
     mbrane.num_triangles = 2*mbrane.N - 4;
     mbrane.num_nbr = 3*mbrane.num_triangles; 
     mbrane.coef_bend = 2.5;
-    mbrane.coef_str = 28.5; 
+    mbrane.coef_str = 28.5;
     mbrane.radius = 1e0; 
     mbrane.pos_bot_wall = -1.0 - 0.05; //mbrane.sigma;
     mbrane.sigma = 0.05; 
@@ -310,7 +309,6 @@ int main(int argc, char **argv[]){
     mbrane.av_bond_len = sqrt(8*pi/(2*mbrane.N-4));
     /* Can estimate all the neighbours and triangles from num neighbours */ 
     /* to read from input */
-
     mesh.cmlist = (int *)calloc(mbrane.N+1, sizeof(int));
     mesh.node_nbr_list = (int *)calloc(mbrane.num_nbr, sizeof(int)); 
     mesh.bond_nbr_list = (int2 *)calloc(mbrane.num_nbr, sizeof(int2));
@@ -338,10 +336,11 @@ int main(int argc, char **argv[]){
     system("touch output/mc_log");
     fid = fopen("output/mc_log", "a");
     num_moves = 0;
+    
     for(i=0; i<iterations; i++){
         if(i%10 == 0){
             Ener_s =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
-            Ener_b =  bending_energy_total(Pos, mesh, mbrane);
+            Ener_b =  bending_energy_total(Pos, mesh, mbrane,is_attractive);
             Ener_t = Ener_s + Ener_b;
             vol_sph  = volume_enclosed_membrane(Pos, triangles, 
                                                 mbrane.num_triangles);

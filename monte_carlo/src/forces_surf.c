@@ -16,9 +16,7 @@ POSITION Position_add(POSITION s1,
     add.z = s1.z + fac*s2.z;
 
     return add;
-
 }
-
 
 POSITION cross_product(POSITION s1, 
         POSITION s2){
@@ -71,14 +69,16 @@ double stretch_energy_ipart(POSITION *pos,
 
 double bending_energy_ipart(POSITION *pos, 
         int *node_nbr, int2 *bond_nbr,
-        int num_nbr, int idx, MBRANE_para para){
+        int num_nbr, int idx, MBRANE_para para, bool *is_attractive){
 
     double idx_ener;
     double BB, rij_dot_rij;
     int i, k, kp;
     int j;
     double cot_sum, sigma_i, bend_ener, curv_t0;
-    POSITION cot_theta_rij, rij, cot_times_rij;
+    double curvature;
+    double area=0;
+    POSITION cot_theta_rij, rij, rik, rikp, cot_times_rij;
 
     BB = para.coef_bend;
     sigma_i = 0e0;
@@ -90,22 +90,30 @@ double bending_energy_ipart(POSITION *pos,
     for (i =0; i < num_nbr; i++){
         j = node_nbr[i];
         k  = bond_nbr[i].i1; 
-        kp = bond_nbr[i].i2; 
+        kp = bond_nbr[i].i2;
 
         cot_sum=0.5*(cotangent(pos[idx],pos[j],pos[k]) +
-                cotangent(pos[idx],pos[j],pos[kp]));
+                     cotangent(pos[idx],pos[j],pos[kp]));
         rij = Position_add(pos[idx], pos[j], -1e0);
-
+        rik = Position_add(pos[idx], pos[k], -1e0);
+        rikp = Position_add(pos[idx], pos[kp], -1e0);
+        area = area+sqrt(inner_product(cross_product(rij,rik),cross_product(rij,rik)))+
+                    sqrt(inner_product(cross_product(rij,rikp),cross_product(rij,rikp)));
         rij_dot_rij = inner_product(rij, rij);
-
-        cot_times_rij  = Position_add(cot_times_rij, rij, cot_sum); 
-
+        // cot_times_rij  = Position_add(cot_times_rij, rij, cot_sum);
+        cot_times_rij  = Position_add(cot_times_rij, rij, 1/sqrt(3));
         sigma_i = sigma_i + rij_dot_rij*cot_sum;
-
-    } 
+    }
+    area=area/2;
     sigma_i *= 0.25;
-    double curvature = (1e0/sigma_i)*sqrt(inner_product(cot_times_rij, cot_times_rij));
+    is_attractive[idx]=sigma_i<0;
+    // if (sigma_i<0){
+    sigma_i=area/3;
+    // cout << area/3 << endl;
+    // }
+    curvature = (1e0/sigma_i)*sqrt(inner_product(cot_times_rij, cot_times_rij));
     bend_ener = 0.5*BB*sigma_i*(curvature - curv_t0)*(curvature - curv_t0);
+    // bend_ener = 0.5*BB*1/area*inner_product(cot_times_rij, cot_times_rij);
     return bend_ener;
 }
 
@@ -119,7 +127,7 @@ double bending_energy_ipart_neighbour(POSITION *pos,
    double be;
 
    be = 0e0;
-
+   bool is_attractive[para.N];
    for (j = mesh.cmlist[idx]; j < mesh.cmlist[idx+1]; j++){
        nbr = mesh.node_nbr_list[j];
        num_nbr_j = mesh.cmlist[nbr+1] -  mesh.cmlist[nbr];
@@ -128,13 +136,13 @@ double bending_energy_ipart_neighbour(POSITION *pos,
        be += bending_energy_ipart(pos, 
               (int *) mesh.node_nbr_list + cm_idx_nbr,
               (int2 *) mesh.bond_nbr_list + cm_idx_nbr, num_nbr_j, 
-           nbr, para);
+               nbr, para, is_attractive);
    }
    return be;
 } 
 
 double bending_energy_total(POSITION *pos, 
-        MESH mesh, MBRANE_para para){
+        MESH mesh, MBRANE_para para, bool *is_attractive){
     int idx, j, k;
     int num_nbr, cm_idx;
     double be, curv;
@@ -151,7 +159,7 @@ double bending_energy_total(POSITION *pos,
         be += bending_energy_ipart(pos, 
                 (int *) (mesh.node_nbr_list + cm_idx),
                 (int2 *) (mesh.bond_nbr_list + cm_idx), num_nbr, 
-                idx, para);
+                idx, para, is_attractive);
     }
     return be;
 }
