@@ -28,91 +28,167 @@ POSITION cross_product(POSITION s1,
     return crosprod;
 
 }
-
-double cotangent(POSITION si, POSITION sj, POSITION sk){
-
+double cotangent(POSITION si, POSITION sk, POSITION sj){
     POSITION drik, drjk, cross;
     double cot_theta, inp_1;  
     double inner_prod;
-
+    //
     drik = Position_add(si , sk, -1e0);
     drjk = Position_add(sj , sk, -1e0);
     cross = cross_product(drik, drjk);
     inner_prod = inner_product(drik, drjk);
     cot_theta = inner_prod/sqrt(inner_product(cross,cross));
-
+    //
     return cot_theta;
 }
-
+//
+double cotangent(double a, double b, double c){
+    double s = 0.5*(a+b+c);
+    area = sqrt(s*(s-a)*(s-b)*(s-c));
+    cot_theta=0.25*(a*a+b*b-c*c)/area
+    return cot_theta;
+}
 double stretch_energy_ipart(POSITION *pos, 
         int *node_nbr, double *lij_t0,
         int num_nbr, int idx, MBRANE_para para){
-
+    //
     double HH;
     double idx_ener;
     POSITION rij;
     double mod_rij;
     int i,j;
-
+    //
     idx_ener = 0e0;
     HH = para.coef_str/(para.av_bond_len*para.av_bond_len);
     for (i =0; i < num_nbr; i++){
         j = node_nbr[i];
         rij = Position_add(pos[idx], pos[j], -1e0);
         mod_rij = sqrt(inner_product(rij, rij));
-
+        //
         idx_ener = idx_ener + (mod_rij - lij_t0[i])*(mod_rij - lij_t0[i]);
     }
-    
+    //
     return 0.5*idx_ener*HH; 
- }
-
-double bending_energy_ipart(POSITION *pos, 
-        int *node_nbr, int2 *bond_nbr,
-        int num_nbr, int idx, MBRANE_para para, bool *is_attractive){
-
-    double idx_ener;
-    double BB, rij_dot_rij;
-    int i, k, kp;
-    int j;
-    double cot_sum, sigma_i, bend_ener, curv_t0;
-    double curvature;
-    double area=0;
-    POSITION cot_theta_rij, rij, rik, rikp, cot_times_rij;
-
-    BB = para.coef_bend;
-    sigma_i = 0e0;
-    curv_t0 = 2e0/para.radius;
-    cot_times_rij.x = 0e0;
-    cot_times_rij.y = 0e0;
-    cot_times_rij.z = 0e0;
-
-    for (i =0; i < num_nbr; i++){
-        j = node_nbr[i];
-        k  = bond_nbr[i].i1; 
-        kp = bond_nbr[i].i2;
-
-        cot_sum=0.5*(cotangent(pos[idx],pos[j],pos[k]) +
-                     cotangent(pos[idx],pos[j],pos[kp]));
-        rij = Position_add(pos[idx], pos[j], -1e0);
-        rik = Position_add(pos[idx], pos[k], -1e0);
-        rikp = Position_add(pos[idx], pos[kp], -1e0);
-        area = area+sqrt(inner_product(cross_product(rij,rik),cross_product(rij,rik)))+
-                    sqrt(inner_product(cross_product(rij,rikp),cross_product(rij,rikp)));
-        rij_dot_rij = inner_product(rij, rij);
-        // cot_times_rij  = Position_add(cot_times_rij, rij, cot_sum);
-        cot_times_rij  = Position_add(cot_times_rij, rij, 1/sqrt(3));
-        sigma_i = sigma_i + rij_dot_rij*cot_sum;
+}
+//
+double norm(POSITION rr){
+    return sqrt(inner_product(rr,rr));
+}
+//
+double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int num_nbr,
+                            int idx, MBRANE_para para, bool *is_attractive, string method){
+    double bend_ener;
+    if (method=="old"){
+        double BB = para.coef_bend;
+        double idx_ener;
+        double rij_dot_rij;
+        int i, k, kp;
+        int j;
+        double cot_sum, sigma_i, curv_t0;
+        double curvature;
+        double area=0;
+        POSITION cot_theta_rij, rij, rik, rikp, cot_times_rij;
+        //
+        sigma_i = 0e0;
+        curv_t0 = 2e0/para.radius;
+        cot_times_rij.x = 0e0;
+        cot_times_rij.y = 0e0;
+        cot_times_rij.z = 0e0;
+        //
+        for (i =0; i < num_nbr; i++){
+            j = node_nbr[i];
+            k  = bond_nbr[i].i1; 
+            kp = bond_nbr[i].i2;
+            //
+            cot_sum=0.5*(cotangent(pos[idx],pos[k],pos[j]) +
+                         cotangent(pos[idx],pos[kp],pos[j]));
+            rij = Position_add(pos[idx], pos[j], -1e0);
+            // rik = Position_add(pos[idx], pos[k], -1e0);
+            // rikp = Position_add(pos[idx], pos[kp], -1e0);
+            // area = area+sqrt(inner_product(cross_product(rij,rik),cross_product(rij,rik)))+
+            //             sqrt(inner_product(cross_product(rij,rikp),cross_product(rij,rikp)));
+            rij_dot_rij = inner_product(rij, rij);
+            cot_times_rij  = Position_add(cot_times_rij, rij, cot_sum);
+            // cot_times_rij  = Position_add(cot_times_rij, rij, 1/sqrt(3));
+            sigma_i = sigma_i + rij_dot_rij*cot_sum;
+        }
+        sigma_i *= 0.25;
+        // is_attractive[idx]=sigma_i<0;
+        // if (sigma_i<0){
+        sigma_i=area/3;
+        // cout << area/3 << endl;
+        // }
+        curvature = (1e0/sigma_i)*sqrt(inner_product(cot_times_rij, cot_times_rij));
+        bend_ener = 0.5*BB*sigma_i*(curvature - curv_t0)*(curvature - curv_t0);
     }
-    area=area/2;
-    sigma_i *= 0.25;
-    is_attractive[idx]=sigma_i<0;
-    // if (sigma_i<0){
-    sigma_i=area/3;
-    // cout << area/3 << endl;
-    // }
-    curvature = (1e0/sigma_i)*sqrt(inner_product(cot_times_rij, cot_times_rij));
-    bend_ener = 0.5*BB*sigma_i*(curvature - curv_t0)*(curvature - curv_t0);
+    else{
+        double BB=para.coef_bend;
+        double cot_jdx_k,cot_jdx_kp,cot_kdx,cot_kpdx,sigma_i,area_ijk,lij,lik,ljk,likp,ljkp;
+        POSITION xij,xik,xjk,xikp,xjkp;
+        for (int j = 0; j < num_nbr; ++j){
+            jdx = node_nbr[j];
+            kdx  = bond_nbr[j].i1;
+            kpdx = bond_nbr[j].i2;
+            //
+            xij = Position_add(pos[idx], pos[jdx], -1e0);
+            xik = Position_add(pos[idx], pos[kdx], -1e0);
+            xjk = Position_add(pos[jdx], pos[kdx], -1e0);
+            xikp = Position_add(pos[idx], pos[kpdx], -1e0);
+            xjkp = Position_add(pos[jdx], pos[kpdx], -1e0);
+            //
+            lijsq = inner_product(xij,xij);
+            liksq = inner_product(xik,xik);
+            ljksq = inner_product(xjk,xjk);
+            likpsq = inner_product(xikp,xikp);
+            ljkpsq = inner_product(xjkp,xjkp);
+            //
+            area_ijk = 0.5*norm(cross_product(xij,xjk)); 
+            area_ijkp = 0.5*norm(cross_product(xij,xjkp));
+            //
+            cot_jdx_k = 0.25*(lijsq+ljksq-liksq)/area_ijk;
+            cot_kdx = 0.25*(ljksq+liksq-lijsq)/area_ijk;
+            cot_jdx_kp = 0.25*(lijsq+ljkpsq-likpsq)/area_ijkp;
+            cot_kpdx =  0.25*(ljkpsq+likpsq-lijsq)/area_ijkp;
+            // check whether all angles are acute?
+            if (cot_jdx_k>0 && cot_kdx>0 && cot_jdx_k*cot_kdx>1){
+                // add the voronoi diagram
+                sigma_i=sigma_i+0.25*(cot_jdx_k*liksq+cot_kdx*lijsq);
+            }else{
+                if(cot_jdx_k*cot_kdx < 1){
+                    sigma_i = sigma_i+0.5*area_ijk;
+                }else{
+                    sigma_i = sigma_i+0.25*area_ijk;
+                }
+            }
+            // similar thing goes for the other triangle.
+            if (cot_jdx_kp>0 && cot_kpdx>0 && cot_jdx_kp*cot_kpdx>1){
+                // add the voronoi diagram
+                sigma_i=sigma_i+0.25*(cot_jdx_kp*likpsq+cot_kpdx*lijsq);
+            }else{
+                if(cot_jdx_kp*cot_kpdx < 1){
+                    sigma_i = sigma_i+0.5*area_ijkp;
+                }else{
+                    sigma_i = sigma_i+0.25*area_ijkp;
+                }
+            }
+        }
+        // double xij[num_nbr],cot_alpha[num_nbr],cot_beta[num_nbr],xij_sq[num_nbr];
+        // int jdx,kdx,jpdx,kpdx,jp;
+        // double sigma_i=0;
+        // // bool obtuse=0;      // if any cotangent is -ve or cot(alpha+beta)<0
+        // for (int j = 0; j < num_nbr; ++j){
+        //     // jp = (j+1)%(num_nbr);         // things are cyclic
+        //     if(cot_alpha[jp] > 0 && cot_beta[j] > 0 && cot_alpha[jp]*cot_beta[j] < 1){
+        //         // this means that all the angles are acute.
+        //         // add the voronoi area.
+        //         sigma_i=sigma_i+0.25*(cot_alpha[jp]*xij_sq[jp] + cot_beta[j]+xij_sq[j]);
+        //     }else{ 
+        //         // add non-voronoi area
+        //         if(cot_alpha[jp]*cot_beta[j] > 1){
+        //         }
+        //     }
+        // }
+    }
     // bend_ener = 0.5*BB*1/area*inner_product(cot_times_rij, cot_times_rij);
     return bend_ener;
 }
@@ -246,7 +322,7 @@ double volume_enclosed_membrane(POSITION *pos,
     return volume/3e0;
 };
 
-void identify_obtuse(POSITION *pos, int *triangles, 
+void identify_obtuse(POSITION *pos, int *triangles,
        double *obtuse,  int N){
     double piby2;
     int i, j, k, it;

@@ -1,6 +1,5 @@
 #ifndef subroutine_h
 #define subroutine_h
-#include <iostream>
 //forces_lj.c
 void make_nlist();
 void make_nlist_pf();
@@ -20,7 +19,8 @@ double pairlj_total_energy_pf(POSITION *Pos, LJpara para, char *metric);
 double bending_energy_total(POSITION *pos, MESH mesh, MBRANE_para para, bool *is_attractive);
 double bending_energy_ipart(POSITION *pos, 
         int *node_nbr, int2 *bond_nbr,
-        int num_nbr, int idx, MBRANE_para para, bool *is_attractive);
+        int num_nbr, int idx, MBRANE_para para, bool *is_attractive,
+        string method="old");
 double bending_energy_ipart_neighbour(POSITION *pos, 
         MESH mesh, int idx, MBRANE_para para);
 double stretch_energy_total(POSITION *pos, 

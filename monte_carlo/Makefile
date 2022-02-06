@@ -2,7 +2,7 @@ HOST=norlx65_vipin
 include hosts/$(HOST)
 # CC = h5cc -O3
 #
-link = -lm -std=c11
+link = -lm -std=c++11
 # 
 sources = src/forces_lj.c src/forces_surf.c
 sources += src/initialise.c  src/visit_io.c src/hdf5_io.c
