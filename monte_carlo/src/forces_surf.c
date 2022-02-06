@@ -1,7 +1,9 @@
 #include "../include/global.h"
 #include "../include/subroutine.h"
 
-double inner_product(POSITION s1, POSITION s2){
+#define sign(x) ((x > 0) ? 1 : ((x < 0) ? -1 : 0))
+
+ double inner_product(POSITION s1, POSITION s2){
     return s1.x*s2.x + s1.y*s2.y + s1.z*s2.z;
 }
 
@@ -16,7 +18,9 @@ POSITION Position_add(POSITION s1,
     add.z = s1.z + fac*s2.z;
 
     return add;
+
 }
+
 
 POSITION cross_product(POSITION s1, 
         POSITION s2){
@@ -44,6 +48,59 @@ double cotangent(POSITION si, POSITION sj, POSITION sk){
     return cot_theta;
 }
 
+double volume_ipart(POSITION *pos, 
+        int *node_nbr, int2* bond_nbr,
+        int num_nbr, int idx, MBRANE_para para){
+
+    int i, j, k, kp, it, itn;
+    double volume1, volume2;
+    POSITION area1, area2, rk, ri, rj, rkp;
+    POSITION rij, rijk, rik, rjkp;
+    POSITION rijkp;
+    POSITION rjk, pt; 
+    double dir_norm, ini_vol;
+    double inp_r1, inp_r2, inp_r3;
+    FILE *fid;
+
+    volume1 = 0e0;
+    volume2 = 0e0;
+    for (i =0; i < num_nbr; i++){
+        j = node_nbr[i];
+        k  = bond_nbr[i].i1; 
+        kp = bond_nbr[i].i2; 
+        ri = pos[idx]; rj = pos[j]; 
+        rk = pos[k]; rkp = pos[kp];
+
+        rij = Position_add(ri, rj, 1e0);
+        rijk = Position_add(rij, rk, 1e0);
+        rijkp = Position_add(rij, rkp, 1e0);
+
+        rijk.x = rijk.x/3e0; rijk.y = rijk.y/3e0; rijk.z = rijk.z/3e0;
+        rijkp.x = rijkp.x/3e0; 
+        rijkp.y = rijkp.y/3e0; rijkp.z = rijkp.z/3e0;
+
+        rij  = Position_add(rj, ri, -1e0);
+        rjk  = Position_add(rj , rk, -1e0);
+        rjkp = Position_add(rj , rkp, -1e0);
+
+
+        area1 = cross_product(rij, rjk);
+        area2 = cross_product(rij, rjkp);
+        double ip1 = inner_product(area1,rijk);
+        double ip2 = inner_product(area2,rijkp);
+
+        if(sign(ip1) == 1) volume1 = volume1 + ip1;
+        if(sign(ip1) == -1) volume2 = volume2 + ip1;
+
+        if(sign(ip2) == 1) volume1 = volume1 + ip2;
+        if(sign(ip2) == -1) volume2 = volume2 + ip2;
+    }
+    volume1 = volume1/3e0;
+    return volume1;
+
+}
+
+
 double stretch_energy_ipart(POSITION *pos, 
         int *node_nbr, double *lij_t0,
         int num_nbr, int idx, MBRANE_para para){
@@ -69,16 +126,14 @@ double stretch_energy_ipart(POSITION *pos,
 
 double bending_energy_ipart(POSITION *pos, 
         int *node_nbr, int2 *bond_nbr,
-        int num_nbr, int idx, MBRANE_para para, bool *is_attractive){
+        int num_nbr, int idx, MBRANE_para para ){
 
     double idx_ener;
     double BB, rij_dot_rij;
     int i, k, kp;
     int j;
     double cot_sum, sigma_i, bend_ener, curv_t0;
-    double curvature;
-    double area=0;
-    POSITION cot_theta_rij, rij, rik, rikp, cot_times_rij;
+    POSITION cot_theta_rij, rij, cot_times_rij;
 
     BB = para.coef_bend;
     sigma_i = 0e0;
@@ -90,30 +145,22 @@ double bending_energy_ipart(POSITION *pos,
     for (i =0; i < num_nbr; i++){
         j = node_nbr[i];
         k  = bond_nbr[i].i1; 
-        kp = bond_nbr[i].i2;
+        kp = bond_nbr[i].i2; 
 
         cot_sum=0.5*(cotangent(pos[idx],pos[j],pos[k]) +
-                     cotangent(pos[idx],pos[j],pos[kp]));
+                cotangent(pos[idx],pos[j],pos[kp]));
         rij = Position_add(pos[idx], pos[j], -1e0);
-        rik = Position_add(pos[idx], pos[k], -1e0);
-        rikp = Position_add(pos[idx], pos[kp], -1e0);
-        area = area+sqrt(inner_product(cross_product(rij,rik),cross_product(rij,rik)))+
-                    sqrt(inner_product(cross_product(rij,rikp),cross_product(rij,rikp)));
+
         rij_dot_rij = inner_product(rij, rij);
-        // cot_times_rij  = Position_add(cot_times_rij, rij, cot_sum);
-        cot_times_rij  = Position_add(cot_times_rij, rij, 1/sqrt(3));
+
+        cot_times_rij  = Position_add(cot_times_rij, rij, cot_sum); 
+
         sigma_i = sigma_i + rij_dot_rij*cot_sum;
-    }
-    area=area/2;
+
+    } 
     sigma_i *= 0.25;
-    is_attractive[idx]=sigma_i<0;
-    // if (sigma_i<0){
-    sigma_i=area/3;
-    // cout << area/3 << endl;
-    // }
-    curvature = (1e0/sigma_i)*sqrt(inner_product(cot_times_rij, cot_times_rij));
+    double curvature = (1e0/sigma_i)*sqrt(inner_product(cot_times_rij, cot_times_rij));
     bend_ener = 0.5*BB*sigma_i*(curvature - curv_t0)*(curvature - curv_t0);
-    // bend_ener = 0.5*BB*1/area*inner_product(cot_times_rij, cot_times_rij);
     return bend_ener;
 }
 
@@ -127,7 +174,7 @@ double bending_energy_ipart_neighbour(POSITION *pos,
    double be;
 
    be = 0e0;
-   bool is_attractive[para.N];
+
    for (j = mesh.cmlist[idx]; j < mesh.cmlist[idx+1]; j++){
        nbr = mesh.node_nbr_list[j];
        num_nbr_j = mesh.cmlist[nbr+1] -  mesh.cmlist[nbr];
@@ -136,13 +183,13 @@ double bending_energy_ipart_neighbour(POSITION *pos,
        be += bending_energy_ipart(pos, 
               (int *) mesh.node_nbr_list + cm_idx_nbr,
               (int2 *) mesh.bond_nbr_list + cm_idx_nbr, num_nbr_j, 
-               nbr, para, is_attractive);
+           nbr, para);
    }
    return be;
 } 
 
 double bending_energy_total(POSITION *pos, 
-        MESH mesh, MBRANE_para para, bool *is_attractive){
+        MESH mesh, MBRANE_para para){
     int idx, j, k;
     int num_nbr, cm_idx;
     double be, curv;
@@ -159,7 +206,7 @@ double bending_energy_total(POSITION *pos,
         be += bending_energy_ipart(pos, 
                 (int *) (mesh.node_nbr_list + cm_idx),
                 (int2 *) (mesh.bond_nbr_list + cm_idx), num_nbr, 
-                idx, para, is_attractive);
+                idx, para);
     }
     return be;
 }
@@ -183,7 +230,7 @@ double stretch_energy_total(POSITION *pos,
                 idx, para);
         /* printf( "stretch: %lf \n", se); */
     }
-    return se;
+    return se*0.5e0;
  }
 
 double lj(double sqdr, double eps){
@@ -200,7 +247,7 @@ double lj_bottom_surface(double zz,
 
     if(is_attractive){
         ds = sur_pos - zz;
-        inv_sqdz = sigma/(ds*ds);
+        inv_sqdz = (sigma*sigma)/(ds*ds);
     }
     return  lj(inv_sqdz, eps);
 }
@@ -218,28 +265,60 @@ void identify_attractive_part(POSITION *pos,
     }
 }
 
+double rep_lj_afm(POSITION pos, AFM_para afm){
+    int i;
+    double ener_afm, ds;
+    double ds_sig_inv, r6;
+    POSITION dr;
+
+    ener_afm = 0e0;
+    if(fabs(afm.tip_pos_z - pos.z) < 4*afm.sigma) {
+        for(i = 0; i<afm.N; i++) {
+            dr = Position_add(pos, afm.tip_curve[i], -1); 
+            ds = (inner_product(dr,dr));
+            ds_sig_inv = (afm.sigma*afm.sigma)/ds;
+            r6 = ds_sig_inv*ds_sig_inv*ds_sig_inv;
+            ener_afm = ener_afm +  afm.epsilon*r6*r6;
+        }
+    }
+   return ener_afm;
+
+};
 double volume_enclosed_membrane(POSITION *pos, 
         int *triangles, int num_triangles){
     int i, j, k, it;
     double volume;
     POSITION area, rk, ri, rj;
     POSITION rij, rijk, rik;
+    POSITION rjk, pt; 
+    double dir_norm;
     double inp_r1, inp_r2, inp_r3;
+    FILE *fid;
     volume = 0e0;
+
+    i = triangles[0];
+    fid = fopen("triangles.dat", "wb");
     for (it = 0; it< 3*num_triangles; it=it+3){
         i = triangles[it];
         j = triangles[it+1];
         k = triangles[it+2];
         ri = pos[i]; rj = pos[j]; rk = pos[k];
+        /* ri = Position_add(pos[i], pt, -1); */
+        /* rj = Position_add(pos[j], pt, -1); */
+        /* rk = Position_add(pos[k], pt, -1); */
         
         rij = Position_add(ri, rj, 1e0);
         rijk = Position_add(rij, rk, 1e0);
 
         rijk.x = rijk.x/3e0; rijk.y = rijk.y/3e0; rijk.z = rijk.z/3e0;
 
-        rij = Position_add(ri, rj, -1e0);
+        rij = Position_add(rj, ri, -1e0);
         rik = Position_add(rk , ri, -1e0);
+
         area = cross_product(rij, rik);
+        dir_norm = (rij.y*rik.z - rij.z*rik.y) + 
+            (rij.z*rik.x - rij.x*rik.z) +
+            (rij.x*rik.y - rij.y*rik.x);
 
         volume = volume + 0.5*fabs(area.x*rijk.x + area.y*rijk.y + area.z*rijk.z);
     }
@@ -293,3 +372,4 @@ void identify_obtuse(POSITION *pos, int *triangles,
         if(logic) obtuse[i/3] = 1e0;
     }
 }
+
