@@ -141,4 +141,99 @@ void initialize_eval_lij_t0(POSITION *Pos, MESH mesh,
     }
 }
 
+void initialize_afm_tip(AFM_para afm){
+    int i, j;
+    int idx;
+    int iext;
+    double dx;
+    double x, y;
+
+    iext = (int) sqrt(afm.N);
+    dx = (afm.extent[1] - afm.extent[0])/iext;
+
+    for(j=0; j < iext; j++){
+        for(i=0; i < iext; i++){
+            x = afm.extent[0] + dx*(i + 0.5);
+            y = afm.extent[2] + dx*(j + 0.5);
+            idx = j*iext + i;
+            afm.tip_curve[idx].x = x;
+            afm.tip_curve[idx].y = y;
+            afm.tip_curve[idx].z = (x/afm.tip_rad)*(x/afm.tip_rad) +
+                (y/afm.tip_rad)*(y/afm.tip_rad) 
+                + afm.tip_pos_z;
+        }
+
+    }
+
+}
+
+void initialize_read_parameters( MBRANE_para *mbrane, 
+        AFM_para *afm, MCpara *mcpara, char para_file[]){
+    
+    char buff[255];
+    int t_n;
+    double td1, td2, td3, td4;
+    FILE *f2;
+    
+
+    f2 = fopen(para_file, "r");
+    if(f2){
+        fgets(buff,255,(FILE*)f2); 
+        fgets(buff,255,(FILE*)f2); 
+        fgets(buff,255,(FILE*)f2);
+        sscanf(buff,"%d %lf %lf %lf", &t_n, &td1, &td2, &td3);
+        /* fprintf(stderr, "%s\n", buff); */
+        mbrane->N = t_n;
+        mbrane->coef_bend = td1;
+        mbrane->coef_str = td2;
+        mbrane->coef_vol_expansion = td3;
+        fgets(buff,255,(FILE*)f2);
+        fgets(buff,255,(FILE*)f2);
+        sscanf(buff,"%lf %lf %lf %lf", &td1,&td2,&td3,&td4);
+        /* fprintf(stderr, "%s\n", buff); */
+        mbrane->radius = td1;
+        mbrane->pos_bot_wall = td2;
+        mbrane->sigma = td3;
+        mbrane->epsilon = td4;
+        fgets(buff,255,(FILE*)f2); 
+        fgets(buff,255,(FILE*)f2); 
+        fgets(buff,255,(FILE*)f2); 
+        sscanf(buff,"%lf %lf ", &td1,&td2);
+        /* fprintf(stderr, "%s\n", buff); */
+        mcpara->dfac = td1;
+        mcpara->kBT = td2;
+        fgets(buff,255,(FILE*)f2);
+        fgets(buff,255,(FILE*)f2);
+        fgets(buff,255,(FILE*)f2); 
+        sscanf(buff,"%d %lf %lf %lf %lf", &t_n, &td1, &td2, &td3, &td4);
+        /* fprintf(stderr, "%s\n", buff); */
+        afm->N = t_n; 
+        afm->extent[0] = td1; afm->extent[1]= td2;
+        afm->extent[2] = td3; afm->extent[3]= td3;
+
+        fgets(buff,255,(FILE*)f2); 
+        fgets(buff,255,(FILE*)f2); 
+        sscanf(buff,"%lf %lf %lf %lf", &td1, &td2, &td3, &td4);
+        /* fprintf(stderr, "%s\n", buff); */
+        afm->tip_rad = td1;
+        afm->tip_pos_z = td2;
+        afm->sigma = td3;
+        afm->epsilon = td4;
+
+    }
+    else{
+        fprintf(stderr, "sorry man the specified doesn't exists in current dir .\n");
+    }
+    fclose(f2);
+
+    mbrane->num_triangles = 2*mbrane->N - 4;
+    mbrane->num_nbr = 3*mbrane->num_triangles; 
+    mbrane->av_bond_len = sqrt(8*pi/(2*mbrane->N-4));
+
+   // define the monte carlo parameters
+    mcpara->mc_iter = 10*mbrane->N;
+    mcpara->metric = "sph";
+    mcpara->delta = sqrt(8*pi/(2*mbrane->N-4));
+}
+
 

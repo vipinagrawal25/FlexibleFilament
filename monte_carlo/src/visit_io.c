@@ -1,4 +1,6 @@
 #include<stdio.h>
+#include<math.h>
+
 void visit_vtk_io(double *points, 
         int *triangles, 
         int Np, char filename[], 
@@ -26,7 +28,6 @@ void visit_vtk_io_point_data(bool *data,
         int Np, char filename[], 
         char dataname[]){
 
-    char first_headers[] = "# vtk DataFile Version 2.0 \n grid, mydata\n ASCII \n DATASET POLYDATA \n";
     int num_triangles, i;
     FILE *fid;
 
@@ -60,6 +61,40 @@ void visit_vtk_io_cell_data(double *data,
     fprintf(fid, "%s \n", "LOOKUP_TABLE default ");
     for(i = 0; i< Np; i=i+1){
         fprintf(fid, "%g \n", data[i]);
+    }
+    fclose(fid);
+}
+
+void visit_vtk_io_afm_tip(double *data, 
+        int Np, char filename[]){
+
+    int i, j, here, est, nth, n_est;
+    double x, y;
+    FILE *fid;
+    int iext, idx;
+    double dx;
+
+    iext = (int) sqrt(Np);
+    char first_headers[] = "# vtk DataFile Version 2.0 \n grid, afmtip\n ASCII \n DATASET POLYDATA \n";
+
+    fid = fopen(filename, "w");
+    fprintf(fid, "%s", first_headers);
+    fprintf(fid, "%s %d %s", "POINTS", Np, "float \n");
+
+    for(i=0; i < 3*Np; i=i+3){
+        fprintf(fid, "%g %g %g\n", data[i], data[i+1], data[i+2]);
+    }
+
+    int npoly = (iext-1)*(iext-1);
+    fprintf(fid, "%s %d  %d %s", "POLYGONS", 4*npoly, 5*4*npoly, " \n");
+    for(j=0; j < iext-1; j++){
+        for(i=0; i < iext-1; i++){
+            here = j*iext + i;
+            est = (i+1)%iext + ((iext + j)%iext) *iext;
+            nth = ((iext + i)%iext) + (j + 1 + iext)%iext *iext;
+            n_est = ((i + 1)%iext) + ((j + 1 + iext)%iext)*iext;
+            fprintf(fid, "%d %d %d %d %d\n", 4, here, est, n_est, nth);
+        }
     }
     fclose(fid);
 }
