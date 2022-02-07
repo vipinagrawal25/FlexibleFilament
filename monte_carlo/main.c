@@ -31,7 +31,7 @@ double rand_inc_theta(double th0,
 }
 
 double energy_mc_3d(POSITION *pos, MESH mesh, 
-        double *lij_t0, bool *is_attractive, int idx, 
+        double *lij_t0, bool *is_attractive, int idx, bool *is_be_pos,
         MBRANE_para mbrane, 
         MCpara mcpara, AFM_para afm){
     double E_b, E_s;
@@ -59,12 +59,9 @@ double energy_mc_3d(POSITION *pos, MESH mesh,
             mbrane.pos_bot_wall, mbrane.epsilon, mbrane.sigma);
 
     E_afm = rep_lj_afm(pos[idx], afm);
+    *is_be_pos = E_b > 0;
 
-    if(E_b < 0e0){
-        return 2e14;
-    } else {
-        return E_b + E_s + E_stick + E_afm;
-    }
+    return E_b + E_s + E_stick + E_afm;
 }
 
 int monte_carlo_3d(POSITION *pos, MESH mesh, 
@@ -79,6 +76,7 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
     double vol_i, vol_f;
     double dvol, de_vol, ini_vol;
     double KAPPA;
+    bool is_be_pos;
 
     ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
     KAPPA = mbrane.coef_vol_expansion;
@@ -90,7 +88,7 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
 
         Eini = energy_mc_3d(pos, mesh, 
                 lij_t0, is_attractive, 
-                idx,  mbrane, mcpara, afm);
+                idx, &is_be_pos, mbrane, mcpara, afm);
 
         vol_i = volume_ipart(pos, 
                 (int *) (mesh.node_nbr_list + cm_idx),
@@ -115,7 +113,7 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
 
         Efin = energy_mc_3d(pos, mesh, 
                 lij_t0, is_attractive, 
-                idx,   mbrane, mcpara, afm);
+                idx, &is_be_pos,  mbrane, mcpara, afm);
 
         vol_f = volume_ipart(pos, 
                 (int *) (mesh.node_nbr_list + cm_idx),
@@ -128,7 +126,7 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
 
 
         de = (Efin - Eini) + de_vol;
-        if(Metropolis(de , mcpara)){
+        if(Metropolis(de , mcpara) && is_be_pos){
             move = move + 1;
             mbrane.tot_energy[0] +=  de;
             mbrane.volume[0] += dvol;
@@ -372,9 +370,7 @@ int main(int argc, char *argv[]){
     Ener_s =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
     Ener_b =  bending_energy_total(Pos, mesh, mbrane);
     Ener_t = Ener_s + Ener_b;
-    cout << Ener_b << endl;
-    cout << Ener_s << endl;
-    exit(1);
+
     mbrane.tot_energy[0] = Ener_t;
     vol_sph  = volume_enclosed_membrane(Pos, triangles, 
             mbrane.num_triangles);

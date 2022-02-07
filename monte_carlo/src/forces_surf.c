@@ -266,8 +266,8 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
             //                             cot_jdx_kp*likpsq+
             //                             cot_kpdx*lijsq);
             // // sigma_i=sigma_i+0.125*();
-            cout << cot_jdx_k << endl;
-            cout << cot_jdx_kp << endl;
+            /* cout << cot_jdx_k << endl; */
+            /* cout << cot_jdx_kp << endl; */
             if (cot_jdx_k>0 && cot_kdx>0 && cot_idx_k>0){
                 // add the voronoi diagram
                 sigma_i=sigma_i+0.125*(cot_jdx_k*liksq+cot_kdx*lijsq);
@@ -283,7 +283,7 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
                 // add the voronoi diagram                
                 sigma_i=sigma_i+0.125*(cot_jdx_kp*likpsq+cot_kpdx*lijsq);
             }else{
-                // add the voronoi diagram\                
+                // add the voronoi diagram                
                 // cout << "coming here?" << endl;
                 if(cot_idx_kp < 0){
                     sigma_i = sigma_i+0.5*area_ijkp;
