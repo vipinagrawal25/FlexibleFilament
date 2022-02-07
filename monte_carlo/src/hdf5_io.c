@@ -1,11 +1,11 @@
 #include <hdf5.h>
-
+#include "../include/global.h"
   /* The input for the hdf5 configuration */ 
   /* supposedly will read all the position and */ 
   /* triangles info from a single file */
 
 void hdf5_io_read_config(double *Pos, int *cmlist,
-        int *node_nbr, int *bond_nbr, int *triangles,
+        int *node_nbr, int2 *bond_nbr, int *triangles,
         char input_file[]){
 
     hid_t   file_id, group_id,dataset_id;  /* identifiers */
