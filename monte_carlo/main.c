@@ -1,12 +1,21 @@
 #include "include/global.h"
 #include "include/subroutine.h"
+#include <random>
+std::mt19937 rng;
+
+void init_rng(){
+    uint32_t seed_val;
+    rng.seed(seed_val);
+}
+
 bool Metropolis(double DE, MCpara mcpara){
     bool yes;
     double rand;
+    std::uniform_real_distribution<> rand_real(0, 1);
 
     yes = (DE <= 0.e0);
     if (!yes){
-        rand = drand48();
+        rand = rand_real(rng);
         yes = rand < exp(-DE/mcpara.kBT);
     }
     return yes;
@@ -16,12 +25,13 @@ double rand_inc_theta(double th0,
         double dfac){
     double dth;
     double tmp_th0;
+    std::uniform_real_distribution<> rand_real(-1, 1);
 
 
 /*     th1 = th0+dth */
     tmp_th0 = 10;
     while (tmp_th0 > pi || tmp_th0 < 0){
-        dth = (pi/dfac)*(2*drand48() - 1); 
+        dth = (pi/dfac)*(rand_real(rng)); 
         tmp_th0 = th0 + dth;
     }
     /*if th1 > np.pi or th1 < 0 : */
@@ -39,7 +49,7 @@ double energy_mc_3d(POSITION *pos, MESH mesh,
     double E_vol, E_afm;
     int cm_idx, num_nbr;
 
-
+    E_b = 0; E_s = 0; E_stick = 0; E_afm = 0;
     num_nbr = mesh.cmlist[idx + 1] - mesh.cmlist[idx];
     cm_idx = mesh.cmlist[idx];
     E_b = bending_energy_ipart(pos, 
@@ -58,7 +68,7 @@ double energy_mc_3d(POSITION *pos, MESH mesh,
     E_stick = lj_bottom_surface(pos[idx].z, is_attractive[idx], 
             mbrane.pos_bot_wall, mbrane.epsilon, mbrane.sigma);
 
-    E_afm = rep_lj_afm(pos[idx], afm);
+    E_afm = lj_afm(pos[idx], afm);
     *is_be_pos = E_b > 0;
 
     return E_b + E_s + E_stick + E_afm;
@@ -77,12 +87,15 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
     double dvol, de_vol, ini_vol;
     double KAPPA;
     bool is_be_pos;
+    std::uniform_int_distribution<uint32_t> rand_int(0,mbrane.N-1);
+    std::uniform_real_distribution<> rand_real(-1, 1);
+
 
     ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
     KAPPA = mbrane.coef_vol_expansion;
     move = 0;
     for(i = 0; i< mcpara.mc_iter; i++){
-        int idx = randint(mbrane.N);
+        int idx = rand_int(rng);
         num_nbr = mesh.cmlist[idx + 1] - mesh.cmlist[idx];
         cm_idx = mesh.cmlist[idx];
 
@@ -99,9 +112,9 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
         y_o =   pos[idx].y;
         z_o =   pos[idx].z;
 
-        dxinc = (mcpara.delta/mcpara.dfac)*(2*drand48() - 1);
-        dyinc = (mcpara.delta/mcpara.dfac)*(2*drand48() - 1);
-        dzinc = (mcpara.delta/mcpara.dfac)*(2*drand48() - 1);
+        dxinc = (mcpara.delta/mcpara.dfac)*(rand_real(rng));
+        dyinc = (mcpara.delta/mcpara.dfac)*(rand_real(rng));
+        dzinc = (mcpara.delta/mcpara.dfac)*(rand_real(rng));
 
         x_n = x_o + dxinc;
         y_n = y_o + dyinc;
@@ -124,7 +137,7 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
         de_vol = (2*dvol/(ini_vol*ini_vol))*(mbrane.volume[0]  - ini_vol);
         de_vol = KAPPA*de_vol;
 
-
+        /* printf("%d %g %g %d\n", idx, Efin, Eini, is_attractive[idx]); */
         de = (Efin - Eini) + de_vol;
         if(Metropolis(de , mcpara) && is_be_pos){
             move = move + 1;
@@ -304,7 +317,7 @@ int dump_config(POSITION *Pos, double len,
 
 int main(int argc, char *argv[]){
     int i, iterations, num_moves;
-    double Ener_s, Ener_b, Ener_t;
+    double Et[5], Ener_t;
     double vol_sph, e_t, s_t;
     POSITION *Pos;
     bool *is_attractive;
@@ -315,21 +328,23 @@ int main(int argc, char *argv[]){
     FILE *fid;
     double *lij_t0, *obtuse;
     int *triangles;
-    char syscmds[128], outfile[89], outfolder[89], para_file[32];
+    char syscmds[128], outfile[89], outfolder[32], para_file[32];
     char log_file[64];
 
     if(argc!=3){
         printf("\n\n mayday.. requires an argument <parameter file> <output folder>\n\n");
         exit(0);
     }else{
-        sscanf(argv[1],"%s",&para_file);
-        sscanf(argv[2],"%s",&outfolder);
+        sscanf(argv[1], "%s", &para_file);
+        sscanf(argv[2], "%s", &outfolder);
     }
 
     sprintf(syscmds, "mkdir %s",outfolder);
     system(syscmds);
     sprintf(syscmds, "cp %s %s/%s",para_file,outfolder,para_file);
     system(syscmds);
+    
+    init_rng();
 
     // read the input file
     initialize_read_parameters(&mbrane, &afm, &mcpara, para_file);
@@ -367,26 +382,33 @@ int main(int argc, char *argv[]){
     identify_attractive_part(Pos, is_attractive, mbrane.N);
     initialize_eval_lij_t0(Pos, mesh, lij_t0, mbrane);
 
-    Ener_s =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
-    Ener_b =  bending_energy_total(Pos, mesh, mbrane);
-    Ener_t = Ener_s + Ener_b;
-
+    Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
+    Et[1] =  bending_energy_total(Pos, mesh, mbrane);
+    Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
+    Et[3] = lj_afm_total(Pos, mbrane, afm);
+    Ener_t = Et[0] + Et[1] + Et[2] + Et[3];
     mbrane.tot_energy[0] = Ener_t;
+
     vol_sph  = volume_enclosed_membrane(Pos, triangles, 
             mbrane.num_triangles);
 
     mbrane.volume[0] = vol_sph;
 
-    iterations = 60000;
+    iterations = 3000;
 
     sprintf(log_file, "%s/mc_log", outfolder);
     fid = fopen(log_file, "a");
     num_moves = 0;
     for(i=0; i<iterations; i++){
-        if(i%100 == 0){
-            fprintf(stderr, "iter, AcceptedMoves, totalener, volume: %d %d %g %g\n",
+        if(i%10 == 0){
+            Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
+            Et[1] =  bending_energy_total(Pos, mesh, mbrane);
+            Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
+            Et[3] = lj_afm_total(Pos, mbrane, afm);
+            fprintf(stderr, "iter, AcceptedMoves, totalener, volume: %d %d %g %g \n",
                     i, num_moves, mbrane.tot_energy[0], mbrane.volume[0]);
             identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
+
             sprintf(outfile,"%s/part_%05d.vtk",outfolder,i);
             visit_vtk_io( (double *) Pos, triangles, 
                     mbrane.N, outfile, "miketesting");
@@ -394,13 +416,15 @@ int main(int argc, char *argv[]){
                     outfile, "is90");
             visit_vtk_io_point_data(is_attractive, mbrane.N,
                     outfile, "attr");
-            fprintf(fid, " %d %d %g %g\n",
-                    i, num_moves, mbrane.tot_energy[0], mbrane.volume[0]);
+            fprintf(fid, " %d %d %g %g %g %g %g\n",
+                    i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3]);
             fflush(fid);
         }
-        if(i > 6000){
+        if(i == 200 ){
             afm.sigma = s_t;
             afm.epsilon = e_t;
+            e_t = lj_afm_total(Pos, mbrane, afm);
+            mbrane.tot_energy[0] += e_t;
         }
         num_moves = monte_carlo_3d(Pos, mesh, lij_t0, is_attractive, 
                 mbrane, mcpara, afm);

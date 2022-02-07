@@ -217,7 +217,7 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
         // sigma_i=area/3;
         // cout << area/3 << endl;
         // }
-    }else{
+    }else if (method=="new"){
         double cot_jdx_k,cot_jdx_kp,cot_kdx,cot_kpdx,cot_idx_k,cot_idx_kp;
         double area_ijk,area_ijkp;
         double lijsq,liksq,ljksq,likpsq,ljkpsq;
@@ -386,10 +386,17 @@ double stretch_energy_total(POSITION *pos,
     return se*0.5e0;
  }
 
-double lj(double sqdr, double eps){
+
+double lj_rep(double sqdr, double eps){
     double r6;
     r6 = sqdr*sqdr*sqdr;
-    return eps*(r6*(r6-1));
+    return eps*(r6*(r6));
+}
+
+double lj_attr(double sqdr, double eps){
+    double r6;
+    r6 = sqdr*sqdr*sqdr;
+    return 4*eps*(r6*(r6-1));
 }
 
 double lj_bottom_surface(double zz, 
@@ -401,8 +408,26 @@ double lj_bottom_surface(double zz,
     if(is_attractive){
         ds = sur_pos - zz;
         inv_sqdz = (sigma*sigma)/(ds*ds);
+        return  lj_attr(inv_sqdz, eps);
+    } else {
+        return 0e0;
     }
-    return  lj(inv_sqdz, eps);
+}
+
+
+double lj_bottom_surf_total(POSITION *pos, 
+        bool *is_attractive, MBRANE_para para){
+    int idx, j, k;
+    double lj_bote;
+
+    lj_bote = 0e0;
+    for(idx = 0; idx < para.N; idx++){
+        /* idx = 2; */
+
+        lj_bote += lj_bottom_surface(pos[idx].z, is_attractive[idx],
+                para.pos_bot_wall, para.epsilon, para.sigma);
+    }
+    return lj_bote;
 }
 
 
@@ -418,7 +443,7 @@ void identify_attractive_part(POSITION *pos,
     }
 }
 
-double rep_lj_afm(POSITION pos, AFM_para afm){
+double lj_afm(POSITION pos, AFM_para afm){
     int i;
     double ener_afm, ds;
     double ds_sig_inv, r6;
@@ -430,13 +455,28 @@ double rep_lj_afm(POSITION pos, AFM_para afm){
             dr = Position_add(pos, afm.tip_curve[i], -1); 
             ds = (inner_product(dr,dr));
             ds_sig_inv = (afm.sigma*afm.sigma)/ds;
-            r6 = ds_sig_inv*ds_sig_inv*ds_sig_inv;
-            ener_afm = ener_afm +  afm.epsilon*r6*r6;
+            ener_afm = ener_afm + lj_rep(ds_sig_inv, afm.epsilon);
         }
     }
    return ener_afm;
 
 };
+
+double lj_afm_total(POSITION *pos, MBRANE_para para,
+        AFM_para afm){
+    int idx, j, k;
+    double lj_afm_e;
+
+    lj_afm_e = 0e0;
+    for(idx = 0; idx < para.N; idx++){
+
+        lj_afm_e += lj_afm(pos[idx], afm);
+    }
+    return lj_afm_e;
+}
+
+
+
 double volume_enclosed_membrane(POSITION *pos, 
         int *triangles, int num_triangles){
     int i, j, k, it;

@@ -26,7 +26,7 @@ double pairlj_total_energy_pf(POSITION *Pos, LJpara para, char *metric);
 double bending_energy_total(POSITION *pos, MESH mesh, MBRANE_para para);
 double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, 
         int num_nbr, int idx, MBRANE_para para,
-        string method="new");
+        string method="old");
 double bending_energy_ipart_neighbour(POSITION *pos, 
         MESH mesh, int idx, MBRANE_para para);
 double stretch_energy_total(POSITION *pos, 
@@ -42,6 +42,10 @@ double stretch_energy_ipart(POSITION *pos,
 double lj_bottom_surface(double zz,
         bool is_attractive, 
         double sur_pos, double eps, double sigma);
+
+double lj_bottom_surf_total(POSITION *pos, 
+         bool *is_attractive, MBRANE_para para);
+
 double volume_enclosed_membrane(POSITION *pos, 
         int *triangles, int num_triangles);
 
@@ -49,8 +53,10 @@ double volume_ipart(POSITION *pos,
         int *node_nbr, int2* bond_nbr,
         int num_nbr, int idx, MBRANE_para para);
 
-double rep_lj_afm(POSITION , AFM_para);
-
+double lj_afm(POSITION , AFM_para);
+double lj_afm_total(POSITION *pos, MBRANE_para para,
+        AFM_para afm);
+ 
 
 //initialise.c
 void initialize_system();

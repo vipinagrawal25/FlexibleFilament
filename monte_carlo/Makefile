@@ -1,5 +1,6 @@
 HOST=norlx65_vipin
 include hosts/$(HOST)
+# CC = /home/vikash/opt/hdf5_cpp/bin/h5c++ -O3
 #
 link = -lm -std=c++11
 # 
@@ -14,13 +15,13 @@ run: $(object)
 	$(CC) $(object) $(link) -o run
 # 
 obj/main.o: main.c $(includes)
-	$(CC) -Jobj -c main.c -o obj/main.o
+	$(CC) -Jobj -c main.c -o obj/main.o $(link)
 # 
 object : $(object)
 obj/%.o : src/%.c $(includes)
 	@mkdir -p $(@D)
 	$(info Compiling $<)
-	$(CC) -Iobj -c $< -o $@ 
+	$(CC) -Iobj -c $< -o $@ $(link)
 # 
 clean:
 	@rm $(object) run
