@@ -639,8 +639,16 @@ def WritePos(rr,fname='pos'):
     hf.create_dataset('rr',data=rr)
     hf.close()
 #-----------------------------------------#
+def WriteMesh(pos,cumu_list,node_nbr,bond_nbr,triangles,fname='input'):
+    hf = h5py.File(fname+'.h5','w')
+    hf.create_dataset('pos',data=pos)
+    hf.create_dataset('cumu_list',data=cumu_list)
+    hf.create_dataset('node_nbr',data=node_nbr)
+    hf.create_dataset('bond_nbr',data=bond_nbr)
+    hf.create_dataset('triangles',data=triangles)
+    hf.close()
+#-----------------------------------------#
 def distance2d(x1,y1,x2,y2,lenx, leny, metric='cart'):
-
     # print('my metric', metric)
     if metric == 'cart':
         ds = cartesian_distance(x1,y1,x2,y2, lenx, leny)

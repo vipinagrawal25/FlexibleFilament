@@ -360,9 +360,8 @@ int main(int argc, char *argv[]){
     afm.epsilon = 0.0;
 
     hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
-            (int *) mesh.node_nbr_list, (int *) mesh.bond_nbr_list, 
-            triangles, "input/input.h5" );
-
+            (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
+            triangles, "input/input.h5");
     initialize_afm_tip(afm);
     sprintf(log_file, "%s/afm_tip.vtk", outfolder);
     visit_vtk_io_afm_tip((double *) afm.tip_curve, 
@@ -373,8 +372,10 @@ int main(int argc, char *argv[]){
     Ener_s =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
     Ener_b =  bending_energy_total(Pos, mesh, mbrane);
     Ener_t = Ener_s + Ener_b;
+    cout << Ener_b << endl;
+    cout << Ener_s << endl;
+    exit(1);
     mbrane.tot_energy[0] = Ener_t;
-
     vol_sph  = volume_enclosed_membrane(Pos, triangles, 
             mbrane.num_triangles);
 
@@ -387,7 +388,7 @@ int main(int argc, char *argv[]){
     num_moves = 0;
     for(i=0; i<iterations; i++){
         if(i%100 == 0){
-            fprintf(stderr, "iter, AcceptedMoves, ener, ener, volume: %d %d %g %g\n",
+            fprintf(stderr, "iter, AcceptedMoves, totalener, volume: %d %d %g %g\n",
                     i, num_moves, mbrane.tot_energy[0], mbrane.volume[0]);
             identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
             sprintf(outfile,"%s/part_%05d.vtk",outfolder,i);

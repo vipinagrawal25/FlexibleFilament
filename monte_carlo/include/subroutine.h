@@ -24,10 +24,9 @@ double pairlj_total_energy_pf(POSITION *Pos, LJpara para, char *metric);
 
 //forces_surf.c
 double bending_energy_total(POSITION *pos, MESH mesh, MBRANE_para para);
-double bending_energy_ipart(POSITION *pos, 
-        int *node_nbr, int2 *bond_nbr,
-        int num_nbr, int idx, MBRANE_para para, bool *is_attractive,
-        string method="old");
+double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, 
+        int num_nbr, int idx, MBRANE_para para,
+        string method="new");
 double bending_energy_ipart_neighbour(POSITION *pos, 
         MESH mesh, int idx, MBRANE_para para);
 double stretch_energy_total(POSITION *pos, 
@@ -79,7 +78,7 @@ void visit_vtk_io_afm_tip(double *data,
         int Np, char filename[]);
 //hdf5_io
 void hdf5_io_read_config(double *Pos, int *cmlist,
-        int *node_nbr, int *bond_nbr, int *triangles,
+        int *node_nbr, int2 *bond_nbr, int *triangles,
         char input_file[]);
 
 //misc

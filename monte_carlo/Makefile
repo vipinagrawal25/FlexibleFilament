@@ -1,6 +1,5 @@
-# HOST=norlx65_vipin
-# include hosts/$(HOST)
-CC = /usr/bin/h5c++ -g -w
+HOST=norlx65_vipin
+include hosts/$(HOST)
 #
 link = -lm -std=c++11
 # 
