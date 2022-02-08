@@ -225,11 +225,10 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         fprintf(stderr, "sorry man the specified doesn't exists in current dir .\n");
     }
     fclose(f2);
-
     mbrane->num_triangles = 2*mbrane->N - 4;
-    mbrane->num_nbr = 3*mbrane->num_triangles; 
+    mbrane->num_nbr = 3*mbrane->num_triangles;
+    // TODO: compute the average bond length by running over all the lengths.
     mbrane->av_bond_len = sqrt(8*pi/(2*mbrane->N-4));
-
    // define the monte carlo parameters
     mcpara->mc_iter = 10*mbrane->N;
     mcpara->metric = "sph";

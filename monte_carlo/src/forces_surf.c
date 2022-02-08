@@ -131,6 +131,27 @@ double norm(POSITION rr){
     return sqrt(inner_product(rr,rr));
 }
 //
+//Q. Given two cotangent angles, it returns either the area due to perpendicular bisector,
+// or the barycenter.
+double voronoi_area(double cotJ, double cotK, double jsq, double ksq, double area){
+    double sigma;
+    if (cotJ>0 && cotK>0){
+        if (cotJ*cotK<1){
+            // all angles are acute;
+            sigma = 0.125*(cotJ*jsq+cotK*ksq);
+        }else{
+            sigma = 0.5*area;
+        }
+    }else{
+       sigma = 0.25*area;
+   }
+    //else{
+    //     cout << cotJ << "\t" << cotK << "\t" << endl;
+    //     cout << "This is not possible" << endl;
+    // }
+    return sigma;
+}
+//
 double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int num_nbr,
                             int idx, MBRANE_para para, string method){
     double bend_ener,curvature,sigma_i;
@@ -188,10 +209,6 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
                          cotangent(pos[idx],pos[kpdx],pos[jdx]));
             //
             xij = Position_add(pos[idx], pos[jdx], -1e0);
-            xik = Position_add(pos[idx], pos[kdx], -1e0);
-            xjk = Position_add(pos[jdx], pos[kdx], -1e0);
-            xikp = Position_add(pos[idx], pos[kpdx], -1e0);
-            xjkp = Position_add(pos[jdx], pos[kpdx], -1e0);
             //
             lijsq = inner_product(xij,xij);
             liksq = inner_product(xik,xik);
@@ -206,12 +223,8 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
             rij_dot_rij = inner_product(xij, xij);
             cot_times_rij  = Position_add(cot_times_rij, xij, cot_sum);
             // cot_times_rij  = Position_add(cot_times_rij, rij, 1/sqrt(3));
-            sigma_i = sigma_i + 0.125*(cot_jdx_k*liksq+
-                                       cot_kdx*lijsq+
-                                       cot_jdx_kp*likpsq+
-                                       cot_kpdx*lijsq);
+            sigma_i = sigma_i + 0.25*(cot_sum*rij_dot_rij);
         }
-        sigma_i *= 0.5;
         // is_attractive[idx]=sigma_i<0;
         // if (sigma_i<0){
         // sigma_i=area/3;
@@ -226,6 +239,7 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
         int jdx,kdx,kpdx;
         double cot_sum;
         sigma_i = 0e0;
+        int count=0;
         for (int j = 0; j < num_nbr; j++){
             jdx = node_nbr[j];
             kdx  = bond_nbr[j].i1;
@@ -243,14 +257,15 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
             likpsq = inner_product(xikp,xikp);
             ljkpsq = inner_product(xjkp,xjkp);
             //
-            area_ijk = 0.5*norm(cross_product(xij,xjk)); 
+            area_ijk = 0.5*norm(cross_product(xij,xjk));
             area_ijkp = 0.5*norm(cross_product(xij,xjkp));
             //
             cot_jdx_k = 0.25*(lijsq+ljksq-liksq)/area_ijk;
             cot_kdx = 0.25*(ljksq+liksq-lijsq)/area_ijk;
+            cot_idx_k = 0.25*(lijsq+liksq-ljksq)/area_ijk;
+            //
             cot_jdx_kp = 0.25*(lijsq+ljkpsq-likpsq)/area_ijkp;
             cot_kpdx =  0.25*(ljkpsq+likpsq-lijsq)/area_ijkp;
-            cot_idx_k = 0.25*(lijsq+likpsq-ljkpsq)/area_ijk;
             cot_idx_kp = 0.25*(lijsq+likpsq-ljkpsq)/area_ijkp;
             // compute sigma_i -> first check whether all angles are acute?
             //
@@ -266,31 +281,8 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
             //                             cot_jdx_kp*likpsq+
             //                             cot_kpdx*lijsq);
             // // sigma_i=sigma_i+0.125*();
-            /* cout << cot_jdx_k << endl; */
-            /* cout << cot_jdx_kp << endl; */
-            if (cot_jdx_k>0 && cot_kdx>0 && cot_idx_k>0){
-                // add the voronoi diagram
-                sigma_i=sigma_i+0.125*(cot_jdx_k*liksq+cot_kdx*lijsq);
-            }else{
-                if(cot_idx_k < 0){
-                    sigma_i = sigma_i+0.5*area_ijk;
-                }else{
-                    sigma_i = sigma_i+0.25*area_ijk;
-                }
-            }
-            // similar thing goes for the other triangle.
-            if (cot_jdx_kp>0 && cot_kpdx>0 && cot_idx_kp>0){
-                // add the voronoi diagram                
-                sigma_i=sigma_i+0.125*(cot_jdx_kp*likpsq+cot_kpdx*lijsq);
-            }else{
-                // add the voronoi diagram                
-                // cout << "coming here?" << endl;
-                if(cot_idx_kp < 0){
-                    sigma_i = sigma_i+0.5*area_ijkp;
-                }else{
-                    sigma_i = sigma_i+0.25*area_ijkp;
-                }
-            }            
+            sigma_i=sigma_i+voronoi_area(cot_jdx_k,cot_kdx,liksq,lijsq,area_ijk);
+            sigma_i=sigma_i+voronoi_area(cot_jdx_kp,cot_kpdx,likpsq,lijsq,area_ijkp);
         }
         sigma_i = 0.5*sigma_i;  // as everything is counted twice.
         // double xij[num_nbr],cot_alpha[num_nbr],cot_beta[num_nbr],xij_sq[num_nbr];
@@ -311,9 +303,7 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
         // }
     }
     curvature = (1e0/sigma_i)*norm(cot_times_rij);
-    // cout << curvature << endl;
-    bend_ener = 0.5*BB*sigma_i*(curvature - curv_t0)*(curvature - curv_t0);
-    // bend_ener = 0.5*BB*1/area*inner_product(cot_times_rij, cot_times_rij);
+    bend_ener = 0.5*BB*sigma_i*(curvature-curv_t0)*(curvature-curv_t0);
     return bend_ener;
  }
 

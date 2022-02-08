@@ -26,7 +26,7 @@ double pairlj_total_energy_pf(POSITION *Pos, LJpara para, char *metric);
 double bending_energy_total(POSITION *pos, MESH mesh, MBRANE_para para);
 double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, 
         int num_nbr, int idx, MBRANE_para para,
-        string method="old");
+        string method="new");
 double bending_energy_ipart_neighbour(POSITION *pos, 
         MESH mesh, int idx, MBRANE_para para);
 double stretch_energy_total(POSITION *pos, 

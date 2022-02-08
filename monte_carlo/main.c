@@ -139,7 +139,8 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
 
         /* printf("%d %g %g %d\n", idx, Efin, Eini, is_attractive[idx]); */
         de = (Efin - Eini) + de_vol;
-        if(Metropolis(de , mcpara) && is_be_pos){
+        // if(Metropolis(de , mcpara) && is_be_pos){
+        if (Metropolis(de,mcpara)){
             move = move + 1;
             mbrane.tot_energy[0] +=  de;
             mbrane.volume[0] += dvol;
@@ -349,12 +350,11 @@ int main(int argc, char *argv[]){
     // read the input file
     initialize_read_parameters(&mbrane, &afm, &mcpara, para_file);
 
-
    /* define all the paras */ 
     mbrane.volume = (double *)calloc(1, sizeof(double)); 
     mbrane.volume[0] = (4./3.)*pi*pow(mbrane.radius,3);
-    mbrane.tot_energy = (double *)calloc(1, sizeof(double)); 
-    mbrane.tot_energy[0] = 0e0; 
+    mbrane.tot_energy = (double *)calloc(1, sizeof(double));
+    mbrane.tot_energy[0] = 0e0;
 
     // allocate arrays
     Pos = (POSITION *)calloc(mbrane.N, sizeof(POSITION));
@@ -362,10 +362,10 @@ int main(int argc, char *argv[]){
     mesh.node_nbr_list = (int *)calloc(mbrane.num_nbr, sizeof(int)); 
     mesh.bond_nbr_list = (int2 *)calloc(mbrane.num_nbr, sizeof(int2));
     lij_t0 = (double *)calloc(mbrane.num_nbr, sizeof(double));
-    triangles = (int *)calloc(mbrane.num_nbr, sizeof(int)); 
-    obtuse = (double *)calloc(mbrane.num_triangles, sizeof(double)); 
-    is_attractive = (bool *)calloc(mbrane.N, sizeof(bool)); 
-    afm.tip_curve = (POSITION *)calloc(afm.N, 3*sizeof(double)); 
+    triangles = (int *)calloc(mbrane.num_nbr, sizeof(int));
+    obtuse = (double *)calloc(mbrane.num_triangles, sizeof(double));
+    is_attractive = (bool *)calloc(mbrane.N, sizeof(bool));
+    afm.tip_curve = (POSITION *)calloc(afm.N, 3*sizeof(double));
 
     s_t = afm.sigma; 
     afm.sigma = 0.00;
@@ -388,14 +388,10 @@ int main(int argc, char *argv[]){
     Et[3] = lj_afm_total(Pos, mbrane, afm);
     Ener_t = Et[0] + Et[1] + Et[2] + Et[3];
     mbrane.tot_energy[0] = Ener_t;
-
     vol_sph  = volume_enclosed_membrane(Pos, triangles, 
             mbrane.num_triangles);
-
     mbrane.volume[0] = vol_sph;
-
     iterations = 3000;
-
     sprintf(log_file, "%s/mc_log", outfolder);
     fid = fopen(log_file, "a");
     num_moves = 0;
