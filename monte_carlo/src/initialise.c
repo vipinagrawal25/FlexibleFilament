@@ -119,16 +119,15 @@ void initialize_system(POSITION *Pos,  LJpara para,
     }
 }
 
-
 void initialize_eval_lij_t0(POSITION *Pos, MESH mesh, 
-        double *lij_t0, MBRANE_para para){
+        double *lij_t0, MBRANE_para *para){
 
     double rij;
     POSITION dr;
     int i,j,k;
     int num_nbr, cm_idx;
-
-    for(i = 0; i < para.N; i++){
+    double sum_lij=0;
+    for(i = 0; i < para->N; i++){
         num_nbr = mesh.cmlist[i + 1] - mesh.cmlist[i];
         cm_idx = mesh.cmlist[i];
         for(k = cm_idx; k < cm_idx + num_nbr; k++) {
@@ -137,8 +136,10 @@ void initialize_eval_lij_t0(POSITION *Pos, MESH mesh,
             dr.y = Pos[i].y - Pos[j].y;
             dr.z = Pos[i].z - Pos[j].z;
             lij_t0[k] = sqrt(dr.x*dr.x + dr.y*dr.y + dr.z*dr.z);
+            sum_lij+=lij_t0[k];
         }
     }
+    para->av_bond_len = sum_lij/mesh.cmlist[para->N];
 }
 
 void initialize_afm_tip(AFM_para afm){
@@ -174,8 +175,6 @@ void initialize_read_parameters( MBRANE_para *mbrane,
     int t_n, t_n2, t_n3;
     double td1, td2, td3, td4;
     FILE *f2;
-    
-
     f2 = fopen(para_file, "r");
     if(f2){
         fgets(buff,255,(FILE*)f2); 
@@ -231,7 +230,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
     mbrane->num_triangles = 2*mbrane->N - 4;
     mbrane->num_nbr = 3*mbrane->num_triangles;
     // TODO: compute the average bond length by running over all the lengths.
-    mbrane->av_bond_len = sqrt(8*pi/(2*mbrane->N-4));
+    // mbrane->av_bond_len = sqrt(8*pi/(2*mbrane->N-4));
    // define the monte carlo parameters
     mcpara->one_mc_iter = 10*mbrane->N;
     mcpara->metric = "sph";

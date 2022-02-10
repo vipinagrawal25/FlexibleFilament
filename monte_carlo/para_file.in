@@ -4,10 +4,10 @@ N   coef_bending coef_stretching  coef_vol_expansion
 radius  pos_bot_wall  sigma  epsilon
 1.0     -1.05         0   		0
 ## Montecarlo parameters
-Dfac  kBT
-32    1.0
+Dfac  kBT is_restart mc_total_iters   mc_dump_iter
+32    1.0  0       10000              200
 ## Afm Tip parameters
 N  extent_l extent_r  extent_t extent_b
-0  -0.1    0.1     -0.1  0.1;
+0  -0.1    0.1     -0.1   0.1;
 tip_radius tip_pos_z  sigma epsilon
-0.2        1.01       0   	 0
+0.2        1.10       0   	 0

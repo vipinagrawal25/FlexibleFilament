@@ -61,7 +61,7 @@ double lj_afm_total(POSITION *pos, MBRANE_para para,
 //initialise.c
 void initialize_system();
 void initialize_eval_lij_t0(POSITION *Pos, MESH mesh, 
-        double *lij_t0, MBRANE_para para);
+        double *lij_t0, MBRANE_para *para);
 void initialize_read_config();
 void initialize_afm_tip(AFM_para );
 void initialize_read_parameters( MBRANE_para *mbrane, 

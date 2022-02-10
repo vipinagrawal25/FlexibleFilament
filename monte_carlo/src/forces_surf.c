@@ -18,9 +18,7 @@ POSITION Position_add(POSITION s1,
     add.z = s1.z + fac*s2.z;
 
     return add;
-
 }
-
 
 POSITION cross_product(POSITION s1, 
         POSITION s2){
@@ -170,7 +168,7 @@ double stretch_energy_ipart(POSITION *pos,
         idx_ener = idx_ener + (mod_rij - lij_t0[i])*(mod_rij - lij_t0[i]);
     }
     //
-    return 0.5*idx_ener*HH; 
+    return 0.5*idx_ener*HH;
 }
 //
 double norm(POSITION rr){
@@ -191,10 +189,6 @@ double voronoi_area(double cotJ, double cotK, double jsq, double ksq, double are
     }else{
        sigma = 0.25*area;
    }
-    //else{
-    //     cout << cotJ << "\t" << cotK << "\t" << endl;
-    //     cout << "This is not possible" << endl;
-    // }
     return sigma;
 }
 //

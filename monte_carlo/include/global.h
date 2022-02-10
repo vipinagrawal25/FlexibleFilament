@@ -28,9 +28,12 @@ typedef struct{
 //
 typedef struct{
     double dfac;
-    int mc_iter;
+    int one_mc_iter;
+    int tot_mc_iter;
+    int dump_skip;
     double kBT;
     double delta; // increment of position
+    bool is_restart;
     char *metric;
 }MCpara;
 //

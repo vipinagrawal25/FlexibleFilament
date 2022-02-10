@@ -327,14 +327,12 @@ int main(int argc, char *argv[]){
     // read the input file
     initialize_read_parameters(&mbrane, &afm, &mcpara, para_file);
 
-    fprintf(stderr, "%d \n", mcpara.is_restart);
-
    /* define all the paras */ 
     mbrane.volume = (double *)calloc(1, sizeof(double)); 
     mbrane.volume[0] = (4./3.)*pi*pow(mbrane.radius,3);
     mbrane.tot_energy = (double *)calloc(1, sizeof(double));
     mbrane.tot_energy[0] = 0e0;
-
+    
     // allocate arrays
     Pos = (POSITION *)calloc(mbrane.N, sizeof(POSITION));
     mesh.cmlist = (int *)calloc(mbrane.N+1, sizeof(int));
@@ -373,8 +371,8 @@ int main(int argc, char *argv[]){
     /*         afm.N, log_file); */
 
     identify_attractive_part(Pos, is_attractive, mbrane.N);
-    initialize_eval_lij_t0(Pos, mesh, lij_t0, mbrane);
-
+    initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
+    //
     Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
     Et[1] =  bending_energy_total(Pos, mesh, mbrane);
     Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
@@ -395,10 +393,9 @@ int main(int argc, char *argv[]){
             Et[1] =  bending_energy_total(Pos, mesh, mbrane);
             Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
             Et[3] = lj_afm_total(Pos, mbrane, afm);
-
-            fprintf(stderr, "iter, AcceptedMoves, totalener, volume: %d %d %g %g \n",
-                    i, num_moves, mbrane.tot_energy[0], mbrane.volume[0]);
-
+            cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.mc_iter << " %;"<<   
+            " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< endl;
+            identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
 
             sprintf(outfile,"%s/part_%05d.vtk",outfolder,i);
             identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
