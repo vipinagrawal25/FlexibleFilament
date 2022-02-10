@@ -171,7 +171,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         AFM_para *afm, MCpara *mcpara, char para_file[]){
     
     char buff[255];
-    int t_n;
+    int t_n, t_n2, t_n3;
     double td1, td2, td3, td4;
     FILE *f2;
     
@@ -198,10 +198,13 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         fgets(buff,255,(FILE*)f2); 
         fgets(buff,255,(FILE*)f2); 
         fgets(buff,255,(FILE*)f2); 
-        sscanf(buff,"%lf %lf ", &td1,&td2);
+        sscanf(buff,"%lf %lf %d %d %d", &td1, &td2, &t_n, &t_n2, &t_n3);
         /* fprintf(stderr, "%s\n", buff); */
         mcpara->dfac = td1;
         mcpara->kBT = td2;
+        mcpara->is_restart = t_n;
+        mcpara->tot_mc_iter = t_n2;
+        mcpara->tot_mc_iter = t_n3;
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2); 
@@ -230,7 +233,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
     // TODO: compute the average bond length by running over all the lengths.
     mbrane->av_bond_len = sqrt(8*pi/(2*mbrane->N-4));
    // define the monte carlo parameters
-    mcpara->mc_iter = 10*mbrane->N;
+    mcpara->one_mc_iter = 10*mbrane->N;
     mcpara->metric = "sph";
     mcpara->delta = sqrt(8*pi/(2*mbrane->N-4));
 }

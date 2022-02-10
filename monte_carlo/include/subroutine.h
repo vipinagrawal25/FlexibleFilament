@@ -86,7 +86,15 @@ void visit_vtk_io_afm_tip(double *data,
 void hdf5_io_read_config(double *Pos, int *cmlist,
         int *node_nbr, int2 *bond_nbr, int *triangles,
         char input_file[]);
+int io_dump_config(POSITION *Pos, double len, 
+        int iter, int N);
+void hdf5_io_dump_config(double *Pos, int *cmlist,
+        int *node_nbr, int2 *bond_nbr, 
+        int *triangles, MBRANE_para mbrane,
+        char folder[]);
+
 
 //misc
 bool FileExists(const std::string &s);
+int cubic_solve(double, double, double, double, double *);
 #endif
