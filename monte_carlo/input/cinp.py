@@ -14,9 +14,7 @@ import glob
 #
 # P.style.use('matplotlibrc')
 #
-
-
-filei = sys.argv[1] 
+filei = sys.argv[1]
 rr = np.loadtxt(filei)
 sv=F.SphVoronoi(rr)
 cumlst, node_neighbour, bond_neighbour = F.neighbours(sv.points,sv._simplices)
@@ -47,10 +45,6 @@ with open ("bond_neighbour.dat", "w") as f:
         f.write("%d %d\n" %(bn[0], bn[1]))
         nbn[i,0] = bn[0]
         nbn[i,1] = bn[1]
-
 print(np.shape(nbn))
-
 hf.create_dataset('bond_nbr',data=nbn)
-
-
 hf.close()

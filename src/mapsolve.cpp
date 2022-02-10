@@ -120,7 +120,7 @@ void calc_stab(double *y, int const neigs){
   if(FileExists("eig") || FileExists("Eig")){
     cout << "# I have already calculated the stability of this orbit."
             "There are already some eigenvalues in the folder. I can not replace that.\n"
-            "Please remove the eig file and run the exec again.";
+            "# Please remove the eig file and run the exec again.";
     exit(1);
   }
  // bool success = jacob_eigval<selectionRule>(&eigval,neigs,mapdim,map_multiple_iter,y);
