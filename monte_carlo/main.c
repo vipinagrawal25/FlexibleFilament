@@ -401,12 +401,10 @@ int main(int argc, char *argv[]){
             Et[3] = lj_afm_total(Pos, &afm_force, mbrane, afm);
             cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<   
             " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< endl;
-            identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
-
-            sprintf(outfile,"%s/part_%05d.vtk",outfolder,i);
-            identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
+            sprintf(outfile,"%s/part_%05d.vtk",outfolder,(int)i/mcpara.dump_skip);
+            // identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
             visit_vtk_io( (double *) Pos, triangles, 
-                    mbrane.N, outfile, "miketesting");
+                    mbrane.N, outfile);
 
             /* visit_vtk_io_cell_data(obtuse, mbrane.num_triangles, */
                     /* outfile, "is90"); */

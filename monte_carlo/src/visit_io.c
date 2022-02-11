@@ -1,10 +1,11 @@
-#include<stdio.h>
 #include<math.h>
-
+#include <iostream>
+#include <string.h>
+using namespace std;
+/*******************************************/
 void visit_vtk_io(double *points, 
         int *triangles, 
-        int Np, char filename[], 
-        char dataname[]){
+        int Np, char filename[], string dataname){
 
     char first_headers[] = "# vtk DataFile Version 2.0 \n grid, mydata\n ASCII \n DATASET POLYDATA \n";
     int num_triangles, i;
@@ -26,7 +27,7 @@ void visit_vtk_io(double *points,
 
 void visit_vtk_io_point_data(bool *data, 
         int Np, char filename[], 
-        char dataname[]){
+        string dataname){
 
     int num_triangles, i;
     FILE *fid;
@@ -48,7 +49,7 @@ void visit_vtk_io_point_data(bool *data,
 
 void visit_vtk_io_cell_data(double *data, 
         int Np, char filename[], 
-        char dataname[]){
+        string dataname){
 
     int num_triangles, i;
     FILE *fid;
@@ -98,5 +99,3 @@ void visit_vtk_io_afm_tip(double *data,
     }
     fclose(fid);
 }
-
-

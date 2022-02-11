@@ -55,5 +55,4 @@ int cubic_solve(double a,double b,double c,
     }
 
 return nroot;
-
 }
