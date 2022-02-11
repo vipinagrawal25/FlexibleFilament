@@ -94,7 +94,7 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
     ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
     KAPPA = mbrane.coef_vol_expansion;
     move = 0;
-    for(i = 0; i< mcpara.mc_iter; i++){
+    for(i = 0; i< mcpara.one_mc_iter; i++){
         int idx = rand_int(rng);
         num_nbr = mesh.cmlist[idx + 1] - mesh.cmlist[idx];
         cm_idx = mesh.cmlist[idx];
@@ -175,8 +175,8 @@ int monte_carlo_surf2d(POSITION *Pos,
 
     move = 0;
 
-    for(i = 0; i< mcpara.mc_iter; i++){
-    /* while(move < mcpara.mc_iter){ */
+    for(i = 0; i< mcpara.one_mc_iter; i++){
+    /* while(move < mcpara.one_mc_iter){ */
         int idx = randint(para.N);
         Eini =  pairlj_ipart_energy(Pos, neib[idx].list_ss,
                 neib[idx].cnt_ss, idx, para, mcpara.metric);
@@ -217,29 +217,6 @@ int monte_carlo_surf2d(POSITION *Pos,
     }
     return move;
 }
-
-int dump_config(POSITION *Pos, double len, 
-        int iter, int N){
-    char part_file[80];
-    int i;
-    double x_n, y_n;
-    FILE *fid;
-
-
-    sprintf(part_file,"output/part_%04d.dat",iter);
-
-    fid = fopen(part_file, "wb");
-
-    for(i=0; i < N; i++){
-        x_n = fmod((Pos[i].x + 30*len), len);
-        y_n = fmod((Pos[i].y + 30*len), len);
-        fprintf(fid, "%lf  %lf \n", x_n, y_n);
-        fflush(fid);
-    }
-    fclose(fid);
-    return 1;
-}
-
 // int thermalize(){
 //     int i, iterations, num_moves;
 //     double Ener;
@@ -263,7 +240,7 @@ int dump_config(POSITION *Pos, double len,
 
 //     // define the monte carlo parameters
 //     mcpara.dfac  = 32;
-//     mcpara.mc_iter = 10*para.N;
+//     mcpara.one_mc_iter = 10*para.N;
 //     mcpara.kBT = 1;
 //     mcpara.metric = "sph";
 //     conf = "regular";
@@ -349,7 +326,7 @@ int main(int argc, char *argv[]){
 
     // read the input file
     initialize_read_parameters(&mbrane, &afm, &mcpara, para_file);
-    
+
    /* define all the paras */ 
     mbrane.volume = (double *)calloc(1, sizeof(double)); 
     mbrane.volume[0] = (4./3.)*pi*pow(mbrane.radius,3);
@@ -372,13 +349,27 @@ int main(int argc, char *argv[]){
     e_t = afm.epsilon; 
     afm.epsilon = 0.0;
 
-    hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
-            (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
-            triangles, "input/input_icosa.h5");
-    initialize_afm_tip(afm);
-    sprintf(log_file, "%s/afm_tip.vtk", outfolder);
-    visit_vtk_io_afm_tip((double *) afm.tip_curve, 
-            afm.N, log_file);
+
+    if(!mcpara.is_restart){
+        hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
+                (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
+                triangles, "input/input.h5");
+    }else{
+
+        hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
+                (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
+                triangles, "input/restart.h5");
+    }
+
+
+
+    // uncomment these and put N=n*n where no is integer 
+    // in afm para to be able to visualize afm tip
+    /* initialize_afm_tip(afm); */
+    /* sprintf(log_file, "%s/afm_tip.vtk", outfolder); */
+    /* visit_vtk_io_afm_tip((double *) afm.tip_curve, */ 
+    /*         afm.N, log_file); */
+
     identify_attractive_part(Pos, is_attractive, mbrane.N);
     initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
     //
@@ -388,15 +379,16 @@ int main(int argc, char *argv[]){
     Et[3] = lj_afm_total(Pos, mbrane, afm);
     Ener_t = Et[0] + Et[1] + Et[2] + Et[3];
     mbrane.tot_energy[0] = Ener_t;
+
     vol_sph  = volume_enclosed_membrane(Pos, triangles, 
             mbrane.num_triangles);
     mbrane.volume[0] = vol_sph;
-    iterations = 3000;
+
     sprintf(log_file, "%s/mc_log", outfolder);
     fid = fopen(log_file, "a");
     num_moves = 0;
-    for(i=0; i<iterations; i++){
-        if(i%10 == 0){
+    for(i=0; i < mcpara.tot_mc_iter; i++){
+        if(i%mcpara.dump_skip == 0){
             Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
             Et[1] =  bending_energy_total(Pos, mesh, mbrane);
             Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
@@ -404,7 +396,9 @@ int main(int argc, char *argv[]){
             cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.mc_iter << " %;"<<   
             " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< endl;
             identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
+
             sprintf(outfile,"%s/part_%05d.vtk",outfolder,i);
+            identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
             visit_vtk_io( (double *) Pos, triangles, 
                     mbrane.N, outfile, "miketesting");
             visit_vtk_io_cell_data(obtuse, mbrane.num_triangles,
@@ -421,6 +415,7 @@ int main(int argc, char *argv[]){
             e_t = lj_afm_total(Pos, mbrane, afm);
             mbrane.tot_energy[0] += e_t;
         }
+
         num_moves = monte_carlo_3d(Pos, mesh, lij_t0, is_attractive, 
                 mbrane, mcpara, afm);
     }

@@ -50,6 +50,52 @@ double cotangent(double a, double b, double c){
     double cot_theta=0.25*(a*a+b*b-c*c)/area;
     return cot_theta;
 }
+
+POSITION determine_xyz_parabola(POSITION pos, AFM_para afm) {
+    int nroot;
+    double a, b, c, d;
+    double a0, c0;
+    double roots[6];
+    POSITION pt_pbola;
+    double x0, y0, z0;
+    // a coef of x^3
+    // b coef of x^2
+    // c coef of x^1
+    // d coef of x^0
+
+    x0 = pos.x;
+    y0 = pos.y;
+    z0 = pos.z;
+
+    // some exception messages
+    if(fabs(x0) < 1e-15){
+        fprintf(stderr, "X0 small roots may not be correct\n");
+    }
+
+    a0 = 1./afm.tip_rad;
+    /* a0 = a0*a0; */
+    c0 = afm.tip_pos_z;
+
+    a = (2*pow(a0*a0*x0, 2)  + 2*pow(a0*a0*y0,2));
+    b = 0e0;
+    c = x0*x0 + 2*a0*a0*x0*x0*(c0 - z0);
+    d = -x0*x0*x0;
+
+    nroot = cubic_solve(a, b, c, d, roots);
+
+     if(nroot  == 3){
+        fprintf(stderr, "Multiple points satisfy distance minimization \n");
+    }
+
+    pt_pbola.x = roots[0];
+    pt_pbola.y = (y0/x0)*roots[0];
+    pt_pbola.z  = (a0*pt_pbola.x)*(a0*pt_pbola.x) + 
+        (a0*pt_pbola.y)*(a0*pt_pbola.y) + c0;
+
+    return pt_pbola;
+
+}
+
 double volume_ipart(POSITION *pos, 
         int *node_nbr, int2* bond_nbr,
         int num_nbr, int idx, MBRANE_para para){
@@ -431,6 +477,40 @@ double lj_afm(POSITION pos, AFM_para afm){
     int i;
     double ener_afm, ds;
     double ds_sig_inv, r6;
+    POSITION dr, pt_pbola;
+    ener_afm = 0e0;
+    
+    pt_pbola = determine_xyz_parabola(pos, afm);
+    if(fabs(afm.tip_pos_z - pt_pbola.z) < 4*afm.sigma) {
+        dr = Position_add(pt_pbola, pos, -1); 
+        ds = (inner_product(dr,dr));
+        ds_sig_inv = (afm.sigma*afm.sigma)/ds;
+        ener_afm = lj_rep(ds_sig_inv, afm.epsilon);
+    }
+   return ener_afm;
+
+};
+
+
+double lj_afm_total(POSITION *pos, MBRANE_para para,
+        AFM_para afm){
+    int idx, j, k;
+    double lj_afm_e;
+
+    lj_afm_e = 0e0;
+    for(idx = 0; idx < para.N; idx++){
+
+        lj_afm_e += lj_afm(pos[idx], afm);
+        /* lj_afm_e  = determine_xyz_parabola(pos[idx], afm); */
+    }
+    return lj_afm_e;
+}
+
+
+double lj_afm_pf(POSITION pos, AFM_para afm){
+    int i;
+    double ener_afm, ds;
+    double ds_sig_inv, r6;
     POSITION dr;
 
     ener_afm = 0e0;
@@ -446,7 +526,7 @@ double lj_afm(POSITION pos, AFM_para afm){
 
 };
 
-double lj_afm_total(POSITION *pos, MBRANE_para para,
+double lj_afm_total_pf(POSITION *pos, MBRANE_para para,
         AFM_para afm){
     int idx, j, k;
     double lj_afm_e;
@@ -454,7 +534,7 @@ double lj_afm_total(POSITION *pos, MBRANE_para para,
     lj_afm_e = 0e0;
     for(idx = 0; idx < para.N; idx++){
 
-        lj_afm_e += lj_afm(pos[idx], afm);
+        lj_afm_e += lj_afm_pf(pos[idx], afm);
     }
     return lj_afm_e;
 }
@@ -512,11 +592,13 @@ void identify_obtuse(POSITION *pos, int *triangles,
     double inp_r1, inp_r2, inp_r3;
 
     piby2 = 0.5*pi;
+
     for (it = 0; it< 3*N; it=it+3){
         i = triangles[it];
         j = triangles[it+1];
         k = triangles[it+2];
 
+        obtuse[it/3] = 0e0;
         ri = pos[i]; rj = pos[j]; rk = pos[k];
 
         rij = Position_add(ri, rj, -1e0);
@@ -546,6 +628,6 @@ void identify_obtuse(POSITION *pos, int *triangles,
        /* printf( "%lf %lf %lf %lf %lf\n", a_ij_ik, */
                /* a_ji_jk, a_ki_kj, sum_ang, pi); */ 
       
-        if(logic) obtuse[i/3] = 1e0;
+        if(logic) obtuse[it/3] = 1e0;
     }
 }
