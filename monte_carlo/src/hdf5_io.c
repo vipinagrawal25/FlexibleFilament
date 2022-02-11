@@ -64,7 +64,7 @@ int io_dump_config(POSITION *Pos, double len,
     return 1;
 }
 
-void hdf5_io_dump_config(double *Pos, int *cmlist,
+void hdf5_io_dump_restart_config(double *Pos, int *cmlist,
         int *node_nbr, int2 *bond_nbr, 
         int *triangles, MBRANE_para mbrane,
         char folder[]){

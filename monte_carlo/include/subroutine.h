@@ -54,8 +54,8 @@ double volume_ipart(POSITION *pos,
         int num_nbr, int idx, MBRANE_para para);
 
 double lj_afm(POSITION , AFM_para);
-double lj_afm_total(POSITION *pos, MBRANE_para para,
-        AFM_para afm);
+double lj_afm_total(POSITION *pos, POSITION *afm_force,
+        MBRANE_para para, AFM_para afm);
  
 
 //initialise.c
@@ -88,7 +88,7 @@ void hdf5_io_read_config(double *Pos, int *cmlist,
         char input_file[]);
 int io_dump_config(POSITION *Pos, double len, 
         int iter, int N);
-void hdf5_io_dump_config(double *Pos, int *cmlist,
+void hdf5_io_dump_restart_config(double *Pos, int *cmlist,
         int *node_nbr, int2 *bond_nbr, 
         int *triangles, MBRANE_para mbrane,
         char folder[]);

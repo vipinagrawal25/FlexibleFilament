@@ -203,7 +203,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         mcpara->kBT = td2;
         mcpara->is_restart = t_n;
         mcpara->tot_mc_iter = t_n2;
-        mcpara->tot_mc_iter = t_n3;
+        mcpara->dump_skip = t_n3;
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2); 

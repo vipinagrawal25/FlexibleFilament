@@ -492,17 +492,32 @@ double lj_afm(POSITION pos, AFM_para afm){
 };
 
 
-double lj_afm_total(POSITION *pos, MBRANE_para para,
+double lj_afm_total(POSITION *pos, 
+        POSITION *afm_force, MBRANE_para para,
         AFM_para afm){
     int idx, j, k;
+    double  ds;
     double lj_afm_e;
+    double lj_afm_t;
+    POSITION f_t, pt_pbola, dr;
 
     lj_afm_e = 0e0;
+    f_t.x = 0; f_t.y = 0; f_t.z = 0;
     for(idx = 0; idx < para.N; idx++){
 
-        lj_afm_e += lj_afm(pos[idx], afm);
+        lj_afm_t = lj_afm(pos[idx], afm);
+        pt_pbola = determine_xyz_parabola(pos[idx], afm);
+        dr = Position_add(pt_pbola, pos[idx], -1); 
+        ds = (inner_product(dr,dr));
+        f_t.x += 12*lj_afm_t*dr.x/ds;
+        f_t.y += 12*lj_afm_t*dr.y/ds;
+        f_t.z += 12*lj_afm_t*dr.z/ds;
+
+        lj_afm_e  += lj_afm_t; 
+
         /* lj_afm_e  = determine_xyz_parabola(pos[idx], afm); */
     }
+    *afm_force  = f_t;
     return lj_afm_e;
 }
 

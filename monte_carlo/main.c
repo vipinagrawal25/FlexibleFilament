@@ -303,11 +303,14 @@ int main(int argc, char *argv[]){
     MCpara mcpara;
     AFM_para afm;
     MESH mesh;
+    POSITION afm_force;
     FILE *fid;
     double *lij_t0, *obtuse;
     int *triangles;
     char syscmds[128], outfile[89], outfolder[32], para_file[32];
     char log_file[64];
+
+    char log_headers[] = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener afm_ener volume  forcex, forcey forcez";
 
     if(argc!=3){
         printf("\n\n mayday.. requires an argument <parameter file> <output folder>\n\n");
@@ -344,10 +347,12 @@ int main(int argc, char *argv[]){
     is_attractive = (bool *)calloc(mbrane.N, sizeof(bool));
     afm.tip_curve = (POSITION *)calloc(afm.N, 3*sizeof(double));
 
-    s_t = afm.sigma; 
-    afm.sigma = 0.00;
-    e_t = afm.epsilon; 
-    afm.epsilon = 0.0;
+    if(!mcpara.is_restart){
+        s_t = afm.sigma; 
+        afm.sigma = 0.00;
+        e_t = afm.epsilon; 
+        afm.epsilon = 0.0;
+    }
 
 
     if(!mcpara.is_restart){
@@ -376,7 +381,7 @@ int main(int argc, char *argv[]){
     Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
     Et[1] =  bending_energy_total(Pos, mesh, mbrane);
     Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
-    Et[3] = lj_afm_total(Pos, mbrane, afm);
+    Et[3] = lj_afm_total(Pos, &afm_force, mbrane, afm);
     Ener_t = Et[0] + Et[1] + Et[2] + Et[3];
     mbrane.tot_energy[0] = Ener_t;
 
@@ -386,14 +391,15 @@ int main(int argc, char *argv[]){
 
     sprintf(log_file, "%s/mc_log", outfolder);
     fid = fopen(log_file, "a");
+    if(!mcpara.is_restart)fprintf(fid, "%s\n", log_headers);
     num_moves = 0;
     for(i=0; i < mcpara.tot_mc_iter; i++){
         if(i%mcpara.dump_skip == 0){
             Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
             Et[1] =  bending_energy_total(Pos, mesh, mbrane);
             Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
-            Et[3] = lj_afm_total(Pos, mbrane, afm);
-            cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.mc_iter << " %;"<<   
+            Et[3] = lj_afm_total(Pos, &afm_force, mbrane, afm);
+            cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<   
             " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< endl;
             identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
 
@@ -401,18 +407,25 @@ int main(int argc, char *argv[]){
             identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
             visit_vtk_io( (double *) Pos, triangles, 
                     mbrane.N, outfile, "miketesting");
-            visit_vtk_io_cell_data(obtuse, mbrane.num_triangles,
-                    outfile, "is90");
-            visit_vtk_io_point_data(is_attractive, mbrane.N,
-                    outfile, "attr");
-            fprintf(fid, " %d %d %g %g %g %g %g\n",
-                    i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3]);
+
+            /* visit_vtk_io_cell_data(obtuse, mbrane.num_triangles, */
+                    /* outfile, "is90"); */
+
+            fprintf(fid, " %d %d %g %g %g %g %g %g %g %g\n",
+                    i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3],
+                    afm_force.x, afm_force.y, afm_force.z);
             fflush(fid);
+
+            // dump config for restart
+
+            hdf5_io_dump_restart_config((double *) Pos, (int *) mesh.cmlist,
+                    (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list,  
+                    triangles, mbrane, "input");
         }
-        if(i == 200 ){
+        if(i == 4*mcpara.dump_skip && !mcpara.is_restart ){
             afm.sigma = s_t;
             afm.epsilon = e_t;
-            e_t = lj_afm_total(Pos, mbrane, afm);
+            e_t = lj_afm_total(Pos, &afm_force, mbrane, afm);
             mbrane.tot_energy[0] += e_t;
         }
 
