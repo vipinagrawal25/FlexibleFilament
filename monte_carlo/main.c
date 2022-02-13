@@ -360,8 +360,14 @@ int main(int argc, char *argv[]){
         hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
                 (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
                 triangles, "input/input.h5");
+        initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
+        identify_attractive_part(Pos, is_attractive, mbrane.N);
     }else{
-
+        hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
+                (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
+                triangles, "input/input.h5");
+        initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
+        identify_attractive_part(Pos, is_attractive, mbrane.N);
         hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
                 (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
                 triangles, "input/restart.h5");
@@ -376,8 +382,6 @@ int main(int argc, char *argv[]){
     /* visit_vtk_io_afm_tip((double *) afm.tip_curve, */ 
     /*         afm.N, log_file); */
 
-    identify_attractive_part(Pos, is_attractive, mbrane.N);
-    initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
     //
     Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
     Et[1] =  bending_energy_total(Pos, mesh, mbrane);
@@ -414,8 +418,8 @@ int main(int argc, char *argv[]){
             visit_vtk_io( (double *) Pos, triangles, 
                     mbrane.N, outfile, "miketesting");
 
-            /* visit_vtk_io_cell_data(obtuse, mbrane.num_triangles, */
-                    /* outfile, "is90"); */
+            visit_vtk_io_point_data(is_attractive, mbrane.N,
+                    outfile, "isattr");
 
             fprintf(fid, " %d %d %g %g %g %g %g %g %g %g %g\n",
                     i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3], Et[4],
@@ -438,6 +442,7 @@ int main(int argc, char *argv[]){
         num_moves = monte_carlo_3d(Pos, mesh, lij_t0, is_attractive, 
                 mbrane, mcpara, afm);
     }
+
     fclose(fid);
     free(Pos);
     free(lij_t0);
