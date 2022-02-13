@@ -134,7 +134,8 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
                 num_nbr, idx, mbrane);
 
         dvol =  0.5*(vol_f - vol_i);
-        de_vol = (2*dvol/(ini_vol*ini_vol))*(mbrane.volume[0]  - ini_vol);
+        de_vol = (2*dvol/(ini_vol*ini_vol))*(mbrane.volume[0]  - ini_vol)
+            + (dvol/ini_vol)*(dvol/ini_vol);
         de_vol = KAPPA*de_vol;
 
         /* printf("%d %g %g %d\n", idx, Efin, Eini, is_attractive[idx]); */
@@ -382,11 +383,13 @@ int main(int argc, char *argv[]){
     Et[1] =  bending_energy_total(Pos, mesh, mbrane);
     Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
     Et[3] = lj_afm_total(Pos, &afm_force, mbrane, afm);
-    Ener_t = Et[0] + Et[1] + Et[2] + Et[3];
-    mbrane.tot_energy[0] = Ener_t;
 
     vol_sph  = volume_enclosed_membrane(Pos, triangles, 
             mbrane.num_triangles);
+    double  ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
+    Et[4] = mbrane.coef_vol_expansion*(vol_sph/ini_vol - 1e0)*(vol_sph/ini_vol - 1e0);
+    Ener_t = Et[0] + Et[1] + Et[2] + Et[3] + Et[4];
+    mbrane.tot_energy[0] = Ener_t;
     mbrane.volume[0] = vol_sph;
 
     sprintf(log_file, "%s/mc_log", outfolder);
@@ -399,6 +402,9 @@ int main(int argc, char *argv[]){
             Et[1] =  bending_energy_total(Pos, mesh, mbrane);
             Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
             Et[3] = lj_afm_total(Pos, &afm_force, mbrane, afm);
+            vol_sph  = volume_enclosed_membrane(Pos, triangles, 
+                    mbrane.num_triangles);
+            Et[4] = mbrane.coef_vol_expansion*(vol_sph/ini_vol - 1e0)*(vol_sph/ini_vol - 1e0);
             cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<   
             " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< endl;
             identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
@@ -411,8 +417,8 @@ int main(int argc, char *argv[]){
             /* visit_vtk_io_cell_data(obtuse, mbrane.num_triangles, */
                     /* outfile, "is90"); */
 
-            fprintf(fid, " %d %d %g %g %g %g %g %g %g %g\n",
-                    i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3],
+            fprintf(fid, " %d %d %g %g %g %g %g %g %g %g %g\n",
+                    i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3], Et[4],
                     afm_force.x, afm_force.y, afm_force.z);
             fflush(fid);
 
