@@ -311,7 +311,7 @@ int main(int argc, char *argv[]){
     char syscmds[128], outfile[89], outfolder[32], para_file[32];
     char log_file[64];
 
-    char log_headers[] = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener afm_ener volume  forcex, forcey forcez";
+    char log_headers[] = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener afm_ener ener_volume  forcex, forcey forcez";
 
     if(argc!=3){
         printf("\n\n mayday.. requires an argument <parameter file> <output folder>\n\n");
