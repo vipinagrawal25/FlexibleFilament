@@ -1,1 +1,6 @@
+TODO:
+1) Code to restart the simuation does not work.
+	a) I dont think, it start
+
+DONE:
 1) fix the average bond length (mbrane->av_bond_len) in src/initialise.c

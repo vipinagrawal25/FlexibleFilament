@@ -1,50 +1,64 @@
 #include<math.h>
 #include <iostream>
 #include <string.h>
+#include <errno.h>
+#include <fstream>
 using namespace std;
 /*******************************************/
 void visit_vtk_io(double *points, 
         int *triangles, 
         int Np, char filename[], string dataname){
-
     char first_headers[] = "# vtk DataFile Version 2.0 \n grid, mydata\n ASCII \n DATASET POLYDATA \n";
     int num_triangles, i;
-    FILE *fid;
-
+    ofstream fid(filename,ofstream::out);
+    // FILE *fid;
+    // //
     num_triangles = 2*Np - 4;
-    fid = fopen(filename, "w");
-    fprintf(fid, "%s", first_headers);
-    fprintf(fid, "%s %d %s", "POINTS", Np, "float \n");
+    // fid = fopen(filename, "w");
+    // if (fid==NULL){
+    //     cout <<"FILE ERROR: can not open the " << filename << endl;
+    //     cout <<"Error = " << errno << endl;
+    // }
+    fid << first_headers;
+    fid << "POINTS\t" << Np << "\t" << "float" << endl;
+    // fprintf(fid, "%s", first_headers);
+    // fprintf(fid, "%s %d %s", "POINTS", Np, "float \n");
     for(i = 0; i< 3*Np; i=i+3){
-        fprintf(fid, "%g %g %g \n", points[i], points[i+1], points[i+2]);
+        fid << points[i] << "\t" << points[i+1] << "\t" << points[i+2] << endl;
+        // fprintf(fid, "%g %g %g \n", points[i], points[i+1], points[i+2]);
     }
-    fprintf(fid, "%s %d  %d %s", "POLYGONS", num_triangles, 4*num_triangles, " \n");
+    fid << "POLYGONS\t"<< num_triangles << "\t" << 4*num_triangles << endl;
+    // fprintf(fid, "%s %d  %d %s", "POLYGONS", num_triangles, 4*num_triangles, " \n");
     for(i = 0; i< 3*num_triangles; i=i+3){
-        fprintf(fid, "%d %d %d %d\n", 3, triangles[i], triangles[i+1], triangles[i+2]);
+        fid << 3 << "\t" << triangles[i] << "\t" << triangles[i+1] << "\t" << triangles[i+2] << endl;
+        // fprintf(fid, "%d %d %d %d\n", 3, triangles[i], triangles[i+1], triangles[i+2]);
     }
-    fclose(fid);
+    // fclose(fid);
+    fid.close();
 }
 
 void visit_vtk_io_point_data(bool *data, 
         int Np, char filename[], 
         string dataname){
-
+    ofstream fid(filename,ofstream::out);
     int num_triangles, i;
-    FILE *fid;
-
     num_triangles = 2*Np - 4;
-    fid = fopen(filename, "a");
-    fprintf(fid, "%s %d \n", "POINT_DATA", Np);
-    fprintf(fid, "%s %s %s \n", "SCALARS", dataname, "float 1");
-    fprintf(fid, "%s \n", "LOOKUP_TABLE default ");
+    fid << "POINT_DATA\t" << Np << endl;
+    fid << "SCALARS\t" << dataname <<"\t" << "float 1" << endl;
+    fid << "LOOKUP_TABLE default \n";
+    // fprintf(fid, "%s %d \n", "POINT_DATA", Np);
+    // fprintf(fid, "%s %s %s \n", "SCALARS", dataname, "float 1");
+    // fprintf(fid, "%s \n", "LOOKUP_TABLE default ");
     for(i = 0; i< Np; i=i+1){
         if(data[i]){
-            fprintf(fid, "%g \n", 1.0);
+            fid << 1.0 << endl;
+            // fprintf(fid, "%g \n", 1.0);
         } else {
-            fprintf(fid, "%g \n", 0.0);
+            fid << 0.0 << endl;
+            // fprintf(fid, "%g \n", 0.0);
         }
     }
-    fclose(fid);
+    fid.close();
 }
 
 void visit_vtk_io_cell_data(double *data, 

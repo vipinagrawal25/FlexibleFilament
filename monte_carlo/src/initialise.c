@@ -232,7 +232,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
     // TODO: compute the average bond length by running over all the lengths.
     // mbrane->av_bond_len = sqrt(8*pi/(2*mbrane->N-4));
    // define the monte carlo parameters
-    mcpara->one_mc_iter = 10*mbrane->N;
+    mcpara->one_mc_iter = 2*mbrane->N;
     mcpara->metric = "sph";
     mcpara->delta = sqrt(8*pi/(2*mbrane->N-4));
 }

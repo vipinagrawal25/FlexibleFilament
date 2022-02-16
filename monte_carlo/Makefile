@@ -1,8 +1,8 @@
-#HOST=norlx65_vipin
-#include hosts/$(HOST)
-CC = /usr/bin/h5c++ -O3 -w
+HOST=norlx65_vipin
+include hosts/$(HOST)
+# CC = /usr/bin/h5c++ -O3 -w
 #
-link = -lm -std=c++11
+link = -lm -std=c++11 -g
 # 
 sources = src/forces_lj.c src/forces_surf.c
 sources += src/initialise.c  src/visit_io.c src/hdf5_io.c
@@ -33,3 +33,4 @@ clean:
 distclean:
 	@rm -rf data_0* $(object) run
 	@echo "all data cleared"
+	@rm -rf output/
