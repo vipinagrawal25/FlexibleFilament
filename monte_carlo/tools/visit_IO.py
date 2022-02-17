@@ -26,7 +26,6 @@ def dump_visit(infile, points, triangles):
                 +str(4*num_triangles) + '\n')
         for it, tri in enumerate(triangles):
             f.write("%d %d %d %d\n" %(3, tri[0], tri[1], tri[2]))
-
 def dump_visit_points_scalar(infile, points, scalar, name_scalar='points_data'):
     """
     subroutine to dump the scalars evaluated along points
@@ -44,7 +43,6 @@ def dump_visit_points_scalar(infile, points, scalar, name_scalar='points_data'):
             f.write('LOOKUP_TABLE default \n')
             for p in scalar:
                 f.write("%16.8f\n" %(p))
- 
 def dump_visit_cells_scalar(infile,
         triangles, 
         scalar, 
@@ -66,3 +64,9 @@ def dump_visit_cells_scalar(infile,
             f.write('LOOKUP_TABLE default \n')
             for p in scalar:
                 f.write("%16.8f\n" %(p))
+#
+def vtk_to_data(infile,Np,skiprows=5):
+    # Read data from vtk file.
+    points=np.loadtxt(infile,skiprows=skiprows,max_rows=Np)
+    cells=np.loadtxt(infile,skiprows=skiprows+Np+1,max_rows=2*Np-4)[:,1:4]
+    return points, cells

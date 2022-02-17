@@ -40,7 +40,7 @@ void visit_vtk_io(double *points,
 void visit_vtk_io_point_data(bool *data, 
         int Np, char filename[], 
         string dataname){
-    ofstream fid(filename,ofstream::out);
+    ofstream fid(filename,ofstream::app);
     int num_triangles, i;
     num_triangles = 2*Np - 4;
     fid << "POINT_DATA\t" << Np << endl;

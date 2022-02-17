@@ -194,7 +194,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         mbrane->pos_bot_wall = td2;
         mbrane->sigma = td3;
         mbrane->epsilon = td4;
-        fgets(buff,255,(FILE*)f2); 
+        fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2); 
         fgets(buff,255,(FILE*)f2); 
         sscanf(buff,"%lf %lf %d %d %d", &td1, &td2, &t_n, &t_n2, &t_n3);
@@ -221,7 +221,6 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         afm->tip_pos_z = td2;
         afm->sigma = td3;
         afm->epsilon = td4;
-
     }
     else{
         fprintf(stderr, "sorry man the specified doesn't exists in current dir .\n");

@@ -5,7 +5,7 @@ radius	pos_bot_wall	sigma	epsilon
 1.00 -1.05 0.17 4.00
 ## Montecarlo parameters
 Dfac	kBT is_restart mc_total_iters	mc_dump_iter
-4 1.00 1 10 10
+4 1.00 1 1000 10
 ## Afm Tip parameters
 N	extent_l	extent_r	extent_t	extent_b
 0 -0.1 0.1 -0.1 0.1

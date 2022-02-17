@@ -14,18 +14,22 @@ def write_param(fname="../para_file.in",paramdict=None):
 	with open(fname, "w") as file:
 		file.write("## Membrane parameters\n")
 		file.write("N\tcoef_bending\tcoef_stretching\tcoef_vol_expansion\n")
-		file.write("%d %3.2f %3.2f %3.2f\n" %(paramdict['N'],paramdict['coef_bending'],paramdict['coef_stretching'],
-					paramdict['coef_vol_expansion']))
+		file.write("%d %3.2f %3.2f %3.2f\n" %(paramdict['N'],paramdict['coef_bending'],
+					paramdict['coef_stretching'],paramdict['coef_vol_expansion']))
 		file.write("radius\tpos_bot_wall\tsigma\tepsilon\n")
-		file.write("%3.2f %3.2f %3.2f %3.2f\n" %(paramdict['radius'],paramdict['pos_bot_wall'],paramdict['sigma'],paramdict['epsilon']))
+		file.write("%3.2f %3.2f %3.2f %3.2f\n" %(paramdict['radius'],paramdict['pos_bot_wall'],
+					paramdict['sigma'],paramdict['epsilon']))
 		file.write("## Montecarlo parameters\n")
 		file.write("Dfac\tkBT is_restart mc_total_iters\tmc_dump_iter\n")
-		file.write("%d %3.2f %d %d %d\n" %(paramdict['Dfac'],paramdict['kBT'],paramdict['is_restart'],paramdict['mc_total_iters'],paramdict['mc_dump_iter']))
+		file.write("%d %3.2f %d %d %d\n" %(paramdict['Dfac'],paramdict['kBT'],paramdict['is_restart'],
+					paramdict['mc_total_iters'],paramdict['mc_dump_iter']))
 		file.write("## Afm Tip parameters\n")
 		file.write("N\textent_l\textent_r\textent_t\textent_b\n")
-		file.write("%d %1.1f %1.1f %1.1f %1.1f\n" %(paramdict['afm_N'],paramdict['extent_l'],paramdict['extent_r'],paramdict['extent_t'],paramdict['extent_b']))
+		file.write("%d %1.1f %1.1f %1.1f %1.1f\n" %(paramdict['afm_N'],paramdict['extent_l'],
+					paramdict['extent_r'],paramdict['extent_t'],paramdict['extent_b']))
 		file.write("tip_radius\ttip_pos_z\tafm_sigma\tafm_epsilon\n")
-		file.write("%2.2f %2.2f %2.2f %2.2f" %(paramdict['tip_radius'],paramdict['tip_pos_z'],paramdict['afm_sigma'],paramdict['afm_epsilon']))
+		file.write("%2.2f %2.2f %2.2f %2.2f" %(paramdict['tip_radius'],paramdict['tip_pos_z'],
+					paramdict['afm_sigma'],paramdict['afm_epsilon']))
 #
 def read_param(fname='../para_file.in'):
 	## Membrane parameters
@@ -42,21 +46,21 @@ def read_param(fname='../para_file.in'):
 	afm_N,extent_l,extent_r,extent_t,extent_b = np.loadtxt(fname,skiprows=10,max_rows=1)
 	afm_N=int(afm_N)
 	tip_radius,tip_pos_z,afm_sigma,afm_epsilon = np.loadtxt(fname,skiprows=12,max_rows=1)
-	paramdict={"N":N,"coef_bending":coef_bending,"coef_stretching":coef_stretching,"coef_vol_expansion":coef_vol_expansion,
+	paramdict={"N":N,"coef_bending":coef_bending,"coef_stretching":coef_stretching,
+				"coef_vol_expansion":coef_vol_expansion,
 				"radius":radius,"pos_bot_wall":pos_bot_wall,"sigma":sigma,"epsilon":epsilon,
-				"Dfac":Dfac,"kBT":kBT,"is_restart":is_restart,"mc_total_iters":mc_total_iters,"mc_dump_iter":mc_dump_iter,
-				"afm_N":afm_N,"extent_l":extent_l,"extent_r":extent_r,"extent_t":extent_t,"extent_b":extent_b,
-				"tip_radius":tip_radius,"tip_pos_z":tip_pos_z,"afm_sigma":afm_sigma,"afm_epsilon":afm_epsilon}
+				"Dfac":Dfac,"kBT":kBT,"is_restart":is_restart,"mc_total_iters":mc_total_iters,
+				"mc_dump_iter":mc_dump_iter,
+				"afm_N":afm_N,"extent_l":extent_l,"extent_r":extent_r,"extent_t":extent_t,
+				"extent_b":extent_b,
+				"tip_radius":tip_radius,"tip_pos_z":tip_pos_z,"afm_sigma":afm_sigma,
+				"afm_epsilon":afm_epsilon}
 	return paramdict
 #
-# def change_param(fname=None,N=None,coef_bending=None,coef_stretching=None,
-# 				coef_vol_expansion=None,radius=None,pos_bot_wall=None,sigma=None,
-# 				epsilon=None,Dfac=None,kBT=None,is_restart=None,mc_total_iters=None,mc_dump_iter=None,
-# 				afm_N=None,extent_l=None,extent_r=0.1,extent_t=-0.1,extent_b=0.1,
-# 				tip_radius=0.2,tip_pos_z=1.025,afm_sigma=0.17,afm_epsilon=4):
 def change_param(fname="../para_file.in",**kwargs):
-	''' The function change one parameter from the input file and write the new parameter file.'''
+	''' The function change one parameter from the input file and overwrites the new parameter file.'''
 	paramdict=read_param(fname=fname)
 	for key,value in kwargs.items():
 		paramdict[key]=value
 	write_param(fname=fname,paramdict=paramdict)
+#

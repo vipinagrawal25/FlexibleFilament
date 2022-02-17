@@ -428,14 +428,14 @@ int main(int argc, char *argv[]){
                     i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3], Et[4],
                     afm_force.x, afm_force.y, afm_force.z);
         fflush(fid);
-        if(i == 4*mcpara.dump_skip && !mcpara.is_restart ){
+        if(i == 10*mcpara.dump_skip && !mcpara.is_restart ){
             afm.sigma = s_t;
             afm.epsilon = e_t;
             e_t = lj_afm_total(Pos, &afm_force, mbrane, afm);
             mbrane.tot_energy[0] += e_t;
         }
-        // num_moves = monte_carlo_3d(Pos, mesh, lij_t0, is_attractive, 
-        //         mbrane, mcpara, afm);
+        num_moves = monte_carlo_3d(Pos, mesh, lij_t0, is_attractive, 
+                mbrane, mcpara, afm);
     }
     fclose(fid);
     free(Pos);
