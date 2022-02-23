@@ -3,10 +3,12 @@
 
 #define sign(x) ((x > 0) ? 1 : ((x < 0) ? -1 : 0))
 
- double inner_product(POSITION s1, POSITION s2){
+inline double inner_product(POSITION s1, POSITION s2){
     return s1.x*s2.x + s1.y*s2.y + s1.z*s2.z;
 }
-
+inline double norm(POSITION s1){
+    return sqrt(inner_product(s1,s1));
+}
 POSITION Position_add(POSITION s1, 
         POSITION s2, double fac){
     /* Returns s1 + fac*s2*/
@@ -197,12 +199,15 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
     POSITION cot_times_rij;
     double BB=para.coef_bend;
     double curv_t0 = para.sp_curv;
+    // lap_bel:Laplace Beltrami operator for sphere is 2\kappa\nhat
+    // nhat is outward normal.
+    POSITION lap_bel,lap_bel_t0,nhat = {0.,0.,0.};
     // double curv_t0 = 2e0/para.radius;
     cot_times_rij.x = 0e0;
     cot_times_rij.y = 0e0;
     cot_times_rij.z = 0e0;
     //
-    if (method=="old"){
+    if (method=="voro_negative"){
         double idx_ener;
         double rij_dot_rij;
         int i, k, kp;
@@ -270,22 +275,25 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
         // sigma_i=area/3;
         // cout << area/3 << endl;
         // }
-    }else if (method=="new"){
+    }else if (method=="curvature_unsigned" || method=="curvature"){
         double cot_jdx_k,cot_jdx_kp,cot_kdx,cot_kpdx;
         double area_ijk,area_ijkp;
         double lijsq,liksq,ljksq,likpsq,ljkpsq;
         // POSITION cot_times_rij;
-        POSITION xij,xik,xjk,xikp,xjkp;
+        POSITION xij,xik,xjk,xikp,xjkp,nhat_local;
         int jdx,kdx,kpdx;
         double cot_sum;
         sigma_i = 0e0;
         int count=0;
         for (int j = 0; j < num_nbr; j++){
             jdx = node_nbr[j];
+            jdxp1=node_nbr[(j+1)%num_nbr];
+            //
             kdx  = bond_nbr[j].i1;
             kpdx = bond_nbr[j].i2;
             //
             xij = Position_add(pos[idx], pos[jdx], -1e0);
+            xijp1 = Position_add(pos[idx], pos[jdxp1], -1e0);
             xik = Position_add(pos[idx], pos[kdx], -1e0);
             xjk = Position_add(pos[jdx], pos[kdx], -1e0);
             xikp = Position_add(pos[idx], pos[kpdx], -1e0);
@@ -323,7 +331,11 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
             // // sigma_i=sigma_i+0.125*();
             sigma_i=sigma_i+voronoi_area(cot_jdx_k,cot_kdx,liksq,lijsq,area_ijk);
             sigma_i=sigma_i+voronoi_area(cot_jdx_kp,cot_kpdx,likpsq,lijsq,area_ijkp);
+            //
+            nhat_local=cross(xijp1,xij)
+            nhat=Position_add(nhat,nhat_local,1e0/norm(nhat_local));
         }
+        nhat=nhat/norm(nhat);
         sigma_i = 0.5*sigma_i;  // as everything is counted twice.
         // double xij[num_nbr],cot_alpha[num_nbr],cot_beta[num_nbr],xij_sq[num_nbr];
         // int jdx,kdx,jpdx,kpdx,jp;
@@ -342,8 +354,14 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
         //     }
         // }
     }
-    curvature = (1e0/sigma_i)*norm(cot_times_rij);
-    bend_ener = 0.5*BB*sigma_i*(curvature-curv_t0)*(curvature-curv_t0);
+    if (method=="curvature_unsigned" || method == "voro_negative"){
+        curvature = (1e0/sigma_i)*norm(cot_times_rij);
+        bend_ener = 0.5*BB*sigma_i*(curvature-curv_t0)*(curvature-curv_t0);
+    }else if(method=="curvature"){
+        lap_bel = (1e0/sigma_i)*(cot_times_rij);
+        lap_bel_t0 = Position_add(0e0,nhat,curv_t0);
+        bend_ener = 0.5*BB*sigma_i*inner_product(lap_bel-lap_bel_t0,lap_bel-lap_bel_t0);
+    }
     return bend_ener;
  }
 
@@ -362,11 +380,10 @@ double bending_energy_ipart_neighbour(POSITION *pos,
        nbr = mesh.node_nbr_list[j];
        num_nbr_j = mesh.cmlist[nbr+1] -  mesh.cmlist[nbr];
        cm_idx_nbr = mesh.cmlist[nbr];
-
        be += bending_energy_ipart(pos, 
               (int *) mesh.node_nbr_list + cm_idx_nbr,
               (int2 *) mesh.bond_nbr_list + cm_idx_nbr, num_nbr_j, 
-           nbr, para);
+              nbr, para);
    }
    return be;
 } 
