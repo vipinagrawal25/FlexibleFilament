@@ -72,13 +72,13 @@ int randint(int n);
 void visit_vtk_io(double *points, 
         int *triangles, 
         int Np, char filename[], 
-        char dataname[]);
+        string dataname="miketesting");
 void visit_vtk_io_point_data(bool *data, 
         int Np, char filename[], 
-        char dataname[]);
+        string dataname);
 void visit_vtk_io_cell_data(double *data, 
         int Np, char filename[], 
-        char dataname[]);
+        string dataname);
 
 void visit_vtk_io_afm_tip(double *data, 
         int Np, char filename[]);

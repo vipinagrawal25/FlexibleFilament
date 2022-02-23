@@ -176,8 +176,7 @@ def check_obtuse(points, triangles):
     90, and 0 if all the angle is acute (less than 90)
     """
     # angle theta for triangle ijk
-    isgt90 = np.zeros(np.shape(triangles)[0], 
-            dtype=np.float64)
+    isgt90 = np.zeros(np.shape(triangles)[0],dtype=np.float64)
     piby2 = 0.5*np.pi
     a_ij_ik=np.zeros(triangles.shape[0])
     a_ji_jk=np.zeros(triangles.shape[0])

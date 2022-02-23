@@ -27,10 +27,7 @@ def dump_visit(infile, points, triangles):
         for it, tri in enumerate(triangles):
             f.write("%d %d %d %d\n" %(3, tri[0], tri[1], tri[2]))
 
-def dump_visit_points_scalar(infile, 
-        points, 
-        scalar, 
-        name_scalar='points_data'):
+def dump_visit_points_scalar(infile, points, scalar, name_scalar='points_data'):
     """
     subroutine to dump the scalars evaluated along points
     """

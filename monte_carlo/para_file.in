@@ -1,13 +1,13 @@
 ## Membrane parameters
-N   coef_bending coef_stretching  coef_vol_expansion
-5120  2.8         200               1e7
-radius  pos_bot_wall  sigma  epsilon
-1.0     -1.05         0.17   		4
+N	coef_bending	coef_stretching	coef_vol_expansion
+5120 2.50 25.00 1000000.00
+radius	pos_bot_wall	sigma	epsilon
+1.00 -1.05 0.17 4.00
 ## Montecarlo parameters
-Dfac  kBT is_restart mc_total_iters   mc_dump_iter
-32    1.0  0       1000             100
+Dfac	kBT is_restart mc_total_iters	mc_dump_iter
+4 1.00 1 1000 10
 ## Afm Tip parameters
-N  extent_l extent_r  extent_t extent_b
-0  -0.1    0.1     -0.1   0.1;
-tip_radius tip_pos_z  sigma epsilon
-0.2        1.05       0.17   4
+N	extent_l	extent_r	extent_t	extent_b
+0 -0.1 0.1 -0.1 0.1
+tip_radius	tip_pos_z	afm_sigma	afm_epsilon
+0.20 0.75 0.17 4.00

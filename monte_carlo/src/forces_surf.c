@@ -197,7 +197,9 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
     double bend_ener,curvature,sigma_i;
     POSITION cot_times_rij;
     double BB=para.coef_bend;
-    double curv_t0 = 2e0/para.radius;
+    double curv_t0 = para.sp_curv;
+    // double curv_t0 = 2e0/para.radius;
+    double curv_t0=0;
     cot_times_rij.x = 0e0;
     cot_times_rij.y = 0e0;
     cot_times_rij.z = 0e0;
@@ -207,7 +209,7 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
         double rij_dot_rij;
         int i, k, kp;
         int j;
-        double cot_sum, curv_t0;
+        double cot_su;
         // double curvature;
         POSITION cot_theta_rij, rij, rik, rikp;
         //
@@ -245,8 +247,7 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
             cot_jdx_kp = cotangent(pos[idx],pos[jdx],pos[kpdx]);
             cot_kpdx = cotangent(pos[idx],pos[kpdx],pos[jdx]);
             //
-            cot_sum=0.5*(cotangent(pos[idx],pos[kdx],pos[jdx]) +
-                         cotangent(pos[idx],pos[kpdx],pos[jdx]));
+            cot_sum=0.5*(cot_kdx +  cot_kpdx);
             //
             xij = Position_add(pos[idx], pos[jdx], -1e0);
             //
@@ -271,7 +272,7 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
         // cout << area/3 << endl;
         // }
     }else if (method=="new"){
-        double cot_jdx_k,cot_jdx_kp,cot_kdx,cot_kpdx,cot_idx_k,cot_idx_kp;
+        double cot_jdx_k,cot_jdx_kp,cot_kdx,cot_kpdx;
         double area_ijk,area_ijkp;
         double lijsq,liksq,ljksq,likpsq,ljkpsq;
         // POSITION cot_times_rij;
@@ -302,11 +303,11 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
             //
             cot_jdx_k = 0.25*(lijsq+ljksq-liksq)/area_ijk;
             cot_kdx = 0.25*(ljksq+liksq-lijsq)/area_ijk;
-            cot_idx_k = 0.25*(lijsq+liksq-ljksq)/area_ijk;
+            // cot_idx_k = 0.25*(lijsq+liksq-ljksq)/area_ijk;
             //
             cot_jdx_kp = 0.25*(lijsq+ljkpsq-likpsq)/area_ijkp;
             cot_kpdx =  0.25*(ljkpsq+likpsq-lijsq)/area_ijkp;
-            cot_idx_kp = 0.25*(lijsq+likpsq-ljkpsq)/area_ijkp;
+            // cot_idx_kp = 0.25*(lijsq+likpsq-ljkpsq)/area_ijkp;
             // compute sigma_i -> first check whether all angles are acute?
             //
             // cot_jdx_k = cotangent(pos[idx],pos[jdx],pos[kdx]);

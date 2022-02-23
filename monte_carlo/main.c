@@ -409,40 +409,34 @@ int main(int argc, char *argv[]){
             vol_sph  = volume_enclosed_membrane(Pos, triangles, 
                     mbrane.num_triangles);
             Et[4] = mbrane.coef_vol_expansion*(vol_sph/ini_vol - 1e0)*(vol_sph/ini_vol - 1e0);
-            cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<   
-            " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< endl;
-            identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
-
-            sprintf(outfile,"%s/part_%05d.vtk",outfolder,i);
-            identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
+            sprintf(outfile,"%s/part_%05d.vtk",outfolder,(int)i/mcpara.dump_skip);
+            // identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
             visit_vtk_io( (double *) Pos, triangles, 
-                    mbrane.N, outfile, "miketesting");
+                    mbrane.N, outfile);
 
             visit_vtk_io_point_data(is_attractive, mbrane.N,
                     outfile, "isattr");
-
-            fprintf(fid, " %d %d %g %g %g %g %g %g %g %g %g\n",
-                    i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3], Et[4],
-                    afm_force.x, afm_force.y, afm_force.z);
-            fflush(fid);
-
             // dump config for restart
 
             hdf5_io_dump_restart_config((double *) Pos, (int *) mesh.cmlist,
                     (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list,  
                     triangles, mbrane, "input");
         }
-        if(i == 4*mcpara.dump_skip && !mcpara.is_restart ){
+        cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<  
+                " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< endl;
+        fprintf(fid, " %d %d %g %g %g %g %g %g %g %g %g\n",
+                    i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3], Et[4],
+                    afm_force.x, afm_force.y, afm_force.z);
+        fflush(fid);
+        if(i == 10*mcpara.dump_skip && !mcpara.is_restart ){
             afm.sigma = s_t;
             afm.epsilon = e_t;
             e_t = lj_afm_total(Pos, &afm_force, mbrane, afm);
             mbrane.tot_energy[0] += e_t;
         }
-
         num_moves = monte_carlo_3d(Pos, mesh, lij_t0, is_attractive, 
                 mbrane, mcpara, afm);
     }
-
     fclose(fid);
     free(Pos);
     free(lij_t0);

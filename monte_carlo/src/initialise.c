@@ -194,7 +194,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         mbrane->pos_bot_wall = td2;
         mbrane->sigma = td3;
         mbrane->epsilon = td4;
-        fgets(buff,255,(FILE*)f2); 
+        fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2); 
         fgets(buff,255,(FILE*)f2); 
         sscanf(buff,"%lf %lf %d %d %d", &td1, &td2, &t_n, &t_n2, &t_n3);
@@ -221,7 +221,6 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         afm->tip_pos_z = td2;
         afm->sigma = td3;
         afm->epsilon = td4;
-
     }
     else{
         fprintf(stderr, "sorry man the specified doesn't exists in current dir .\n");
@@ -232,7 +231,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
     // TODO: compute the average bond length by running over all the lengths.
     // mbrane->av_bond_len = sqrt(8*pi/(2*mbrane->N-4));
    // define the monte carlo parameters
-    mcpara->one_mc_iter = 10*mbrane->N;
+    mcpara->one_mc_iter = 2*mbrane->N;
     mcpara->metric = "sph";
     mcpara->delta = sqrt(8*pi/(2*mbrane->N-4));
 }
