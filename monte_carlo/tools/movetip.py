@@ -1,5 +1,6 @@
 import psutil
 import functiontools as f
+import paramio as pio
 import numpy as np
 from threading import Timer
 import time
@@ -24,12 +25,13 @@ tz_all=np.linspace(tz_start,tz_end,npoints)
 # os.chdir("../")
 # print(os.getcwd())
 os.system("make")
-f.change_param(fname='para_file.in',tip_pos_z=tz_all[0],is_restart=0)
+pio.change_param(fname='para_file.in',tip_pos_z=tz_all[0],is_restart=0)
 for tz in tz_all:
+	print("# tz = ", tz)
 	g = float("{0:.3f}".format(tz))
 	os.system("./run para_file.in "+str(g))
 	running=1
 	while running==1:
 		time.sleep(timedelay)
 		running=isrunning()
-	f.change_param(fname='para_file.in',tip_pos_z=tz,is_restart=1)
+	pio.change_param(fname='para_file.in',tip_pos_z=tz,is_restart=1)

@@ -173,7 +173,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
     
     char buff[255];
     int t_n, t_n2, t_n3;
-    double td1, td2, td3, td4;
+    double td1, td2, td3, td4, td5;
     FILE *f2;
     f2 = fopen(para_file, "r");
     if(f2){
@@ -188,12 +188,13 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         mbrane->coef_vol_expansion = td3;
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2);
-        sscanf(buff,"%lf %lf %lf %lf", &td1,&td2,&td3,&td4);
+        sscanf(buff,"%lf %lf %lf %lf %lf", &td1,&td2,&td3,&td4,&td5);
         /* fprintf(stderr, "%s\n", buff); */
         mbrane->radius = td1;
         mbrane->pos_bot_wall = td2;
         mbrane->sigma = td3;
         mbrane->epsilon = td4;
+        mbrane->sp_curv = td5;
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2); 
         fgets(buff,255,(FILE*)f2); 

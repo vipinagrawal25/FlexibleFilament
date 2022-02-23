@@ -87,7 +87,6 @@ mesh.HH=YY*np.sqrt(3)/2
 print("mesh.HH =",mesh.HH)
 F.WriteMesh(points,mesh.cmlst,mesh.node_nbr,mesh.bond_nbr,cells,
           fname='../monte_carlo/input/input_icosa')
-exit()
 #
 with open('energy.dat', "w") as file:
     dv.dump_visit('output/var'+str(0).zfill(4)+'.vtk', mesh.R, cells)

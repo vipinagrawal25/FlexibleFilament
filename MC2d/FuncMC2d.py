@@ -13,6 +13,7 @@ from mpl_toolkits.mplot3d import proj3d
 from dataclasses import dataclass
 import math
 import ttisect as ttis
+import quaternion
 #-----------------------------------------
 class MESH:
     def __init__(self,BB,HH,R,cells):
@@ -112,6 +113,74 @@ class MESH:
         # print("beE=",beE)
         # print("stE=",stE)
         return beE+stE
+    def sort_nbrs(self):
+        '''The function sorts the neighbours of every node in an anti-clockwise direction
+           such that the normal is in outward direction.'''
+#-----------------------------------------
+def sort_2Dpoints_theta(x,y):
+    len_x = len(x)
+    len_y = len(y)
+    if len_x!=len_y:
+        raise Exception("")
+    #
+    xsort=np.zeros(len_x)
+    ysort=np.zeros(len_y)
+    #
+
+    theta=np.arctan2(x,y)+np.pi
+    indices=np.linspace(0,len_x-1,len_x)
+    xyth=np.transpose(np.array([x,y,theta,indices]))
+    #
+    xysort = np.asarray(sorted(xyth, key=lambda x: (x[2])))
+    return xysort[:,3].astype(int),np.array([xysort[:,0],xysort[:,1]])
+#-----------------------------------------------
+def cart2sph(xyz):
+    x=xyz[0]
+    y=xyz[1]
+    z=xyz[2]
+    XsqPlusYsq = x**2 + y**2
+    r = np.sqrt(XsqPlusYsq + z**2)                  # r
+    elev = np.arctan2(np.sqrt(XsqPlusYsq),z)        # theta
+    az = np.arctan2(y,x)                            # phi
+    return r, az, elev
+#-----------------------------------------------
+def polar(xyz):
+    x=xyz[0]
+    y=xyz[1]
+    z=xyz[2]
+    XsqPlusYsq = x**2 + y**2
+    return np.arctan2(np.sqrt(XsqPlusYsq),z)
+#-----------------------------------------------
+def rotate(vector,nhat,theta):
+    '''rotate a vector about nhat by angle theta'''
+    cos_thby2=np.cos(theta/2)
+    sin_thby2=np.sin(theta/2)
+    q=np.quaternion(cos_thby2,nhat[0]*sin_thby2,nhat[1]*sin_thby2,nhat[2]*sin_thby2)
+    q_inv=np.quaternion(cos_thby2,-nhat[0]*sin_thby2,-nhat[1]*sin_thby2,-nhat[2]*sin_thby2)
+    nn=vector.shape[0]
+    rot_vec=np.zeros([nn,3])
+    for i in range(nn):
+        q_vec=np.quaternion(0,vector[i][0],vector[i][1],vector[i][2])
+        rot_vec[i]=quater2vec(q*q_vec*q_inv)
+    return rot_vec
+#-----------------------------------------------
+def quater2vec(qq,precision=1e-16):
+    if qq.w>1e-8:
+        print("# ERROR: Quaternion has non-zero scalar value.\n \
+               # Can not convert to vector.")
+        exit(1)
+    return np.array([qq.x,qq.y,qq.z])
+#-----------------------------------------------
+# def cart2polar(x,y,rr=None):
+#     if rr is None:
+#         rr=np.sqrt(x*x+y*y)
+#     theta=np.arctan2(y,x)
+#     if x>0:
+#         pass
+#     elif (x<0 and y>=0):
+#         theta=theta+np.pi
+#     elif (x<0 and y<0):
+#         theta=theta-np.pi
 #-----------------------------------------
 def mesh_intersect(points,cells):
     """
@@ -326,7 +395,8 @@ def get_tri(sv,point):
     if 'tris' in dir(sv):
         return sv.tris[sv.cntris[point]:sv.cntris[point+1]]
     else:
-        print("# tris(triangles for a given point) is not a member of SphericalVoronoi object. Assign it by calling calc_tris function.")
+        print("# tris(triangles for a given point) is not a member of SphericalVoronoi object.\
+                Assign it by calling calc_tris function.")
         print("# Anyway I am doing it for you now.")
         sv.tris,sv.cntris=list_to_arr(sv.regions)
         return sv.tris[sv.cntris[point]:sv.cntris[point+1]]
@@ -372,7 +442,8 @@ def calc_trinrmls(sv):
     trinrmls=np.zeros([len(sces),3])
     trcount=0
     for ices in sces:
-        trinrmls[trcount,:]=np.cross(points[ices[0]]-points[ices[1]],points[ices[1]]-points[ices[2]])
+        trinrmls[trcount,:]=np.cross(points[ices[0]]-points[ices[1]],
+                                     points[ices[1]]-points[ices[2]])
         trinrmls[trcount,:]=trinrmls[trcount,:]/LA.norm(trinrmls[trcount,:])
         trcount=trcount+1
     sv.trinrmls=trinrmls
@@ -380,7 +451,8 @@ def calc_trinrmls(sv):
 #-----------------------------------------#
 # Given coordinates of a point, what is the normal?
 # Ans: it's sum of all the normals neighbouring the point
-# REQUIREMENTS: sv.tris,sv.trinrmls is assigned and defined if not call make_tris,calc_trinrmls functions first.
+# REQUIREMENTS: sv.tris,sv.trinrmls is assigned and defined if not call make_tris,
+                # calc_trinrmls functions first.
 def normal(sv,point):
     tris_point=get_tri(sv,point)
     print(tris_point)
@@ -810,7 +882,8 @@ def map_z2color(zval, colormap, vmin, vmax):
     return 'rgb('+'{:d}'.format(int(R*255+0.5))+','+'{:d}'.format(int(G*255+0.5))+\
            ','+'{:d}'.format(int(B*255+0.5))+')'
 #---------------------------------
-#To plot the triangles on a surface, we set in Plotly Mesh3d the lists of x, y, respectively z- coordinates of the 
+#To plot the triangles on a surface, we set in Plotly Mesh3d the lists of x, y, respectively 
+# z- coordinates of the 
 #vertices, and the lists of indices, i, j, k, for x, y, z coordinates of all vertices:
 #-------------------------------------------------------
 def tri_indices(simplices):
@@ -851,7 +924,6 @@ def plotly_trisurf(x, y, z, simplices, colormap=cm.RdBu, plot_edges=None):
         #None separates data corresponding to two consecutive triangles
         lists_coord=[[[T[k%3][c] for k in range(4)]+[ None]   for T in tri_vertices]  for c in range(3)]
         Xe, Ye, Ze=[np.ufunc.reduce(lambda x,y: x+y, lists_coord[k]) for k in range(3)]
-
         #define the lines to be plotted
         lines=go.Scatter3d(x=Xe,
                         y=Ye,

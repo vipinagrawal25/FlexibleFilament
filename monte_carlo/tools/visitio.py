@@ -42,7 +42,7 @@ def dump_visit_points_scalar(infile, points, scalar, name_scalar='points_data'):
             f.write('SCALARS '+name_scalar+' float 1 \n')
             f.write('LOOKUP_TABLE default \n')
             for p in scalar:
-                f.write("%16.8f\n" %(p))
+                f.write("%.16E\n" %(p))
 def dump_visit_cells_scalar(infile,
         triangles, 
         scalar, 

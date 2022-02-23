@@ -108,7 +108,6 @@ double volume_ipart(POSITION *pos,
     POSITION rjk, pt; 
     double dir_norm, ini_vol;
     double inp_r1, inp_r2, inp_r3;
-    FILE *fid;
 
     volume1 = 0e0;
     volume2 = 0e0;
@@ -199,7 +198,6 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
     double BB=para.coef_bend;
     double curv_t0 = para.sp_curv;
     // double curv_t0 = 2e0/para.radius;
-    double curv_t0=0;
     cot_times_rij.x = 0e0;
     cot_times_rij.y = 0e0;
     cot_times_rij.z = 0e0;
@@ -237,6 +235,7 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
         POSITION xij,xik,xjk,xikp,xjkp;
         double cot_jdx_k,cot_jdx_kp,cot_kdx,cot_kpdx;
         double lijsq,liksq,ljksq,likpsq,ljkpsq;
+        double cot_sum;
         for (i =0; i < num_nbr; i++){
             jdx = node_nbr[i];
             kdx  = bond_nbr[i].i1; 
@@ -566,11 +565,9 @@ double volume_enclosed_membrane(POSITION *pos,
     POSITION rjk, pt; 
     double dir_norm;
     double inp_r1, inp_r2, inp_r3;
-    FILE *fid;
     volume = 0e0;
 
     i = triangles[0];
-    fid = fopen("triangles.dat", "wb");
     for (it = 0; it< 3*num_triangles; it=it+3){
         i = triangles[it];
         j = triangles[it+1];
