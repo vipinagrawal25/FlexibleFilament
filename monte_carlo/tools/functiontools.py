@@ -1,9 +1,9 @@
 import numpy as np
 from numpy import linalg as LA
-#-----------------------------------------
+#------------------------------------------------------------------------------------#
 def voronoi_area(cotJ,cotK,jsq,ksq,area):
-    '''Q. Given two cotangent angles, it returns either the area due to perpendicular bisector,
-        or the barycenter.'''
+    '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
+        bisector, or the barycenter.'''
     sigma=0
     if cotJ>0 and cotK>0:
         if cotJ*cotK <1:
@@ -13,7 +13,7 @@ def voronoi_area(cotJ,cotK,jsq,ksq,area):
     else:
         sigma = 0.25*area
     return sigma;
-#-----------------------------------------
+#------------------------------------------------------------------------------------#
 def foldername(file):
     '''The function return the folder name for a given filename'''
     x=file.split("/")
@@ -21,7 +21,7 @@ def foldername(file):
     for n in x[0:-1]:
         name=name+n+"/"
     return name
-#-----------------------------------------
+#------------------------------------------------------------------------------------#
 def partition(energy,KbT):
     '''Returns the running average of partition function i.e. Z=<exp(-beta*E_tot)>'''
     beta=1.0/KbT
@@ -34,9 +34,9 @@ def partition(energy,KbT):
         Zsum=Zsum+np.exp(-beta*energy[i])
         ZZ[i]=Zsum/(i+1)
     return ZZ
-#-----------------------------------------
-def free_energy(energy,KbT=1):
-    '''Returns the running average of free energy i.e. Z=<exp(-beta*E_tot)>, F= -KbT*np.log10(Z)'''
+#------------------------------------------------------------------------------------#
+def free_energy(energy,KbT=1,runnin_avg=1):
+    '''Returns the free energy i.e. Z=<exp(-beta*E_tot)>, F= -KbT*np.log10(Z)'''
     beta = 1.0/KbT
     Nens = energy.shape[0]
     Emin = -1e-16
@@ -49,4 +49,19 @@ def free_energy(energy,KbT=1):
         # Zred=Zred*np.exp(-beta*)
         FF=Emin+np.log10(Zred)
     return -KbT*np.log10(partition(energy,KbT=KbT))
-#-----------------------------------------
+#------------------------------------------------------------------------------------#
+def SphVoronoi(rr,R=1,lplot=False):
+    Np = np.shape(rr)[0]
+    xyz = np.zeros([Np,3])
+    for ip in range(Np):
+        tht = rr[ip,0]
+        phi = rr[ip,1]
+        x = R*np.sin(tht)*np.cos(phi)
+        y = R*np.sin(tht)*np.sin(phi)
+        z = R*np.cos(tht)
+        xyz[ip] = np.array([x,y,z])
+    sv = SphericalVoronoi(xyz,radius=R)
+    if lplot:
+        plot_voronoi(xyz,sv)
+    return sv
+#------------------------------------------------------------------------------------#

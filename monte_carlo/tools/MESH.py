@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.linalg as LA
 import quaternion
+import h5py
 #################################### CLASS ###################################
 class Mesh:
     cmlst=None
@@ -62,7 +63,7 @@ class Mesh:
         curv = np.zeros([Np,3])
         R=self.R
         if self.cmlst is None or self.node_nbr is None or self.bond_nbr is None:
-            print("# Seems like you are calling the function for the first time, as we have not \
+            print("# Seems like you are calling the function for the first time, and we have not \
                      constructed the neighbour list.\n Dont worry, I am going to do it now.")
             self.assign_nbrs()
             print("# SUCCESSS:neighbour list is succesfully constructed.")
@@ -170,7 +171,23 @@ class Mesh:
                 self.node_nbr[self.cmlst[i]:self.cmlst[i+1]]=nbrs[sorted_indices]
                 bond_nbrs = self.bond_nbr[self.cmlst[i]:self.cmlst[i+1]]
                 self.bond_nbr[self.cmlst[i]:self.cmlst[i+1]]=bond_nbrs[sorted_indices]
-################################# OTHER FUNCTIONS ###############################
+    def dump_hdf5(self,file):
+        if file.split(".")[-1]=="h5":
+            pass
+        else:
+            file=file+".h5"
+        hf = h5py.File(file,'w')
+        hf.create_dataset('pos',data=self.R)
+        hf.create_dataset('cumu_list',data=self.cmlst)
+        hf.create_dataset('node_nbr',data=self.node_nbr)
+        hf.create_dataset('triangles',data=self.cells)
+        nbn = np.zeros([len(self.node_nbr),2], dtype=int)
+        for i,bn in enumerate(self.bond_nbr):
+            nbn[i,0] = bn[0]
+            nbn[i,1] = bn[1]
+        hf.create_dataset('bond_nbr',data=nbn)
+        hf.close()
+#################################### OTHER FUNCTIONS ##################################
 def sort_2Dpoints_theta(x,y):
     len_x = len(x)
     len_y = len(y)

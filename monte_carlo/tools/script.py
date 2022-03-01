@@ -19,6 +19,7 @@ for arg in sys.argv[1:]:
 		compute[arg]=1;
 	else:
 		fnames.append(arg)
+# ---------------------------- Now call required functions -------------------------------- #
 for file in fnames:
 	folder=f.foldername(file)
 	Np=pio.read_param(folder+'/para_file.in')['N']
@@ -38,8 +39,3 @@ for file in fnames:
 		plt.plot(FF)
 	vio.dump_visit(foutname+".vtk", points, cells)
 	vio.dump_visit_points_scalar(foutname+".vtk", points, curv, name_scalar='curvature')
-	# foutname+="_curv"
-	# if compute['obtuse']==1:
-	# 	vio.dump_visit_points_scalar(foutname, points, isobtuse, name_scalar='obtuse_data')
-	# if compute['curvature']==1:
-	# 	vio.dump_visit_points_scalar(foutname, points, curv, name_scalar='curvature')

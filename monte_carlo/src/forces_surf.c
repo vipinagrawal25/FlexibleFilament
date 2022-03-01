@@ -1,37 +1,7 @@
 #include "../include/global.h"
 #include "../include/subroutine.h"
-
 #define sign(x) ((x > 0) ? 1 : ((x < 0) ? -1 : 0))
 
-inline double inner_product(POSITION s1, POSITION s2){
-    return s1.x*s2.x + s1.y*s2.y + s1.z*s2.z;
-}
-inline double norm(POSITION s1){
-    return sqrt(inner_product(s1,s1));
-}
-POSITION Position_add(POSITION s1, 
-        POSITION s2, double fac){
-    /* Returns s1 + fac*s2*/
-
-    POSITION add;
-
-    add.x = s1.x + fac*s2.x;
-    add.y = s1.y + fac*s2.y;
-    add.z = s1.z + fac*s2.z;
-
-    return add;
-}
-
-POSITION cross_product(POSITION s1, 
-        POSITION s2){
-
-    POSITION crosprod;
-    crosprod.x = s1.y*s2.z - s1.z*s2.y;
-    crosprod.y = s1.z*s2.x - s1.x*s2.z;
-    crosprod.z = s1.x*s2.y - s1.y*s2.x;
-    return crosprod;
-
-}
 double cotangent(POSITION si, POSITION sk, POSITION sj){
     POSITION drik, drjk, cross;
     double cot_theta, inp_1;  
@@ -172,10 +142,6 @@ double stretch_energy_ipart(POSITION *pos,
     return 0.5*idx_ener*HH;
 }
 //
-double norm(POSITION rr){
-    return sqrt(inner_product(rr,rr));
-}
-//
 //Q. Given two cotangent angles, it returns either the area due to perpendicular bisector,
 // or the barycenter.
 double voronoi_area(double cotJ, double cotK, double jsq, double ksq, double area){
@@ -201,7 +167,7 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
     double curv_t0 = para.sp_curv;
     // lap_bel:Laplace Beltrami operator for sphere is 2\kappa\nhat
     // nhat is outward normal.
-    POSITION lap_bel,lap_bel_t0,nhat = {0.,0.,0.};
+    POSITION lap_bel,lap_bel_t0,nhat;
     // double curv_t0 = 2e0/para.radius;
     cot_times_rij.x = 0e0;
     cot_times_rij.y = 0e0;
@@ -280,8 +246,8 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
         double area_ijk,area_ijkp;
         double lijsq,liksq,ljksq,likpsq,ljkpsq;
         // POSITION cot_times_rij;
-        POSITION xij,xik,xjk,xikp,xjkp,nhat_local;
-        int jdx,kdx,kpdx;
+        POSITION xij,xik,xjk,xikp,xjkp,nhat_local,xijp1;
+        int jdx,kdx,kpdx,jdxp1;
         double cot_sum;
         sigma_i = 0e0;
         int count=0;
@@ -332,10 +298,11 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
             sigma_i=sigma_i+voronoi_area(cot_jdx_k,cot_kdx,liksq,lijsq,area_ijk);
             sigma_i=sigma_i+voronoi_area(cot_jdx_kp,cot_kpdx,likpsq,lijsq,area_ijkp);
             //
-            nhat_local=cross(xijp1,xij)
+            nhat_local=cross_product(xijp1,xij);
             nhat=Position_add(nhat,nhat_local,1e0/norm(nhat_local));
         }
-        nhat=nhat/norm(nhat);
+        nhat = nhat/norm(nhat);
+        // nhat=nhat/norm(nhat);
         sigma_i = 0.5*sigma_i;  // as everything is counted twice.
         // double xij[num_nbr],cot_alpha[num_nbr],cot_beta[num_nbr],xij_sq[num_nbr];
         // int jdx,kdx,jpdx,kpdx,jp;
@@ -358,9 +325,9 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
         curvature = (1e0/sigma_i)*norm(cot_times_rij);
         bend_ener = 0.5*BB*sigma_i*(curvature-curv_t0)*(curvature-curv_t0);
     }else if(method=="curvature"){
-        lap_bel = (1e0/sigma_i)*(cot_times_rij);
-        lap_bel_t0 = Position_add(0e0,nhat,curv_t0);
-        bend_ener = 0.5*BB*sigma_i*inner_product(lap_bel-lap_bel_t0,lap_bel-lap_bel_t0);
+        lap_bel = cot_times_rij/sigma_i;
+        lap_bel_t0 = nhat*curv_t0;
+        bend_ener = 0.5*BB*sigma_i*normsq(lap_bel-lap_bel_t0);
     }
     return bend_ener;
  }

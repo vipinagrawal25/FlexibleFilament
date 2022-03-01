@@ -5,7 +5,7 @@ ES=os.getenv('ES')
 ES=ES+"/monte_carlo/"
 #
 if len(sys.argv)==2:
-	if sys.argv[1]=='-d' or sys.argv[1]=='-debug'
+	if sys.argv[1]=='-d' or sys.argv[1]=='-debug'\
 		or sys.argv[1]=='debug' or sys.agrv[1]=='d':
 		os.system("ln -s " + ES + "main.c .")
 		os.system("cp "+ ES +"Makefile .")

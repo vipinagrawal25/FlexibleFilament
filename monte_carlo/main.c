@@ -155,69 +155,69 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
     return move;
 }
 
-int monte_carlo_surf2d(POSITION *Pos, 
-        Neighbours *neib, LJpara para, 
-        MCpara mcpara){
-    int i, j, move;
-    double x_o, y_o, x_n, y_n;
-    double de, Et, Eini, Efin;
-    double dxinc, dyinc;
-    bool is_sph, is_cart;
+// int monte_carlo_surf2d(POSITION *Pos, 
+//         Neighbours *neib, LJpara para, 
+//         MCpara mcpara){
+//     int i, j, move;
+//     double x_o, y_o, x_n, y_n;
+//     double de, Et, Eini, Efin;
+//     double dxinc, dyinc;
+//     bool is_sph, is_cart;
 
-    is_sph = false;
-    is_cart = false;
-    if(strcmp(mcpara.metric, "sph") == 0){
-        is_sph = true;
-    }
-    if(strcmp(mcpara.metric, "cart") == 0){
-        is_cart = true;
-    }
+//     is_sph = false;
+//     is_cart = false;
+//     if(strcmp(mcpara.metric, "sph") == 0){
+//         is_sph = true;
+//     }
+//     if(strcmp(mcpara.metric, "cart") == 0){
+//         is_cart = true;
+//     }
 
 
-    move = 0;
+//     move = 0;
 
-    for(i = 0; i< mcpara.one_mc_iter; i++){
-    /* while(move < mcpara.one_mc_iter){ */
-        int idx = randint(para.N);
-        Eini =  pairlj_ipart_energy(Pos, neib[idx].list_ss,
-                neib[idx].cnt_ss, idx, para, mcpara.metric);
-        /* Eini =  pairlj_ipart_energy_pf(Pos, idx, para, */ 
-                /* mcpara.metric); */
-        x_o =   Pos[idx].x;
-        y_o =   Pos[idx].y;
+//     for(i = 0; i< mcpara.one_mc_iter; i++){
+//     /* while(move < mcpara.one_mc_iter){ */
+//         int idx = randint(para.N);
+//         Eini =  pairlj_ipart_energy(Pos, neib[idx].list_ss,
+//                 neib[idx].cnt_ss, idx, para, mcpara.metric);
+//         /* Eini =  pairlj_ipart_energy_pf(Pos, idx, para, */ 
+//                 /* mcpara.metric); */
+//         x_o =   Pos[idx].x;
+//         y_o =   Pos[idx].y;
 
-        if(is_cart){
-            dxinc = (para.sigma/mcpara.dfac)*(2*drand48() - 1);
-            dyinc = (para.sigma/mcpara.dfac)*(2*drand48() - 1);
-            x_n = fmod((x_o + dxinc + 30*para.len), para.len);
-            y_n = fmod((y_o + dyinc + 30*para.len), para.len);
-            Pos[idx].x = x_n;
-            Pos[idx].y = y_n;
-        }
-        if(is_sph){
-            dxinc = rand_inc_theta(Pos[idx].x, mcpara.dfac);
-            dyinc = (para.sigma/mcpara.dfac)*(2*drand48() - 1);
-            x_n = x_o + dxinc;
-            y_n = fmod((y_o + dyinc + 30*2*pi), 2*pi);
-            Pos[idx].x = x_n;
-            Pos[idx].y = y_n;
-        }
-        /* Efin =  pairlj_ipart_energy_pf(Pos, idx, para, */ 
-                /* mcpara.metric); */
+//         if(is_cart){
+//             dxinc = (para.sigma/mcpara.dfac)*(2*drand48() - 1);
+//             dyinc = (para.sigma/mcpara.dfac)*(2*drand48() - 1);
+//             x_n = fmod((x_o + dxinc + 30*para.len), para.len);
+//             y_n = fmod((y_o + dyinc + 30*para.len), para.len);
+//             Pos[idx].x = x_n;
+//             Pos[idx].y = y_n;
+//         }
+//         if(is_sph){
+//             dxinc = rand_inc_theta(Pos[idx].x, mcpara.dfac);
+//             dyinc = (para.sigma/mcpara.dfac)*(2*drand48() - 1);
+//             x_n = x_o + dxinc;
+//             y_n = fmod((y_o + dyinc + 30*2*pi), 2*pi);
+//             Pos[idx].x = x_n;
+//             Pos[idx].y = y_n;
+//         }
+//         /* Efin =  pairlj_ipart_energy_pf(Pos, idx, para, */ 
+//                 /* mcpara.metric); */
  
-        Efin =  pairlj_ipart_energy(Pos, neib[idx].list_ss,
-                neib[idx].cnt_ss, idx, para, mcpara.metric);
-        de = Efin - Eini;
-        if(Metropolis(de, mcpara)){
-            move = move + 1;
-        }
-        else{
-            Pos[idx].x = x_o;
-            Pos[idx].y = y_o;
-        } 
-    }
-    return move;
-}
+//         Efin =  pairlj_ipart_energy(Pos, neib[idx].list_ss,
+//                 neib[idx].cnt_ss, idx, para, mcpara.metric);
+//         de = Efin - Eini;
+//         if(Metropolis(de, mcpara)){
+//             move = move + 1;
+//         }
+//         else{
+//             Pos[idx].x = x_o;
+//             Pos[idx].y = y_o;
+//         } 
+//     }
+//     return move;
+// }
 // int thermalize(){
 //     int i, iterations, num_moves;
 //     double Ener;
@@ -310,9 +310,7 @@ int main(int argc, char *argv[]){
     int *triangles;
     char syscmds[128], outfile[89], outfolder[32], para_file[32];
     char log_file[64];
-
     char log_headers[] = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener afm_ener ener_volume  forcex, forcey forcez";
-
     if(argc!=3){
         printf("\n\n mayday.. requires an argument <parameter file> <output folder>\n\n");
         exit(0);
@@ -320,17 +318,14 @@ int main(int argc, char *argv[]){
         sscanf(argv[1], "%s", &para_file);
         sscanf(argv[2], "%s", &outfolder);
     }
-
+    //
     sprintf(syscmds, "mkdir %s",outfolder);
     system(syscmds);
     sprintf(syscmds, "cp %s %s/%s",para_file,outfolder,para_file);
     system(syscmds);
-    
     init_rng();
-
     // read the input file
     initialize_read_parameters(&mbrane, &afm, &mcpara, para_file);
-
    /* define all the paras */ 
     mbrane.volume = (double *)calloc(1, sizeof(double)); 
     mbrane.volume[0] = (4./3.)*pi*pow(mbrane.radius,3);
@@ -354,8 +349,6 @@ int main(int argc, char *argv[]){
         e_t = afm.epsilon; 
         afm.epsilon = 0.0;
     }
-
-
     if(!mcpara.is_restart){
         hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
                 (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
@@ -372,22 +365,18 @@ int main(int argc, char *argv[]){
                 (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
                 triangles, "input/restart.h5");
     }
-
-
-
     // uncomment these and put N=n*n where no is integer 
     // in afm para to be able to visualize afm tip
     /* initialize_afm_tip(afm); */
     /* sprintf(log_file, "%s/afm_tip.vtk", outfolder); */
     /* visit_vtk_io_afm_tip((double *) afm.tip_curve, */ 
     /*         afm.N, log_file); */
-
     //
     Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
     Et[1] =  bending_energy_total(Pos, mesh, mbrane);
     Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
     Et[3] = lj_afm_total(Pos, &afm_force, mbrane, afm);
-
+    //
     vol_sph  = volume_enclosed_membrane(Pos, triangles, 
             mbrane.num_triangles);
     double  ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
@@ -395,20 +384,26 @@ int main(int argc, char *argv[]){
     Ener_t = Et[0] + Et[1] + Et[2] + Et[3] + Et[4];
     mbrane.tot_energy[0] = Ener_t;
     mbrane.volume[0] = vol_sph;
-
+    //
     sprintf(log_file, "%s/mc_log", outfolder);
     fid = fopen(log_file, "a");
     if(!mcpara.is_restart)fprintf(fid, "%s\n", log_headers);
     num_moves = 0;
     for(i=0; i < mcpara.tot_mc_iter; i++){
+        Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
+        Et[1] =  bending_energy_total(Pos, mesh, mbrane);
+        Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
+        Et[3] = lj_afm_total(Pos, &afm_force, mbrane, afm);
+        vol_sph  = volume_enclosed_membrane(Pos, triangles, 
+                mbrane.num_triangles);
+        Et[4] = mbrane.coef_vol_expansion*(vol_sph/ini_vol - 1e0)*(vol_sph/ini_vol - 1e0);
+        cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<  
+                " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< endl;
+        fprintf(fid, " %d %d %g %g %g %g %g %g %g %g %g\n",
+                    i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3], Et[4],
+                    afm_force.x, afm_force.y, afm_force.z);
+        fflush(fid);
         if(i%mcpara.dump_skip == 0){
-            Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
-            Et[1] =  bending_energy_total(Pos, mesh, mbrane);
-            Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
-            Et[3] = lj_afm_total(Pos, &afm_force, mbrane, afm);
-            vol_sph  = volume_enclosed_membrane(Pos, triangles, 
-                    mbrane.num_triangles);
-            Et[4] = mbrane.coef_vol_expansion*(vol_sph/ini_vol - 1e0)*(vol_sph/ini_vol - 1e0);
             sprintf(outfile,"%s/part_%05d.vtk",outfolder,(int)i/mcpara.dump_skip);
             // identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
             visit_vtk_io( (double *) Pos, triangles, 
@@ -422,12 +417,6 @@ int main(int argc, char *argv[]){
                     (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list,  
                     triangles, mbrane, "input");
         }
-        cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<  
-                " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< endl;
-        fprintf(fid, " %d %d %g %g %g %g %g %g %g %g %g\n",
-                    i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3], Et[4],
-                    afm_force.x, afm_force.y, afm_force.z);
-        fflush(fid);
         if(i == 10*mcpara.dump_skip && !mcpara.is_restart ){
             afm.sigma = s_t;
             afm.epsilon = e_t;

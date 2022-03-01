@@ -1,5 +1,6 @@
 #ifndef subroutine_h
 #define subroutine_h
+#include "Position.h"
 #include <iostream>
 //*************************************************//
 // main.c
@@ -10,7 +11,6 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
 //forces_lj.c
 void make_nlist();
 void make_nlist_pf();
-// bool len_check_ss();
 bool len_check_ss(POSITION s1, POSITION s2, double len, double new_rc);
 bool len_check_pf(POSITION s1, POSITION s2, double len, double new_rc, char* metric);
 double cal_length();
