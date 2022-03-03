@@ -69,4 +69,4 @@ def vtk_to_data(infile,Np,skiprows=5):
     # Read data from vtk file.
     points=np.loadtxt(infile,skiprows=skiprows,max_rows=Np)
     cells=np.loadtxt(infile,skiprows=skiprows+Np+1,max_rows=2*Np-4)[:,1:4]
-    return points, cells
+    return points, cells.astype(int)

@@ -83,6 +83,9 @@ void visit_vtk_io_cell_data(double *data,
 void visit_vtk_io_afm_tip(double *data, 
         int Np, char filename[]);
 //hdf5_io
+void hdf5_io_read_pos(double *Pos, int *cmlist,
+        int *node_nbr, int2 *bond_nbr, int *triangles,
+        char input_file[]);
 void hdf5_io_read_config(double *Pos, int *cmlist,
         int *node_nbr, int2 *bond_nbr, int *triangles,
         char input_file[]);

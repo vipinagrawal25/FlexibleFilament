@@ -50,12 +50,13 @@ class Mesh:
         nsimpl = np.asarray(sorted(nsimpl, key=lambda x: (x[0], x[1])))
         return nsimpl
     #
-    def assign_nbrs(self):
+    def assign_nbrs(self,sorting=True):
         cmlst,node_nbr,bond_nbr=self.__neighbours()
         self.cmlst=np.array(cmlst).astype(np.int)
         self.node_nbr=np.array(node_nbr).astype(np.int)
         self.bond_nbr = np.array(bond_nbr).astype(tuple)
-        self.__sort_nbrs()
+        if sorting:        
+            self.__sort_nbrs()
     #
     def curvature(self):
         '''Given a snapshot, the function computes curvature for all points.'''
@@ -171,6 +172,7 @@ class Mesh:
                 self.node_nbr[self.cmlst[i]:self.cmlst[i+1]]=nbrs[sorted_indices]
                 bond_nbrs = self.bond_nbr[self.cmlst[i]:self.cmlst[i+1]]
                 self.bond_nbr[self.cmlst[i]:self.cmlst[i+1]]=bond_nbrs[sorted_indices]
+    #
     def dump_hdf5(self,file):
         if file.split(".")[-1]=="h5":
             pass
@@ -178,10 +180,10 @@ class Mesh:
             file=file+".h5"
         hf = h5py.File(file,'w')
         hf.create_dataset('pos',data=self.R)
-        hf.create_dataset('cumu_list',data=self.cmlst)
-        hf.create_dataset('node_nbr',data=self.node_nbr)
-        hf.create_dataset('triangles',data=self.cells)
-        nbn = np.zeros([len(self.node_nbr),2], dtype=int)
+        hf.create_dataset('cumu_list',data=self.cmlst.astype(np.int32))
+        hf.create_dataset('node_nbr',data=self.node_nbr.astype(np.int32))
+        hf.create_dataset('triangles',data=self.cells.astype(np.int32))
+        nbn = np.zeros([len(self.node_nbr),2], dtype=np.int32)
         for i,bn in enumerate(self.bond_nbr):
             nbn[i,0] = bn[0]
             nbn[i,1] = bn[1]

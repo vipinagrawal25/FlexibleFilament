@@ -9,7 +9,6 @@
 #define ievolve_save 1
 #define wDataMeth 2
 #define rDataMeth 2
-
 /* typedef enum {
     heading = 1,
     direction,

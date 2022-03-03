@@ -1,5 +1,6 @@
 import numpy as np
 from numpy import linalg as LA
+import matplotlib.pyplot as plt
 #------------------------------------------------------------------------------------#
 def voronoi_area(cotJ,cotK,jsq,ksq,area):
     '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
@@ -22,33 +23,34 @@ def foldername(file):
         name=name+n+"/"
     return name
 #------------------------------------------------------------------------------------#
-def partition(energy,KbT):
+def partition(energy,KbT=1,running_avg=1):
     '''Returns the running average of partition function i.e. Z=<exp(-beta*E_tot)>'''
     beta=1.0/KbT
     Nensemble=energy.shape[0]
-    ZZ=np.zeros(Nensemble)
-    Emin=np.min(energy)
-    # Zsum=np.exp(-beta*energy[0])
-    ZZ[0]=Zsum
-    for i in range(1,Nensemble):
-        Zsum=Zsum+np.exp(-beta*energy[i])
-        ZZ[i]=Zsum/(i+1)
-    return ZZ
+    # O(n^2) algorithm
+    if running_avg:
+        ZZ=np.zeros(Nensemble)
+        Eminis=np.zeros(Nensemble)
+        for i in range(0,Nensemble):
+            Emin=np.min(energy[0:i+1])
+            ZZ[i]=np.sum(np.exp(-beta*(energy[0:i+1] - Emin)))/(i+1)
+            Eminis[i]=Emin
+        return Eminis,ZZ
+    else:
+        Emin=np.min(energy)
+        ZZ=np.sum(np.exp(-beta*(energy - Emin)))/Nensemble
+        return Emin,ZZ
 #------------------------------------------------------------------------------------#
-def free_energy(energy,KbT=1,runnin_avg=1):
+def free_energy(energy,KbT=1,running_avg=1):
     '''Returns the free energy i.e. Z=<exp(-beta*E_tot)>, F= -KbT*np.log10(Z)'''
     beta = 1.0/KbT
     Nens = energy.shape[0]
     Emin = -1e-16
     # FF = Emin
-    Zred=0
-    for i in range(Nens):
-        Emin_old = Emin
-        if Emin<FF[i]:
-            Emin=FF[i]
-        # Zred=Zred*np.exp(-beta*)
-        FF=Emin+np.log10(Zred)
-    return -KbT*np.log10(partition(energy,KbT=KbT))
+    Eminis,ZZ=partition(energy,KbT=KbT,running_avg=running_avg)
+    # Free energy = -KbT*log(ZZ)
+    FF = Eminis - KbT*np.log(ZZ)
+    return Eminis, FF
 #------------------------------------------------------------------------------------#
 def SphVoronoi(rr,R=1,lplot=False):
     Np = np.shape(rr)[0]

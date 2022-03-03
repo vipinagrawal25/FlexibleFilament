@@ -89,8 +89,6 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
     bool is_be_pos;
     std::uniform_int_distribution<uint32_t> rand_int(0,mbrane.N-1);
     std::uniform_real_distribution<> rand_real(-1, 1);
-
-
     ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
     KAPPA = mbrane.coef_vol_expansion;
     move = 0;
@@ -137,7 +135,6 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
         de_vol = (2*dvol/(ini_vol*ini_vol))*(mbrane.volume[0]  - ini_vol)
             + (dvol/ini_vol)*(dvol/ini_vol);
         de_vol = KAPPA*de_vol;
-
         /* printf("%d %g %g %d\n", idx, Efin, Eini, is_attractive[idx]); */
         de = (Efin - Eini) + de_vol;
         // if(Metropolis(de , mcpara) && is_be_pos){
@@ -150,7 +147,7 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
             pos[idx].x = x_o;
             pos[idx].y = y_o;
             pos[idx].z = z_o;
-        } 
+        }
     }
     return move;
 }
@@ -304,10 +301,12 @@ int main(int argc, char *argv[]){
     MCpara mcpara;
     AFM_para afm;
     MESH mesh;
+    MESH mes_t;
     POSITION afm_force;
     FILE *fid;
     double *lij_t0, *obtuse;
     int *triangles;
+    int *triangles_t;
     char syscmds[128], outfile[89], outfolder[32], para_file[32];
     char log_file[64];
     char log_headers[] = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener afm_ener ener_volume  forcex, forcey forcez";
@@ -337,8 +336,12 @@ int main(int argc, char *argv[]){
     mesh.cmlist = (int *)calloc(mbrane.N+1, sizeof(int));
     mesh.node_nbr_list = (int *)calloc(mbrane.num_nbr, sizeof(int)); 
     mesh.bond_nbr_list = (int2 *)calloc(mbrane.num_nbr, sizeof(int2));
+    mes_t.cmlist = (int *)calloc(mbrane.N+1, sizeof(int));
+    mes_t.node_nbr_list = (int *)calloc(mbrane.num_nbr, sizeof(int)); 
+    mes_t.bond_nbr_list = (int2 *)calloc(mbrane.num_nbr, sizeof(int2));
     lij_t0 = (double *)calloc(mbrane.num_nbr, sizeof(double));
     triangles = (int *)calloc(mbrane.num_nbr, sizeof(int));
+    triangles_t = (int *)calloc(mbrane.num_nbr, sizeof(int));
     obtuse = (double *)calloc(mbrane.num_triangles, sizeof(double));
     is_attractive = (bool *)calloc(mbrane.N, sizeof(bool));
     afm.tip_curve = (POSITION *)calloc(afm.N, 3*sizeof(double));
@@ -361,9 +364,9 @@ int main(int argc, char *argv[]){
                 triangles, "input/input.h5");
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
         identify_attractive_part(Pos, is_attractive, mbrane.N);
-        hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
-                (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
-                triangles, "input/restart.h5");
+        hdf5_io_read_config((double *) Pos, (int *) mes_t.cmlist,
+                (int *) mes_t.node_nbr_list, (int2 *) mes_t.bond_nbr_list,
+                triangles_t, "input/restart.h5");
     }
     // uncomment these and put N=n*n where no is integer 
     // in afm para to be able to visualize afm tip
@@ -397,8 +400,10 @@ int main(int argc, char *argv[]){
         vol_sph  = volume_enclosed_membrane(Pos, triangles, 
                 mbrane.num_triangles);
         Et[4] = mbrane.coef_vol_expansion*(vol_sph/ini_vol - 1e0)*(vol_sph/ini_vol - 1e0);
+        // Ener_t = Et[0] + Et[1] + Et[2] + Et[3] + Et[4];
+        // mbrane.tot_energy[0] = Ener_t;
         cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<  
-                " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< endl;
+                " totalener = "<< mbrane.tot_energy[0] << "; sumener = "<< Et[0] + Et[1] + Et[2] + Et[3] + Et[4] << "; volume = " << mbrane.volume[0]<< endl;
         fprintf(fid, " %d %d %g %g %g %g %g %g %g %g %g\n",
                     i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3], Et[4],
                     afm_force.x, afm_force.y, afm_force.z);

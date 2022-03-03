@@ -34,4 +34,4 @@ for tz in tz_all:
 	while running==1:
 		time.sleep(timedelay)
 		running=isrunning()
-	pio.change_param(fname='para_file.in',tip_pos_z=tz,is_restart=1)
+	pio.change_param(finname='para_file.in',tip_pos_z=tz,is_restart=1)

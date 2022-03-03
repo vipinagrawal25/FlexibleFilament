@@ -57,10 +57,13 @@ def read_param(fname='../para_file.in'):
 				"afm_epsilon":afm_epsilon}
 	return paramdict
 #
-def change_param(fname="../para_file.in",**kwargs):
+def change_param(finname="para_file.in",foutname=None,**kwargs):
 	''' The function change one parameter from the input file and overwrites the new parameter file.'''
-	paramdict=read_param(fname=fname)
+	if foutname is None:
+		foutname=finname
+	# print(finname)
+	paramdict=read_param(fname=finname)
 	for key,value in kwargs.items():
 		paramdict[key]=value
-	write_param(fname=fname,paramdict=paramdict)
+	write_param(fname=foutname,paramdict=paramdict)
 #

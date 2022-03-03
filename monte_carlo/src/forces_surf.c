@@ -390,7 +390,6 @@ double stretch_energy_total(POSITION *pos,
         /* idx = 2; */
         num_nbr = mesh.cmlist[idx + 1] - mesh.cmlist[idx];
         cm_idx = mesh.cmlist[idx];
-
         se += stretch_energy_ipart(pos, 
                 (int *) (mesh.node_nbr_list + cm_idx),
                 (double *) (lij_t0 + cm_idx), num_nbr, 
