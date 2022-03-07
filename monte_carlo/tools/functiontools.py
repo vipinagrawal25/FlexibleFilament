@@ -23,34 +23,24 @@ def foldername(file):
         name=name+n+"/"
     return name
 #------------------------------------------------------------------------------------#
-def partition(energy,KbT=1,running_avg=1):
+def partition(energy,KbT=1):
     '''Returns the running average of partition function i.e. Z=<exp(-beta*E_tot)>'''
     beta=1.0/KbT
     Nensemble=energy.shape[0]
     # O(n^2) algorithm
-    if running_avg:
-        ZZ=np.zeros(Nensemble)
-        Eminis=np.zeros(Nensemble)
-        for i in range(0,Nensemble):
-            Emin=np.min(energy[0:i+1])
-            ZZ[i]=np.sum(np.exp(-beta*(energy[0:i+1] - Emin)))/(i+1)
-            Eminis[i]=Emin
-        return Eminis,ZZ
-    else:
-        Emin=np.min(energy)
-        ZZ=np.sum(np.exp(-beta*(energy - Emin)))/Nensemble
-        return Emin,ZZ
+    Emin = np.min(energy)
+    ZZ=np.zeros(Nensemble)
+    ZZ = np.cumsum(np.exp(-beta*(energy - Emin)))
+    return Emin,ZZ
 #------------------------------------------------------------------------------------#
-def free_energy(energy,KbT=1,running_avg=1):
+def free_energy(energy,KbT=1):
     '''Returns the free energy i.e. Z=<exp(-beta*E_tot)>, F= -KbT*np.log10(Z)'''
     beta = 1.0/KbT
     Nens = energy.shape[0]
-    Emin = -1e-16
     # FF = Emin
-    Eminis,ZZ=partition(energy,KbT=KbT,running_avg=running_avg)
-    # Free energy = -KbT*log(ZZ)
-    FF = Eminis - KbT*np.log(ZZ)
-    return Eminis, FF
+    Emini,ZZ=partition(energy,KbT=KbT)
+    FF = Emini - KbT*np.log(ZZ)
+    return Emini, FF
 #------------------------------------------------------------------------------------#
 def SphVoronoi(rr,R=1,lplot=False):
     Np = np.shape(rr)[0]

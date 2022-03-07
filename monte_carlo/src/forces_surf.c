@@ -116,7 +116,6 @@ double volume_ipart(POSITION *pos,
     }
     volume1 = volume1/3e0;
     return volume1;
-
 }
 
 double stretch_energy_ipart(POSITION *pos, 
@@ -537,19 +536,18 @@ double lj_afm_total_pf(POSITION *pos, MBRANE_para para,
     return lj_afm_e;
 }
 
-
-
-double volume_enclosed_membrane(POSITION *pos, 
-        int *triangles, int num_triangles){
+void volume_area_enclosed_membrane(POSITION *pos, 
+    int *triangles, int num_triangles,
+    double *avolume, double *aarea){
     int i, j, k, it;
-    double volume;
     POSITION area, rk, ri, rj;
     POSITION rij, rijk, rik;
     POSITION rjk, pt; 
     double dir_norm;
     double inp_r1, inp_r2, inp_r3;
+    double volume,tot_area;
     volume = 0e0;
-
+    tot_area=0e0;
     i = triangles[0];
     for (it = 0; it< 3*num_triangles; it=it+3){
         i = triangles[it];
@@ -574,8 +572,10 @@ double volume_enclosed_membrane(POSITION *pos,
             (rij.x*rik.y - rij.y*rik.x);
 
         volume = volume + 0.5*fabs(area.x*rijk.x + area.y*rijk.y + area.z*rijk.z);
+        tot_area += norm(area);
     }
-    return volume/3e0;
+    *aarea = volume;
+    *avolume = tot_area;
 };
 
 void identify_obtuse(POSITION *pos, int *triangles,
