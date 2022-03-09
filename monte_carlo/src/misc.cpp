@@ -2,6 +2,7 @@
 #include <sys/stat.h>
 #include "math.h"
 #include <string>
+#include "../include/Position.h"
 using namespace std;
 /*-----------------------------------------------*/
 double SqEr(double Arr1[], double Arr2[],int nn){
@@ -118,7 +119,44 @@ void downScale(double *yscaled, double *y, int factor, int nn ){
 }
 /*-----------------------------------------------*/
 void zeros(double *yzero, int ndim){
-  yzero[0]=0;
-  yzero[1]=0;
+  for (int idim = 0; idim < ndim; ++idim){
+    yzero[idim]=0.;
+  }
+}
+/*-----------------------------------------------*/
+inline double pos_coord(POSITION pos,char dirn='z'){
+  if (dirn=='x'){return pos.x;}
+  else if(dirn=='y'){return pos.y;}
+  else if(dirn=='z'){return pos.z;}
+}
+/*-----------------------------------------------*/
+void max(int *amaxind, double *amaxval, POSITION *pos, int ndim,char dirn){
+  // function returns the value and index of the maximum entry.
+  int maxind=0;
+  double maxval=-1e+16;
+  //
+  for (int idim = 0; idim < ndim; ++idim){
+    if(pos_coord(pos[idim],dirn)>maxval){
+      maxval = pos_coord(pos[idim],dirn);
+      maxind = idim;
+    }
+  }
+  *amaxind=maxind;
+  *amaxval=maxval;
+}
+/*-----------------------------------------------*/
+void min(int *aminind, double *aminval, POSITION *pos, int ndim,char dirn){
+  // function returns the value and index of the maximum entry.
+  int minind=0;
+  double minval=1e+16;
+  //
+  for (int idim = 0; idim < ndim; ++idim){
+    if(pos_coord(pos[idim],dirn)<minval){
+      minval = pos_coord(pos[idim],dirn);
+      minind = idim;
+    }
+  }
+  *aminind=minind;
+  *aminval=minval;
 }
 /*-----------------------------------------------*/

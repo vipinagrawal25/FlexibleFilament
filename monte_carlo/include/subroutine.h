@@ -1,6 +1,7 @@
 #ifndef subroutine_h
 #define subroutine_h
 #include "Position.h"
+#include "../src/misc.h"
 #include <iostream>
 //*************************************************//
 // main.c
@@ -46,8 +47,9 @@ double lj_bottom_surface(double zz,
 double lj_bottom_surf_total(POSITION *pos, 
          bool *is_attractive, MBRANE_para para);
 
-double volume_enclosed_membrane(POSITION *pos, 
-        int *triangles, int num_triangles);
+void volume_area_enclosed_membrane(POSITION *pos, 
+    int *triangles, int num_triangles,
+    double *avolume, double *aarea);
 
 double volume_ipart(POSITION *pos, 
         int *node_nbr, int2* bond_nbr,
@@ -56,7 +58,6 @@ double volume_ipart(POSITION *pos,
 double lj_afm(POSITION , AFM_para);
 double lj_afm_total(POSITION *pos, POSITION *afm_force,
         MBRANE_para para, AFM_para afm);
- 
 
 //initialise.c
 void initialize_system();
@@ -95,9 +96,8 @@ void hdf5_io_dump_restart_config(double *Pos, int *cmlist,
         int *node_nbr, int2 *bond_nbr, 
         int *triangles, MBRANE_para mbrane,
         char folder[]);
-
-
 //misc
 bool FileExists(const std::string &s);
 int cubic_solve(double, double, double, double, double *);
+
 #endif

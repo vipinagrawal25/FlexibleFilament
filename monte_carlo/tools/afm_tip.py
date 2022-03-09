@@ -32,7 +32,6 @@ with open("afm_tip.vtk", "w") as f:
            # print(here, est, nth, n_est)
            f.write("%d %d %d %d %d\n" %(4, here, est, n_est, nth))
 
-
 x = np.asarray([-1.2,1.2])
 y = np.asarray([-1.2,1.2])
 z = np.asarray([-1.05,-0.85])
@@ -58,5 +57,3 @@ with open("bot_wall.vtk", "w") as f:
     f.write('4 2 3 7 6\n')
     f.write('4 0 4 7 3\n')
     f.write('4 1 2 6 5\n')
-
-

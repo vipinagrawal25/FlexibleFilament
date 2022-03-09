@@ -12,7 +12,6 @@
 #include <stdbool.h>
 #include <iostream>
 #include <cstdlib>
-#include <mpi.h>
 #include "Position.h"
 
 using namespace std;

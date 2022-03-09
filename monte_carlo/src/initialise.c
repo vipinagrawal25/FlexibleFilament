@@ -236,5 +236,3 @@ void initialize_read_parameters( MBRANE_para *mbrane,
     mcpara->metric = "sph";
     mcpara->delta = sqrt(8*pi/(2*mbrane->N-4));
 }
-
-

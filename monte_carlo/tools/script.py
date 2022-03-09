@@ -6,6 +6,8 @@ import functiontools as f
 import paramio as pio
 import matplotlib.pyplot as plt
 import numpy as np
+# import matplotlib
+# matplotlib.use('TkAgg')
 ################# SCRIPT ################
 # if len(sys.argv < 2):
 # 	print("Please pass the file name for diagnostics.")
@@ -14,7 +16,8 @@ import numpy as np
 argc=len(sys.argv)
 compute={"obtuse":0,"curvature":0,
 		"free_energy":0,"freeenergy":0,"free-energy":0,
-		"mean_energy":0,"meanE":0
+		"mean_energy":0,"meanE":0,
+		"pdf":0
 		}
 fnames=[]
 for arg in sys.argv[1:]:
@@ -48,7 +51,14 @@ if compute['mean_energy'] or compute['meanE'] ==1:
 		std[ifol] = np.std(tot_ener)
 		print(avgE[ifol],"\t",std[ifol])
 	plt.plot(avgE,'.-')
-# plt.show()
+# ------------------ PDF -------------------- #
+if compute['pdf']==1:
+	for ifol in range(nrun):
+		plt.figure()
+		data=mc_log[ifol][:,2]
+		hist=np.histogram(data,bins=25,density=True)
+		plt.plot(hist[1][1:],hist[0],'.-')
+plt.show()
 # for file in fnames:
 # 	if compute['obtuse']==1 or compute['curvature']==1:
 # 		folder=f.foldername(file)

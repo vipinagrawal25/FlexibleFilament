@@ -67,7 +67,6 @@ POSITION determine_xyz_parabola(POSITION pos, AFM_para afm) {
     return pt_pbola;
 
 }
-
 double volume_ipart(POSITION *pos, 
         int *node_nbr, int2* bond_nbr,
         int num_nbr, int idx, MBRANE_para para){
@@ -117,7 +116,6 @@ double volume_ipart(POSITION *pos,
     volume1 = volume1/3e0;
     return volume1;
 }
-
 double stretch_energy_ipart(POSITION *pos, 
         int *node_nbr, double *lij_t0,
         int num_nbr, int idx, MBRANE_para para){
@@ -572,10 +570,10 @@ void volume_area_enclosed_membrane(POSITION *pos,
             (rij.x*rik.y - rij.y*rik.x);
 
         volume = volume + 0.5*fabs(area.x*rijk.x + area.y*rijk.y + area.z*rijk.z);
-        tot_area += norm(area);
+        tot_area += 0.5*norm(area);
     }
-    *aarea = volume;
-    *avolume = tot_area;
+    *aarea = tot_area;
+    *avolume = volume/3e0;
 };
 
 void identify_obtuse(POSITION *pos, int *triangles,

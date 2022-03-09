@@ -22,7 +22,7 @@ def SphVoronoi(rr,R=1,lplot=False):
     if lplot:
         plot_voronoi(xyz,sv)
     return sv
-# ------------------------ save datasets --------------------------------------#
+# ------------------------ save datasets ------------------------------------ #
 def dump_mesh_hdf5(msh,file):
     if file.split(".")[-1]=="h5":
         pass
@@ -41,9 +41,11 @@ def dump_mesh_hdf5(msh,file):
     hf.close()
 #################################### SCRIPT ###################################
 filei = sys.argv[1]
+if len(sys.argv)==2:
+    fileo = filei.split("/")[-1].split(".")[0]
 rr = np.loadtxt(filei)
 sv = SphVoronoi(rr)
 # cumlst, node_neighbour, bond_neighbour = ft.neighbours(sv.points,sv._simplices)
 msh = Mesh(sv.points,sv._simplices)
 msh.assign_nbrs()
-dump_mesh_hdf5(msh,'input')
+msh.dump_hdf5(fileo)
