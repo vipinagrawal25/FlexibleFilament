@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
+from threading import Timer
 #------------------------------------------------------------------------------------#
 def voronoi_area(cotJ,cotK,jsq,ksq,area):
     '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
@@ -57,3 +58,27 @@ def SphVoronoi(rr,R=1,lplot=False):
         plot_voronoi(xyz,sv)
     return sv
 #------------------------------------------------------------------------------------#
+def isrunning(procname='run'):
+    for p in psutil.process_iter(['username','name']):
+        if p.info['name']==procname:
+            running = 1
+        else:
+            running = 0
+    return running
+#---------------------------------------------------------------- #
+def wait(procname='run',timedelay=10):
+    running=1
+    while running==1:
+        time.sleep(timedelay)
+        running=isrunning()
+#---------------------------------------------------------------- #
+def movetip(tz_start,tz_end,npoints,timedelay=10):
+    tz_all=np.linspace(tz_start,tz_end,npoints)
+    for tz in tz_all:
+        pio.change_param(tip_pos_z=tz)
+        print("# tz = ", tz)
+        g = float("{0:.3f}".format(tz))
+        os.system("mkdir "+str(g))
+        os.system("./run para_file.in "+str(g)+" > "+str(g)+"/terminal.txt")
+        wait()
+#---------------------------------------------------------------- #

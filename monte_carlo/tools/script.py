@@ -28,8 +28,11 @@ for arg in sys.argv[1:]:
 # ------------------ Read data -------------------- #
 nrun = len(fnames)
 mc_log=np.empty(nrun,dtype=object)
+tz=np.zeros(nrun)
 for ifol,folder in enumerate(fnames):
 	mc_log[ifol]=np.loadtxt(folder+"/mc_log")
+	tz[ifol]=pio.read_param(fname=folder+'/para_file.in')['tip_pos_z']
+N=mc_log[0].shape[0]
 # ------------------ Free energy -------------------- #
 if compute['free_energy'] ==1 or compute['freeenergy'] ==1 or compute['free-energy']==1:
 	FFall = np.zeros(nrun)
@@ -42,6 +45,7 @@ if compute['free_energy'] ==1 or compute['freeenergy'] ==1 or compute['free-ener
 	plt.figure()
 	plt.plot(FFall,'.-')
 # ------------------ Mean energy -------------------- #
+dvert=tz[-1]-tz
 if compute['mean_energy'] or compute['meanE'] ==1:
 	avgE=np.zeros(nrun)
 	std=np.zeros(nrun)
@@ -50,7 +54,10 @@ if compute['mean_energy'] or compute['meanE'] ==1:
 		avgE[ifol] = np.mean(tot_ener)
 		std[ifol] = np.std(tot_ener)
 		print(avgE[ifol],"\t",std[ifol])
-	plt.plot(avgE,'.-')
+	plt.plot(dvert,avgE,'o-')
+	plt.figure()
+	plt.plot(np.log10(dvert[0:-1]),np.log10(avgE[0:-1]-avgE[-1]),'o-')
+	# plt.grid(True)
 # ------------------ PDF -------------------- #
 if compute['pdf']==1:
 	for ifol in range(nrun):

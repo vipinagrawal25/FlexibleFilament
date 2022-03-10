@@ -310,7 +310,8 @@ int main(int argc, char *argv[]){
     double *lij_t0, *obtuse;
     int *triangles;
     int *triangles_t;
-    char syscmds[128], outfile[89], outfolder[32], para_file[32];
+    char syscmds[128], outfile[89], para_file[32];
+    string outfolder;
     char log_file[64];
     char log_headers[] = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener afm_ener ener_volume  forcex, forcey forcez area nPole_z sPole_z";
     int nPole,sPole;
@@ -320,7 +321,7 @@ int main(int argc, char *argv[]){
         exit(0);
     }else{
         sscanf(argv[1], "%s", &para_file);
-        sscanf(argv[2], "%s", &outfolder);
+        outfolder=argv[2];
     }
     //
     sprintf(syscmds, "mkdir %s",outfolder);
@@ -350,7 +351,7 @@ int main(int argc, char *argv[]){
     is_attractive = (bool *)calloc(mbrane.N, sizeof(bool));
     afm.tip_curve = (POSITION *)calloc(afm.N, 3*sizeof(double));
     //
-    double HH = mbrane.coef_str/(para.av_bond_len*para.av_bond_len);
+    double HH = mbrane.coef_str/(mbrane.av_bond_len*mbrane.av_bond_len);
     double BB = mbrane.coef_bend;
     cout << "# Foppl von Karman (FvK): "
          << 2*HH*mbrane.radius*mbrane.radius/(BB*sqrt(3)) << endl;
@@ -379,7 +380,10 @@ int main(int argc, char *argv[]){
         identify_attractive_part(Pos, is_attractive, mbrane.N);
         hdf5_io_read_config((double *) Pos, (int *) mes_t.cmlist,
                 (int *) mes_t.node_nbr_list, (int2 *) mes_t.bond_nbr_list,
-                triangles_t, "input/restart.h5");
+                triangles_t, outfolder+"/restart.h5");
+        hdf5_io_read_config((double *) Pos, (int *) mes_t.cmlist,
+                (int *) mes_t.node_nbr_list, (int2 *) mes_t.bond_nbr_list,
+                triangles_t, +"input/restart.h5");
     }
     //
     // cout << nPole << endl;
@@ -436,7 +440,7 @@ int main(int argc, char *argv[]){
 
             hdf5_io_dump_restart_config((double *) Pos, (int *) mesh.cmlist,
                     (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list,  
-                    triangles, mbrane, "input");
+                    triangles, mbrane, outfolder);
         }
         if(i == 10*mcpara.dump_skip && !mcpara.is_restart ){
             afm.sigma = s_t;

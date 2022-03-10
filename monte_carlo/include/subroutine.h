@@ -89,13 +89,13 @@ void hdf5_io_read_pos(double *Pos, int *cmlist,
         char input_file[]);
 void hdf5_io_read_config(double *Pos, int *cmlist,
         int *node_nbr, int2 *bond_nbr, int *triangles,
-        char input_file[]);
+        string input_file);
 int io_dump_config(POSITION *Pos, double len, 
         int iter, int N);
 void hdf5_io_dump_restart_config(double *Pos, int *cmlist,
         int *node_nbr, int2 *bond_nbr, 
         int *triangles, MBRANE_para mbrane,
-        char folder[]);
+        string folder);
 //misc
 bool FileExists(const std::string &s);
 int cubic_solve(double, double, double, double, double *);

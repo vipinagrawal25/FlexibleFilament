@@ -1,5 +1,6 @@
 #include <hdf5.h>
 #include "../include/global.h"
+#include "misc.h"
   /* The input for the hdf5 configuration */ 
   /* supposedly will read all the position and */ 
   /* triangles info from a single file */
@@ -24,13 +25,18 @@ void hdf5_io_read_pos(double *Pos, int *cmlist,
 
 void hdf5_io_read_config(double *Pos, int *cmlist,
         int *node_nbr, int2 *bond_nbr, int *triangles,
-        char input_file[]){
+        string input_file){
 
     hid_t   file_id, group_id,dataset_id;  /* identifiers */
     herr_t  status;
-
   /* Open an existing file. */
-  file_id = H5Fopen(input_file, H5F_ACC_RDONLY, H5P_DEFAULT);
+  if (FileExists(input_file)){
+    file_id = H5Fopen(input_file.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT); 
+  }else{
+    cout << "# HDF5 file is not found to start the simulaton." << endl;
+    cout << "# EXITING the code" << endl;
+    exit(1);
+  }
 
   dataset_id = H5Dopen(file_id, "pos", H5P_DEFAULT);
   status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, 
@@ -85,7 +91,7 @@ int io_dump_config(POSITION *Pos, double len,
 void hdf5_io_dump_restart_config(double *Pos, int *cmlist,
         int *node_nbr, int2 *bond_nbr, 
         int *triangles, MBRANE_para mbrane,
-        char folder[]){
+        string folder){
 
     char filename[64];
     char syscmds[128];

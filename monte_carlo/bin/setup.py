@@ -14,6 +14,7 @@ if len(sys.argv)==2:
 		os.system("mkdir include")
 		os.system("mkdir tools")
 		os.system("mkdir input")
+		os.system("mkdir runsc")
 		#
 		os.system("ln -s "+ES+"src/*.c src/")
 		os.system("ln -s "+ES+"src/*.cpp src/")
@@ -23,6 +24,7 @@ if len(sys.argv)==2:
 		os.system("ln -s "+ES+"hosts/* hosts/")
 		os.system("cp "+ES+"input/input.h5 input/")
 		os.system("cp "+ES+"para_file.in .")
+		os.system("cp "+ES+"runsc/* runsc/")
 else:
 	curr_dir = os.getcwd()
 	os.chdir(ES)
@@ -35,3 +37,5 @@ else:
 	os.system("cp "+ ES +"Makefile .")
 	os.system("mkdir tools")
 	os.system("ln "+ES+"tools/*.py tools/")
+	os.system("mkdir runsc")
+	os.system("cp "+ES+"runsc/* runsc/")
