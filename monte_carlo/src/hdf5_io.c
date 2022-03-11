@@ -37,7 +37,6 @@ void hdf5_io_read_config(double *Pos, int *cmlist,
     cout << "# EXITING the code" << endl;
     exit(1);
   }
-
   dataset_id = H5Dopen(file_id, "pos", H5P_DEFAULT);
   status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, 
           H5S_ALL, H5S_ALL, H5P_DEFAULT,Pos);
@@ -93,24 +92,23 @@ void hdf5_io_dump_restart_config(double *Pos, int *cmlist,
         int *triangles, MBRANE_para mbrane,
         string folder){
 
-    char filename[64];
-    char syscmds[128];
+    string filename;
+    string syscmds;
     int err; 
     hid_t                   file_id, dset1, space_id;
     herr_t                  status;
     hsize_t                 dims[1]; 
 
-
-    sprintf(syscmds, "mv %s/restart.h5 %s/restart_old.h5",folder,folder);
-    err = system(syscmds);
-    sprintf(filename, "%s/restart.h5", folder);
-
+    syscmds="mv "+folder+"/restart.h5 "+folder+"/restart_old.h5";
+    cout << syscmds << endl;
+    err = system(syscmds.c_str());
+    filename=folder+"/restart.h5";
     /*
      * Create a new file using the default properties.
      */
     dims[0] = 3*mbrane.N;
     /* dims[1] = 3*mbrane.N; */
-    file_id = H5Fcreate (filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    file_id = H5Fcreate (filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
     space_id = H5Screate_simple (1, dims, NULL);
     dset1 = H5Dcreate2(file_id, "/pos", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT,

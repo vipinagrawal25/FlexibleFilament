@@ -3,6 +3,8 @@
 #include <random>
 #include <unistd.h>
 #include <cmath>
+#include <sstream>
+#include<iomanip>
 std::mt19937 rng;
 void init_rng(){
     uint32_t seed_val;
@@ -291,6 +293,13 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
 //     free(neib);
 //     return 0;
 // }
+template<typename T>
+inline string ZeroPadNumber(T num){
+    ostringstream ss;
+    ss << setw( 5 ) << setfill( '0' ) << (int)num;
+    return ss.str();
+}
+
 int main(int argc, char *argv[]){
     pid_t pid = getpid();
     cout << "# ID for this process is: " << pid << endl;
@@ -310,24 +319,23 @@ int main(int argc, char *argv[]){
     double *lij_t0, *obtuse;
     int *triangles;
     int *triangles_t;
-    char syscmds[128], outfile[89], para_file[32];
-    string outfolder;
-    char log_file[64];
+    string outfolder, syscmds, log_file, outfile, para_file;
     char log_headers[] = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener afm_ener ener_volume  forcex, forcey forcez area nPole_z sPole_z";
     int nPole,sPole;
+    int ibydumpskip;
     double Pole_zcoord;
     if(argc!=3){
         printf("\n\n mayday.. requires an argument <parameter file> <output folder>\n\n");
         exit(0);
     }else{
-        sscanf(argv[1], "%s", &para_file);
+        para_file=argv[1];
         outfolder=argv[2];
     }
     //
-    sprintf(syscmds, "mkdir %s",outfolder);
-    system(syscmds);
-    sprintf(syscmds, "cp %s %s/%s",para_file,outfolder,para_file);
-    system(syscmds);
+    syscmds="mkdir "+outfolder;
+    system(syscmds.c_str());
+    syscmds="cp "+para_file+" "+outfolder+"/";
+    system(syscmds.c_str());
     init_rng();
     // read the input file
     initialize_read_parameters(&mbrane, &afm, &mcpara, para_file);
@@ -350,11 +358,6 @@ int main(int argc, char *argv[]){
     obtuse = (double *)calloc(mbrane.num_triangles, sizeof(double));
     is_attractive = (bool *)calloc(mbrane.N, sizeof(bool));
     afm.tip_curve = (POSITION *)calloc(afm.N, 3*sizeof(double));
-    //
-    double HH = mbrane.coef_str/(mbrane.av_bond_len*mbrane.av_bond_len);
-    double BB = mbrane.coef_bend;
-    cout << "# Foppl von Karman (FvK): "
-         << 2*HH*mbrane.radius*mbrane.radius/(BB*sqrt(3)) << endl;
     //
     if(!mcpara.is_restart){
         s_t = afm.sigma; 
@@ -381,10 +384,12 @@ int main(int argc, char *argv[]){
         hdf5_io_read_config((double *) Pos, (int *) mes_t.cmlist,
                 (int *) mes_t.node_nbr_list, (int2 *) mes_t.bond_nbr_list,
                 triangles_t, outfolder+"/restart.h5");
-        hdf5_io_read_config((double *) Pos, (int *) mes_t.cmlist,
-                (int *) mes_t.node_nbr_list, (int2 *) mes_t.bond_nbr_list,
-                triangles_t, +"input/restart.h5");
     }
+    //
+    double HH = mbrane.coef_str/(mbrane.av_bond_len*mbrane.av_bond_len);
+    double BB = mbrane.coef_bend;
+    cout << "# Foppl von Karman (FvK): "
+         << 2*HH*mbrane.radius*mbrane.radius/(BB*sqrt(3)) << endl;
     //
     // cout << nPole << endl;
     // cout << Pole_zcoord;
@@ -409,8 +414,8 @@ int main(int argc, char *argv[]){
     mbrane.tot_energy[0] = Ener_t;
     mbrane.volume[0] = vol_sph;
     //
-    sprintf(log_file, "%s/mc_log", outfolder);
-    fid = fopen(log_file, "a");
+    log_file=outfolder+"/mc_log";
+    fid = fopen(log_file.c_str(), "a");
     if(!mcpara.is_restart)fprintf(fid, "%s\n", log_headers);
     num_moves = 0;
     for(i=0; i < mcpara.tot_mc_iter; i++){
@@ -429,18 +434,21 @@ int main(int argc, char *argv[]){
                     afm_force.x, afm_force.y, afm_force.z,area_sph,Pos[nPole].z,Pos[sPole].z);
         fflush(fid);
         if(i%mcpara.dump_skip == 0){
-            sprintf(outfile,"%s/part_%05d.vtk",outfolder,(int)i/mcpara.dump_skip);
+            outfile=outfolder+"/part_"+ ZeroPadNumber(i/mcpara.dump_skip)+".vtk";
+            // sprintf(outfile,"%s/part_%05d.vtk",outfolder,(int)i/mcpara.dump_skip);
             // identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
-            visit_vtk_io( (double *) Pos, triangles, 
+            visit_vtk_io( (double *) Pos, triangles,
                     mbrane.N, outfile);
 
-            visit_vtk_io_point_data(is_attractive, mbrane.N,
-                    outfile, "isattr");
+            // visit_vtk_io_point_data(is_attractive, mbrane.N,
+            //         outfile, "isattr");
             // dump config for restart
-
+            // hdf5_io_dump_restart_config((double *) Pos, (int *) mesh.cmlist,
+            //         (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list,  
+            //         triangles, mbrane, outfolder);
             hdf5_io_dump_restart_config((double *) Pos, (int *) mesh.cmlist,
                     (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list,  
-                    triangles, mbrane, outfolder);
+                    triangles, mbrane, "input");
         }
         if(i == 10*mcpara.dump_skip && !mcpara.is_restart ){
             afm.sigma = s_t;

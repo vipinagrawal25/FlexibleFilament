@@ -66,23 +66,23 @@ void initialize_eval_lij_t0(POSITION *Pos, MESH mesh,
 void initialize_read_config();
 void initialize_afm_tip(AFM_para );
 void initialize_read_parameters( MBRANE_para *mbrane, 
-        AFM_para *afm, MCpara *mcpara, char para_file[]);
+        AFM_para *afm, MCpara *mcpara, string para_file);
 int randint(int n);
 
 //visit_io.c
 void visit_vtk_io(double *points, 
         int *triangles, 
-        int Np, char filename[], 
+        int Np, string filename, 
         string dataname="miketesting");
 void visit_vtk_io_point_data(bool *data, 
-        int Np, char filename[], 
+        int Np, string filename, 
         string dataname);
 void visit_vtk_io_cell_data(double *data, 
-        int Np, char filename[], 
+        int Np, string filename, 
         string dataname);
 
 void visit_vtk_io_afm_tip(double *data, 
-        int Np, char filename[]);
+        int Np, string filename);
 //hdf5_io
 void hdf5_io_read_pos(double *Pos, int *cmlist,
         int *node_nbr, int2 *bond_nbr, int *triangles,

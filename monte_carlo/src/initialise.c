@@ -169,13 +169,13 @@ void initialize_afm_tip(AFM_para afm){
 }
 
 void initialize_read_parameters( MBRANE_para *mbrane, 
-        AFM_para *afm, MCpara *mcpara, char para_file[]){
+        AFM_para *afm, MCpara *mcpara, string para_file){
     
     char buff[255];
     int t_n, t_n2, t_n3;
     double td1, td2, td3, td4, td5;
     FILE *f2;
-    f2 = fopen(para_file, "r");
+    f2 = fopen(para_file.c_str(), "r");
     if(f2){
         fgets(buff,255,(FILE*)f2); 
         fgets(buff,255,(FILE*)f2); 

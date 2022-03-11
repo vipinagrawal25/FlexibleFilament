@@ -1,7 +1,10 @@
 import numpy as np
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
-from threading import Timer
+import time
+import paramio as pio
+import os
+import psutil
 #------------------------------------------------------------------------------------#
 def voronoi_area(cotJ,cotK,jsq,ksq,area):
     '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
@@ -72,13 +75,19 @@ def wait(procname='run',timedelay=10):
         time.sleep(timedelay)
         running=isrunning()
 #---------------------------------------------------------------- #
-def movetip(tz_start,tz_end,npoints,timedelay=10):
+def movetip(tz_start,tz_end,npoints,timedelay=10,restart=None):
     tz_all=np.linspace(tz_start,tz_end,npoints)
     for tz in tz_all:
         pio.change_param(tip_pos_z=tz)
         print("# tz = ", tz)
-        g = float("{0:.3f}".format(tz))
-        os.system("mkdir "+str(g))
-        os.system("./run para_file.in "+str(g)+" > "+str(g)+"/terminal.txt")
+        g = str(float("{0:.3f}".format(tz)))
+        os.system("mkdir "+g)
+        if restart is None:
+            pio.change_param(is_restart=0)
+        else:
+            os.system("cp "+restart+"/restart.h5 "+g)
+            pio.change_param(is_restart=1)
+        os.system("./run para_file.in "+g+" > "+g+"/terminal.txt")
+        restart=g
         wait()
 #---------------------------------------------------------------- #
