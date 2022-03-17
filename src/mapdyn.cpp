@@ -28,9 +28,7 @@ void pre_next_iter(double *y,double *ytrans) __attribute__((weak));
 /*-----------------------------------------------*/
 /*1) Prefix a means address to that particular varibale (avar -> address to var).
   2) Idea is not to use Eigen/Spectra namespace anywhere in these files.
-  all of the converting function needs to be defined utils.
-  3) wData,rData needs to be defined in IO.cpp file. Let's do it later.
-  4) Define NewtonRaphson and NewtonKrylov method.*/
+  all of the converting function needs to be defined in utils.
 /*-----------------------------------------------*/
 void assign_map_param(){
   // In principle, this function converts set of ODEs to a poincare map by taking poincare section.
@@ -302,7 +300,7 @@ void map_one_iter(double *y){
     // This function convert ODE to map for 1 iteration. It also has flexibility to save a few 
     // intermediate points as well.
     double time = MM.time;
-    double Tmax = period + time;   // We typically get this by defining Poincare section. 
+    double Tmax = period + time;    // We typically get this by defining Poincare section. 
                                     // which can depend on the initial condition, but not in the case
                                     // Elastic string.
     // The function for Poincare section should be defined in model.cpp file.

@@ -37,29 +37,29 @@ void visit_vtk_io(double *points,
     fid.close();
 }
 
-// void visit_vtk_io_point_data(bool *data, 
-//         int Np, string filename, 
-//         string dataname){
-//     ofstream fid(filename,ofstream::app);
-//     int num_triangles, i;
-//     num_triangles = 2*Np - 4;
-//     fid << "POINT_DATA\t" << Np << endl;
-//     fid << "SCALARS\t" << dataname <<"\t" << "float 1" << endl;
-//     fid << "LOOKUP_TABLE default \n";
-//     // fprintf(fid, "%s %d \n", "POINT_DATA", Np);
-//     // fprintf(fid, "%s %s %s \n", "SCALARS", dataname, "float 1");
-//     // fprintf(fid, "%s \n", "LOOKUP_TABLE default ");
-//     for(i = 0; i< Np; i=i+1){
-//         if(data[i]){
-//             fid << 1.0 << endl;
-//             // fprintf(fid, "%g \n", 1.0);
-//         } else {
-//             fid << 0.0 << endl;
-//             // fprintf(fid, "%g \n", 0.0);
-//         }
-//     }
-//     fid.close();
-// }
+void visit_vtk_io_point_data(bool *data, 
+        int Np, string filename, 
+        string dataname){
+    ofstream fid(filename,ofstream::app);
+    int num_triangles, i;
+    num_triangles = 2*Np - 4;
+    fid << "POINT_DATA\t" << Np << endl;
+    fid << "SCALARS\t" << dataname <<"\t" << "float 1" << endl;
+    fid << "LOOKUP_TABLE default \n";
+    // fprintf(fid, "%s %d \n", "POINT_DATA", Np);
+    // fprintf(fid, "%s %s %s \n", "SCALARS", dataname, "float 1");
+    // fprintf(fid, "%s \n", "LOOKUP_TABLE default ");
+    for(i = 0; i< Np; i=i+1){
+        if(data[i]){
+            fid << 1.0 << endl;
+            // fprintf(fid, "%g \n", 1.0);
+        } else {
+            fid << 0.0 << endl;
+            // fprintf(fid, "%g \n", 0.0);
+        }
+    }
+    fid.close();
+}
 
 // void visit_vtk_io_cell_data(double *data, 
 //         int Np, string filename, 

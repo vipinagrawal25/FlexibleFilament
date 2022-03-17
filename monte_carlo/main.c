@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <cmath>
 #include <sstream>
-#include<iomanip>
+#include <iomanip>
 std::mt19937 rng;
 void init_rng(){
     uint32_t seed_val;
@@ -299,7 +299,7 @@ inline string ZeroPadNumber(T num){
     ss << setw( 5 ) << setfill( '0' ) << (int)num;
     return ss.str();
 }
-
+//
 int main(int argc, char *argv[]){
     pid_t pid = getpid();
     cout << "# ID for this process is: " << pid << endl;
@@ -370,7 +370,7 @@ int main(int argc, char *argv[]){
                 (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
                 triangles, "input/input.h5");
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
-        identify_attractive_part(Pos, is_attractive, mbrane.N);
+        identify_attractive_part(Pos, is_attractive, mbrane.N,5*pi/12.0);
         max(&nPole,&Pole_zcoord,Pos,mbrane.N);
         min(&sPole,&Pole_zcoord,Pos,mbrane.N);
     }else{
@@ -380,7 +380,7 @@ int main(int argc, char *argv[]){
         max(&nPole,&Pole_zcoord,Pos,mbrane.N);
         min(&sPole,&Pole_zcoord,Pos,mbrane.N);
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
-        identify_attractive_part(Pos, is_attractive, mbrane.N);
+        identify_attractive_part(Pos, is_attractive, mbrane.N,5*pi/12.0);
         hdf5_io_read_config((double *) Pos, (int *) mes_t.cmlist,
                 (int *) mes_t.node_nbr_list, (int2 *) mes_t.bond_nbr_list,
                 triangles_t, outfolder+"/restart.h5");
@@ -440,8 +440,8 @@ int main(int argc, char *argv[]){
             visit_vtk_io( (double *) Pos, triangles,
                     mbrane.N, outfile);
 
-            // visit_vtk_io_point_data(is_attractive, mbrane.N,
-            //         outfile, "isattr");
+            visit_vtk_io_point_data(is_attractive, mbrane.N,
+                    outfile, "isattr");
             // dump config for restart
             // hdf5_io_dump_restart_config((double *) Pos, (int *) mesh.cmlist,
             //         (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list,  
@@ -450,7 +450,7 @@ int main(int argc, char *argv[]){
                     (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list,  
                     triangles, mbrane, "input");
         }
-        if(i == 10*mcpara.dump_skip && !mcpara.is_restart ){
+        if(i == 50*mcpara.dump_skip && !mcpara.is_restart ){
             afm.sigma = s_t;
             afm.epsilon = e_t;
             e_t = lj_afm_total(Pos, &afm_force, mbrane, afm);

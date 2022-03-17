@@ -13,7 +13,6 @@
 #include <iostream>
 #include <cstdlib>
 #include "Position.h"
-
 using namespace std;
 #define pi 3.14159265358979
 #define R_del 0.05

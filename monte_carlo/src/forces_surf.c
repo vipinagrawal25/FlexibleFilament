@@ -206,7 +206,7 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
         double cot_sum;
         for (i =0; i < num_nbr; i++){
             jdx = node_nbr[i];
-            kdx  = bond_nbr[i].i1; 
+            kdx  = bond_nbr[i].i1;
             kpdx = bond_nbr[i].i2;
             //
             cot_jdx_k = cotangent(pos[idx],pos[jdx],pos[kdx]);
@@ -440,16 +440,15 @@ double lj_bottom_surf_total(POSITION *pos,
     return lj_bote;
 }
 
-
-
 void identify_attractive_part(POSITION *pos, 
-        bool *is_attractive, int N){
+        bool *is_attractive, int N, double th_cr){
 
     int i; 
     double theta, rr;
     for(i= 0; i<N; i++){
-        theta = pi - acos(pos[i].z);
-        is_attractive[i] = theta < pi/6.0;
+        rr=norm(pos[i]);
+        theta = pi - acos(pos[i].z/rr);
+        is_attractive[i] = theta < th_cr;
     }
 }
 

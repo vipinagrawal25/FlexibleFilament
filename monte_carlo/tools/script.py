@@ -45,18 +45,6 @@ if compute['free_energy'] ==1 or compute['freeenergy'] ==1 or compute['free-ener
 	plt.figure()
 	plt.plot(FFall,'.-')
 # ------------------ Mean energy -------------------- #
-dvert=tz[-1]-tz
-if compute['mean_energy'] or compute['meanE'] ==1:
-	avgE=np.zeros(nrun)
-	std=np.zeros(nrun)
-	for ifol in range(nrun):
-		tot_ener=mc_log[ifol][:,2]
-		avgE[ifol] = np.mean(tot_ener)
-		std[ifol] = np.std(tot_ener)
-		print(avgE[ifol],"\t",std[ifol])
-	plt.plot(dvert,avgE,'o-')
-	plt.figure()
-	plt.plot(np.log10(dvert[0:-1]),np.log10(avgE[0:-1]-avgE[-1]),'o-')
 	# plt.grid(True)
 # ------------------ PDF -------------------- #
 if compute['pdf']==1:

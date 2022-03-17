@@ -36,7 +36,7 @@ double stretch_energy_total(POSITION *pos,
 void identify_obtuse(POSITION *pos, int *triangles, 
        double *obtuse,  int N);
 void identify_attractive_part(POSITION *pos, 
-        bool *is_attractive, int N);
+        bool *is_attractive, int N, double theta);
 double stretch_energy_ipart(POSITION *pos, 
         int *node_nbr, double *lij_t0,
         int num_nbr, int idx, MBRANE_para para);

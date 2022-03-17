@@ -14,14 +14,12 @@ void hdf5_io_read_pos(double *Pos, int *cmlist,
 
   /* Open an existing file. */
   file_id = H5Fopen(input_file, H5F_ACC_RDONLY, H5P_DEFAULT);
-
   dataset_id = H5Dopen(file_id, "pos", H5P_DEFAULT);
-  status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, 
-          H5S_ALL, H5S_ALL, H5P_DEFAULT,Pos);
+  status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE,
+          H5S_ALL, H5S_ALL, H5P_DEFAULT, Pos);
   status = H5Dclose(dataset_id);
   status = H5Fclose(file_id);
 }
-
 
 void hdf5_io_read_config(double *Pos, int *cmlist,
         int *node_nbr, int2 *bond_nbr, int *triangles,
@@ -38,7 +36,7 @@ void hdf5_io_read_config(double *Pos, int *cmlist,
     exit(1);
   }
   dataset_id = H5Dopen(file_id, "pos", H5P_DEFAULT);
-  status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, 
+  status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE,
           H5S_ALL, H5S_ALL, H5P_DEFAULT,Pos);
   status = H5Dclose(dataset_id);
 
@@ -100,7 +98,7 @@ void hdf5_io_dump_restart_config(double *Pos, int *cmlist,
     hsize_t                 dims[1]; 
 
     syscmds="mv "+folder+"/restart.h5 "+folder+"/restart_old.h5";
-    cout << syscmds << endl;
+    // cout << syscmds << endl;
     err = system(syscmds.c_str());
     filename=folder+"/restart.h5";
     /*

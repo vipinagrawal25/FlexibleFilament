@@ -53,8 +53,8 @@ int main(){
     pre_next_iter(y,ytrans);
   }
   else{
-    cout << "# -- guess_space is not mentioned."
-            " Reading input as real space -- # " << endl;
+    cout << "# -- guess_space is not mentioned.\n"
+            "# Reading input as real space -- # " << endl;
     iniconf(y);
     coordinate_transform(ytrans,y);
   }

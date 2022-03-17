@@ -42,7 +42,7 @@ int main(){
   //
   if(wDataMeth==1){  
     outfile.open("output/var0.txt");
-    wData(&outfile,&outfile,y,vel);                                     //Code it in your model.cpp
+    wData(&outfile,&outfile,y,vel);                                     // Code it in your model.cpp
     outfile.close();
   }else if(wDataMeth==2){
     outfile.open("PSI", ios::out);
