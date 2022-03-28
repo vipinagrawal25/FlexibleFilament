@@ -36,11 +36,12 @@ typedef struct{
 //
 typedef struct{
     double coef_bend;  //coefficient bending
-    double coef_str;  //coefficient stretching
+    double YY;  //coefficient stretching
     double coef_vol_expansion;   //coefficient of volume expansion
     double radius;  // radius of ball
     double sigma, epsilon; // sigma and epsilon for the bottom attractive wall
-    double sp_curv; // spontaneous curvature of the membrane.
+    double th_cr;
+    // double sp_curv; // spontaneous curvature of the membrane.
     double pos_bot_wall;  // position of the bottom attractive wall
     double av_bond_len; // average length of the bond
     double *tot_energy;

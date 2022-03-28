@@ -390,7 +390,8 @@ int main(int argc, char *argv[]){
                 triangles_t, filename);
     }
     //
-    double HH = mbrane.coef_str/(mbrane.av_bond_len*mbrane.av_bond_len);
+    // double HH = mbrane.coef_str/(mbrane.av_bond_len*mbrane.av_bond_len);
+    double YY = mbrane.YY;
     double BB = mbrane.coef_bend;
     cout << "# Foppl von Karman (FvK): "
          << 2*HH*mbrane.radius*mbrane.radius/(BB*sqrt(3)) << endl;
@@ -398,8 +399,6 @@ int main(int argc, char *argv[]){
     fid = fopen(filename.c_str(), "w");
     fprintf(fid, " Fopl von karman %lf", 2*HH*mbrane.radius*mbrane.radius/(BB*sqrt(3)));
     fclose(fid);
-
-
     //
     Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
     Et[1] =  bending_energy_total(Pos, mesh, mbrane);
@@ -440,7 +439,6 @@ int main(int argc, char *argv[]){
             // sprintf(outfile,"%s/part_%05d.vtk",outfolder,(int)i/mcpara.dump_skip);
             // identify_obtuse(Pos, triangles, obtuse, mbrane.num_triangles);
             visit_vtk_io( (double *) Pos, triangles, mbrane.N, outfile);
-
             hdf5_io_dump_restart_config((double *) Pos, (int *) mesh.cmlist,
                     (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list,  
                     triangles, mbrane, outfolder);

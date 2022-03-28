@@ -75,8 +75,8 @@ def wait(procname='run',timedelay=10):
         time.sleep(timedelay)
         running=isrunning()
 #---------------------------------------------------------------- #
-def movetip(tz_start,tz_end,npoints,timedelay=10,restart=None):
-    tz_all=np.linspace(tz_start,tz_end,npoints)
+def movetip(tz_start,tz_end,step=-0.02,timedelay=10,restart=None):
+    tz_all=np.arange(tz_start,tz_end,step)
     for tz in tz_all:
         pio.change_param(tip_pos_z=tz)
         print("# tz = ", tz)
@@ -85,9 +85,8 @@ def movetip(tz_start,tz_end,npoints,timedelay=10,restart=None):
         if restart is None:
             pio.change_param(is_restart=0)
         else:
-            os.system("cp "+restart+"/restart.h5 "+g)
             pio.change_param(is_restart=1)
-        os.system("./run para_file.in "+g+" > "+g+"/terminal.txt")
-        restart=g
+            os.system("cp "+restart+"/restart.h5 "+g)
+        os.system("./run para_file.in "+ g + "> "+g+"/terminal.txt")
         wait()
 #---------------------------------------------------------------- #

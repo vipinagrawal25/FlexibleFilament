@@ -184,7 +184,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         /* fprintf(stderr, "%s\n", buff); */
         mbrane->N = t_n;
         mbrane->coef_bend = td1;
-        mbrane->coef_str = td2;
+        mbrane->YY = td2;       // Young's modulus
         mbrane->coef_vol_expansion = td3;
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2);
@@ -194,7 +194,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         mbrane->pos_bot_wall = td2;
         mbrane->sigma = td3;
         mbrane->epsilon = td4;
-        mbrane->sp_curv = td5;
+        mbrane->th_cr = td5;
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2); 
         fgets(buff,255,(FILE*)f2); 

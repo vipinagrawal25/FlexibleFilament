@@ -6,6 +6,7 @@ import functiontools as f
 import paramio as pio
 import matplotlib.pyplot as plt
 import numpy as np
+from MESH import *
 # import matplotlib
 # matplotlib.use('TkAgg')
 ################# SCRIPT ################
@@ -25,14 +26,15 @@ for arg in sys.argv[1:]:
 		compute[arg]=1;
 	else:
 		fnames.append(arg)
+# foutname = "0.75_curv_fixed"
 # ------------------ Read data -------------------- #
-nrun = len(fnames)
-mc_log=np.empty(nrun,dtype=object)
-tz=np.zeros(nrun)
-for ifol,folder in enumerate(fnames):
-	mc_log[ifol]=np.loadtxt(folder+"/mc_log")
-	tz[ifol]=pio.read_param(fname=folder+'/para_file.in')['tip_pos_z']
-N=mc_log[0].shape[0]
+# nrun = len(fnames)
+# mc_log=np.empty(nrun,dtype=object)
+# tz=np.zeros(nrun)
+# for ifol,folder in enumerate(fnames):
+# 	mc_log[ifol]=np.loadtxt(folder+"/mc_log")
+# 	tz[ifol]=pio.read_param(fname=folder+'/para_file.in')['tip_pos_z']
+# N=mc_log[0].shape[0]
 # ------------------ Free energy -------------------- #
 if compute['free_energy'] ==1 or compute['freeenergy'] ==1 or compute['free-energy']==1:
 	FFall = np.zeros(nrun)
@@ -54,19 +56,21 @@ if compute['pdf']==1:
 		hist=np.histogram(data,bins=25,density=True)
 		plt.plot(hist[1][1:],hist[0],'.-')
 plt.show()
-# for file in fnames:
-# 	if compute['obtuse']==1 or compute['curvature']==1:
-# 		folder=f.foldername(file)
-# 		Np=pio.read_param(folder+'/para_file.in')['N']
-# 		points,cells=vio.vtk_to_data(infile=file,Np=Np)
-# 		mesh = MESH(points,cells)
-# 		foutname=''.join(file.split(".")[0:-1])
-# 	if compute['obtuse']==1:
-# 		isobtuse=mesh.compute_obtuse()
-# 		foutname+="_obtuse"
-# 	if compute['curvature']==1:
-# 		mesh.assign_nbrs()
-# 		curv=mesh.curvature()
-# 		foutname=foutname+"_curv"
-	# vio.dump_visit(foutname+".vtk", points, cells)
-	# vio.dump_visit_points_scalar(foutname+".vtk", points, curv, name_scalar='curvature')
+for file in fnames:
+	if compute['obtuse']==1 or compute['curvature']==1:
+		folder=f.foldername(file)
+		Np=pio.read_param(folder+'/para_file.in')['N']
+		points,cells=vio.vtk_to_data(infile=file,Np=Np)
+		mesh = Mesh(points,cells)
+		# foutname=file
+		foutname=''.join(file.split(".")[0:-1])
+	if compute['obtuse']==1:
+		isobtuse=mesh.compute_obtuse()
+		foutname+="_obtuse"
+	if compute['curvature']==1:
+		mesh.assign_nbrs()
+		curv=mesh.curvature()
+		foutname=foutname+"_curv"
+		print(curv)
+	vio.dump_visit(foutname+".vtk", points, cells)
+	vio.dump_visit_points_scalar(foutname+".vtk", points, curv, name_scalar='curvature')

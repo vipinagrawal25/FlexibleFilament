@@ -1,8 +1,10 @@
 import os
 import sys
 #
-ES=os.getenv('ES')
-ES=ES+"/monte_carlo/"
+ES=sys.path[0]
+ES=ES.replace("/bin","/")
+# ES=os.getenv('ES')
+# ES=ES+"/monte_carlo/"
 #
 if len(sys.argv)==2:
 	if sys.argv[1]=='-d' or sys.argv[1]=='-debug'\

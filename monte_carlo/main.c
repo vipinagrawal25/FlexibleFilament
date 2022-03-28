@@ -370,7 +370,7 @@ int main(int argc, char *argv[]){
                 (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
                 triangles, "input/input.h5");
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
-        identify_attractive_part(Pos, is_attractive, mbrane.N,5*pi/12.0);
+        identify_attractive_part(Pos, is_attractive, mbrane.N, mbrane.th_cr);
         max(&nPole,&Pole_zcoord,Pos,mbrane.N);
         min(&sPole,&Pole_zcoord,Pos,mbrane.N);
     }else{
@@ -380,16 +380,17 @@ int main(int argc, char *argv[]){
         max(&nPole,&Pole_zcoord,Pos,mbrane.N);
         min(&sPole,&Pole_zcoord,Pos,mbrane.N);
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
-        identify_attractive_part(Pos, is_attractive, mbrane.N,5*pi/12.0);
+        identify_attractive_part(Pos, is_attractive, mbrane.N, mbrane.th_cr);
         hdf5_io_read_config((double *) Pos, (int *) mes_t.cmlist,
                 (int *) mes_t.node_nbr_list, (int2 *) mes_t.bond_nbr_list,
                 triangles_t, outfolder+"/restart.h5");
     }
     //
-    double HH = mbrane.coef_str/(mbrane.av_bond_len*mbrane.av_bond_len);
+    // double HH = mbrane.coef_str/(mbrane.av_bond_len*mbrane.av_bond_len);
+    double YY=mbrane.YY; 
     double BB = mbrane.coef_bend;
     cout << "# Foppl von Karman (FvK): "
-         << 2*HH*mbrane.radius*mbrane.radius/(BB*sqrt(3)) << endl;
+         << YY*mbrane.radius*mbrane.radius/BB << endl;
     //
     // cout << nPole << endl;
     // cout << Pole_zcoord;
@@ -448,7 +449,7 @@ int main(int argc, char *argv[]){
             //         triangles, mbrane, outfolder);
             hdf5_io_dump_restart_config((double *) Pos, (int *) mesh.cmlist,
                     (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list,  
-                    triangles, mbrane, "input");
+                    triangles, mbrane, outfolder);
         }
         if(i == 50*mcpara.dump_skip && !mcpara.is_restart ){
             afm.sigma = s_t;

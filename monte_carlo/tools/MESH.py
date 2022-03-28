@@ -199,7 +199,6 @@ def sort_2Dpoints_theta(x,y):
     xsort=np.zeros(len_x)
     ysort=np.zeros(len_y)
     #
-
     theta=np.arctan2(x,y)+np.pi
     indices=np.linspace(0,len_x-1,len_x)
     xyth=np.transpose(np.array([x,y,theta,indices]))
@@ -233,4 +232,17 @@ def quater2vec(qq,precision=1e-16):
                # Can not convert to vector.")
         exit(1)
     return np.array([qq.x,qq.y,qq.z])
+#----------------------------------------------------------------------------#
+def voronoi_area(cotJ,cotK,jsq,ksq,area):
+    '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
+        bisector, or the barycenter.'''
+    sigma=0
+    if cotJ>0 and cotK>0:
+        if cotJ*cotK <1:
+            sigma = 0.125*(cotJ*jsq+cotK*ksq)
+        else:
+            sigma = 0.5*area
+    else:
+        sigma = 0.25*area
+    return sigma;
 #----------------------------------------------------------------------------#

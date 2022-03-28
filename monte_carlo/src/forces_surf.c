@@ -55,17 +55,16 @@ POSITION determine_xyz_parabola(POSITION pos, AFM_para afm) {
 
     nroot = cubic_solve(a, b, c, d, roots);
 
-     if(nroot  == 3){
-        fprintf(stderr, "Multiple points satisfy distance minimization \n");
-    }
+    // if(nroot  == 3){
+    //     fprintf(stderr, "Multiple points satisfy distance minimization \n");
+    // }
 
     pt_pbola.x = roots[0];
     pt_pbola.y = (y0/x0)*roots[0];
     pt_pbola.z  = (a0*pt_pbola.x)*(a0*pt_pbola.x) + 
-        (a0*pt_pbola.y)*(a0*pt_pbola.y) + c0;
+                    (a0*pt_pbola.y)*(a0*pt_pbola.y) + c0;
 
     return pt_pbola;
-
 }
 double volume_ipart(POSITION *pos, 
         int *node_nbr, int2* bond_nbr,
@@ -81,7 +80,7 @@ double volume_ipart(POSITION *pos,
     double inp_r1, inp_r2, inp_r3;
 
     volume1 = 0e0;
-    volume2 = 0e0;
+    // volume2 = 0e0;
     for (i =0; i < num_nbr; i++){
         j = node_nbr[i];
         k  = bond_nbr[i].i1; 
@@ -108,10 +107,10 @@ double volume_ipart(POSITION *pos,
         double ip2 = inner_product(area2,rijkp);
 
         if(sign(ip1) == 1) volume1 = volume1 + ip1;
-        if(sign(ip1) == -1) volume2 = volume2 + ip1;
+        // if(sign(ip1) == -1) volume2 = volume2 + ip1;
 
         if(sign(ip2) == 1) volume1 = volume1 + ip2;
-        if(sign(ip2) == -1) volume2 = volume2 + ip2;
+        // if(sign(ip2) == -1) volume2 = volume2 + ip2;
     }
     volume1 = volume1/3e0;
     return volume1;
@@ -127,7 +126,8 @@ double stretch_energy_ipart(POSITION *pos,
     int i,j;
     //
     idx_ener = 0e0;
-    HH = para.coef_str/(para.av_bond_len*para.av_bond_len);
+    HH = para.YY*sqrt(3)/2;
+    // HH = para.coef_str/(para.av_bond_len*para.av_bond_len);
     for (i =0; i < num_nbr; i++){
         j = node_nbr[i];
         rij = Position_add(pos[idx], pos[j], -1e0);
@@ -161,11 +161,11 @@ double bending_energy_ipart(POSITION *pos, int *node_nbr, int2 *bond_nbr, int nu
     double bend_ener,curvature,sigma_i;
     POSITION cot_times_rij;
     double BB=para.coef_bend;
-    double curv_t0 = para.sp_curv;
+    // double curv_t0 = para.sp_curv;
     // lap_bel:Laplace Beltrami operator for sphere is 2\kappa\nhat
     // nhat is outward normal.
     POSITION lap_bel,lap_bel_t0,nhat;
-    // double curv_t0 = 2e0/para.radius;
+    double curv_t0 = 2e0/para.radius;
     cot_times_rij.x = 0e0;
     cot_times_rij.y = 0e0;
     cot_times_rij.z = 0e0;
@@ -396,7 +396,6 @@ double stretch_energy_total(POSITION *pos,
     return se*0.5e0;
  }
 
-
 double lj_rep(double sqdr, double eps){
     double r6;
     r6 = sqdr*sqdr*sqdr;
@@ -442,7 +441,6 @@ double lj_bottom_surf_total(POSITION *pos,
 
 void identify_attractive_part(POSITION *pos, 
         bool *is_attractive, int N, double th_cr){
-
     int i; 
     double theta, rr;
     for(i= 0; i<N; i++){
@@ -458,9 +456,9 @@ double lj_afm(POSITION pos, AFM_para afm){
     double ds_sig_inv, r6;
     POSITION dr, pt_pbola;
     ener_afm = 0e0;
-    
+    //
     pt_pbola = determine_xyz_parabola(pos, afm);
-    if(fabs(afm.tip_pos_z - pt_pbola.z) < 4*afm.sigma) {
+    if(fabs(afm.tip_pos_z - pt_pbola.z) < 4*afm.sigma){
         dr = Position_add(pt_pbola, pos, -1); 
         ds = (inner_product(dr,dr));
         ds_sig_inv = (afm.sigma*afm.sigma)/ds;
