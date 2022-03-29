@@ -372,7 +372,7 @@ int main(int argc, char *argv[]){
                 (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
                 triangles, filename);
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
-        identify_attractive_part(Pos, is_attractive, mbrane.N);
+        identify_attractive_part(Pos, is_attractive, mbrane.N,th_cr);
         max(&nPole,&Pole_zcoord,Pos,mbrane.N);
         min(&sPole,&Pole_zcoord,Pos,mbrane.N);
     }else{
@@ -383,7 +383,7 @@ int main(int argc, char *argv[]){
         max(&nPole,&Pole_zcoord,Pos,mbrane.N);
         min(&sPole,&Pole_zcoord,Pos,mbrane.N);
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
-        identify_attractive_part(Pos, is_attractive, mbrane.N);
+        identify_attractive_part(Pos, is_attractive, mbrane.N,th_cr);
         filename = outfolder + "/restart.h5";
         hdf5_io_read_config((double *) Pos, (int *) mes_t.cmlist,
                 (int *) mes_t.node_nbr_list, (int2 *) mes_t.bond_nbr_list,
