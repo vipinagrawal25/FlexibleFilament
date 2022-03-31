@@ -407,7 +407,7 @@ int main(int argc, char *argv[]){
     Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
     Et[3] = lj_afm_total(Pos, &afm_force, mbrane, afm);
     //
-    volume_area_enclosed_membrane(Pos, triangles, 
+    volume_area_enclosed_membrane(Pos, triangles,
             mbrane.num_triangles,&vol_sph,&area_sph);
     double  ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
     Et[4] = mbrane.coef_vol_expansion*(vol_sph/ini_vol - 1e0)*(vol_sph/ini_vol - 1e0);
