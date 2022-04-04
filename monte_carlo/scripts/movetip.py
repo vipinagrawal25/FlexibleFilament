@@ -8,17 +8,19 @@ from threading import Timer
 import time
 import os
 ######################## PARAMETER ###############################
-timedelay=10
-sigma=0.02
+inisigma=0.16
 afm_eps=100
 print("# PID = ",os.getpid())
 # exit()
+# ------------------ More parameteres -------------------------- #
+timedelay=10
+sigma=0.02
 ######################## SCRIPT ##################################
 os.system("make")
 # #--------- Stick it first time  ----------------- #
 pio.change_param(fname='para_file.in',tip_pos_z=200,is_restart=0,
 				afm_sigma=0,afm_epsilon=0,mc_total_iters=5000,mc_dump_iter=100,
-				sigma=1.0,pos_bot_wall=-1.05)
+				sigma=inisigma,pos_bot_wall=-1.05)
 print("# Sticking it for the first time")
 os.system("mkdir stick1")
 os.system("./run para_file.in stick1 > stick1/terminal.txt")

@@ -93,7 +93,7 @@ def movetip(tz_start,tz_end,step=-0.02,timedelay=10,restart=None):
         wait()
 #---------------------------------------------------------------- #
 def avg_quantity_tz(tz_start=None,tz_end=None,index=2,step=0.01,datadir="./",subfol="rerun/"):
-    nruns=int((tz_start-tz_end)/0.02)+2
+    nruns=int((tz_start-tz_end)/step)+2
     tzall=np.linspace(tz_start,tz_end,nruns)
     mc_log=np.empty(nruns,dtype=object)
     for ifol,tz in enumerate(tzall):
