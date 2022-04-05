@@ -5,6 +5,7 @@
 #include <cmath>
 #include <sstream>
 #include<iomanip>
+#include <fstream>
 
 std::mt19937 rng;
 void init_rng(uint32_t seed_val){
@@ -326,20 +327,20 @@ int main(int argc, char *argv[]){
     int ibydumpskip, mpi_err, mpi_rank;
     uint32_t seed_v;
     double Pole_zcoord;
-
+    //
     mpi_err = MPI_Init(0x0, 0x0);
     mpi_err =  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     seed_v = 7*3*11*(mpi_rank+1)*rand();
     init_rng(seed_v);
-
-
+    //
     outfolder = ZeroPadNumber(mpi_rank);
-    
     cout << outfolder << endl;
-
     filename = outfolder + "/para_file.in";
     initialize_read_parameters(&mbrane, &afm, &mcpara, filename.c_str());
-   /* define all the paras */ 
+    // ---------- open outfile_terminal ------------------- //
+    fstream outfile_terminal(outfolder+"terminal.out", ios::app);
+    //
+    /* define all the paras */ 
     mbrane.volume = (double *)calloc(1, sizeof(double)); 
     mbrane.volume[0] = (4./3.)*pi*pow(mbrane.radius,3);
     mbrane.tot_energy = (double *)calloc(1, sizeof(double));
@@ -372,7 +373,7 @@ int main(int argc, char *argv[]){
                 (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
                 triangles, filename);
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
-        identify_attractive_part(Pos, is_attractive, mbrane.N,th_cr);
+        identify_attractive_part(Pos, is_attractive, mbrane.N,mbrane.th_cr);
         max(&nPole,&Pole_zcoord,Pos,mbrane.N);
         min(&sPole,&Pole_zcoord,Pos,mbrane.N);
     }else{
@@ -383,7 +384,7 @@ int main(int argc, char *argv[]){
         max(&nPole,&Pole_zcoord,Pos,mbrane.N);
         min(&sPole,&Pole_zcoord,Pos,mbrane.N);
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
-        identify_attractive_part(Pos, is_attractive, mbrane.N,th_cr);
+        identify_attractive_part(Pos, is_attractive, mbrane.N,mbrane.th_cr);
         filename = outfolder + "/restart.h5";
         hdf5_io_read_config((double *) Pos, (int *) mes_t.cmlist,
                 (int *) mes_t.node_nbr_list, (int2 *) mes_t.bond_nbr_list,
@@ -393,11 +394,11 @@ int main(int argc, char *argv[]){
     // double HH = mbrane.coef_str/(mbrane.av_bond_len*mbrane.av_bond_len);
     double YY = mbrane.YY;
     double BB = mbrane.coef_bend;
-    cout << "# Foppl von Karman (FvK): "
-         << 2*HH*mbrane.radius*mbrane.radius/(BB*sqrt(3)) << endl;
+    outfile_terminal << "# Foppl von Karman (FvK): "
+         << YY*mbrane.radius*mbrane.radius/BB << endl;
     filename = outfolder + "/para.out";
     fid = fopen(filename.c_str(), "w");
-    fprintf(fid, " Fopl von karman %lf", 2*HH*mbrane.radius*mbrane.radius/(BB*sqrt(3)));
+    fprintf(fid, " Fopl von karman %lf", YY*mbrane.radius*mbrane.radius/BB);
     fclose(fid);
     //
     Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
@@ -427,7 +428,7 @@ int main(int argc, char *argv[]){
         // Ener_t = Et[0] + Et[1] + Et[2] + Et[3] + Et[4];
         // mbrane.tot_energy[0] = Ener_t;
         if(mpi_rank == 0){
-        cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<  
+        outfile_terminal << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<  
                 " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< "; area = " << area_sph << endl;
         }
         fprintf(fid, " %d %d %g %g %g %g %g %g %g %g %g %g %g %g\n",
@@ -452,11 +453,14 @@ int main(int argc, char *argv[]){
         num_moves = monte_carlo_3d(Pos, mesh, lij_t0, is_attractive, 
                 mbrane, mcpara, afm);
     }
+    MPI_Barrier(MPI_COMM_WORLD);
     fclose(fid);
     free(Pos);
     free(lij_t0);
     free(mesh.node_nbr_list);
     free(mesh.bond_nbr_list);
     mpi_err = MPI_Finalize();
+
+    outfile_terminal.close();
     return 0;
 }
