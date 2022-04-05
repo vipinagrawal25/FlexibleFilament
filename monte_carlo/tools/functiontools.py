@@ -5,6 +5,7 @@ import time
 import paramio as pio
 import os
 import psutil
+from scipy.spatial import SphericalVoronoi
 #------------------------------------------------------------------------------------#
 def voronoi_area(cotJ,cotK,jsq,ksq,area):
     '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
@@ -88,5 +89,43 @@ def movetip(tz_start,tz_end,step=-0.02,timedelay=10,restart=None):
             pio.change_param(is_restart=1)
             os.system("cp "+restart+"/restart.h5 "+g)
         os.system("./run para_file.in "+ g + "> "+g+"/terminal.txt")
+        restart=g
         wait()
 #---------------------------------------------------------------- #
+def avg_quantity_tz(tz_start=None,tz_end=None,index=2,step=0.01,datadir="./",subfol="rerun/"):
+    nruns=int((tz_start-tz_end)/step)+2
+    tzall=np.linspace(tz_start,tz_end,nruns)
+    mc_log=np.empty(nruns,dtype=object)
+    for ifol,tz in enumerate(tzall):
+        folder = str(float("{0:.3f}".format(tz)))+"/"
+        mc_log[ifol]=np.loadtxt(datadir+folder+subfol+"/mc_log")
+    # ------------------ compute average -------------------- #
+    dvert=tzall[0]-tzall
+    mc_noafm = np.loadtxt(datadir+"noafm/"+subfol+"/mc_log")
+    baseE = np.mean(mc_noafm[:,index])
+    print(baseE)
+    avgE=np.zeros(nruns)
+    std=np.zeros(nruns)
+    for ifol in range(nruns):
+        tot_ener=mc_log[ifol][:,index]
+        avgE[ifol] = np.mean(tot_ener)
+        std[ifol] = np.std(tot_ener)
+    return dvert,avgE,baseE
+# # ---------------------------------------------------------------- #
+# def FF_tz(tz_start,tz_end,step=0.02,datadir="../"):
+#     nruns=int((tz_start-tz_end)/0.02)+2
+#     tzall=np.linspace(tz_start,tz_end,nruns)
+#     mc_log=np.empty(nruns,dtype=object)
+#     for ifol,tz in enumerate(tzall):
+#         folder = str(float("{0:.3f}".format(tz)))
+#         mc_log[ifol]=np.loadtxt(datadir+folder+"/rerun/mc_log")
+#     # ------------------ compute mean_energy -------------------- #
+#     dvert=tzall[0]-tzall
+#     avgE=np.zeros(nruns)
+#     std=np.zeros(nruns)
+#     for ifol in range(nruns):
+#         tot_ener=mc_log[ifol][:,]
+#         avgE[ifol] = np.mean(tot_ener)
+#         std[ifol] = np.std(tot_ener)
+#     return dvert,avgE
+# # ---------------------------------------------------------------- #

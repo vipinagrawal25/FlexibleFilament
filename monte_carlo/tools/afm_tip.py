@@ -1,15 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import sys
 Np = 256
 iext = int(np.sqrt(Np))
 jext = int(np.sqrt(Np))
 npoly = (iext-1)*(iext-1);
 extent = np.asarray([-0.1, 0.1, -0.1, 0.1])
 dx = (extent[1] - extent[0])/jext;
-rad = 0.2;
-z_bot = 1.05
-with open("afm_tip.vtk", "w") as f:
+rad = 0.12;
+z_bot = 1.07
+with open(sys.argv[1]+"afm_tip.vtk", "w") as f:
    f.write('# vtk DataFile Version 2.0 \n')
    f.write('grid, time 110\n')
    f.write('ASCII \n')

@@ -55,7 +55,7 @@ class Mesh:
         self.cmlst=np.array(cmlst).astype(np.int)
         self.node_nbr=np.array(node_nbr).astype(np.int)
         self.bond_nbr = np.array(bond_nbr).astype(tuple)
-        if sorting:        
+        if sorting:
             self.__sort_nbrs()
     #
     def curvature(self):
