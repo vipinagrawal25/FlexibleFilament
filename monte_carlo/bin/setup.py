@@ -10,6 +10,7 @@ if len(sys.argv)==2:
 	if sys.argv[1]=='-d' or sys.argv[1]=='-debug'\
 		or sys.argv[1]=='debug' or sys.agrv[1]=='d':
 		os.system("ln -s " + ES + "main.c .")
+		os.system("ln -s " + ES + "main_mpi.c .")
 		os.system("cp "+ ES +"Makefile .")
 		os.system("mkdir hosts")
 		os.system("mkdir src")
