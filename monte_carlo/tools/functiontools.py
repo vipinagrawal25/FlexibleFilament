@@ -76,7 +76,7 @@ def wait(procname='run',timedelay=10):
         time.sleep(timedelay)
         running=isrunning()
 #---------------------------------------------------------------- #
-def movetip(tz_start,tz_end,step=-0.02,timedelay=10,restart=None):
+def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
     tz_all=np.arange(tz_start,tz_end,step)
     for tz in tz_all:
         pio.change_param(tip_pos_z=tz)
@@ -92,7 +92,9 @@ def movetip(tz_start,tz_end,step=-0.02,timedelay=10,restart=None):
         restart=g
         wait()
 #---------------------------------------------------------------- #
-def avg_quantity_tz(tz_start=None,tz_end=None,index=2,step=0.01,datadir="./",subfol="rerun/"):
+def avg_quantity_tz(tz_start=None,tz_end=None,index=2,step=0.01,
+                    datadir="./",subfol="rerun/",start=1000,
+                    nch=20,error=True):
     nruns=int((tz_start-tz_end)/step)+2
     tzall=np.linspace(tz_start,tz_end,nruns)
     mc_log=np.empty(nruns,dtype=object)
@@ -102,15 +104,25 @@ def avg_quantity_tz(tz_start=None,tz_end=None,index=2,step=0.01,datadir="./",sub
     # ------------------ compute average -------------------- #
     dvert=tzall[0]-tzall
     mc_noafm = np.loadtxt(datadir+"noafm/"+subfol+"/mc_log")
-    baseE = np.mean(mc_noafm[:,index])
-    print(baseE)
+    baseE = np.mean(mc_noafm[start:,index])
+    # print(baseE)
     avgE=np.zeros(nruns)
     std=np.zeros(nruns)
+    err=np.zeros(nruns)
     for ifol in range(nruns):
-        tot_ener=mc_log[ifol][:,index]
-        avgE[ifol] = np.mean(tot_ener)
-        std[ifol] = np.std(tot_ener)
-    return dvert,avgE,baseE
+        tot_ener=mc_log[ifol][start:,index]
+        Nmc=tot_ener.shape[0]
+        chsz=int(Nmc/nch)
+        Ech=np.zeros(chsz)
+        for ich in range(nch):
+            Ech[ich] = np.mean(tot_ener[ich*chsz:(ich+1)*chsz])
+        err[ifol]=np.std(Ech)
+        # print(err[ifol])
+        avgE[ifol]=np.mean(Ech)
+    if error:
+        return dvert,avgE,baseE,err
+    else:
+        return dvert,avgE,baseE
 # # ---------------------------------------------------------------- #
 # def FF_tz(tz_start,tz_end,step=0.02,datadir="../"):
 #     nruns=int((tz_start-tz_end)/0.02)+2

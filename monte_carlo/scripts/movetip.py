@@ -42,8 +42,8 @@ os.system("./run para_file.in noafm > noafm/terminal.txt")
 ft.wait()
 pio.change_param(is_restart=1,afm_sigma=sigma,afm_epsilon=afm_eps)
 #------------------- Now run for all tz --------------------------- #
-tz_start=np.loadtxt("noafm/mc_log")[-1,-2]
+tz_start=np.loadtxt("noafm/mc_log")[-1,-2]+2**(1/6)*sigma
 print("#tz_start\ttz_end")
-tz_end=(np.loadtxt("noafm/mc_log")[-1,-1]+tz_start)/2
+tz_end=tz_start+(np.loadtxt("noafm/mc_log")[-1,-1]-tz_start)/4
 print(tz_start,"\t",tz_end)
 ft.movetip(tz_start,tz_end,restart="noafm")

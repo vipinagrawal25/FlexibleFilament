@@ -129,7 +129,7 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
                 lij_t0, is_attractive, 
                 idx, &is_be_pos,  mbrane, mcpara, afm);
 
-        vol_f = volume_ipart(pos, 
+        vol_f = volume_ipart(pos,
                 (int *) (mesh.node_nbr_list + cm_idx),
                 (int2 *) (mesh.bond_nbr_list + cm_idx),
                 num_nbr, idx, mbrane);

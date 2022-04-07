@@ -177,7 +177,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
     FILE *f2;
     f2 = fopen(para_file.c_str(), "r");
     if(f2){
-        fgets(buff,255,(FILE*)f2); 
+        fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2); 
         fgets(buff,255,(FILE*)f2);
         sscanf(buff,"%d %lf %lf %lf", &t_n, &td1, &td2, &td3);
