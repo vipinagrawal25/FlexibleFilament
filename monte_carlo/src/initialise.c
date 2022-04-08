@@ -170,7 +170,6 @@ void initialize_afm_tip(AFM_para afm){
 
 void initialize_read_parameters( MBRANE_para *mbrane, 
         AFM_para *afm, MCpara *mcpara, string para_file){
-    
     char buff[255];
     int t_n, t_n2, t_n3;
     double td1, td2, td3, td4, td5;
@@ -178,46 +177,38 @@ void initialize_read_parameters( MBRANE_para *mbrane,
     f2 = fopen(para_file.c_str(), "r");
     if(f2){
         fgets(buff,255,(FILE*)f2);
-        fgets(buff,255,(FILE*)f2); 
         fgets(buff,255,(FILE*)f2);
-        sscanf(buff,"%d %lf %lf %lf", &t_n, &td1, &td2, &td3);
-        /* fprintf(stderr, "%s\n", buff); */
+        fgets(buff,255,(FILE*)f2);
+        sscanf(buff,"%d %lf %lf %lf %lf", &t_n, &td1, &td2, &td3, &td4);
         mbrane->N = t_n;
         mbrane->coef_bend = td1;
-        mbrane->YY = td2;       // Young's modulus
+        mbrane->YY = td2;       //Young's modulus
         mbrane->coef_vol_expansion = td3;
+        mbrane->radius = td4;
+        // First line done
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2);
-        sscanf(buff,"%lf %lf %lf %lf %lf", &td1,&td2,&td3,&td4,&td5);
-        /* fprintf(stderr, "%s\n", buff); */
-        mbrane->radius = td1;
-        mbrane->pos_bot_wall = td2;
-        mbrane->sigma = td3;
-        mbrane->epsilon = td4;
-        mbrane->th_cr = td5;
+        fgets(buff,255,(FILE*)f2);
+        sscanf(buff,"%lf %lf %lf %lf %lf", &td1,&td2,&td3,&td4);
+        mbrane->pos_bot_wall = td1;
+        mbrane->sigma = td2;
+        mbrane->epsilon = td3;
+        mbrane->th_cr = td4;
+        // second line done
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2); 
         fgets(buff,255,(FILE*)f2); 
         sscanf(buff,"%lf %lf %d %d %d", &td1, &td2, &t_n, &t_n2, &t_n3);
-        /* fprintf(stderr, "%s\n", buff); */
         mcpara->dfac = td1;
         mcpara->kBT = td2;
         mcpara->is_restart = t_n;
         mcpara->tot_mc_iter = t_n2;
         mcpara->dump_skip = t_n3;
+        // Third line done
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2); 
         sscanf(buff,"%d %lf %lf %lf %lf", &t_n, &td1, &td2, &td3, &td4);
-        /* fprintf(stderr, "%s\n", buff); */
-        afm->N = t_n; 
-        afm->extent[0] = td1; afm->extent[1]= td2;
-        afm->extent[2] = td3; afm->extent[3]= td3;
-
-        fgets(buff,255,(FILE*)f2); 
-        fgets(buff,255,(FILE*)f2); 
-        sscanf(buff,"%lf %lf %lf %lf", &td1, &td2, &td3, &td4);
-        /* fprintf(stderr, "%s\n", buff); */
         afm->tip_rad = td1;
         afm->tip_pos_z = td2;
         afm->sigma = td3;

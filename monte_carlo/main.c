@@ -74,6 +74,7 @@ double energy_mc_3d(POSITION *pos, MESH mesh,
     E_afm = lj_afm(pos[idx], afm);
     *is_be_pos = E_b > 0;
 
+    // E_vol = 
     return E_b + E_s + E_stick + E_afm;
 }
 
@@ -100,7 +101,7 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
         num_nbr = mesh.cmlist[idx + 1] - mesh.cmlist[idx];
         cm_idx = mesh.cmlist[idx];
 
-        Eini = energy_mc_3d(pos, mesh, 
+        Eini = energy_mc_3d(pos, mesh,
                 lij_t0, is_attractive, 
                 idx, &is_be_pos, mbrane, mcpara, afm);
 
@@ -339,7 +340,7 @@ int main(int argc, char *argv[]){
     init_rng();
     // read the input file
     initialize_read_parameters(&mbrane, &afm, &mcpara, para_file);
-   /* define all the paras */ 
+    /* define all the paras */ 
     mbrane.volume = (double *)calloc(1, sizeof(double)); 
     mbrane.volume[0] = (4./3.)*pi*pow(mbrane.radius,3);
     mbrane.tot_energy = (double *)calloc(1, sizeof(double));
