@@ -120,13 +120,13 @@ int randint(int n) {
 // }
 
 void initialize_eval_lij_t0(POSITION *Pos, MESH mesh, 
-        double *lij_t0, MBRANE_para *para){
-
+        double *lij_t0, MBRANE_para *para, SPRING_para *spring){
     double rij;
     POSITION dr;
     int i,j,k;
     int num_nbr, cm_idx;
     double sum_lij=0;
+    double r0;
     for(i = 0; i < para->N; i++){
         num_nbr = mesh.cmlist[i + 1] - mesh.cmlist[i];
         cm_idx = mesh.cmlist[i];
@@ -140,6 +140,8 @@ void initialize_eval_lij_t0(POSITION *Pos, MESH mesh,
         }
     }
     para->av_bond_len = sum_lij/mesh.cmlist[para->N];
+    r0=para->av_bond_len;
+    spring->constant=para->coef_bend/(r0*r0);
 }
 
 void initialize_afm_tip(AFM_para afm){

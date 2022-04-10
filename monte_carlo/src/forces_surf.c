@@ -87,20 +87,19 @@ double volume_ipart(POSITION *pos,
         kp = bond_nbr[i].i2; 
         ri = pos[idx]; rj = pos[j]; 
         rk = pos[k]; rkp = pos[kp];
-
+        //
         rij = Position_add(ri, rj, 1e0);
         rijk = Position_add(rij, rk, 1e0);
         rijkp = Position_add(rij, rkp, 1e0);
-
+        //
         rijk.x = rijk.x/3e0; rijk.y = rijk.y/3e0; rijk.z = rijk.z/3e0;
         rijkp.x = rijkp.x/3e0; 
         rijkp.y = rijkp.y/3e0; rijkp.z = rijkp.z/3e0;
-
+        //
         rij  = Position_add(rj, ri, -1e0);
         rjk  = Position_add(rj , rk, -1e0);
         rjkp = Position_add(rj , rkp, -1e0);
-
-
+        //
         area1 = cross_product(rij, rjk);
         area2 = cross_product(rij, rjkp);
         double ip1 = inner_product(area1,rijk);
@@ -115,7 +114,7 @@ double volume_ipart(POSITION *pos,
     volume1 = volume1/3e0;
     return volume1;
 }
-double stretch_energy_ipart(POSITION *pos, 
+double stretch_energy_ipart(POSITION *pos,
         int *node_nbr, double *lij_t0,
         int num_nbr, int idx, MBRANE_para para){
     //
@@ -350,7 +349,7 @@ double bending_energy_ipart_neighbour(POSITION *pos,
               nbr, para);
    }
    return be;
-} 
+}
 
 double bending_energy_total(POSITION *pos, 
         MESH mesh, MBRANE_para para){
@@ -465,7 +464,6 @@ double lj_afm(POSITION pos, AFM_para afm){
         ener_afm = lj_rep(ds_sig_inv, afm.epsilon);
     }
    return ener_afm;
-
 };
 
 
@@ -481,7 +479,6 @@ double lj_afm_total(POSITION *pos,
     lj_afm_e = 0e0;
     f_t.x = 0; f_t.y = 0; f_t.z = 0;
     for(idx = 0; idx < para.N; idx++){
-
         lj_afm_t = lj_afm(pos[idx], afm);
         pt_pbola = determine_xyz_parabola(pos[idx], afm);
         dr = Position_add(pt_pbola, pos[idx], -1); 
@@ -591,8 +588,30 @@ double PV_change(MBRANE_para mbrane, double vol_i,double vol_f){
     return mbrane.pressure*(vol_i-vol_f);
 }
 //
-double spring_energy(){
-
+double spring_energy(POSITION pos, int idx, MESH mesh, SPRING_para spring){
+    if (spring.icompute==0) return 0;
+    double ener_spr=0e0;
+    double kk=spring.constant;
+    double nZeq = spring.nPole_eq_z;
+    double sZeq = spring.sPole_eq_z;
+    if (mesh.nPole==idx){
+        ener_spr=kk*pow((pos.z-nZeq),2)/2;
+    }
+    if (mesh.sPole==idx){
+        ener_spr=kk*pow((pos.z-sZeq),2)/2;
+    }
+    return ener_spr;
+}
+//
+double spring_tot_energy_force(POSITION *Pos, POSITION *spring_force, 
+                               MESH mesh, SPRING_para spring){
+    double kk = spring.constant;
+    double nZeq = spring.nPole_eq_z;
+    double sZeq = spring.sPole_eq_z;
+    double ener_spr = kk*pow((Pos[mesh.nPole].z-nZeq),2)/2 +
+                      kk*pow((Pos[mesh.sPole].z-sZeq),2)/2 ;
+    spring_force->z = kk*(nZeq-Pos[mesh.nPole].z)+kk*(sZeq-Pos[mesh.sPole].z);
+    return ener_spr;
 }
 //
 void identify_obtuse(POSITION *pos, int *triangles,

@@ -83,13 +83,11 @@ inline POSITION Position_add(POSITION s1, POSITION s2, double fac){
 }
 inline POSITION cross_product(POSITION s1, 
         POSITION s2){
-
     POSITION crosprod;
     crosprod.x = s1.y*s2.z - s1.z*s2.y;
     crosprod.y = s1.z*s2.x - s1.x*s2.z;
     crosprod.z = s1.x*s2.y - s1.y*s2.x;
     return crosprod;
-
 }
 inline POSITION POSITION::operator/(double param){
   POSITION temp;

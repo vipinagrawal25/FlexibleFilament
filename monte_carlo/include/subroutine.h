@@ -55,10 +55,13 @@ double PV_change(MBRANE_para mbrane,double vol_i,double vol_f);
 double lj_afm(POSITION , AFM_para);
 double lj_afm_total(POSITION *pos, POSITION *afm_force,
         MBRANE_para para, AFM_para afm);
+double spring_energy(POSITION pos, int idx, MESH mesh, SPRING_para spring);
+double spring_tot_energy_force(POSITION *Pos, POSITION *spring_force, 
+                               MESH mesh, SPRING_para spring);
 //initialise.c
 void initialize_system();
 void initialize_eval_lij_t0(POSITION *Pos, MESH mesh, 
-        double *lij_t0, MBRANE_para *para);
+                            double *lij_t0, MBRANE_para *para, SPRING_para *spring);
 void initialize_read_config();
 void initialize_afm_tip(AFM_para );
 void initialize_read_parameters( MBRANE_para *mbrane, 

@@ -84,7 +84,7 @@ typedef struct{
 //
 typedef struct{
 int icompute;
-double cons;
+double constant;
 double nPole_eq_z;
 double sPole_eq_z;
 }SPRING_para;

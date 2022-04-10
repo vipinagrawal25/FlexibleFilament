@@ -37,12 +37,12 @@ void calc_Xconstrain(vec2* Xcons, double time);
 double y_start[2*pp] = {0.,0.,0.,aa};
 string cc;
 /**************************/
-void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
+void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
   double EForceArr[ndim];
   eval_rhs(time,y,rhs,flag_kappa,CurvSqr,SS,EForceArr,0);
 }
 /**************************/
-void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[], 
+void eval_rhs(double time, double y[], double rhs[], bool flag_kappa, double CurvSqr[], double SS[], 
               double EForceArr[], bool iEforceArr){
   vec2 R[Np],dR[Np],EForce_ip,FF0,EForce[Np];
   // R is the position of the beads.
