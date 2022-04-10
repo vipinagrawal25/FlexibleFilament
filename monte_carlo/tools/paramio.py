@@ -4,7 +4,8 @@ def write_param(fname="../para_file.in",paramdict=None):
 		paramdict={"N":5120,"coef_bending":2.5,"Y":25,"coef_vol_expansion":1e6,
 				"radius":1.0,"pos_bot_wall":-1.05,"sigma":0.17,"epsilon":4,"th_cr":0.53,
 				"Dfac":4,"kBT":1,"is_restart":1,"mc_total_iters":10000,"mc_dump_iter":10,
-				"tip_radius":0.2,"tip_pos_z":1.05,"afm_sigma":0.17,"afm_epsilon":4}
+				"tip_radius":0.2,"tip_pos_z":1.05,"afm_sigma":0.17,"afm_epsilon":4,
+				"spr_compute":0,"nPole_eq_z":-1,"sPole_eq_z":1}
 	with open(fname, "w") as file:
 		file.write("## Membrane parameters\n")
 		file.write("N coef_bending Y coef_vol_expansion radius\n")
@@ -24,6 +25,10 @@ def write_param(fname="../para_file.in",paramdict=None):
 		file.write("tip_radius tip_pos_z afm_sigma afm_epsilon\n")
 		file.write("%2.2f %2.2f %2.2f %2.2f" %(paramdict['tip_radius'],paramdict['tip_pos_z'],
 					paramdict['afm_sigma'],paramdict['afm_epsilon']))
+		file.write("## Spring parameters\n")
+		file.write("spr_compute nPole_eq_z sPole_eq_z\n")
+		file.write("%d %2.2f %2.2f" %(paramdict['spr_compute'],paramdict['nPole_eq_z'],
+					paramdict['sPole_eq_z']))
 #
 def read_param(fname='../para_file.in'):
 	## Membrane parameters
@@ -40,6 +45,7 @@ def read_param(fname='../para_file.in'):
 	# afm_N,extent_l,extent_r,extent_t,extent_b = np.loadtxt(fname,skiprows=10,max_rows=1)
 	# afm_N=int(afm_N)
 	tip_radius,tip_pos_z,afm_sigma,afm_epsilon = np.loadtxt(fname,skiprows=11,max_rows=1)
+	spr_compute,nPole_eq_z,sPole_eq_z = np.loadtxt(fname,skiprows=14,max_rows=1)
 	paramdict={"N":N,"coef_bending":coef_bending,"Y":Y,
 				"coef_vol_expansion":coef_vol_expansion,
 				"radius":radius,"pos_bot_wall":pos_bot_wall,"sigma":sigma,"epsilon":epsilon,
@@ -47,7 +53,8 @@ def read_param(fname='../para_file.in'):
 				"Dfac":Dfac,"kBT":kBT,"is_restart":is_restart,"mc_total_iters":mc_total_iters,
 				"mc_dump_iter":mc_dump_iter,
 				"tip_radius":tip_radius,"tip_pos_z":tip_pos_z,"afm_sigma":afm_sigma,
-				"afm_epsilon":afm_epsilon}
+				"afm_epsilon":afm_epsilon,
+				"spr_compute":spr_compute,"nPole_eq_z":nPole_eq_z,"sPole_eq_z":sPole_eq_z}
 	return paramdict
 #
 def change_param(finname="para_file.in",foutname=None,**kwargs):
