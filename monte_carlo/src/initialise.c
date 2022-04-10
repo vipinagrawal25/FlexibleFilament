@@ -148,7 +148,11 @@ void initialize_afm_tip(AFM_para afm){
     int iext;
     double dx;
     double x, y;
-
+    afm.N=0;
+    afm.extent[0] = -0.1;
+    afm.extent[1] = 0.1;
+    afm.extent[2] = -0.1;
+    afm.extent[3] = 0.1;
     iext = (int) sqrt(afm.N);
     dx = (afm.extent[1] - afm.extent[0])/iext;
 
@@ -163,13 +167,11 @@ void initialize_afm_tip(AFM_para afm){
                 (y/afm.tip_rad)*(y/afm.tip_rad) 
                 + afm.tip_pos_z;
         }
-
     }
-
 }
-
 void initialize_read_parameters( MBRANE_para *mbrane, 
-        AFM_para *afm, MCpara *mcpara, string para_file){
+        AFM_para *afm, MCpara *mcpara, SPRING_para *spring,
+        string para_file){
     char buff[255];
     int t_n, t_n2, t_n3;
     double td1, td2, td3, td4, td5;
@@ -179,17 +181,18 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2);
-        sscanf(buff,"%d %lf %lf %lf %lf", &t_n, &td1, &td2, &td3, &td4);
+        sscanf(buff,"%d %lf %lf %lf %lf %lf", &t_n, &td1, &td2, &td3, &td4, &td5);
         mbrane->N = t_n;
         mbrane->coef_bend = td1;
         mbrane->YY = td2;       //Young's modulus
         mbrane->coef_vol_expansion = td3;
-        mbrane->radius = td4;
+        mbrane->pressure = td4;
+        mbrane->radius = td5;
         // First line done
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2);
         fgets(buff,255,(FILE*)f2);
-        sscanf(buff,"%lf %lf %lf %lf %lf", &td1,&td2,&td3,&td4);
+        sscanf(buff,"%lf %lf %lf %lf", &td1,&td2,&td3,&td4);
         mbrane->pos_bot_wall = td1;
         mbrane->sigma = td2;
         mbrane->epsilon = td3;
@@ -213,6 +216,16 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         afm->tip_pos_z = td2;
         afm->sigma = td3;
         afm->epsilon = td4;
+        if (fabs(afm->epsilon)<1e-16){
+            afm->icompute=0;
+        }
+        fgets(buff,255,(FILE*)f2);
+        fgets(buff,255,(FILE*)f2);
+        fgets(buff,255,(FILE*)f2); 
+        sscanf(buff,"%d %lf %lf", &t_n, &td1, &td2);
+        spring -> icompute = t_n;
+        spring -> nPole_eq_z = td1;
+        spring -> sPole_eq_z = td2;
     }
     else{
         fprintf(stderr, "sorry man the specified doesn't exists in current dir .\n");

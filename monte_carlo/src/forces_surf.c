@@ -22,7 +22,7 @@ double cotangent(double a, double b, double c){
     double cot_theta=0.25*(a*a+b*b-c*c)/area;
     return cot_theta;
 }
-
+//
 POSITION determine_xyz_parabola(POSITION pos, AFM_para afm) {
     int nroot;
     double a, b, c, d;
@@ -499,37 +499,37 @@ double lj_afm_total(POSITION *pos,
 }
 
 
-double lj_afm_pf(POSITION pos, AFM_para afm){
-    int i;
-    double ener_afm, ds;
-    double ds_sig_inv, r6;
-    POSITION dr;
+// double lj_afm_pf(POSITION pos, AFM_para afm){
+//     int i;
+//     double ener_afm, ds;
+//     double ds_sig_inv, r6;
+//     POSITION dr;
 
-    ener_afm = 0e0;
-    if(fabs(afm.tip_pos_z - pos.z) < 4*afm.sigma) {
-        for(i = 0; i<afm.N; i++) {
-            dr = Position_add(pos, afm.tip_curve[i], -1); 
-            ds = (inner_product(dr,dr));
-            ds_sig_inv = (afm.sigma*afm.sigma)/ds;
-            ener_afm = ener_afm + lj_rep(ds_sig_inv, afm.epsilon);
-        }
-    }
-   return ener_afm;
+//     ener_afm = 0e0;
+//     if(fabs(afm.tip_pos_z - pos.z) < 4*afm.sigma) {
+//         for(i = 0; i<afm.N; i++) {
+//             dr = Position_add(pos, afm.tip_curve[i], -1); 
+//             ds = (inner_product(dr,dr));
+//             ds_sig_inv = (afm.sigma*afm.sigma)/ds;
+//             ener_afm = ener_afm + lj_rep(ds_sig_inv, afm.epsilon);
+//         }
+//     }
+//    return ener_afm;
 
-};
+// };
 
-double lj_afm_total_pf(POSITION *pos, MBRANE_para para,
-        AFM_para afm){
-    int idx, j, k;
-    double lj_afm_e;
+// double lj_afm_total_pf(POSITION *pos, MBRANE_para para,
+//         AFM_para afm){
+//     int idx, j, k;
+//     double lj_afm_e;
 
-    lj_afm_e = 0e0;
-    for(idx = 0; idx < para.N; idx++){
+//     lj_afm_e = 0e0;
+//     for(idx = 0; idx < para.N; idx++){
 
-        lj_afm_e += lj_afm_pf(pos[idx], afm);
-    }
-    return lj_afm_e;
-}
+//         lj_afm_e += lj_afm_pf(pos[idx], afm);
+//     }
+//     return lj_afm_e;
+// }
 
 void volume_area_enclosed_membrane(POSITION *pos, 
     int *triangles, int num_triangles,
@@ -572,7 +572,29 @@ void volume_area_enclosed_membrane(POSITION *pos,
     *aarea = tot_area;
     *avolume = volume/3e0;
 };
+//
+double vol_energy_change(MBRANE_para mbrane,double vol_i,double vol_f){
+    double dvol;
+    double KAPPA = mbrane.coef_vol_expansion;
+    double de_vol=0.0;
+    double ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
+    if (fabs(KAPPA)>1e-16){
+        dvol =  0.5*(vol_f - vol_i);
+        de_vol = (2*dvol/(ini_vol*ini_vol))*(mbrane.volume[0]  - ini_vol)
+            + (dvol/ini_vol)*(dvol/ini_vol);
+       de_vol = KAPPA*de_vol;
+    }
+    return de_vol;
+}
+//
+double PV_change(MBRANE_para mbrane, double vol_i,double vol_f){
+    return mbrane.pressure*(vol_i-vol_f);
+}
+//
+double spring_energy(){
 
+}
+//
 void identify_obtuse(POSITION *pos, int *triangles,
        double *obtuse,  int N){
     double piby2;

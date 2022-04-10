@@ -30,7 +30,6 @@ double rand_inc_theta(double th0,
     double tmp_th0;
     std::uniform_real_distribution<> rand_real(-1, 1);
 
-
 /*     th1 = th0+dth */
     tmp_th0 = 10;
     while (tmp_th0 > pi || tmp_th0 < 0){
@@ -59,28 +58,28 @@ double energy_mc_3d(POSITION *pos, MESH mesh,
             (int *) (mesh.node_nbr_list + cm_idx),
             (int2 *) (mesh.bond_nbr_list + cm_idx), num_nbr, 
             idx, mbrane);
-
+    
     E_b += bending_energy_ipart_neighbour(pos, 
             mesh, idx, mbrane);
-
+    
     E_s = stretch_energy_ipart(pos, 
             (int *) (mesh.node_nbr_list + cm_idx),
             (double *) (lij_t0 + cm_idx), num_nbr, 
             idx, mbrane);
-
+    
     E_stick = lj_bottom_surface(pos[idx].z, is_attractive[idx], 
             mbrane.pos_bot_wall, mbrane.epsilon, mbrane.sigma);
 
     E_afm = lj_afm(pos[idx], afm);
     *is_be_pos = E_b > 0;
 
-    // E_vol = 
-    return E_b + E_s + E_stick + E_afm;
+    E_afm = spring_energy(pos[idx], spring);
+    return E_b + E_s + E_stick + E_afm + E_spr;
 }
 
 int monte_carlo_3d(POSITION *pos, MESH mesh, 
                 double *lij_t0, bool *is_attractive, 
-                MBRANE_para mbrane, 
+                MBRANE_para mbrane,
                 MCpara mcpara, AFM_para afm){
     int i, j, move;
     int num_nbr, cm_idx;
@@ -88,13 +87,11 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
     double de, Et, Eini, Efin;
     double dxinc, dyinc, dzinc;
     double vol_i, vol_f;
-    double dvol, de_vol, ini_vol;
-    double KAPPA;
+    double de_vol,dvol,de_pressure;
     bool is_be_pos;
     std::uniform_int_distribution<uint32_t> rand_int(0,mbrane.N-1);
     std::uniform_real_distribution<> rand_real(-1, 1);
-    ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
-    KAPPA = mbrane.coef_vol_expansion;
+    // 
     move = 0;
     for(i = 0; i< mcpara.one_mc_iter; i++){
         int idx = rand_int(rng);
@@ -135,10 +132,8 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
                 (int2 *) (mesh.bond_nbr_list + cm_idx),
                 num_nbr, idx, mbrane);
 
-        dvol =  0.5*(vol_f - vol_i);
-        de_vol = (2*dvol/(ini_vol*ini_vol))*(mbrane.volume[0]  - ini_vol)
-            + (dvol/ini_vol)*(dvol/ini_vol);
-        de_vol = KAPPA*de_vol;
+        de_vol = vol_energy_change(mbrane,vol_i,vol_f);
+        de_pressure = PV_change(mbrane,vol_i,vol_f);
         /* printf("%d %g %g %d\n", idx, Efin, Eini, is_attractive[idx]); */
         de = (Efin - Eini) + de_vol;
         // if(Metropolis(de , mcpara) && is_be_pos){
@@ -306,23 +301,23 @@ int main(int argc, char *argv[]){
     cout << "# ID for this process is: " << pid << endl;
     //
     int i, iterations, num_moves;
-    double Et[5], Ener_t;
+    double Et[6], Ener_t;
     double vol_sph, e_t, s_t,area_sph;
     POSITION *Pos;
     bool *is_attractive;
     MBRANE_para mbrane;
     MCpara mcpara;
     AFM_para afm;
+    SPRING_para spring;
     MESH mesh;
     MESH mes_t;
-    POSITION afm_force;
+    POSITION afm_force,spring_force;
     FILE *fid;
     double *lij_t0, *obtuse;
     int *triangles;
     int *triangles_t;
     string outfolder, syscmds, log_file, outfile, para_file;
-    char log_headers[] = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener afm_ener ener_volume  forcex, forcey forcez area nPole_z sPole_z";
-    int nPole,sPole;
+    // int nPole,sPole;
     int ibydumpskip;
     double Pole_zcoord;
     if(argc!=3){
@@ -339,7 +334,16 @@ int main(int argc, char *argv[]){
     system(syscmds.c_str());
     init_rng();
     // read the input file
-    initialize_read_parameters(&mbrane, &afm, &mcpara, para_file);
+    initialize_read_parameters(&mbrane, &afm, &mcpara, &springpara, para_file);
+    /* Define log headers */
+    string log_headers = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener ";
+    if(afm.icompute!=0){
+        log_headers+="afm_ener ";
+    }
+    if(fabs(mbrane.coef_vol_expansion)>1e-16){
+        log_headers+="ener_volume ";
+    }
+    log_headers+="forcex, forcey forcez area nPole_z sPole_z";
     /* define all the paras */ 
     mbrane.volume = (double *)calloc(1, sizeof(double)); 
     mbrane.volume[0] = (4./3.)*pi*pow(mbrane.radius,3);
@@ -363,7 +367,7 @@ int main(int argc, char *argv[]){
     if(!mcpara.is_restart){
         s_t = afm.sigma; 
         afm.sigma = 0.00;
-        e_t = afm.epsilon; 
+        e_t = afm.epsilon;
         afm.epsilon = 0.0;
     }
     if(!mcpara.is_restart){
@@ -372,14 +376,14 @@ int main(int argc, char *argv[]){
                 triangles, "input/input.h5");
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
         identify_attractive_part(Pos, is_attractive, mbrane.N, mbrane.th_cr);
-        max(&nPole,&Pole_zcoord,Pos,mbrane.N);
-        min(&sPole,&Pole_zcoord,Pos,mbrane.N);
+        max(&mesh.nPole,&Pole_zcoord,Pos,mbrane.N);
+        min(&mesh.sPole,&Pole_zcoord,Pos,mbrane.N);
     }else{
         hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
                 (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
                 triangles, "input/input.h5");
-        max(&nPole,&Pole_zcoord,Pos,mbrane.N);
-        min(&sPole,&Pole_zcoord,Pos,mbrane.N);
+        max(&mesh.nPole,&Pole_zcoord,Pos,mbrane.N);
+        min(&mesh.sPole,&Pole_zcoord,Pos,mbrane.N);
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane);
         identify_attractive_part(Pos, is_attractive, mbrane.N, mbrane.th_cr);
         hdf5_io_read_config((double *) Pos, (int *) mes_t.cmlist,
@@ -391,9 +395,9 @@ int main(int argc, char *argv[]){
     double YY=mbrane.YY; 
     double BB = mbrane.coef_bend;
     cout << "# Foppl von Karman (FvK): "
-         << YY*mbrane.radius*mbrane.radius/BB << endl;
+        << YY*mbrane.radius*mbrane.radius/BB << endl;
     //
-    // cout << nPole << endl;
+    // cout << mesh.nPole << endl;
     // cout << Pole_zcoord;
     // exit(1);
     // uncomment these and put N=n*n where no is integer 
@@ -412,13 +416,15 @@ int main(int argc, char *argv[]){
             mbrane.num_triangles,&vol_sph,&area_sph);
     double  ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
     Et[4] = mbrane.coef_vol_expansion*(vol_sph/ini_vol - 1e0)*(vol_sph/ini_vol - 1e0);
-    Ener_t = Et[0] + Et[1] + Et[2] + Et[3] + Et[4];
+    Et[5] = spring_energy_force(Pos, &spring_force, mesh, spring);
+    //
+    Ener_t = Et[0] + Et[1] + Et[2] + Et[3] + Et[4] + Et[5];
     mbrane.tot_energy[0] = Ener_t;
     mbrane.volume[0] = vol_sph;
     //
     log_file=outfolder+"/mc_log";
     fid = fopen(log_file.c_str(), "a");
-    if(!mcpara.is_restart)fprintf(fid, "%s\n", log_headers);
+    fprintf(fid, "%s\n", log_headers);
     num_moves = 0;
     for(i=0; i < mcpara.tot_mc_iter; i++){
         Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
@@ -427,13 +433,12 @@ int main(int argc, char *argv[]){
         Et[3] = lj_afm_total(Pos, &afm_force, mbrane, afm);
         volume_area_enclosed_membrane(Pos, triangles, mbrane.num_triangles, &vol_sph, &area_sph);
         Et[4] = mbrane.coef_vol_expansion*(vol_sph/ini_vol - 1e0)*(vol_sph/ini_vol - 1e0);
-        // Ener_t = Et[0] + Et[1] + Et[2] + Et[3] + Et[4];
         // mbrane.tot_energy[0] = Ener_t;
         cout << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<  
                 " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< "; area = " << area_sph << endl;
         fprintf(fid, " %d %d %g %g %g %g %g %g %g %g %g %g %g %g\n",
                     i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2], Et[3], Et[4],
-                    afm_force.x, afm_force.y, afm_force.z,area_sph,Pos[nPole].z,Pos[sPole].z);
+                    afm_force.x, afm_force.y, afm_force.z,area_sph,Pos[mesh.nPole].z,Pos[mesh.sPole].z);
         fflush(fid);
         if(i%mcpara.dump_skip == 0){
             outfile=outfolder+"/part_"+ ZeroPadNumber(i/mcpara.dump_skip)+".vtk";

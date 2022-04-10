@@ -38,6 +38,7 @@ typedef struct{
     double coef_bend;  //coefficient bending
     double YY;  //coefficient stretching
     double coef_vol_expansion;   //coefficient of volume expansion
+    double pressure;
     double radius;  // radius of ball
     double sigma, epsilon; // sigma and epsilon for the bottom attractive wall
     double th_cr;
@@ -47,7 +48,7 @@ typedef struct{
     double *tot_energy;
     double *volume; // these are updated after each monte carlo 
     int N;   // number of particles in mesh
-    int num_triangles;  //number of triangles 
+    int num_triangles;  //number of triangles
     int num_nbr; // sum  neighbours of all particles
 }MBRANE_para;
 //
@@ -60,15 +61,17 @@ typedef struct{
     int *cmlist;
     int *node_nbr_list;
     int2 *bond_nbr_list;
+    int nPole, sPole;
 }MESH;
 //
 typedef struct{
 int N; // number of points defining in afm tip curve
 double extent[4]; // extent in x- x+ y- y+
 POSITION *tip_curve;
-double tip_pos_z; // position of tip in z
 double tip_rad; // radius of the tip
+double tip_pos_z; // position of tip in z
 double sigma, epsilon;
+int icompute;
 }AFM_para;
 //
 typedef struct{
@@ -78,4 +81,11 @@ typedef struct{
     double len;
     double r_cut;
 }LJpara;
+//
+typedef struct{
+int icompute;
+double cons;
+double nPole_eq_z;
+double sPole_eq_z;
+}SPRING_para;
 #endif

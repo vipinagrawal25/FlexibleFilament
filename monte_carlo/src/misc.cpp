@@ -130,7 +130,7 @@ inline double pos_coord(POSITION pos,char dirn='z'){
   else if(dirn=='z'){return pos.z;}
 }
 /*-----------------------------------------------*/
-void max(int *amaxind, double *amaxval, POSITION *pos, int ndim,char dirn){
+void max(int *amaxind, double *amaxval, POSITION *pos, int ndim, char dirn){
   // function returns the value and index of the maximum entry.
   int maxind=0;
   double maxval=-1e+16;
