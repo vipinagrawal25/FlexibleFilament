@@ -11,5 +11,5 @@ Dfac	kBT is_restart mc_total_iters	mc_dump_iter
 tip_radius	tip_pos_z	afm_sigma	afm_epsilon
 0.12 200 0 0
 ##Spring parameters
-icompute nPole_eq_z sPole_eq_z
+spr_compute nPole_eq_z sPole_eq_z
 	0		-1		1

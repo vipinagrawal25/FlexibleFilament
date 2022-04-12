@@ -541,7 +541,7 @@ void iniconf(double *y){
   vec2 Xcons[np_cons],XX;
   ifstream myfile;
   double ch;
-  int cnt=0;
+  int cnt=0;  
   switch(niniconf){
     case -2:
       // To give perturbation to the filament.

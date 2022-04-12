@@ -40,9 +40,8 @@ double stretch_energy_ipart(POSITION *pos,
         int *node_nbr, double *lij_t0,
         int num_nbr, int idx, MBRANE_para para);
 double lj_bottom_surface(double zz,
-        bool is_attractive, 
-        double sur_pos, double eps, double sigma);
-double lj_bottom_surf_total(POSITION *pos, 
+        bool is_attractive, MBRANE_para mbrane);
+double lj_bottom_surf_total(POSITION *pos,
          bool *is_attractive, MBRANE_para para);
 void volume_area_enclosed_membrane(POSITION *pos, 
     int *triangles, int num_triangles,
@@ -68,6 +67,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         AFM_para *afm, MCpara *mcpara, SPRING_para *spring,
         string para_file);
 int randint(int n);
+void write_param(string fname, MBRANE_para mbrane, MCpara mcpara);
 //visit_io.c
 void visit_vtk_io(double *points, 
         int *triangles, 

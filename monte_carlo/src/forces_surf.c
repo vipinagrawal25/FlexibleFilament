@@ -408,12 +408,12 @@ double lj_attr(double sqdr, double eps){
 }
 
 double lj_bottom_surface(double zz, 
-        bool is_attractive, 
-        double sur_pos, double eps, double sigma){
-
+        bool is_attractive, MBRANE_para mbrane){
     double inv_sqdz, ds;
-
-    if(is_attractive){
+    double sur_pos=mbrane.pos_bot_wall;
+    double sigma=mbrane.sigma;
+    double eps=mbrane.epsilon;
+    if(is_attractive && mbrane.istick){
         ds = sur_pos - zz;
         inv_sqdz = (sigma*sigma)/(ds*ds);
         return  lj_attr(inv_sqdz, eps);
@@ -422,18 +422,15 @@ double lj_bottom_surface(double zz,
     }
 }
 
-
 double lj_bottom_surf_total(POSITION *pos, 
         bool *is_attractive, MBRANE_para para){
     int idx, j, k;
     double lj_bote;
-
     lj_bote = 0e0;
-    for(idx = 0; idx < para.N; idx++){
-        /* idx = 2; */
-
-        lj_bote += lj_bottom_surface(pos[idx].z, is_attractive[idx],
-                para.pos_bot_wall, para.epsilon, para.sigma);
+    if (para.istick!=0){
+        for(idx = 0; idx < para.N; idx++){
+            lj_bote += lj_bottom_surface(pos[idx].z, is_attractive[idx],para);
+        }
     }
     return lj_bote;
 }

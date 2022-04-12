@@ -17,6 +17,15 @@ int randint(int n) {
         return r % n;
     }
 }
+void write_param(string fname, MBRANE_para mbrane, MCpara mcpara){
+    double FvK = mbrane.YY*mbrane.radius*mbrane.radius/mbrane.coef_bend;
+    ofstream paramfile;
+    paramfile.open( fname );
+    paramfile << "# =========== Model Parameters ==========" << endl
+            << "Foppl von Karman number: FvK = " << FvK << endl
+            << "Elasto-thermal number: ET = " << mcpara.kBT/mbrane.coef_bend*sqrt(FvK) << endl;
+    paramfile.close();
+}
 
 // void initialize_read_config(POSITION *Pos,  
 //         MESH mesh,  int *triangles,
@@ -174,46 +183,50 @@ void initialize_afm_tip(AFM_para afm){
 void initialize_read_parameters( MBRANE_para *mbrane, 
         AFM_para *afm, MCpara *mcpara, SPRING_para *spring,
         string para_file){
-    char buff[255];
+    // char buff[255];
+    string buff;
     int t_n, t_n2, t_n3;
     double td1, td2, td3, td4, td5;
-    FILE *f2;
-    f2 = fopen(para_file.c_str(), "r");
+    cout << para_file << endl;
+    ifstream f2(para_file.c_str(),ifstream::in);
     if(f2){
-        fgets(buff,255,(FILE*)f2);
-        fgets(buff,255,(FILE*)f2);
-        fgets(buff,255,(FILE*)f2);
-        sscanf(buff,"%d %lf %lf %lf %lf %lf", &t_n, &td1, &td2, &td3, &td4, &td5);
+        getline(f2, buff);
+        getline(f2, buff);
+        getline(f2, buff);
+        sscanf(buff.c_str(),"%d %lf %lf %lf %lf %lf", &t_n, &td1, &td2, &td3, &td4, &td5);
         mbrane->N = t_n;
         mbrane->coef_bend = td1;
-        mbrane->YY = td2;       //Young's modulus
+        mbrane->YY = td2;       // Young's modulus
         mbrane->coef_vol_expansion = td3;
         mbrane->pressure = td4;
         mbrane->radius = td5;
         // First line done
-        fgets(buff,255,(FILE*)f2);
-        fgets(buff,255,(FILE*)f2);
-        fgets(buff,255,(FILE*)f2);
-        sscanf(buff,"%lf %lf %lf %lf", &td1,&td2,&td3,&td4);
+        getline(f2, buff);
+        getline(f2, buff);
+        getline(f2, buff);
+        sscanf(buff.c_str(),"%lf %lf %lf %lf", &td1,&td2,&td3,&td4);
         mbrane->pos_bot_wall = td1;
         mbrane->sigma = td2;
         mbrane->epsilon = td3;
         mbrane->th_cr = td4;
-        // second line done
-        fgets(buff,255,(FILE*)f2);
-        fgets(buff,255,(FILE*)f2); 
-        fgets(buff,255,(FILE*)f2); 
-        sscanf(buff,"%lf %lf %d %d %d", &td1, &td2, &t_n, &t_n2, &t_n3);
+        if (fabs(mbrane->epsilon)<1e-16 || fabs(mbrane->th_cr) < 1e-16){
+            mbrane->istick = 0;        // second line done   
+        }
+        getline(f2, buff);
+        getline(f2, buff);
+        getline(f2, buff);
+        sscanf(buff.c_str(),"%lf %lf %d %d %d", &td1, &td2, &t_n, &t_n2, &t_n3);
         mcpara->dfac = td1;
         mcpara->kBT = td2;
         mcpara->is_restart = t_n;
         mcpara->tot_mc_iter = t_n2;
         mcpara->dump_skip = t_n3;
+        cout << "mcpara->is_restart" << "\t"<<mcpara->is_restart<<endl;
         // Third line done
-        fgets(buff,255,(FILE*)f2);
-        fgets(buff,255,(FILE*)f2);
-        fgets(buff,255,(FILE*)f2); 
-        sscanf(buff,"%d %lf %lf %lf %lf", &t_n, &td1, &td2, &td3, &td4);
+        getline(f2, buff);
+        getline(f2, buff);
+        getline(f2, buff);
+        sscanf(buff.c_str(),"%d %lf %lf %lf %lf", &t_n, &td1, &td2, &td3, &td4);
         afm->tip_rad = td1;
         afm->tip_pos_z = td2;
         afm->sigma = td3;
@@ -221,10 +234,10 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         if (fabs(afm->epsilon)<1e-16){
             afm->icompute=0;
         }
-        fgets(buff,255,(FILE*)f2);
-        fgets(buff,255,(FILE*)f2);
-        fgets(buff,255,(FILE*)f2); 
-        sscanf(buff,"%d %lf %lf", &t_n, &td1, &td2);
+        getline(f2, buff);
+        getline(f2, buff);
+        getline(f2, buff);
+        sscanf(buff.c_str(),"%d %lf %lf", &t_n, &td1, &td2);
         spring -> icompute = t_n;
         spring -> nPole_eq_z = td1;
         spring -> sPole_eq_z = td2;
@@ -232,7 +245,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
     else{
         fprintf(stderr, "sorry man the specified doesn't exists in current dir .\n");
     }
-    fclose(f2);
+    f2.close();
     mbrane->num_triangles = 2*mbrane->N - 4;
     mbrane->num_nbr = 3*mbrane->num_triangles;
     // TODO: compute the average bond length by running over all the lengths.

@@ -31,7 +31,7 @@ void hdf5_io_read_config(double *Pos, int *cmlist,
   if (FileExists(input_file)){
     file_id = H5Fopen(input_file.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT); 
   }else{
-    cout << "# HDF5 file is not found to start the simulaton." << endl;
+    cout << "# HDF5 file " + input_file + " is not found to start the simulaton." << endl;
     cout << "# EXITING the code" << endl;
     exit(1);
   }

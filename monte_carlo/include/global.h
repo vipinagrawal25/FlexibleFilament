@@ -13,6 +13,7 @@
 #include <iostream>
 #include <cstdlib>
 #include "Position.h"
+#include <fstream>
 using namespace std;
 #define pi 3.14159265358979
 #define R_del 0.05
@@ -50,6 +51,7 @@ typedef struct{
     int N;   // number of particles in mesh
     int num_triangles;  //number of triangles
     int num_nbr; // sum  neighbours of all particles
+    bool istick;
 }MBRANE_para;
 //
 typedef struct{

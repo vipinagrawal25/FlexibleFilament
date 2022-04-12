@@ -15,7 +15,6 @@ bool Metropolis(double DE, MCpara mcpara){
     bool yes;
     double rand;
     std::uniform_real_distribution<> rand_real(0, 1);
-
     yes = (DE <= 0.e0);
     if (!yes){
         rand = rand_real(rng);
@@ -23,13 +22,12 @@ bool Metropolis(double DE, MCpara mcpara){
     }
     return yes;
 }
-
+//
 double rand_inc_theta(double th0, 
         double dfac){
     double dth;
     double tmp_th0;
     std::uniform_real_distribution<> rand_real(-1, 1);
-
 /*     th1 = th0+dth */
     tmp_th0 = 10;
     while (tmp_th0 > pi || tmp_th0 < 0){
@@ -68,7 +66,7 @@ double energy_mc_3d(POSITION *pos, MESH mesh,
             idx, mbrane);
     
     E_stick = lj_bottom_surface(pos[idx].z, is_attractive[idx], 
-            mbrane.pos_bot_wall, mbrane.epsilon, mbrane.sigma);
+            mbrane);
 
     E_afm = lj_afm(pos[idx], afm);
     *is_be_pos = E_b > 0;
@@ -316,7 +314,7 @@ int main(int argc, char *argv[]){
     double *lij_t0, *obtuse;
     int *triangles;
     int *triangles_t;
-    string outfolder, syscmds, log_file, outfile, para_file;
+    string outfolder, syscmds, log_file, outfile, para_file,filename;
     // int nPole,sPole;
     int ibydumpskip;
     double Pole_zcoord;
@@ -327,14 +325,16 @@ int main(int argc, char *argv[]){
         para_file=argv[1];
         outfolder=argv[2];
     }
+    // read the input file
+    initialize_read_parameters(&mbrane, &afm, &mcpara, &spring, para_file);
     //
     syscmds="mkdir "+outfolder;
     system(syscmds.c_str());
+    filename = outfolder + "/para.out";
+    write_param(filename,mbrane,mcpara);
     syscmds="cp "+para_file+" "+outfolder+"/";
     system(syscmds.c_str());
     init_rng();
-    // read the input file
-    initialize_read_parameters(&mbrane, &afm, &mcpara, &spring, para_file);
     /* Define log headers */
     string log_headers = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener ";
     if(afm.icompute!=0){log_headers+="afm_ener ";}
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]){
     if(fabs(mbrane.coef_vol_expansion)>1e-16){log_headers+="ener_volume ";}
     if (fabs(mbrane.pressure)>1e-16){log_headers+="pressure_ener ";}
     log_headers+="forcex, forcey forcez area nPole_z sPole_z";
-    /* define all the paras */ 
+    /* define all the paras */
     mbrane.volume = (double *)calloc(1, sizeof(double)); 
     mbrane.volume[0] = (4./3.)*pi*pow(mbrane.radius,3);
     mbrane.tot_energy = (double *)calloc(1, sizeof(double));
@@ -422,7 +422,7 @@ int main(int argc, char *argv[]){
     //
     log_file=outfolder+"/mc_log";
     fid = fopen(log_file.c_str(), "a");
-    fprintf(fid, "%s\n", log_headers);
+    fprintf(fid, "%s\n", log_headers.c_str());
     num_moves = 0;
     for(i=0; i < mcpara.tot_mc_iter; i++){
         Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
@@ -442,13 +442,12 @@ int main(int argc, char *argv[]){
         if(fabs(mbrane.coef_vol_expansion)>1e-16){fprintf(fid, " %g", Et[4]);}
         if (fabs(mbrane.pressure)>1e-16){fprintf(fid, " %g", Et[6]);}
         fprintf(fid, " %g %g %g %g %g %g\n",                    
-                tot_force.x, tot_force.y, tot_force.z,area_sph,Pos[mesh.nPole].z,Pos[mesh.sPole].z);
+                tot_force.x, tot_force.y, tot_force.z, area_sph,Pos[mesh.nPole].z,Pos[mesh.sPole].z);
         fflush(fid);
         if(i%mcpara.dump_skip == 0){
             outfile=outfolder+"/part_"+ ZeroPadNumber(i/mcpara.dump_skip)+".vtk";
             visit_vtk_io( (double *) Pos, triangles,
                     mbrane.N, outfile);
-
             visit_vtk_io_point_data(is_attractive, mbrane.N,
                     outfile, "isattr");
             hdf5_io_dump_restart_config((double *) Pos, (int *) mesh.cmlist,

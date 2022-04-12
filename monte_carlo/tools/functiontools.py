@@ -74,7 +74,7 @@ def wait(procname='run',timedelay=10):
     running=1
     while running==1:
         time.sleep(timedelay)
-        running=isrunning()
+        running=isrunning(procname=procname)
 #---------------------------------------------------------------- #
 def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
     tz_all=np.arange(tz_start,tz_end,step)
@@ -92,9 +92,9 @@ def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
         restart=g
         wait()
 #---------------------------------------------------------------- #
-def avg_quantity_tz(tz_start=None,tz_end=None,index=2,step=0.01,
+def avg_quantity_tz(tz_start,tz_end,index=2,step=0.01,
                     datadir="./",subfol="rerun/",start=1000,
-                    nch=20,error=True):
+                    nch=20,error=True,noafm="noafm/"):
     nruns=int((tz_start-tz_end)/step)+2
     tzall=np.linspace(tz_start,tz_end,nruns)
     mc_log=np.empty(nruns,dtype=object)
@@ -103,7 +103,7 @@ def avg_quantity_tz(tz_start=None,tz_end=None,index=2,step=0.01,
         mc_log[ifol]=np.loadtxt(datadir+folder+subfol+"/mc_log")
     # ------------------ compute average -------------------- #
     dvert=tzall[0]-tzall
-    mc_noafm = np.loadtxt(datadir+"noafm/"+subfol+"/mc_log")
+    mc_noafm = np.loadtxt(datadir+noafm+subfol+"/mc_log")
     baseE = np.mean(mc_noafm[start:,index])
     # print(baseE)
     avgE=np.zeros(nruns)

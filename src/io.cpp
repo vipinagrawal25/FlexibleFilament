@@ -123,7 +123,7 @@ void rData(double *y,string fname, int Npt, int ppt){
         myfile.close();
       }
       else{
-        cout << "EXITING: Number of entries in the data file are more or less than required." << endl;
+        cout << "EXITING: Number of entries in the data file are either more or less than required." << endl;
         exit(1);
       }
       break;
