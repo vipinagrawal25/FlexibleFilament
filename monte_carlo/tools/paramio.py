@@ -35,9 +35,9 @@ def read_param(fname='../para_file.in'):
 	## Membrane parameters
 	N,coef_bending,Y,coef_vol_expansion,pressure,radius = np.loadtxt(fname,skiprows=2,max_rows=1)
 	N=int(N)
-	pos_bot_wall,sigma,epsilon,th_cr = np.loadtxt(fname,skiprows=4,max_rows=1)
+	pos_bot_wall,sigma,epsilon,th_cr = np.loadtxt(fname,skiprows=5,max_rows=1)
 	## Montecarlo parameters
-	Dfac,kBT,is_restart,mc_total_iters,mc_dump_iter = np.loadtxt(fname,skiprows=7,max_rows=1)
+	Dfac,kBT,is_restart,mc_total_iters,mc_dump_iter = np.loadtxt(fname,skiprows=8,max_rows=1)
 	Dfac=int(Dfac)
 	is_restart=int(is_restart)
 	mc_total_iters=int(mc_total_iters)
