@@ -15,6 +15,8 @@ print("# PID = ",os.getpid())
 # ------------------ More parameteres -------------------------- #
 timedelay=10
 sigma=0.02
+mc_total_iters=10001
+mc_dump_iter=1000
 ######################## SCRIPT ##################################
 os.system("make")
 # #--------- Stick it first time  ----------------- #
