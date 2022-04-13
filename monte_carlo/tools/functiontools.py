@@ -92,38 +92,90 @@ def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
         restart=g
         wait()
 #---------------------------------------------------------------- #
-def avg_quantity_tz(tz_start,tz_end,index=2,step=0.01,
-                    datadir="./",subfol="rerun/",start=1000,
-                    nch=20,error=True,noafm="noafm/"):
-    nruns=int((tz_start-tz_end)/step)+2
-    tzall=np.linspace(tz_start,tz_end,nruns)
+def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
+                    nch=10,error=True,nopush="noafm/"):
+    nruns=len(folders)
     mc_log=np.empty(nruns,dtype=object)
-    for ifol,tz in enumerate(tzall):
-        folder = str(float("{0:.3f}".format(tz)))+"/"
-        mc_log[ifol]=np.loadtxt(datadir+folder+subfol+"/mc_log")
+    for i,fol in enumerate(folders):
+        mc_log[i]=np.loadtxt(datadir+fol+subfol+"/mc_log")
     # ------------------ compute average -------------------- #
-    dvert=tzall[0]-tzall
-    mc_noafm = np.loadtxt(datadir+noafm+subfol+"/mc_log")
-    baseE = np.mean(mc_noafm[start:,index])
-    # print(baseE)
+    dvert=np.zeros(nruns)
+    mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
+    zoavg=np.mean(mc_nopush[start:,-2])-np.mean(mc_nopush[start:,-1])
+    baseE = np.mean(mc_nopush[start:,index])
     avgE=np.zeros(nruns)
     std=np.zeros(nruns)
     err=np.zeros(nruns)
     for ifol in range(nruns):
         tot_ener=mc_log[ifol][start:,index]
+        zavg=np.mean(mc_log[ifol][start:,-2])-np.mean(mc_log[ifol][start:,-1])
+        dvert[ifol]=1-zavg/zoavg;
+        #
         Nmc=tot_ener.shape[0]
         chsz=int(Nmc/nch)
-        Ech=np.zeros(chsz)
+        Ech=np.zeros(nch)
         for ich in range(nch):
             Ech[ich] = np.mean(tot_ener[ich*chsz:(ich+1)*chsz])
         err[ifol]=np.std(Ech)
-        # print(err[ifol])
         avgE[ifol]=np.mean(Ech)
     if error:
         return dvert,avgE,baseE,err
     else:
         return dvert,avgE,baseE
 # # ---------------------------------------------------------------- #
+def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
+                nch=10,error=True,nopush="noafm/",fit_end=10):
+    fols=sorted(glob.glob(datadir+"/run"))[0:-1]
+    fols = [ifol.replace("/run","/") for ifol in fols]
+    Y3d = [float(ifol.replace("/run",""))*(10**9)/3 for ifol in fols]
+    mm=np.zeros(len(fols))
+    bb=np.zeros(len(fols))
+    dvert_all=np.empty(len(fols),dtype=object)
+    for i,ifol in enumerate(fols):
+        os.chdir(ifol)
+        tzall=sorted(glob.glob("*/mc_log"))
+        step=float(tzall[1].replace("/mc_log",""))-float(tzall[0].replace("/mc_log",""))
+        tz_start=float(tzall[-4].replace("/mc_log",""))
+        tz_end=float(tzall[0].replace("/mc_log",""))
+        nruns=int(abs(tz_start-tz_end)/step+2)
+        folders=np.linspace(tz_start,tz_end,nruns)
+        dvert,force,baseE,error=avg_quantity_tz(folders=folders,index=-4,datadir="./",
+                                                subfol=subsubfol)
+        m,b = np.polyfit(dvert[0:fit_end], force[0:fit_end], 1)
+        # plt.plot(dvert,m*dvert+b,'-')
+        print(m)
+        mm[i]=m
+        bb[i]=b
+        dvert_all[i]=dvert
+        # plt.legend()
+        os.chdir("../")
+    return Y3d, mm, bb, dvert_all
+#-------------------------------------------------------------------#
+def dvert(folders,datadir="./",subfol="rerun/",start=1000,
+          nch=10,error=True,nopush="noafm/"):
+    nruns=len(folders)
+    mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
+    zoavg=np.mean(mc_nopush[start:,-2])-np.mean(mc_nopush[start:,-1])
+    dvert=np.zeros(nruns)
+    err=np.zeros(nruns)
+    mc_log=np.empty(nruns,dtype=object)
+    for i,fol in enumerate(folders):
+        mc_log[i]=np.loadtxt(datadir+fol+subfol+"/mc_log")
+    for ifol in range(nruns):
+        zz=mc_log[ifol][start:,-2]-mc_log[ifol][start:,-1]
+        Nmc=zz.shape[0]
+        chsz=int(Nmc/nch)
+        zch=np.zeros(nch)
+        for ich in range(nch):
+            zch[ich] = np.mean(zz[ich*chsz:(ich+1)*chsz])
+        print(zch)
+        err[ifol]=np.std(1-zch/zoavg)
+        dvert[ifol]=np.mean(1-zch/zoavg)
+    if error:
+        return dvert,err
+    else:
+        return dvert
+
 # def FF_tz(tz_start,tz_end,step=0.02,datadir="../"):
 #     nruns=int((tz_start-tz_end)/0.02)+2
 #     tzall=np.linspace(tz_start,tz_end,nruns)

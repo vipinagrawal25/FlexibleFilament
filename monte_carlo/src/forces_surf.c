@@ -567,18 +567,17 @@ void volume_area_enclosed_membrane(POSITION *pos,
     *avolume = volume/3e0;
 };
 //
-double vol_energy_change(MBRANE_para mbrane,double vol_i,double vol_f){
+double vol_energy_change(MBRANE_para mbrane,double vol_i, double vol_f){
     double dvol;
     double KAPPA = mbrane.coef_vol_expansion;
     double de_vol=0.0;
     double ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
     if (fabs(KAPPA)>1e-16){
-        dvol =  0.5*(vol_f - vol_i);
         de_vol = (2*dvol/(ini_vol*ini_vol))*(mbrane.volume[0]  - ini_vol)
             + (dvol/ini_vol)*(dvol/ini_vol);
        de_vol = KAPPA*de_vol;
     }
-    return de_vol;
+    return dvol,de_vol;
 }
 //
 double PV_change(MBRANE_para mbrane, double vol_i,double vol_f){
@@ -607,7 +606,8 @@ double spring_tot_energy_force(POSITION *Pos, POSITION *spring_force,
     double sZeq = spring.sPole_eq_z;
     double ener_spr = kk*pow((Pos[mesh.nPole].z-nZeq),2)/2 +
                       kk*pow((Pos[mesh.sPole].z-sZeq),2)/2 ;
-    spring_force->z = kk*(nZeq-Pos[mesh.nPole].z)+kk*(sZeq-Pos[mesh.sPole].z);
+    spring_force[0].z = kk*(nZeq-Pos[mesh.nPole].z);
+    spring_force[1].z = kk*(sZeq-Pos[mesh.sPole].z);
     return ener_spr;
 }
 //

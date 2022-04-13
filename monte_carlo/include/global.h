@@ -17,7 +17,7 @@
 using namespace std;
 #define pi 3.14159265358979
 #define R_del 0.05
-//not included the celid and particle id which i shall do in the cell linked list part
+//Not included the celid and particle id which i shall do in the cell linked list part
 //
 typedef struct{
     int list_ss[200];

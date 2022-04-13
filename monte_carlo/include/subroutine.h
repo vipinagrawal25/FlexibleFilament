@@ -4,16 +4,24 @@
 #include "../src/misc.h"
 #include <iostream>
 //*************************************************//
-// main.c
+// metropolis.cpp
 int monte_carlo_3d(POSITION *pos, MESH mesh, 
-                double *lij_t0, bool *, MBRANE_para mbrane, 
-                MCpara mcpara);
+                double *lij_t0, bool *is_attractive, 
+                MBRANE_para mbrane,
+                MCpara mcpara, AFM_para afm, SPRING_para spring);
+void init_rng();
+bool Metropolis(double DE, MCpara mcpara);
+double rand_inc_theta(double th0, double dfac);
+double energy_mc_3d(POSITION *pos, MESH mesh, 
+        double *lij_t0, bool *is_attractive, int idx, bool *is_be_pos,
+        MBRANE_para mbrane, 
+        MCpara mcpara, AFM_para afm, SPRING_para spring);
 //*************************************************//          
 //forces_lj.c
 void make_nlist();
-void make_nlist_pf();
 bool len_check_ss(POSITION s1, POSITION s2, double len, double new_rc);
-bool len_check_pf(POSITION s1, POSITION s2, double len, double new_rc, char* metric);
+bool len_check_pf(POSITION s1, POSITION s2, double len, double new_rc, 
+                char* metric);
 double cal_length();
 double pairlj_ipart_energy(POSITION *Pos, int *n_list,
         int ni, int i_p, LJpara para, char *metric);

@@ -45,8 +45,8 @@ def read_param(fname='../para_file.in'):
 	## Afm Tip parameters
 	# afm_N,extent_l,extent_r,extent_t,extent_b = np.loadtxt(fname,skiprows=10,max_rows=1)
 	# afm_N=int(afm_N)
-	tip_radius,tip_pos_z,afm_sigma,afm_epsilon = np.loadtxt(fname,skiprows=10,max_rows=1)
-	spr_compute,nPole_eq_z,sPole_eq_z = np.loadtxt(fname,skiprows=13,max_rows=1)
+	tip_radius,tip_pos_z,afm_sigma,afm_epsilon = np.loadtxt(fname,skiprows=11,max_rows=1)
+	spr_compute,nPole_eq_z,sPole_eq_z = np.loadtxt(fname,skiprows=14,max_rows=1)
 	paramdict={"N":N,"coef_bending":coef_bending,"Y":Y,
 				"coef_vol_expansion":coef_vol_expansion,"pressure":pressure,
 				"radius":radius,"pos_bot_wall":pos_bot_wall,"sigma":sigma,"epsilon":epsilon,

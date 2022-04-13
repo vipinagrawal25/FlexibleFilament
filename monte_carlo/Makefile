@@ -8,8 +8,10 @@ sources = src/forces_lj.c src/forces_surf.c
 sources += src/initialise.c  src/visit_io.c src/hdf5_io.c
 sources += src/cubic_solve.c
 sources += src/misc.cpp
+sources += src/metropolis.c
 #
 object =  obj/forces_lj.o obj/initialise.o obj/forces_surf.o
+object += obj/metropolis.o
 object += obj/visit_io.o obj/hdf5_io.o obj/main.o
 object += obj/cubic_solve.o obj/misc.o
 #
