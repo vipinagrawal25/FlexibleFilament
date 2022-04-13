@@ -21,7 +21,8 @@ mc_dump_iter=1000
 os.system("make")
 # #--------- Stick it first time  ----------------- #
 pio.change_param(fname='para_file.in',tip_pos_z=200,is_restart=0,
-				afm_sigma=0,afm_epsilon=0,mc_total_iters=5000,mc_dump_iter=100,
+				afm_sigma=0,afm_epsilon=0,mc_total_iters=mc_total_iters,
+				mc_dump_iter=mc_dump_iter,
 				sigma=inisigma,pos_bot_wall=-1.05)
 print("# Sticking it for the first time")
 os.system("mkdir stick1")
