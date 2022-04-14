@@ -126,7 +126,6 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
                 (int *) (mesh.node_nbr_list + cm_idx),
                 (int2 *) (mesh.bond_nbr_list + cm_idx),
                 num_nbr, idx, mbrane);
-
         dvol=0.5*(vol_f-vol_i);
         de_vol = vol_energy_change(mbrane,dvol);
         de_pressure = PV_change(mbrane,dvol);
