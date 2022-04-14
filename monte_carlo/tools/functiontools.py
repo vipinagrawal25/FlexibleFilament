@@ -93,7 +93,7 @@ def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
         wait()
 #---------------------------------------------------------------- #
 def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
-                    nch=10,error=True,nopush="noafm/",index2=None):
+                    nch=10,error=True,nopush="noafm/",index2=None,Ks=False):
     if index2 is None:
         index2=index
     nruns=len(folders)
@@ -103,7 +103,7 @@ def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
     # ------------------ compute average -------------------- #
     dvert=np.zeros(nruns)
     mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
-    zoavg=np.mean(mc_nopush[start:,-2])-np.mean(mc_nopush[start:,-1])
+    zoavg=np.mean(mc_nopush[start:,-2])-np.mean(mc_nopush[start:,-1])-1
     baseE = np.mean(mc_nopush[start:,index])
     avgE=np.zeros(nruns)
     std=np.zeros(nruns)
@@ -111,7 +111,7 @@ def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
     for ifol in range(nruns):
         tot_ener=np.abs(mc_log[ifol][start:,index])+np.abs(mc_log[ifol][start:,index2])
         tot_ener=0.5*tot_ener
-        zavg=np.mean(mc_log[ifol][start:,-2])-np.mean(mc_log[ifol][start:,-1])
+        zavg=np.mean(mc_log[ifol][start:,-2])-np.mean(mc_log[ifol][start:,-1])-1
         dvert[ifol]=1-zavg/zoavg;
         #
         Nmc=tot_ener.shape[0]
@@ -194,20 +194,9 @@ def isgaussian(datadir="./",subfol="./",index=2,start=1000):
     plt.semilogy(xx,f)
     plt.show()
 #-------------------------------------------------------------------#
-# def FF_tz(tz_start,tz_end,step=0.02,datadir="../"):
-#     nruns=int((tz_start-tz_end)/0.02)+2
-#     tzall=np.linspace(tz_start,tz_end,nruns)
-#     mc_log=np.empty(nruns,dtype=object)
-#     for ifol,tz in enumerate(tzall):
-#         folder = str(float("{0:.3f}".format(tz)))
-#         mc_log[ifol]=np.loadtxt(datadir+folder+"/rerun/mc_log")
-#     # ------------------ compute mean_energy -------------------- #
-#     dvert=tzall[0]-tzall
-#     avgE=np.zeros(nruns)
-#     std=np.zeros(nruns)
-#     for ifol in range(nruns):
-#         tot_ener=mc_log[ifol][:,]
-#         avgE[ifol] = np.mean(tot_ener)
-#         std[ifol] = np.std(tot_ener)
-#     return dvert,avgE
-# # ---------------------------------------------------------------- #
+def Ks_spring(datadir="Zn1.0/",KbT=1e0,subfol="./",start=1000):
+    mc_log=np.loadtxt(datadir+subfol+"/mc_log")
+    z0=mc_log[start:,-2]-mc_log[start:,-1]-1
+    # avg_z02=np.mean(z0*z0)
+    # zo_avg2=np.mean(z0)**2
+    return KbT/np.var(z0)
