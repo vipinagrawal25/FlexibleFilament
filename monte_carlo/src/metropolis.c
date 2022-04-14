@@ -127,8 +127,9 @@ int monte_carlo_3d(POSITION *pos, MESH mesh,
                 (int2 *) (mesh.bond_nbr_list + cm_idx),
                 num_nbr, idx, mbrane);
 
-        dvol,de_vol = vol_energy_change(mbrane,vol_i,vol_f);
-        de_pressure = PV_change(mbrane,vol_i,vol_f);
+        dvol=0.5*(vol_f-vol_i);
+        de_vol = vol_energy_change(mbrane,dvol);
+        de_pressure = PV_change(mbrane,dvol);
         /* printf("%d %g %g %d\n", idx, Efin, Eini, is_attractive[idx]); */
         de = (Efin - Eini) + de_vol + de_pressure;
         // if(Metropolis(de , mcpara) && is_be_pos){
