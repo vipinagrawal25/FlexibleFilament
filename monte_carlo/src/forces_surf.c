@@ -543,10 +543,7 @@ void volume_area_enclosed_membrane(POSITION *pos,
         j = triangles[it+1];
         k = triangles[it+2];
         ri = pos[i]; rj = pos[j]; rk = pos[k];
-        /* ri = Position_add(pos[i], pt, -1); */
-        /* rj = Position_add(pos[j], pt, -1); */
-        /* rk = Position_add(pos[k], pt, -1); */
-        
+                
         rij = Position_add(ri, rj, 1e0);
         rijk = Position_add(rij, rk, 1e0);
 
@@ -567,8 +564,7 @@ void volume_area_enclosed_membrane(POSITION *pos,
     *avolume = volume/3e0;
 };
 //
-double vol_energy_change(MBRANE_para mbrane,double vol_i, double vol_f){
-    double dvol;
+double vol_energy_change(MBRANE_para mbrane,double dvol){
     double KAPPA = mbrane.coef_vol_expansion;
     double de_vol=0.0;
     double ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
@@ -577,11 +573,11 @@ double vol_energy_change(MBRANE_para mbrane,double vol_i, double vol_f){
             + (dvol/ini_vol)*(dvol/ini_vol);
        de_vol = KAPPA*de_vol;
     }
-    return dvol,de_vol;
+    return de_vol;
 }
 //
-double PV_change(MBRANE_para mbrane, double vol_i,double vol_f){
-    return mbrane.pressure*(vol_i-vol_f);
+double PV_change(MBRANE_para mbrane, double dvol){
+    return -2*mbrane.pressure*dvol;
 }
 //
 double spring_energy(POSITION pos, int idx, MESH mesh, SPRING_para spring){

@@ -93,7 +93,9 @@ def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
         wait()
 #---------------------------------------------------------------- #
 def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
-                    nch=10,error=True,nopush="noafm/"):
+                    nch=10,error=True,nopush="noafm/",index2=None):
+    if index2 is None:
+        index2=index
     nruns=len(folders)
     mc_log=np.empty(nruns,dtype=object)
     for i,fol in enumerate(folders):
@@ -107,7 +109,8 @@ def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
     std=np.zeros(nruns)
     err=np.zeros(nruns)
     for ifol in range(nruns):
-        tot_ener=mc_log[ifol][start:,index]
+        tot_ener=np.abs(mc_log[ifol][start:,index])+np.abs(mc_log[ifol][start:,index2])
+        tot_ener=0.5*tot_ener
         zavg=np.mean(mc_log[ifol][start:,-2])-np.mean(mc_log[ifol][start:,-1])
         dvert[ifol]=1-zavg/zoavg;
         #
@@ -184,10 +187,12 @@ def isgaussian(datadir="./",subfol="./",index=2,start=1000):
     nbin=50
     hist=np.histogram((data-avg)/std,bins=nbin,density=True)
     cen = hist[1][1:] + hist[1][:-1]
+    plt.subplots()
     plt.plot(cen*0.5,hist[0],'.-')
     xx = (np.linspace(0,nbin,nbin+1)-nbin/2)*8/nbin
     f = 1/(np.sqrt(2*np.pi))*np.exp(-0.5*xx**2)
     plt.semilogy(xx,f)
+    plt.show()
 #-------------------------------------------------------------------#
 # def FF_tz(tz_start,tz_end,step=0.02,datadir="../"):
 #     nruns=int((tz_start-tz_end)/0.02)+2

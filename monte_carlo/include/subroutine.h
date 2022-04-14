@@ -57,8 +57,8 @@ void volume_area_enclosed_membrane(POSITION *pos,
 double volume_ipart(POSITION *pos, 
         int *node_nbr, int2* bond_nbr,
         int num_nbr, int idx, MBRANE_para para);
-double vol_energy_change(MBRANE_para mbrane,double vol_i,double vol_f);
-double PV_change(MBRANE_para mbrane,double vol_i,double vol_f);
+double vol_energy_change(MBRANE_para mbrane,double dvol);
+double PV_change(MBRANE_para mbrane,double dvol);
 double lj_afm(POSITION , AFM_para);
 double lj_afm_total(POSITION *pos, POSITION *afm_force,
         MBRANE_para para, AFM_para afm);
