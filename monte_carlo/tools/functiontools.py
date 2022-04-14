@@ -175,7 +175,20 @@ def dvert(folders,datadir="./",subfol="rerun/",start=1000,
         return dvert,err
     else:
         return dvert
-
+#-------------------------------------------------------------------#
+def isgaussian(datadir="./",subfol="./",index=2,start=1000):
+    mc_log=np.loadtxt(datadir+"/"+subfol+"/mc_log")
+    data=mc_log[start:,index]
+    avg=np.mean(mc_log[start:,index])
+    std=np.std(mc_log[start:,index])
+    nbin=50
+    hist=np.histogram((data-avg)/std,bins=nbin,density=True)
+    cen = hist[1][1:] + hist[1][:-1]
+    plt.plot(cen*0.5,hist[0],'.-')
+    xx = (np.linspace(0,nbin,nbin+1)-nbin/2)*8/nbin
+    f = 1/(np.sqrt(2*np.pi))*np.exp(-0.5*xx**2)
+    plt.semilogy(xx,f)
+#-------------------------------------------------------------------#
 # def FF_tz(tz_start,tz_end,step=0.02,datadir="../"):
 #     nruns=int((tz_start-tz_end)/0.02)+2
 #     tzall=np.linspace(tz_start,tz_end,nruns)
