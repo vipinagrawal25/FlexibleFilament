@@ -75,7 +75,7 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         AFM_para *afm, MCpara *mcpara, SPRING_para *spring,
         string para_file);
 int randint(int n);
-void write_param(string fname, MBRANE_para mbrane, MCpara mcpara);
+void write_param(string fname, MBRANE_para mbrane, MCpara mcpara, SPRING_para spring);
 //visit_io.c
 void visit_vtk_io(double *points, 
         int *triangles, 

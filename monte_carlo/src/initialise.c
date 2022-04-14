@@ -17,13 +17,17 @@ int randint(int n) {
         return r % n;
     }
 }
-void write_param(string fname, MBRANE_para mbrane, MCpara mcpara){
+void write_param(string fname, MBRANE_para mbrane, MCpara mcpara, SPRING_para spring){
     double FvK = mbrane.YY*mbrane.radius*mbrane.radius/mbrane.coef_bend;
     ofstream paramfile;
     paramfile.open( fname );
     paramfile << "# =========== Model Parameters ==========" << endl
-            << "Foppl von Karman number: FvK = " << FvK << endl
-            << "Elasto-thermal number: ET = " << mcpara.kBT/mbrane.coef_bend*sqrt(FvK) << endl;
+            << "# Foppl von Karman number: FvK = " << FvK << endl
+            << "# Elasto-thermal number: ET = " << mcpara.kBT/mbrane.coef_bend*sqrt(FvK) << endl
+            << "# average bond length: r0 = " << mbrane.av_bond_len << endl;
+    if (spring.icompute!=0){
+       paramfile << "# Spring constant: Ki = " << spring.constant << endl;    
+    }
     paramfile.close();
 }
 

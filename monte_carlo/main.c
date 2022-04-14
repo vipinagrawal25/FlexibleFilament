@@ -77,7 +77,7 @@ int main(int argc, char *argv[]){
     syscmds="mkdir "+outfolder;
     system(syscmds.c_str());
     filename = outfolder + "/para.out";
-    write_param(filename,mbrane,mcpara);
+    write_param(filename,mbrane,mcpara,spring);
     syscmds="cp "+para_file+" "+outfolder+"/";
     system(syscmds.c_str());
     init_rng();
