@@ -3,8 +3,7 @@
 #include <random>
 //
 std::mt19937 rng;
-void init_rng(){
-    uint32_t seed_val;
+void init_rng(uint32_t seed_val){
     rng.seed(seed_val);
 }
 //

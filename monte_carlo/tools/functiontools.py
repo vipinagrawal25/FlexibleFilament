@@ -197,6 +197,4 @@ def isgaussian(datadir="./",subfol="./",index=2,start=1000):
 def Ks_spring(datadir="Zn1.0/",KbT=1e0,subfol="./",start=1000):
     mc_log=np.loadtxt(datadir+subfol+"/mc_log")
     z0=mc_log[start:,-2]-mc_log[start:,-1]-1
-    # avg_z02=np.mean(z0*z0)
-    # zo_avg2=np.mean(z0)**2
     return KbT/np.var(z0)

@@ -1,11 +1,12 @@
 HOST=norlx65_vipin
 include hosts/$(HOST)
 # CC = /usr/bin/h5c++ -O3 -w
+# CC=h5c++ -O2 -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11
 #
 link = -lm -std=c++11
-# 
+
 sources = src/forces_lj.c src/forces_surf.c
-sources += src/initialise.c  src/visit_io.c src/hdf5_io.c
+sources += src/initialise.c src/visit_io.c src/hdf5_io.c
 sources += src/cubic_solve.c
 sources += src/misc.cpp
 sources += src/metropolis.c
@@ -17,9 +18,15 @@ object += obj/cubic_solve.o obj/misc.o
 #
 includes += include/global.h include/subroutine.h 
 #
-run: $(object)
+run: $(object) obj/main.o
 	$(CC) $(object) $(link) -o run
-# 
+# #
+# mpi: $(object) main_mpi.o
+# 	$(CC) $(object) $(link) -o run_mpi
+# #
+# obj/main_mpi.o: main_mpi.c $(includes)
+# 	$(CC) -c main_mpi.c -o obj/main_mpi.o $(link)
+#
 obj/main.o: main.c $(includes)
 	$(CC) -Jobj -c main.c -o obj/main.o $(link)
 # 

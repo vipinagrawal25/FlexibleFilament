@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <random>
 /**************************************************/
+//
 template<typename T>
 inline string ZeroPadNumber(T num){
     ostringstream ss;
@@ -64,6 +65,7 @@ int main(int argc, char *argv[]){
     // int nPole,sPole;
     int ibydumpskip;
     double Pole_zcoord;
+    uint32_t seed_val;
     if(argc!=3){
         printf("\n\n mayday.. requires an argument <parameter file> <output folder>\n\n");
         exit(0);
@@ -76,11 +78,10 @@ int main(int argc, char *argv[]){
     //
     syscmds="mkdir "+outfolder;
     system(syscmds.c_str());
-    filename = outfolder + "/para.out";
-    write_param(filename,mbrane,mcpara,spring);
+    write_param(outfolder + "/para.out",mbrane,mcpara,spring);
     syscmds="cp "+para_file+" "+outfolder+"/";
     system(syscmds.c_str());
-    init_rng();
+    init_rng(seed_val);
     /* define all the paras */
     mbrane.volume = (double *)calloc(1, sizeof(double)); 
     mbrane.volume[0] = (4./3.)*pi*pow(mbrane.radius,3);
@@ -130,7 +131,8 @@ int main(int argc, char *argv[]){
     //
     double YY=mbrane.YY; 
     double BB = mbrane.coef_bend;
-    cout << "# Foppl von Karman (FvK): " << YY*mbrane.radius*mbrane.radius/BB << endl;
+    cout << "# Foppl von Karman (FvK): " 
+         << YY*mbrane.radius*mbrane.radius/BB << endl;
     Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
     Et[1] =  bending_energy_total(Pos, mesh, mbrane);
     Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
