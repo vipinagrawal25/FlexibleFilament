@@ -6,41 +6,6 @@
 #include <iomanip>
 #include <random>
 /**************************************************/
-//
-template<typename T>
-inline string ZeroPadNumber(T num){
-    ostringstream ss;
-    ss << setw( 5 ) << setfill( '0' ) << (int)num;
-    return ss.str();
-}
-//
-void wHeader(FILE *fid, MBRANE_para mbrane, AFM_para afm, SPRING_para spring){
-    string log_headers = "#iter acceptedmoves total_ener stretch_ener bend_ener stick_ener ";
-    if(afm.icompute!=0){log_headers+="afm_ener ";}
-    if (spring.icompute!=0){log_headers+="spring_energy ";}
-    if(fabs(mbrane.coef_vol_expansion)>1e-16){log_headers+="ener_volume ";}
-    if (fabs(mbrane.pressure)>1e-16){log_headers+="pressure_ener ";}
-    if (afm.icompute!=0){log_headers+="afm_fx, afm_fy afm_fz ";}
-    if (spring.icompute!=0){log_headers+="spr_north.z spr_south.z ";}
-    log_headers+=" area nPole_z sPole_z";
-    fprintf(fid, "%s\n", log_headers.c_str());
-    fflush(fid);
-}
-//
-void wDiag(FILE *fid, MBRANE_para mbrane, AFM_para afm, SPRING_para spring, MESH mesh, 
-            int i, int num_moves, double *Et,
-            POSITION *afm_force, POSITION *spring_force, double area_sph, POSITION *Pos){
-    fprintf(fid, " %d %d %g %g %g %g", i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2]);
-    if(afm.icompute!=0){fprintf(fid, " %g", Et[3]);}
-    if (spring.icompute!=0){fprintf(fid, " %g", Et[5]);}
-    if(fabs(mbrane.coef_vol_expansion)>1e-16){fprintf(fid, " %g", Et[4]);}
-    if (fabs(mbrane.pressure)>1e-16){fprintf(fid, " %g", Et[6]);}
-    if (afm.icompute!=0){fprintf(fid, " %g %g %g", afm_force->x,afm_force->y,afm_force->z );}
-    if (spring.icompute!=0){fprintf(fid, " %g %g", spring_force[0].z,spring_force[1].z);}
-    fprintf(fid, " %g %g %g\n",area_sph,Pos[mesh.nPole].z,Pos[mesh.sPole].z);
-    fflush(fid);
-}
-//
 int main(int argc, char *argv[]){
     pid_t pid = getpid();
     cout << "# ID for this process is: " << pid << endl;

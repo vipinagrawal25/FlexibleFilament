@@ -3,6 +3,10 @@
 #include "Position.h"
 #include "../src/misc.h"
 #include <iostream>
+#include <random>
+#include <iomanip>
+#include <sstream>
+using namespace std;
 //*************************************************//
 // metropolis.cpp
 int monte_carlo_3d(POSITION *pos, MESH mesh, 
@@ -106,14 +110,16 @@ void hdf5_io_dump_restart_config(double *Pos, int *cmlist,
 //misc
 bool FileExists(const std::string &s);
 int cubic_solve(double, double, double, double, double *);
-//main.c
-
-template<typename T>
-string ZeroPadNumber(T num);
 void wHeader(FILE *fid, MBRANE_para mbrane, AFM_para afm,  
             SPRING_para spring);
 void wDiag(FILE *fid, MBRANE_para mbrane, AFM_para afm, 
           SPRING_para spring, MESH mesh, int i, int num_moves, 
           double *Et,POSITION *afm_force, POSITION *spring_force, 
           double area_sph, POSITION *Pos);
+template<typename T>
+inline string ZeroPadNumber(T num){
+    ostringstream ss;
+    ss << setw( 5 ) << setfill( '0' ) << (int)num;
+    return ss.str();
+}
 #endif
