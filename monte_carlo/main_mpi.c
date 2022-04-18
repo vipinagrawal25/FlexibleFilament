@@ -40,12 +40,12 @@ int main(int argc, char *argv[]){
     seed_v = (uint32_t) 7*3*11*(mpi_rank+1)*rand();
     init_rng(seed_v);
     //
-    outfolder = ZeroPadNumber(mpi_rank);
+    outfolder = ZeroPadNumber(mpi_rank)+"/";
     cout << "I made folder "+ outfolder << endl;
     filename = outfolder + "/para_file.in";
     initialize_read_parameters(&mbrane, &afm, &mcpara, &spring, filename.c_str());
     // ---------- open outfile_terminal ------------------- //
-    fstream outfile_terminal(outfolder+"terminal.out", ios::app);
+    fstream outfile_terminal(outfolder+"/terminal.out", ios::app);
     //
     /* define all the paras */ 
     mbrane.volume = (double *)calloc(1, sizeof(double)); 
