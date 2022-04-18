@@ -1,0 +1,1 @@
+CC = $(HOME)/opt/hdf5/bin/h5c++ -O3 -w
