@@ -63,7 +63,6 @@ int main(int argc, char *argv[]){
     lij_t0 = (double *)calloc(mbrane.num_nbr, sizeof(double));
     triangles = (int *)calloc(mbrane.num_nbr, sizeof(int));
     triangles_t = (int *)calloc(mbrane.num_nbr, sizeof(int));
-    obtuse = (double *)calloc(mbrane.num_triangles, sizeof(double));
     is_attractive = (bool *)calloc(mbrane.N, sizeof(bool));
     afm.tip_curve = (POSITION *)calloc(afm.N, 3*sizeof(double));
     //

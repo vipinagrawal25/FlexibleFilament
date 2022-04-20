@@ -4,6 +4,7 @@ def write_param(fname="../para_file.in",paramdict=None):
 		paramdict={"N":5120,"coef_bending":2.5,"Y":25,"coef_vol_expansion":1e6,"pressure":0,
 				"radius":1.0,"pos_bot_wall":-1.05,"sigma":0.17,"epsilon":4,"th_cr":0.53,
 				"Dfac":4,"kBT":1,"is_restart":1,"mc_total_iters":10000,"mc_dump_iter":10,
+				"e_activity":4,
 				"tip_radius":0.2,"tip_pos_z":1.05,"afm_sigma":0.17,"afm_epsilon":4,
 				"spr_compute":0,"nPole_eq_z":-1,"sPole_eq_z":1}
 	with open(fname, "w") as file:
@@ -16,9 +17,9 @@ def write_param(fname="../para_file.in",paramdict=None):
 		file.write("%3.2f %3.2f %3.2f %3.2f\n" %(paramdict['pos_bot_wall'],
 					paramdict['sigma'],paramdict['epsilon'],paramdict['th_cr']))
 		file.write("## Montecarlo parameters\n")
-		file.write("Dfac kBT is_restart mc_total_iters mc_dump_iter\n")
+		file.write("Dfac kBT is_restart mc_total_iters mc_dump_iter e_activity\n")
 		file.write("%d %3.2f %d %d %d\n" %(paramdict['Dfac'],paramdict['kBT'],paramdict['is_restart'],
-					paramdict['mc_total_iters'],paramdict['mc_dump_iter']))
+					paramdict['mc_total_iters'],paramdict['mc_dump_iter'],paramdict['e_activity']))
 		file.write("## Afm Tip parameters\n")
 		# file.write("N extent_l extent_r extent_t extent_b\n")
 		# file.write("%d %1.1f %1.1f %1.1f %1.1f\n" %(paramdict['afm_N'],paramdict['extent_l'],
@@ -37,7 +38,7 @@ def read_param(fname='../para_file.in'):
 	N=int(N)
 	pos_bot_wall,sigma,epsilon,th_cr = np.loadtxt(fname,skiprows=5,max_rows=1)
 	## Montecarlo parameters
-	Dfac,kBT,is_restart,mc_total_iters,mc_dump_iter = np.loadtxt(fname,skiprows=8,max_rows=1)
+	Dfac,kBT,is_restart,mc_total_iters,mc_dump_iter,e_activity=np.loadtxt(fname,skiprows=8,max_rows=1)
 	Dfac=int(Dfac)
 	is_restart=int(is_restart)
 	mc_total_iters=int(mc_total_iters)
@@ -52,7 +53,7 @@ def read_param(fname='../para_file.in'):
 				"radius":radius,"pos_bot_wall":pos_bot_wall,"sigma":sigma,"epsilon":epsilon,
 				"th_cr":th_cr,
 				"Dfac":Dfac,"kBT":kBT,"is_restart":is_restart,"mc_total_iters":mc_total_iters,
-				"mc_dump_iter":mc_dump_iter,
+				"mc_dump_iter":mc_dump_iter,"e_activity":e_activity,
 				"tip_radius":tip_radius,"tip_pos_z":tip_pos_z,"afm_sigma":afm_sigma,
 				"afm_epsilon":afm_epsilon,
 				"spr_compute":spr_compute,"nPole_eq_z":nPole_eq_z,"sPole_eq_z":sPole_eq_z}

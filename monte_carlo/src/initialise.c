@@ -219,12 +219,13 @@ void initialize_read_parameters( MBRANE_para *mbrane,
         getline(f2, buff);
         getline(f2, buff);
         getline(f2, buff);
-        sscanf(buff.c_str(),"%lf %lf %d %d %d", &td1, &td2, &t_n, &t_n2, &t_n3);
+        sscanf(buff.c_str(),"%lf %lf %d %d %d %lf", &td1, &td2, &t_n, &t_n2, &t_n3, &td3);
         mcpara->dfac = td1;
         mcpara->kBT = td2;
         mcpara->is_restart = t_n;
         mcpara->tot_mc_iter = t_n2;
         mcpara->dump_skip = t_n3;
+        mcpara->activity = td3;
         cout << "mcpara->is_restart" << "\t"<<mcpara->is_restart<<endl;
         // Third line done
         getline(f2, buff);

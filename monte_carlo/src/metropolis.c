@@ -10,6 +10,7 @@ void init_rng(uint32_t seed_val){
 bool Metropolis(double DE, MCpara mcpara){
     bool yes;
     double rand;
+    DE += mcpara.activity;
     std::uniform_real_distribution<> rand_real(0, 1);
     yes = (DE <= 0.e0);
     if (!yes){

@@ -33,6 +33,7 @@ typedef struct{
     double delta; // increment of position
     bool is_restart;
     char *metric;
+    double activity;
 }MCpara;
 //
 typedef struct{

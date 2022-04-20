@@ -24,16 +24,18 @@ int main(int argc, char *argv[]){
     MESH mes_t;
     POSITION afm_force,spring_force[2],tot_force;
     FILE *fid;
-    double *lij_t0, *obtuse;
+    double *lij_t0;
     int *triangles;
     int *triangles_t;
     string outfolder, syscmds, log_file, outfile, para_file,filename;
     int ibydumpskip, mpi_err, mpi_rank;
     double Pole_zcoord;
-    char log_headers[] = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener afm_ener ener_volume  forcex, forcey forcez area nPole_z sPole_z";
+    // char log_headers[] = "# iter acceptedmoves total_ener stretch_ener bend_ener stick_ener afm_ener ener_volume  forcex, forcey forcez area nPole_z sPole_z";
     int nPole, sPole;
     uint32_t seed_v;
     SPRING_para spring;
+    //
+    wHeader(fid,mbrane,afm,spring);
     //
     mpi_err = MPI_Init(0x0, 0x0);
     mpi_err =  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -41,7 +43,7 @@ int main(int argc, char *argv[]){
     init_rng(seed_v);
     //
     outfolder = ZeroPadNumber(mpi_rank)+"/";
-    cout << "I made folder "+ outfolder << endl;
+    cout << "I am in folder "+ outfolder << endl;
     filename = outfolder + "/para_file.in";
     initialize_read_parameters(&mbrane, &afm, &mcpara, &spring, filename.c_str());
     // ---------- open outfile_terminal ------------------- //
@@ -63,7 +65,6 @@ int main(int argc, char *argv[]){
     lij_t0 = (double *)calloc(mbrane.num_nbr, sizeof(double));
     triangles = (int *)calloc(mbrane.num_nbr, sizeof(int));
     triangles_t = (int *)calloc(mbrane.num_nbr, sizeof(int));
-    obtuse = (double *)calloc(mbrane.num_triangles, sizeof(double));
     is_attractive = (bool *)calloc(mbrane.N, sizeof(bool));
     afm.tip_curve = (POSITION *)calloc(afm.N, 3*sizeof(double));
     if(!mcpara.is_restart){ 
@@ -73,15 +74,15 @@ int main(int argc, char *argv[]){
                 triangles, filename);
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane, &spring);
         identify_attractive_part(Pos, is_attractive, mbrane.N,mbrane.th_cr);
-        max(&nPole,&Pole_zcoord,Pos,mbrane.N);
-        min(&sPole,&Pole_zcoord,Pos,mbrane.N);
+        max(&mesh.nPole,&Pole_zcoord,Pos,mbrane.N);
+        min(&mesh.sPole,&Pole_zcoord,Pos,mbrane.N);
     }else{
         filename = outfolder + "/input.h5";
         hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
                 (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 
                 triangles, filename);
-        max(&nPole,&Pole_zcoord,Pos,mbrane.N);
-        min(&sPole,&Pole_zcoord,Pos,mbrane.N);
+        max(&mesh.nPole,&Pole_zcoord,Pos,mbrane.N);
+        min(&mesh.sPole,&Pole_zcoord,Pos,mbrane.N);
         initialize_eval_lij_t0(Pos, mesh, lij_t0, &mbrane, &spring);
         identify_attractive_part(Pos, is_attractive, mbrane.N,mbrane.th_cr);
         filename = outfolder + "/restart.h5";
@@ -104,22 +105,25 @@ int main(int argc, char *argv[]){
             mbrane.num_triangles,&vol_sph,&area_sph);
     double  ini_vol = (4./3.)*pi*pow(mbrane.radius,3);
     Et[4] = mbrane.coef_vol_expansion*(vol_sph/ini_vol - 1e0)*(vol_sph/ini_vol - 1e0);
+    //
     Et[5] = spring_tot_energy_force(Pos, spring_force, mesh, spring);
+    //
     Et[6] = -mbrane.pressure*vol_sph;
     //
     Ener_t = Et[0] + Et[1] + Et[2] + Et[3] + Et[4] + Et[5] + Et[6];
     mbrane.tot_energy[0] = Ener_t;
     mbrane.volume[0] = vol_sph;
     //
+    //
     log_file=outfolder+"/mc_log";
     fid = fopen(log_file.c_str(), "a");
-    if(!mcpara.is_restart)fprintf(fid, "%s\n", log_headers);
+    fprintf(fid, "%s\n", log_headers);
     num_moves = 0;
     for(i=0; i < mcpara.tot_mc_iter; i++){
         Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);
         Et[1] =  bending_energy_total(Pos, mesh, mbrane);
-        Et[2] = lj_bottom_surf_total(Pos, is_attractive, mbrane);
-        Et[3] = lj_afm_total(Pos, &afm_force, mbrane, afm);
+        Et[2] =  lj_bottom_surf_total(Pos, is_attractive, mbrane);
+        Et[3] =  lj_afm_total(Pos, &afm_force, mbrane, afm);
         volume_area_enclosed_membrane(Pos, triangles, mbrane.num_triangles, &vol_sph, &area_sph);
         Et[4] = mbrane.coef_vol_expansion*(vol_sph/ini_vol - 1e0)*(vol_sph/ini_vol - 1e0);
         Et[5] = spring_tot_energy_force(Pos, spring_force, mesh, spring);
@@ -144,6 +148,9 @@ int main(int argc, char *argv[]){
         }
         num_moves = monte_carlo_3d(Pos, mesh, lij_t0, is_attractive, 
                 mbrane, mcpara, afm, spring);
+        // cout << "code 1 " + ZeroPadNumber(mpi_rank)+" " 
+        // + ZeroPadNumber(i) << endl;
+
     }
     MPI_Barrier(MPI_COMM_WORLD);
     fclose(fid);
@@ -152,7 +159,6 @@ int main(int argc, char *argv[]){
     free(mesh.node_nbr_list);
     free(mesh.bond_nbr_list);
     mpi_err = MPI_Finalize();
-
     outfile_terminal.close();
     return 0;
 }
