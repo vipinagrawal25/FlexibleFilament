@@ -9,3 +9,4 @@ import functiontools as ft
 plt.style.use(Home+'/.matplotlibrc')
 plt.rcParams['text.usetex'] = True
 import glob
+import paramio as pio

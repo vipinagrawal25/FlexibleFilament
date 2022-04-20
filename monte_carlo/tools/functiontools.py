@@ -103,7 +103,7 @@ def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
     # ------------------ compute average -------------------- #
     dvert=np.zeros(nruns)
     mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
-    zoavg=np.mean(mc_nopush[start:,-2])-np.mean(mc_nopush[start:,-1])-1
+    zoavg=np.mean(mc_nopush[start:,-2])-np.mean(mc_nopush[start:,-1])
     baseE = np.mean(mc_nopush[start:,index])
     avgE=np.zeros(nruns)
     std=np.zeros(nruns)
@@ -111,7 +111,7 @@ def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
     for ifol in range(nruns):
         tot_ener=np.abs(mc_log[ifol][start:,index])+np.abs(mc_log[ifol][start:,index2])
         tot_ener=0.5*tot_ener
-        zavg=np.mean(mc_log[ifol][start:,-2])-np.mean(mc_log[ifol][start:,-1])-1
+        zavg=np.mean(mc_log[ifol][start:,-2])-np.mean(mc_log[ifol][start:,-1])
         dvert[ifol]=1-zavg/zoavg;
         #
         Nmc=tot_ener.shape[0]
@@ -154,26 +154,26 @@ def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
         os.chdir("../")
     return Y3d, mm, bb, dvert_all
 #-------------------------------------------------------------------#
-def dvert(folders,datadir="./",subfol="rerun/",start=1000,
+def dvert(folders,datadir="./",subfol="rerun/",start=1000,end=-1,
           nch=10,error=True,nopush="noafm/"):
     nruns=len(folders)
     mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
-    zoavg=np.mean(mc_nopush[start:,-2])-np.mean(mc_nopush[start:,-1])
+    zoavg=np.mean(mc_nopush[start:end,-2])-np.mean(mc_nopush[start:end,-1])
     dvert=np.zeros(nruns)
     err=np.zeros(nruns)
     mc_log=np.empty(nruns,dtype=object)
     for i,fol in enumerate(folders):
         mc_log[i]=np.loadtxt(datadir+fol+subfol+"/mc_log")
     for ifol in range(nruns):
-        zz=mc_log[ifol][start:,-2]-mc_log[ifol][start:,-1]
+        zz=mc_log[ifol][start:end,-2]-mc_log[ifol][start:end,-1]
         Nmc=zz.shape[0]
         chsz=int(Nmc/nch)
         zch=np.zeros(nch)
         for ich in range(nch):
             zch[ich] = np.mean(zz[ich*chsz:(ich+1)*chsz])
-        print(zch)
-        err[ifol]=np.std(1-zch/zoavg)
-        dvert[ifol]=np.mean(1-zch/zoavg)
+        print(np.mean(zch))
+        err[ifol]=1-np.std(zch)/zoavg;
+        dvert[ifol]=1-np.mean(zch)/zoavg;
     if error:
         return dvert,err
     else:
@@ -194,7 +194,8 @@ def isgaussian(datadir="./",subfol="./",index=2,start=1000):
     plt.semilogy(xx,f)
     plt.show()
 #-------------------------------------------------------------------#
-def Ks_spring(datadir="Zn1.0/",KbT=1e0,subfol="./",start=1000):
+def Ks_spring(datadir="Zn1.0/",KbT=1e0,subfol="./",start=100000):
     mc_log=np.loadtxt(datadir+subfol+"/mc_log")
-    z0=mc_log[start:,-2]-mc_log[start:,-1]-1
+    z0=mc_log[start:,-2]-mc_log[start:,-1]
+    print(np.mean(z0))
     return KbT/np.var(z0)

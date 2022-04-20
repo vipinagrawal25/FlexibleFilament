@@ -152,7 +152,6 @@ int main(int argc, char *argv[]){
     free(mesh.node_nbr_list);
     free(mesh.bond_nbr_list);
     mpi_err = MPI_Finalize();
-
     outfile_terminal.close();
     return 0;
 }
