@@ -7,6 +7,7 @@ import os
 import psutil
 from scipy.spatial import SphericalVoronoi
 from multipledispatch import dispatch
+import glob
 #------------------------------------------------------------------------------------#
 def voronoi_area(cotJ,cotK,jsq,ksq,area):
     '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
@@ -220,3 +221,16 @@ def Ks_spring(folders=None,mc_log=None,datadir="./",subfol="./",KbT=1e0,start=10
         err[irun]=np.std(Ksch)
         Ks[irun]=np.mean(Ksch)
     return Ks,err
+#-------------------------------------------------------------------------------------------#
+def height_field(files,Np=None,nbin=50,radius=1):
+    if Np is None:
+        pfile = foldername(files[0])+"/para_file.in"
+        pdict=pio.read_param(pfile)
+        Np,radius=pdict['N'],pdict['radius']
+    hfluc_all=[]
+    for i,file in enumerate(files):
+        pos=np.loadtxt(file,skiprows=5,max_rows=Np)
+        hfluc=np.sqrt(pos[:,0]**2+pos[:,1]**2+pos[:,2]**2) - radius
+        hfluc_all.extend(hfluc)
+    hist=np.histogram(hfluc_all,bins=nbin,density=True)
+    return hist
