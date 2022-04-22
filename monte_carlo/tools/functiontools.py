@@ -6,6 +6,7 @@ import paramio as pio
 import os
 import psutil
 from scipy.spatial import SphericalVoronoi
+from multipledispatch import dispatch
 #------------------------------------------------------------------------------------#
 def voronoi_area(cotJ,cotK,jsq,ksq,area):
     '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
@@ -92,15 +93,14 @@ def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
         restart=g
         wait()
 #---------------------------------------------------------------- #
-def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
+def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/",start=1000,
                     nch=10,error=True,nopush="noafm/",index2=None,Ks=False):
     if index2 is None:
         index2=index
-    nruns=len(folders)
-    mc_log=np.empty(nruns,dtype=object)
-    for i,fol in enumerate(folders):
-        mc_log[i]=np.loadtxt(datadir+fol+subfol+"/mc_log")
+    if mc_log is None:
+        mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
     # ------------------ compute average -------------------- #
+    nruns=mc_log.shape[0]
     dvert=np.zeros(nruns)
     mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
     zoavg=np.mean(mc_nopush[start:,-2])-np.mean(mc_nopush[start:,-1])
@@ -125,7 +125,15 @@ def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
         return dvert,avgE,baseE,err
     else:
         return dvert,avgE,baseE
-# # ---------------------------------------------------------------- #
+#---------------------------------------------------------------- #
+def read_mc_log(folders,datadir="./",subfol="rerun/"):
+    '''It reads the data and returns mc_log for all the folders'''
+    nruns=len(folders)
+    mc_log=np.empty(nruns,dtype=object)
+    for i,fol in enumerate(folders):
+        mc_log[i]=np.loadtxt(datadir+fol+subfol+"/mc_log")
+    return mc_log
+#---------------------------------------------------------------- #
 def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
                 nch=10,error=True,nopush="noafm/",fit_end=10):
     fols=sorted(glob.glob(datadir+"/run"))[0:-1]
@@ -193,8 +201,22 @@ def isgaussian(datadir="./",subfol="./",index=2,start=1000):
     f = 1/(np.sqrt(2*np.pi))*np.exp(-0.5*xx**2)
     plt.semilogy(xx,f)
     plt.show()
-#-------------------------------------------------------------------#
-def Ks_spring(datadir="Zn1.0/",KbT=1e0,subfol="./",start=1000):
-    mc_log=np.loadtxt(datadir+subfol+"/mc_log")
-    z0=mc_log[start:,-2]-mc_log[start:,-1]-1
-    return KbT/np.var(z0)
+#-------------------------------------------------------------------------------------------#
+def Ks_spring(folders=None,mc_log=None,datadir="./",subfol="./",KbT=1e0,start=10000,nch=10,
+              error=True):
+    if mc_log is None:
+        mc_log = read_mc_log(folders,datadir=datadir,subfol=subfol)
+    nruns = mc_log.shape[0]
+    Ks=np.zeros(nruns)
+    err=np.zeros(nruns)
+    for irun in range(nruns):
+        z0=mc_log[irun][start:,-2]-mc_log[irun][start:,-1]
+        ## Divide the data into 10 bins
+        Nmc=zz.shape[0]
+        chsz=int(Nmc/nch)
+        Ksch=np.zeros(nch)
+        for ich in range(nch):
+            Ksch[ich] = KbT/np.var(zz[ich*chsz:(ich+1)*chsz])
+        err[irun]=np.std(Ksch)
+        Ks[irun]=np.mean(Ksch)
+    return Ks,err
