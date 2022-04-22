@@ -35,8 +35,6 @@ int main(int argc, char *argv[]){
     uint32_t seed_v;
     SPRING_para spring;
     //
-    wHeader(fid,mbrane,afm,spring);
-    //
     mpi_err = MPI_Init(0x0, 0x0);
     mpi_err =  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     seed_v = (uint32_t) 7*3*11*(mpi_rank+1)*rand();
@@ -45,6 +43,11 @@ int main(int argc, char *argv[]){
     outfolder = ZeroPadNumber(mpi_rank)+"/";
     cout << "I am in folder "+ outfolder << endl;
     filename = outfolder + "/para_file.in";
+    //
+    log_file=outfolder+"/mc_log";
+    fid = fopen(log_file.c_str(), "a");
+    wHeader(fid,mbrane,afm,spring);
+    //
     initialize_read_parameters(&mbrane, &afm, &mcpara, &spring, filename.c_str());
     // ---------- open outfile_terminal ------------------- //
     fstream outfile_terminal(outfolder+"/terminal.out", ios::app);
@@ -114,10 +117,6 @@ int main(int argc, char *argv[]){
     mbrane.tot_energy[0] = Ener_t;
     mbrane.volume[0] = vol_sph;
     //
-    //
-    log_file=outfolder+"/mc_log";
-    fid = fopen(log_file.c_str(), "a");
-    fprintf(fid, "%s\n", log_headers);
     num_moves = 0;
     for(i=0; i < mcpara.tot_mc_iter; i++){
         Et[0] =  stretch_energy_total(Pos, mesh, lij_t0, mbrane);

@@ -18,7 +18,7 @@ def write_param(fname="../para_file.in",paramdict=None):
 					paramdict['sigma'],paramdict['epsilon'],paramdict['th_cr']))
 		file.write("## Montecarlo parameters\n")
 		file.write("Dfac kBT is_restart mc_total_iters mc_dump_iter e_activity\n")
-		file.write("%d %3.2f %d %d %d\n" %(paramdict['Dfac'],paramdict['kBT'],paramdict['is_restart'],
+		file.write("%d %3.2f %d %d %d %3.2f\n" %(paramdict['Dfac'],paramdict['kBT'],paramdict['is_restart'],
 					paramdict['mc_total_iters'],paramdict['mc_dump_iter'],paramdict['e_activity']))
 		file.write("## Afm Tip parameters\n")
 		# file.write("N extent_l extent_r extent_t extent_b\n")

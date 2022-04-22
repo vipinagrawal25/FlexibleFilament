@@ -103,7 +103,7 @@ def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
     # ------------------ compute average -------------------- #
     dvert=np.zeros(nruns)
     mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
-    zoavg=np.mean(mc_nopush[start:,-2])-np.mean(mc_nopush[start:,-1])-1
+    zoavg=np.mean(mc_nopush[start:,-2])-np.mean(mc_nopush[start:,-1])
     baseE = np.mean(mc_nopush[start:,index])
     avgE=np.zeros(nruns)
     std=np.zeros(nruns)
@@ -111,7 +111,7 @@ def avg_quantity_tz(folders,index=2,datadir="./",subfol="rerun/",start=1000,
     for ifol in range(nruns):
         tot_ener=np.abs(mc_log[ifol][start:,index])+np.abs(mc_log[ifol][start:,index2])
         tot_ener=0.5*tot_ener
-        zavg=np.mean(mc_log[ifol][start:,-2])-np.mean(mc_log[ifol][start:,-1])-1
+        zavg=np.mean(mc_log[ifol][start:,-2])-np.mean(mc_log[ifol][start:,-1])
         dvert[ifol]=1-zavg/zoavg;
         #
         Nmc=tot_ener.shape[0]
