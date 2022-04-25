@@ -129,7 +129,8 @@ int main(int argc, char *argv[]){
         Et[6] = -mbrane.pressure*vol_sph;
         outfile_terminal << "iter = " << i << "; Accepted Moves = " << (double) num_moves*100/mcpara.one_mc_iter << " %;"<<  
                 " totalener = "<< mbrane.tot_energy[0] << "; volume = " << mbrane.volume[0]<< "; area = " << area_sph << endl;
-        wDiag(fid, mbrane, afm, spring, mesh, i, num_moves, Et,  &afm_force,  spring_force,  area_sph,  Pos);
+        wDiag(fid, mbrane, afm, spring, mesh, i, num_moves, Et,  &afm_force,  spring_force,
+                vol_sph, area_sph,  Pos);
         if(i%mcpara.dump_skip == 0){
             outfile=outfolder+"/part_"+ ZeroPadNumber(i/mcpara.dump_skip)+".vtk";
             visit_vtk_io( (double *) Pos, triangles, mbrane.N, outfile);

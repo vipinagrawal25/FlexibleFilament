@@ -114,7 +114,7 @@ void wHeader(FILE *fid, MBRANE_para mbrane, AFM_para afm,
             SPRING_para spring);
 void wDiag(FILE *fid, MBRANE_para mbrane, AFM_para afm, 
           SPRING_para spring, MESH mesh, int i, int num_moves, 
-          double *Et,POSITION *afm_force, POSITION *spring_force, 
+          double *Et,POSITION *afm_force, POSITION *spring_force, double vol_sph,
           double area_sph, POSITION *Pos);
 template<typename T>
 inline string ZeroPadNumber(T num){
