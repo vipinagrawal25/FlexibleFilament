@@ -172,7 +172,7 @@ void wHeader(FILE *fid, MBRANE_para mbrane, AFM_para afm, SPRING_para spring){
     if (fabs(mbrane.pressure)>1e-16){log_headers+="pressure_ener ";}
     if (afm.icompute!=0){log_headers+="afm_fx, afm_fy afm_fz ";}
     if (spring.icompute!=0){log_headers+="spr_north.z spr_south.z ";}
-    log_headers+=" area nPole_z sPole_z";
+    log_headers+="volume area nPole_z sPole_z";
     fprintf(fid, "%s\n", log_headers.c_str());
     fflush(fid);
 }
