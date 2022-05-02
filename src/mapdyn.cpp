@@ -35,8 +35,8 @@ void assign_map_param(){
   // For a non-automous flow such as the particular problem of Elastic string in periodically driven
   // Stokes flow, we take Poincare section sin(omega*t)=0 which is 3*N-1 dimensional hyper-plane, 
   // where 'N' is number of ODE to solve. 
-  // This is also the other way of saying that for "n" iteration of the map, we integrate the ODEs for
-  // "n" time period.
+  // This is also the other way of saying that for "n" iteration of the map, we integrate the ODEs 
+  // for "n" time period.
   /* Set up parameters for map iteration */
   MM.time = 0.;    // Ignore for discrete map
   MM.dt = 1.e-4;   // Ignore for discrete map
@@ -53,8 +53,8 @@ void assign_map_param(){
   MM.guess_space = "Real";  // take two values "Real" or "Transformed"
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics.
-  // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses
-  // Poincare section.
+  // Since I am converting ODE to a map, I will just save things whenever the dynamical curve 
+  // crosses Poincare section.
   // (*MM).tdiag = 0.;
   // (*MM).ldiag = 0.;
   // (*MM).ndiag = 1.;

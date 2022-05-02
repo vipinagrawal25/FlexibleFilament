@@ -6,5 +6,5 @@ ES=ES.replace("/bin","/")
 #
 os.system("mkdir tools")
 os.system("mkdir scripts")
-os.system("ln "+ES+"tools/*.py tools/")
+os.system("ln -s "+ES+"tools/*.py tools/")
 os.system("cp "+ES+"scripts/* scripts/")

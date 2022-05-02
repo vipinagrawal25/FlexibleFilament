@@ -576,8 +576,8 @@ double vol_energy_change(MBRANE_para mbrane,double dvol){
     return de_vol;
 }
 //
-double PV_change(MBRANE_para mbrane, double dvol){
-    return -2*mbrane.pressure*dvol;
+double PV_change(MBRANE_para mbrane, double dvol){ 
+    return 2*mbrane.pressure*dvol;
 }
 //
 double spring_energy(POSITION pos, int idx, MESH mesh, SPRING_para spring){

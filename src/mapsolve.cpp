@@ -102,7 +102,7 @@ int main(){
     else{
      // First check whether you actually have the periodic orbit?
       cout << "# Is it a periodic orbit?"
-             " (if you don't want this, please comment it out in MapSolve.cpp) " << endl;
+             " (if you don't want this, please comment it out in mapsolve.cpp) " << endl;
       if(IsOrbit(ytrans)){calc_stab(ytrans);}
       // if (1){calc_stab(ytrans);}
       else{

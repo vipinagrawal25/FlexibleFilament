@@ -147,7 +147,7 @@ void max(int *amaxind, double *amaxval, POSITION *pos, int ndim, char dirn){
   *amaxind=maxind;
   *amaxval=maxval;
 }
-/*-----------------------------------------------*/
+/*-------------------------------------------------------------------------------------------*/
 void min(int *aminind, double *aminval, POSITION *pos, int ndim,char dirn){
   // function returns the value and index of the maximum entry.
   int minind=0;
@@ -162,8 +162,7 @@ void min(int *aminind, double *aminval, POSITION *pos, int ndim,char dirn){
   *aminind=minind;
   *aminval=minval;
 }
-/*-----------------------------------------------*/
-//
+/*------------------------------------------------------------------------------------------*/
 void wHeader(FILE *fid, MBRANE_para mbrane, AFM_para afm, SPRING_para spring){
     string log_headers = "#iter acceptedmoves total_ener stretch_ener bend_ener stick_ener ";
     if(afm.icompute!=0){log_headers+="afm_ener ";}
@@ -172,14 +171,26 @@ void wHeader(FILE *fid, MBRANE_para mbrane, AFM_para afm, SPRING_para spring){
     if (fabs(mbrane.pressure)>1e-16){log_headers+="pressure_ener ";}
     if (afm.icompute!=0){log_headers+="afm_fx, afm_fy afm_fz ";}
     if (spring.icompute!=0){log_headers+="spr_north.z spr_south.z ";}
-    log_headers+="volume area nPole_z sPole_z";
+    log_headers+="volume area nPole_z sPole_z hrms";
     fprintf(fid, "%s\n", log_headers.c_str());
     fflush(fid);
 }
 //
+double height_rms(POSITION *Pos, MBRANE_para mbrane){
+  double radius=mbrane.radius;
+  double N=mbrane.N;
+  double hrms=0;
+  double hh;
+  for (int i = 0; i < N; ++i){
+    hh = sqrt(Pos[i].x*Pos[i].x+Pos[i].y*Pos[i].y+Pos[i].z*Pos[i].z) - radius;
+    hrms += hh*hh;
+  }
+  return sqrt(hrms/N);
+}
+//
 void wDiag(FILE *fid, MBRANE_para mbrane, AFM_para afm, SPRING_para spring, MESH mesh, 
-            int i, int num_moves, double *Et,
-            POSITION *afm_force, POSITION *spring_force, double area_sph, POSITION *Pos){
+            int i, int num_moves, double *Et,POSITION *afm_force,
+            POSITION *spring_force, double vol_sph,double area_sph, POSITION *Pos){
     fprintf(fid, " %d %d %g %g %g %g", i, num_moves, mbrane.tot_energy[0], Et[0], Et[1], Et[2]);
     if(afm.icompute!=0){fprintf(fid, " %g", Et[3]);}
     if (spring.icompute!=0){fprintf(fid, " %g", Et[5]);}
@@ -187,6 +198,7 @@ void wDiag(FILE *fid, MBRANE_para mbrane, AFM_para afm, SPRING_para spring, MESH
     if (fabs(mbrane.pressure)>1e-16){fprintf(fid, " %g", Et[6]);}
     if (afm.icompute!=0){fprintf(fid, " %g %g %g", afm_force->x,afm_force->y,afm_force->z );}
     if (spring.icompute!=0){fprintf(fid, " %g %g", spring_force[0].z,spring_force[1].z);}
-    fprintf(fid, " %g %g %g\n",area_sph,Pos[mesh.nPole].z,Pos[mesh.sPole].z);
+    fprintf(fid, " %g %g %g %g %g\n",vol_sph,area_sph,Pos[mesh.nPole].z,Pos[mesh.sPole].z,
+            height_rms(Pos,mbrane));
     fflush(fid);
 }
