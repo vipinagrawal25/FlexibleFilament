@@ -95,13 +95,14 @@ def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
         wait()
 #---------------------------------------------------------------- #
 def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/",start=1000,
-                    nch=10,error=True,index2=None):
+                    nch=10,error=True,nopush="noafm/",index2=None,Ks=False):
     if index2 is None:
         index2=index
     if mc_log is None:
         mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
     # ------------------ compute average -------------------- #
     nruns=mc_log.shape[0]
+    mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
     avgE=np.zeros(nruns)
     std=np.zeros(nruns)
     err=np.zeros(nruns)
@@ -157,22 +158,23 @@ def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
         os.chdir("../")
     return Y3d, mm, bb, dvert_all
 #-------------------------------------------------------------------#
-def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=1000,
-          nch=10,error=True,nopush="noafm/",index1=-3,index2=-4):
-    if mc_log is None:
-        mc_log = read_mc_log(datadir=datadir,subfol=subfol,folders=["./"],start=start)
-    nruns=mc_log.shape[0]
+def dvert(folders,datadir="./",subfol="rerun/",start=1000,
+          nch=10,error=True,nopush="noafm/",index1=-3,index2=-2):
+    nruns=len(folders)
     mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
     zoavg=np.mean(mc_nopush[start:,index1])-np.mean(mc_nopush[start:,index2])
     dvert=np.zeros(nruns)
     err=np.zeros(nruns)
+    mc_log=np.empty(nruns,dtype=object)
+    for i,fol in enumerate(folders):
+        mc_log[i]=np.loadtxt(datadir+fol+subfol+"/mc_log")
     for ifol in range(nruns):
         zz=mc_log[ifol][start:,index1]-mc_log[ifol][start:,index2]
         Nmc=zz.shape[0]
         chsz=int(Nmc/nch)
         zch=np.zeros(nch)
         for ich in range(nch):
-            zch[ich]=np.mean(zz[ich*chsz:(ich+1)*chsz])
+            zch[ich] = np.mean(zz[ich*chsz:(ich+1)*chsz])
         print(zch)
         err[ifol]=np.std(1-zch/zoavg)
         dvert[ifol]=np.mean(1-zch/zoavg)
@@ -181,13 +183,11 @@ def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=1000,
     else:
         return dvert
 #-------------------------------------------------------------------#
-def isgaussian(mc_log=None,datadir=None,subfol="./",index=2,start=1000):
-    if mc_log is None:
-        mc_log = read_mc_log(datadir=datadir,subfol=subfol,folders=["./"],start=start)
-    # mc_log=np.loadtxt(datadir+"/"+subfol+"/mc_log")
-    data=mc_log[:,index]
-    avg=np.mean(mc_log[:,index])
-    std=np.std(mc_log[:,index])
+def isgaussian(datadir="./",subfol="./",index=2,start=1000):
+    mc_log=np.loadtxt(datadir+"/"+subfol+"/mc_log")
+    data=mc_log[start:,index]
+    avg=np.mean(mc_log[start:,index])
+    std=np.std(mc_log[start:,index])
     nbin=50
     hist=np.histogram((data-avg)/std,bins=nbin,density=True)
     cen = hist[1][1:] + hist[1][:-1]
@@ -199,14 +199,14 @@ def isgaussian(mc_log=None,datadir=None,subfol="./",index=2,start=1000):
     plt.show()
 #-------------------------------------------------------------------------------------------#
 def Ks_spring(folders=None,mc_log=None,datadir="./",subfol="./",KbT=1e0,start=10000,nch=10,
-              error=True,index1=-3,index2=-4):
+              error=True,index1=-3,index2=-2):
     if mc_log is None:
         mc_log = read_mc_log(folders,datadir=datadir,subfol=subfol)
     nruns = mc_log.shape[0]
     Ks=np.zeros(nruns)
     err=np.zeros(nruns)
     for irun in range(nruns):
-        zz=mc_log[irun][start:,index1]-mc_log[irun][start:,index2]
+        z0=mc_log[irun][start:,index1]-mc_log[irun][start:,index2]
         ## Divide the data into 10 bins
         Nmc=zz.shape[0]
         chsz=int(Nmc/nch)
