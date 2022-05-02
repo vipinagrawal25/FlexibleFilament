@@ -127,12 +127,12 @@ def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/
     else:
         return dvert,avgE,baseE
 #---------------------------------------------------------------- #
-def read_mc_log(folders,datadir="./",subfol="rerun/"):
+def read_mc_log(folders,datadir="./",subfol="./",start=0):
     '''It reads the data and returns mc_log for all the folders'''
     nruns=len(folders)
     mc_log=np.empty(nruns,dtype=object)
     for i,fol in enumerate(folders):
-        mc_log[i]=np.loadtxt(datadir+fol+subfol+"/mc_log")
+        mc_log[i]=np.loadtxt(datadir+fol+subfol+"/mc_log",skiprows=start)
     return mc_log
 #---------------------------------------------------------------- #
 def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,

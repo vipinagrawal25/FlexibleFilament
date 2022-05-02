@@ -43,12 +43,11 @@ int main(int argc, char *argv[]){
     outfolder = ZeroPadNumber(mpi_rank)+"/";
     cout << "I am in folder "+ outfolder << endl;
     filename = outfolder + "/para_file.in";
+    initialize_read_parameters(&mbrane, &afm, &mcpara, &spring, filename.c_str());
     //
     log_file=outfolder+"/mc_log";
     fid = fopen(log_file.c_str(), "a");
     wHeader(fid,mbrane,afm,spring);
-    //
-    initialize_read_parameters(&mbrane, &afm, &mcpara, &spring, filename.c_str());
     // ---------- open outfile_terminal ------------------- //
     fstream outfile_terminal(outfolder+"/terminal.out", ios::app);
     //
