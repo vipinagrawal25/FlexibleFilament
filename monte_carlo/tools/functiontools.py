@@ -158,16 +158,15 @@ def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
         os.chdir("../")
     return Y3d, mm, bb, dvert_all
 #-------------------------------------------------------------------#
-def dvert(folders,datadir="./",subfol="rerun/",start=1000,
+def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=1000,
           nch=10,error=True,nopush="noafm/",index1=-3,index2=-2):
-    nruns=len(folders)
+    if mc_log is None:
+        mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
+    nruns=mc_log.shape[0]
     mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
     zoavg=np.mean(mc_nopush[start:,index1])-np.mean(mc_nopush[start:,index2])
     dvert=np.zeros(nruns)
     err=np.zeros(nruns)
-    mc_log=np.empty(nruns,dtype=object)
-    for i,fol in enumerate(folders):
-        mc_log[i]=np.loadtxt(datadir+fol+subfol+"/mc_log")
     for ifol in range(nruns):
         zz=mc_log[ifol][start:,index1]-mc_log[ifol][start:,index2]
         Nmc=zz.shape[0]
@@ -183,8 +182,9 @@ def dvert(folders,datadir="./",subfol="rerun/",start=1000,
     else:
         return dvert
 #-------------------------------------------------------------------#
-def isgaussian(datadir="./",subfol="./",index=2,start=1000):
-    mc_log=np.loadtxt(datadir+"/"+subfol+"/mc_log")
+def isgaussian(folders=None,mc_log=None,datadir="./",subfol="./",index=2,start=1000):
+    if mc_log is None:
+        mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
     data=mc_log[start:,index]
     avg=np.mean(mc_log[start:,index])
     std=np.std(mc_log[start:,index])
