@@ -2,7 +2,7 @@ from header import *
 tzall=sorted(glob.glob("*/mc_log"))
 folders=[tz.replace("/mc_log","/") for tz in tzall]
 folders.reverse()
-start=800000
+start=200000
 #
 mc_log = ft.read_mc_log(folders=folders,start=start)
 dvert,d_err=ft.dvert(mc_log=mc_log[1:][:],nopush='nopull/',subfol="./")
