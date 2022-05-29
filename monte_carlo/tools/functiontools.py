@@ -8,6 +8,9 @@ import psutil
 from scipy.spatial import SphericalVoronoi
 from multipledispatch import dispatch
 import glob
+import visitio as vio
+import numpy.linalg as la
+from scipy.special import sph_harm
 #------------------------------------------------------------------------------------#
 def voronoi_area(cotJ,cotK,jsq,ksq,area):
     '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
@@ -229,3 +232,60 @@ def height_field(files,Np=None,nbin=50,radius=1):
         hfluc_all.extend(hfluc)
     hist=np.histogram(hfluc_all,bins=nbin,density=True)
     return hist
+# -----------------------------------------------------------------#
+def cart2sph(points):
+    ''' Computes theta and phi for the given points.'''
+    Np=points.shape[0]
+    theta = np.zeros(Np)
+    phi = np.zeros(Np)
+    for ip,pos in enumerate(points):
+        x,y,z=pos[0],pos[1],pos[2]
+        #
+        xy=np.sqrt(x**2+y**2)
+        theta[ip] = np.arctan2(y,x)
+        phi[ip] = np.arctan2(xy,z);
+    return theta,phi
+# -----------------------------------------------------------------#
+def project_onto_sph(points,radius=1):
+    ''' The function take the points (3 dimensional vector) and 
+        projects on an unit sphere. '''
+    Np = points.shape[0]
+    proj_pnts=np.zeros([Np,3])
+    for ip,pos in enumerate(points):
+        # x,y,z=pos[0],pos[1],pos[2]
+        rad_act=la.norm(pos)
+        proj_pnts[ip,0]=pos[0]/rad_act  
+        proj_pnts[ip,1]=pos[1]/rad_act
+        proj_pnts[ip,2]=pos[2]/rad_act
+    return proj_pnts
+# ----------------------------------------------------------------- #
+def height_field_lm(h_theta_phi,theta,phi,area,l,m,radius=1):
+    # m=l
+    Np = h_theta_phi.shape[0]
+    h_lm=0
+    # theta=list(map(math.degrees,theta))
+    # phi=list(map(math.degrees,phi))
+    for ip in range(Np):
+        h_lm = h_lm + h_theta_phi[ip]*sph_harm(m,l,theta[ip],phi[ip]).real*area[ip]
+    return h_lm
+# ----------------------------------------------------------------- #
+def spectra(infile,Np=5120,lmax=10):
+    # if Np is None:
+    #     pname=foldername(infile)+"/para_file.in"
+    #     Np=pio.read_param(pname)['Np']
+    points,cells = vio.vtk_to_data(infile,Np=Np)
+    theta,phi = cart2sph(points)
+    proj_pnts = project_onto_sph(points)
+    h_theta_phi = la.norm(points,axis=1)-la.norm(proj_pnts,axis=1)
+    print(np.mean(h_theta_phi))
+    # h_theta_phi = np.cos(phi)
+    sv = SphericalVoronoi(proj_pnts)
+    area=sv.calculate_areas()
+    h_lm=np.zeros(lmax)
+    # for l in range(0,lmax):
+    #     h_lm[l]= height_field_lm(h_theta_phi,theta,phi,area,l,m=0)
+    for l in range(0,lmax):
+        for m in range(-l,l+1):
+           h_lm[l]= h_lm[l]+height_field_lm(h_theta_phi,theta,phi,area,l,m)
+        h_lm[l]=h_lm[l]/(2*l+1)
+    return h_lm
