@@ -277,15 +277,19 @@ def spectra(infile,Np=5120,lmax=10):
     theta,phi = cart2sph(points)
     proj_pnts = project_onto_sph(points)
     h_theta_phi = la.norm(points,axis=1)-la.norm(proj_pnts,axis=1)
-    print(np.mean(h_theta_phi))
-    # h_theta_phi = np.cos(phi)
+    # h_theta_phi = sph_harm(0,5,theta,phi).real
+    # print(np.mean(h_theta_phi))
     sv = SphericalVoronoi(proj_pnts)
     area=sv.calculate_areas()
     h_lm=np.zeros(lmax)
-    # for l in range(0,lmax):
-    #     h_lm[l]= height_field_lm(h_theta_phi,theta,phi,area,l,m=0)
     for l in range(0,lmax):
-        for m in range(-l,l+1):
-           h_lm[l]= h_lm[l]+height_field_lm(h_theta_phi,theta,phi,area,l,m)
-        h_lm[l]=h_lm[l]/(2*l+1)
+        h_lm[l]= height_field_lm(h_theta_phi,theta,phi,area,l,m=0)
+    # h_lm=np.zeros(lmax*lmax+2*lmax)
+    # count=0
+    # for l in range(0,lmax):
+    #     for m in range(-l,l+1):
+    #        h_lm[count]= height_field_lm(h_theta_phi,theta,phi,area,l,m)
+    #        count = count+1
+        # h_lm[l]=h_lm[l]/(2*l+1)
+    # print(count,lmax*lmax+2*lmax)
     return h_lm

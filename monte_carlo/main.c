@@ -72,6 +72,7 @@ int main(int argc, char *argv[]){
         e_t = afm.epsilon;
         afm.epsilon = 0.0;
     }
+    cout << "mcpara.is_restart=" << mcpara.is_restart << endl;
     if(!mcpara.is_restart){
         hdf5_io_read_config((double *) Pos, (int *) mesh.cmlist,
                 (int *) mesh.node_nbr_list, (int2 *) mesh.bond_nbr_list, 

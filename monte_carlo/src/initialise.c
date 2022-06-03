@@ -152,6 +152,7 @@ void initialize_eval_lij_t0(POSITION *Pos, MESH mesh,
             sum_lij+=lij_t0[k];
         }
     }
+    cout << "sum=" << sum_lij << endl;
     para->av_bond_len = sum_lij/mesh.cmlist[para->N];
     r0=para->av_bond_len;
     spring->constant=para->coef_bend/(r0*r0);
