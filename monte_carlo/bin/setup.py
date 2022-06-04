@@ -21,7 +21,7 @@ if len(sys.argv)==2:
 		os.system("ln -s "+ES+"src/*.cpp src/")
 		os.system("ln -s "+ES+"src/*.h src/")
 		os.system("ln -s "+ES+"include/*.h include/")
-		os.system("ln "+ES+"tools/*.py tools/")
+		os.system("ln -s "+ES+"tools/*.py tools/")
 		os.system("ln -s "+ES+"hosts/* hosts/")
 		os.system("cp "+ES+"input/*.h5 input/")
 		os.system("cp "+ES+"para_file.in .")

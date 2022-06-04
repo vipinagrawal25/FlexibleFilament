@@ -292,4 +292,3 @@ def spectra(infile,Np=5120,lmax=10):
     #        count = count+1
         # h_lm[l]=h_lm[l]/(2*l+1)
     # print(count,lmax*lmax+2*lmax)
-    return h_lm
