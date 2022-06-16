@@ -292,3 +292,17 @@ def spectra(infile,Np=5120,lmax=10):
     #        count = count+1
         # h_lm[l]=h_lm[l]/(2*l+1)
     # print(count,lmax*lmax+2*lmax)
+    return h_lm
+# ----------------------------------------------------------------- #
+def stat_error(data,nch=10):
+    '''
+    Takes a one dimensional function and returns error by binning.
+    It assumes that the quantity of interest is average of the data.
+    It returns 1) the average quantity 2) error in the quantity
+    '''
+    Nmc=data.shape[0]
+    chsz=int(Nmc/nch)
+    datach=np.zeros(nch)
+    for ich in range(nch):
+        datach[ich]=np.average(data[ich*chsz:(ich+1)*chsz])
+    return np.avg(datach),np.std(datach)
