@@ -302,7 +302,10 @@ def stat_error(data,nch=10):
     '''
     Nmc=data.shape[0]
     chsz=int(Nmc/nch)
-    datach=np.zeros(nch)
+    if (len(data.shape)>1):
+        datach=np.zeros([nch,data.shape[1]])
+    else:
+        datach=np.zeros(nch)
     for ich in range(nch):
-        datach[ich]=np.average(data[ich*chsz:(ich+1)*chsz])
-    return np.avg(datach),np.std(datach)
+        datach[ich]=np.mean(data[ich*chsz:(ich+1)*chsz],axis=0)    
+    return np.std(datach,axis=0),np.mean(datach,axis=0)
