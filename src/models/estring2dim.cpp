@@ -91,7 +91,7 @@ void eval_rhs_tr(double time, double EForceArr[], double y[], double y_tr[], dou
     EForce[ip].z = EForceArr[2*ip+1]-FF.y;
   }
   double d_RR,c1,dsqr1;
-  Tens2 mu;
+  Tens2 mu; 
   double onebythree = 1./3.;
   for (int ip_tracer = 0; ip_tracer < np_tracer; ++ip_tracer){
     dX.x = 0;
@@ -510,7 +510,7 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
 /****************************************************/
 void iniconf(double *y, double *aTime, double tdiag){
   int itn = (int) ((*aTime)/tdiag);
-  cout << itn << endl;
+  // cout << itn << endl;
   string fname;
   if (FileExists("output/var"+ to_string(itn) + ".txt")){
     fname = "output/var" + to_string(itn) + ".txt";
@@ -546,7 +546,7 @@ void iniconf(double *y){
     case -2:
       // To give perturbation to the filament.
       rData(y,datafile);
-      print(y,Np,pp);
+      // print(y,Np,pp);
       cout << endl;
       // add perturbation to the file.
       for (int ip = 0; ip < Np; ++ip){
@@ -554,7 +554,7 @@ void iniconf(double *y){
         XX.x = XX.x + 5*aa*sin(M_PI*k*aa*double(ip)/height);
         vec2y(y, XX, ip);
       }
-      print(y,Np,pp);
+      // print(y,Np,pp);
       break;
     case -1:
       // myfile.open(datafile);
@@ -857,7 +857,7 @@ void kappa2y(double y[], double kappa[]){
     dT/ds = \kappa N
     dN/ds = -\kappa T
   */
-  cout << "#" << y_start[0] << "\t" << y_start[1] << "\t" << y_start[2] << "\t" << y_start[3] << endl;
+  // cout << "#" << y_start[0] << "\t" << y_start[1] << "\t" << y_start[2] << "\t" << y_start[3] << endl;
   double ds=aa;
   vec2 Tngt,Nrml,Tngtm1,Nrmlm1,XX,dX;
   // vec2y(y,XX,0);
@@ -895,31 +895,31 @@ void kappa2y(double y[], double kappa[]){
     vec2y(y,XX,ip);
   }
   // Is it physical?
-  // bool isphysical=1;
-  // double d_rij;
-  // vec2 X1;
-  // vec2 X2;
-  // for (int ip = 0; ip < Np; ++ip){
-  //   for (int jp = ip+1; jp < Np; ++jp){
-  //      X1 = y2vec2(y,ip);
-  //      X2 = y2vec2(y,jp);
-  //      d_rij = norm(X1-X2);
-  //      if (d_rij<dd/2){
-  //        isphysical=0;
-  //        break;
-  //      }
-  //   }
-  //   if (isphysical==0){
-  //     break;
-  //   }
-  // }
-  // if (isphysical==0){
-  //   cout << "# I am halving the curvature to take a physical NK step." << endl;
-  //   for (int ip = 0; ip < Np; ++ip){
-  //     kappa[ip] = kappa[ip]/2;
-  //   }
-  //   kappa2y(y,kappa);
-  // }
+  bool isphysical=1;
+  double d_rij;
+  vec2 X1;
+  vec2 X2;
+  for (int ip = 0; ip < Np; ++ip){
+    for (int jp = ip+1; jp < Np; ++jp){
+       X1 = y2vec2(y,ip);
+       X2 = y2vec2(y,jp);
+       d_rij = norm(X1-X2);
+       if (d_rij<dd/2){
+         isphysical=0;
+         break;
+       }
+    }
+    if (isphysical==0){
+      break;
+    }
+  }
+  if (isphysical==0){
+    // cout << "# I am halving the curvature to take a physical NK step." << endl;
+    for (int ip = 0; ip < Np; ++ip){
+      kappa[ip] = kappa[ip]/2;
+    }
+    kappa2y(y,kappa);
+  }
   // cc = "previous";
 }
 /********************************************/
@@ -941,6 +941,6 @@ void inv_coordinate_transform(double y[], double y_trans[]){
 }
 /********************************************/
 void pre_next_iter(double *y, double *y_trans){
-  cout << "# Is it coming?" << endl;
+  // cout << "# Is it coming?" << endl;
   memcpy(y_start,y,2*pp*sizeof(double));
 }

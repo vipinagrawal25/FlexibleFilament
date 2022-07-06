@@ -40,10 +40,10 @@ void assign_map_param(){
   // This is also the other way of saying that for "n" iteration of the map, we integrate the ODEs for
   // "n" time period.
   /* Set up parameters for map iteration */
-  MM.time = 0.;    // Ignore for discrete map
-  MM.dt = 1.e-4;   // Ignore for discrete map
-  MM.period = 4.;
-  MM.iorbit = 2.;     // 0 if you already have the orbit,
+  MM.time = 0.;       // Ignore for discrete map
+  MM.dt = 1.e-4;       // Ignore for discrete map
+  MM.period = 3.;
+  MM.iorbit = 1.;     // 0 if you already have the orbit,
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
@@ -305,6 +305,7 @@ void map_one_iter(double *y){
     double Tmax = period + time;   // We typically get this by defining Poincare section. 
                                     // which can depend on the initial condition, but not in the case
                                     // Elastic string.
+    // cout << period << endl;
     // The function for Poincare section should be defined in model.cpp file.
     double dt = MM.dt;
     double ldiag = 0;               //Theoretically it should be bool but both works.

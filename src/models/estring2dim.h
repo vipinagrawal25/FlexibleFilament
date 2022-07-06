@@ -16,7 +16,7 @@ double const angularVel = 3;
 double const period = 2*M_PI/(2);
 double const AA = 1.5*pow(10,-5)*pow(height,4)*100;
 double const HH = 16*AA/(dd*dd);			// Follow: bit.ly/2r23lmA unit -> Pa.m^4/m^2 -> Pa.m^2
-char const UseRP = 'Y';						// N -- Local drag, Y -- Global drag
+char const UseRP = 'N';						// N -- Local drag, Y -- Global drag
 /* BC Not needed in Peskin way*/
 double const bcb = 1;      					// Boundary condition at bottom, 0 - fixed, 1 - free, 2 - clamped.
 double const bct = 1;       				// Boundary condition at top. 1 - free.

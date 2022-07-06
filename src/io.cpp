@@ -135,7 +135,7 @@ void rData(double *y,string fname, int Npt, int ppt){
     //   myfile.close();
     //   break;
     default:
-      cout << "Hey, your choice of writing data does not exist. "
+      cout << "Hey, your choice of reading data does not exist. "
               "If you want a new way, Code function: wData( double y[], string filename) "
               "in model.cpp file." << endl;
       exit(1);

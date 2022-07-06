@@ -14,7 +14,7 @@ clean:
 	(cd src/; rm -f *.o *.mod *.exe; rm -f model.cpp; rm -f model.h; rm -f input.h;)
 multirun:
 	(cd src/;ln -sf ../hosts/${HOST} host; ln -sf ../${folder}/${MODEL}.h model.h;ln -sf ../${folder}/input.h input.h;\
-	 ln -sf models/${MODEL}.cpp model.cpp; make exec=${exec}; mv ${exec}.exe ../${folder}; cd ..; 
+	 ln -sf models/${MODEL}.cpp model.cpp; make exec=${exec}; mv ${exec}.exe ../${folder}; cd ..;\
 	 echo "The executable file has been moved to ${folder}.")
 dynamics:
 	(echo "I will compile myself to compute fixed points or periodic orbits for given bounday condition.\n";\
