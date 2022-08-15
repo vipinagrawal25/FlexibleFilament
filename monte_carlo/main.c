@@ -94,7 +94,7 @@ int main(int argc, char *argv[]){
                 triangles_t, outfolder+"/restart.h5");
     }
     //
-    double YY=mbrane.YY; 
+    double YY=mbrane.YY;
     double BB = mbrane.coef_bend;
     cout << "# Foppl von Karman (FvK): " 
          << YY*mbrane.radius*mbrane.radius/BB << endl;

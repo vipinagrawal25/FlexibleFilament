@@ -13,7 +13,6 @@ int randint(int n) {
         // so we can expect to bail out of this loop pretty quickly.)
         int r;
         while ((r = rand()) >= end);
-
         return r % n;
     }
 }

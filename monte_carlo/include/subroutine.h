@@ -4,8 +4,6 @@
 #include "../src/misc.h"
 #include <iostream>
 #include <random>
-#include <iomanip>
-#include <sstream>
 using namespace std;
 //*************************************************//
 // metropolis.cpp
@@ -70,15 +68,13 @@ double spring_energy(POSITION pos, int idx, MESH mesh, SPRING_para spring);
 double spring_tot_energy_force(POSITION *Pos, POSITION *spring_force, 
                                MESH mesh, SPRING_para spring);
 //initialise.c
-void initialize_system();
-void initialize_eval_lij_t0(POSITION *Pos, MESH mesh, 
-                            double *lij_t0, MBRANE_para *para, SPRING_para *spring);
-void initialize_read_config();
-void initialize_afm_tip(AFM_para );
-void initialize_read_parameters( MBRANE_para *mbrane, 
+void init_system_random_pos(Vec2d *Pos,  double len, int N, 
+                            char *metric);
+void init_eval_lij_t0(POSITION *Pos, MESH mesh, double *lij_t0,
+                     MBRANE_para *para, SPRING_para *spring);
+void init_read_parameters( MBRANE_para *mbrane, 
         AFM_para *afm, MCpara *mcpara, SPRING_para *spring,
         string para_file);
-int randint(int n);
 void write_param(string fname, MBRANE_para mbrane, MCpara mcpara, SPRING_para spring);
 //visit_io.c
 void visit_vtk_io(double *points, 

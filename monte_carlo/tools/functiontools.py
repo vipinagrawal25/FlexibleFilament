@@ -47,9 +47,8 @@ def free_energy(energy,KbT=1):
     '''Returns the free energy i.e. Z=<exp(-beta*E_tot)>, F= -KbT*np.log10(Z)'''
     beta = 1.0/KbT
     Nens = energy.shape[0]
-    # FF = Emin
     Emini,ZZ=partition(energy,KbT=KbT)
-    FF = Emini - KbT*np.log(ZZ)
+    FF = Emini - KbT*np.log(ZZ[-1])
     return Emini, FF
 #------------------------------------------------------------------------------------#
 def SphVoronoi(rr,R=1,lplot=False):
@@ -105,13 +104,15 @@ def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/
         mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
     # ------------------ compute average -------------------- #
     nruns=mc_log.shape[0]
-    mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
     avgE=np.zeros(nruns)
     std=np.zeros(nruns)
     err=np.zeros(nruns)
     for ifol in range(nruns):
-        tot_ener=np.abs(mc_log[ifol][start:,index])+np.abs(mc_log[ifol][start:,index2])
-        tot_ener=0.5*tot_ener
+        if index==0:
+            tot_ener=np.abs(mc_log[ifol][start:])
+        else:
+            tot_ener=np.abs(mc_log[ifol][start:,index])+np.abs(mc_log[ifol][start:,index2])
+            tot_ener=0.5*tot_ener
         #
         Nmc=tot_ener.shape[0]
         chsz=int(Nmc/nch)
@@ -125,12 +126,25 @@ def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/
     else:
         return avgE
 #---------------------------------------------------------------- #
-def read_mc_log(folders,datadir="./",subfol="./",start=0):
+def read_mc_log_one(folder,start=0,fname='mc_log'):
+    try:
+        mc_log=np.load(folder+fname+".npy")[start:]
+    except:
+        dd=np.loadtxt(folder+fname)
+        np.save(folder+fname,dd)
+        mc_log=dd[start:]
+    return mc_log
+#---------------------------------------------------------------- #
+def read_mc_log(folders,datadir="./",subfol="./",start=0,fname='mc_log'):
     '''It reads the data and returns mc_log for all the folders'''
     nruns=len(folders)
+    if len(folders)==1:
+        filein=datadir+folders+subfol
+        mc_log=read_mc_log_one(filein,start=start,fname=fname)
     mc_log=np.empty(nruns,dtype=object)
     for i,fol in enumerate(folders):
-        mc_log[i]=np.loadtxt(datadir+fol+subfol+"/mc_log",skiprows=start)
+        filein=datadir+fol+subfol
+        mc_log[i]=read_mc_log_one(filein,start=start,fname=fname)
     return mc_log
 #---------------------------------------------------------------- #
 def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
@@ -152,7 +166,6 @@ def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
         dvert,force,baseE,error=avg_quantity_tz(folders=folders,index=-4,datadir="./",
                                                 subfol=subsubfol)
         m,b = np.polyfit(dvert[0:fit_end], force[0:fit_end], 1)
-        # plt.plot(dvert,m*dvert+b,'-')
         print(m)
         mm[i]=m
         bb[i]=b
@@ -164,7 +177,7 @@ def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
 def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=1000,
           nch=10,error=True,nopush="noafm/",index1=-3,index2=-2):
     if mc_log is None:
-        mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
+        mc_log=read_mc_log(folders,datadir=datadir,subfol=subfol)
     nruns=mc_log.shape[0]
     mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
     zoavg=np.mean(mc_nopush[start:,index1])-np.mean(mc_nopush[start:,index2])
@@ -177,7 +190,7 @@ def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=1000,
         zch=np.zeros(nch)
         for ich in range(nch):
             zch[ich] = np.mean(zz[ich*chsz:(ich+1)*chsz])
-        print(zch)
+        # print(zch)
         err[ifol]=np.std(1-zch/zoavg)
         dvert[ifol]=np.mean(1-zch/zoavg)
     if error:
