@@ -175,7 +175,7 @@ void wHeader(FILE *fid, MBRANE_para mbrane, AFM_para afm, SPRING_para spring){
     fprintf(fid, "%s\n", log_headers.c_str());
     fflush(fid);
 }
-//
+/*------------------------------------------------------------------------------------------*/
 double height_rms(POSITION *Pos, MBRANE_para mbrane){
   double radius=mbrane.radius;
   double N=mbrane.N;
@@ -187,7 +187,7 @@ double height_rms(POSITION *Pos, MBRANE_para mbrane){
   }
   return sqrt(hrms/N);
 }
-//
+/*------------------------------------------------------------------------------------------*/
 void wDiag(FILE *fid, MBRANE_para mbrane, AFM_para afm, SPRING_para spring, MESH mesh, 
             int i, int num_moves, double *Et,POSITION *afm_force,
             POSITION *spring_force, double vol_sph,double area_sph, POSITION *Pos){

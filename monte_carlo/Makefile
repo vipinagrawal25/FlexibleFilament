@@ -3,7 +3,7 @@ include hosts/$(HOST)
 # CC = /usr/bin/h5c++ -O3 -w
 # CC=h5c++ -O2 -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11
 #
-link = -lm -std=c++11 -lhdf5
+link = -lm -std=c++14 -lhdf5
 #
 sources = src/forces_lj.c src/forces_surf.c
 sources += src/initialise.c src/visit_io.c src/hdf5_io.c

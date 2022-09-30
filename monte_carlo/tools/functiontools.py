@@ -96,7 +96,7 @@ def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
         restart=g
         wait()
 #---------------------------------------------------------------- #
-def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/",start=1000,
+def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/",start=0,
                     nch=10,error=True,nopush="noafm/",index2=None,Ks=False):
     if index2 is None:
         index2=index
@@ -135,7 +135,7 @@ def read_mc_log_one(folder,start=0,fname='mc_log'):
         mc_log=dd[start:]
     return mc_log
 #---------------------------------------------------------------- #
-def read_mc_log(folders,datadir="./",subfol="./",start=0,fname='mc_log'):
+def read_mc_log(folders,datadir="",subfol="./",start=0,fname='mc_log'):
     '''It reads the data and returns mc_log for all the folders'''
     nruns=len(folders)
     if len(folders)==1:
@@ -147,7 +147,7 @@ def read_mc_log(folders,datadir="./",subfol="./",start=0,fname='mc_log'):
         mc_log[i]=read_mc_log_one(filein,start=start,fname=fname)
     return mc_log
 #---------------------------------------------------------------- #
-def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
+def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=0,
                 nch=10,error=True,nopush="noafm/",fit_end=10):
     fols=sorted(glob.glob(datadir+"/run"))[0:-1]
     fols = [ifol.replace("/run","/") for ifol in fols]
@@ -174,7 +174,7 @@ def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
         os.chdir("../")
     return Y3d, mm, bb, dvert_all
 #-------------------------------------------------------------------#
-def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=1000,
+def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=0,
           nch=10,error=True,nopush="noafm/",index1=-3,index2=-2):
     if mc_log is None:
         mc_log=read_mc_log(folders,datadir=datadir,subfol=subfol)
@@ -198,7 +198,7 @@ def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=1000,
     else:
         return dvert
 #-------------------------------------------------------------------#
-def isgaussian(folders=None,mc_log=None,datadir="./",subfol="./",index=2,start=1000):
+def isgaussian(folders=None,mc_log=None,datadir="./",subfol="./",index=2,start=0):
     if mc_log is None:
         mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
     data=mc_log[start:,index]

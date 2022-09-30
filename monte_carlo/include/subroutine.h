@@ -44,7 +44,7 @@ double stretch_energy_total(POSITION *pos,
          MBRANE_para para);
 void identify_obtuse(POSITION *pos, int *triangles, 
        double *obtuse,  int N);
-void identify_attractive_part(POSITION *pos, 
+void identify_attractive_part(POSITION *pos,
         bool *is_attractive, int N, double theta);
 double stretch_energy_ipart(POSITION *pos, 
         int *node_nbr, double *lij_t0,
@@ -68,14 +68,13 @@ double spring_energy(POSITION pos, int idx, MESH mesh, SPRING_para spring);
 double spring_tot_energy_force(POSITION *Pos, POSITION *spring_force, 
                                MESH mesh, SPRING_para spring);
 //initialise.c
-void init_system_random_pos(Vec2d *Pos,  double len, int N, 
-                            char *metric);
-void init_eval_lij_t0(POSITION *Pos, MESH mesh, double *lij_t0,
-                     MBRANE_para *para, SPRING_para *spring);
-void init_read_parameters( MBRANE_para *mbrane, 
+int randint(int n);
+void write_param(string fname, MBRANE_para mbrane, MCpara mcpara, SPRING_para spring);
+void initialize_eval_lij_t0(POSITION *Pos, MESH mesh, 
+        double *lij_t0, MBRANE_para *para, SPRING_para *spring);
+void initialize_read_parameters( MBRANE_para *mbrane, 
         AFM_para *afm, MCpara *mcpara, SPRING_para *spring,
         string para_file);
-void write_param(string fname, MBRANE_para mbrane, MCpara mcpara, SPRING_para spring);
 //visit_io.c
 void visit_vtk_io(double *points, 
         int *triangles, 
@@ -112,10 +111,4 @@ void wDiag(FILE *fid, MBRANE_para mbrane, AFM_para afm,
           SPRING_para spring, MESH mesh, int i, int num_moves, 
           double *Et,POSITION *afm_force, POSITION *spring_force, double vol_sph,
           double area_sph, POSITION *Pos);
-template<typename T>
-inline string ZeroPadNumber(T num){
-    ostringstream ss;
-    ss << setw( 5 ) << setfill( '0' ) << (int)num;
-    return ss.str();
-}
 #endif
