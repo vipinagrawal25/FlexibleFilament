@@ -1,4 +1,4 @@
-# ElasticString
+# Flexible Filament
 How to run the code:
 
 1> first set an environment variable : ES = <wherver you checked-out the code> 
