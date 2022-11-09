@@ -11,6 +11,9 @@ import glob
 import visitio as vio
 import numpy.linalg as la
 from scipy.special import sph_harm
+from sklearn.decomposition import PCA
+import pyswarms as ps
+from pyswarms.utils.functions import single_obj as fx
 #------------------------------------------------------------------------------------#
 def voronoi_area(cotJ,cotK,jsq,ksq,area):
     '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
@@ -97,8 +100,8 @@ def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
         restart=g
         wait()
 #---------------------------------------------------------------- #
-def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/",start=1000,
-                    nch=10,error=True,nopush="noafm/",index2=None,Ks=False):
+def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/",
+                    start=1000,nch=10,error=True,nopush="noafm/",index2=None,Ks=False):
     if index2 is None:
         index2=index
     if mc_log is None:
@@ -219,19 +222,6 @@ def Ks_spring(folders=None,mc_log=None,datadir="./",subfol="./",KbT=1e0,start=10
         err[irun]=np.std(Ksch)
         Ks[irun]=np.mean(Ksch)
     return Ks,err
-#-------------------------------------------------------------------------------------------#
-def height_field(files,Np=None,nbin=50,radius=1):
-    if Np is None:
-        pfile = foldername(files[0])+"/para_file.in"
-        pdict=pio.read_param(pfile)
-        Np,radius=pdict['N'],pdict['radius']
-    hfluc_all=[]
-    for i,file in enumerate(files):
-        pos=np.loadtxt(file,skiprows=5,max_rows=Np)
-        hfluc=np.sqrt(pos[:,0]**2+pos[:,1]**2+pos[:,2]**2) - radius
-        hfluc_all.extend(hfluc)
-    hist=np.histogram(hfluc_all,bins=nbin,density=True)
-    return hist
 # -----------------------------------------------------------------#
 def cart2sph(points):
     ''' Computes theta and phi for the given points.'''
@@ -263,8 +253,6 @@ def height_field_lm(h_theta_phi,theta,phi,area,l,m,radius=1):
     # m=l
     Np = h_theta_phi.shape[0]
     h_lm=0
-    # theta=list(map(math.degrees,theta))
-    # phi=list(map(math.degrees,phi))
     for ip in range(Np):
         h_lm = h_lm + h_theta_phi[ip]*sph_harm(m,l,theta[ip],phi[ip]).real*area[ip]
     return h_lm
@@ -292,3 +280,67 @@ def spectra(infile,Np=5120,lmax=10):
     #        count = count+1
         # h_lm[l]=h_lm[l]/(2*l+1)
     # print(count,lmax*lmax+2*lmax)
+#--------------------------------------------------------------------------------------#
+def height_field(files,Np=None,nbin=50,radius=1,hist=True):
+    if Np is None:
+        pfile=foldername(files[0])+"/para_file.in"
+        pdict=pio.read_param(pfile)
+        Np,radius=pdict['N'],pdict['radius']
+    hfluc_all=np.zeros([len(files),Np])
+    for i,file in enumerate(files):
+        print(file)
+        pos=np.loadtxt(file,skiprows=5,max_rows=Np)
+        hfluc=np.sqrt(pos[:,0]**2+pos[:,1]**2+pos[:,2]**2)-radius
+        hfluc_all[i]=hfluc
+        # hfluc_all.extend(hfluc)
+    if hist:
+        hist=np.histogram(np.reshape(hfluc_all,(1,Np*len(files))),bins=nbin,
+                density=True)
+        # hist=np.histogram(hfluc_all,bins=nbin,density=True)
+        return hist
+    else:
+        return np.reshape(hfluc_all,(len(files),Np))
+#--------------------------------------------------------------------------------------#
+def data_PCA(fol=None,start=None,end=None,hfluc=None
+            ,ncut=2):
+    if hfluc is None and fol is not None:
+        files=np.empty(end-start,dtype=object)
+        for foln in range(start,end):
+            files[foln-start]=fol+"/part_"+str(foln).zfill(5)+".vtk"
+        hfluc=height_field(files,hist=False)
+    pca_2=PCA(n_components=ncut)
+    data=pca_2.fit_transform(hfluc)
+    return data
+#---------------------------------------------------------------------------------------#
+def entropy_rate(data,n_particles=1000,iters=1000):
+    ''' This function takes the reduced data and calculates the entropy.
+        It uses the pyswarm algorithm to optimize the function.'''
+    ncut=data.shape[0]
+    options={'c1': 0.5, 'c2': 0.3, 'w':0.9, 'k': 2, 'p': 2}
+    optimizer=ps.single.global_best.GlobalBestPSO(n_particles=n_particles,dimensions=ncut,
+                                    options=options)
+    optimizer.optimize(fun4,iters=iters,data=data,n_particles=n_particles)
+    cost=np.array(optimizer.cost_history)
+    sigma=1/cost-1
+    return sigma
+#---------------------------------------------------------------------------------------#
+def costLinear(pars,data):
+    nframes=data.shape[0]
+    ncut=data.shape[1]
+    data_mid = 0.5*data[0:nframes-1,:]+0.5*data[1:nframes,:]
+    data_diff= -data[0:nframes-1,:]+ data[1:nframes,:]
+    jj=data_mid*data_diff
+    jjj=np.zeros(nframes-1)
+    for ig in range(ncut):
+        jjj=jjj+pars[ig]*jj[:,ig]
+    return 2*(np.mean(jjj))*(np.mean(jjj))/(np.var(jjj))
+#--------------------------------------------------------------------------------------#
+def costLinear2(pars,data):
+    return 1/(costLinear(pars,data)+1)
+#--------------------------------------------------------------------------------------#
+def fun4(x,data,n_particles=1000):
+    cost=np.zeros(n_particles)
+    for im in range(n_particles):
+        cost[im]=costLinear2(x[im,:],data)
+    return cost
+#-------------------------------------------------------------------------------------#
