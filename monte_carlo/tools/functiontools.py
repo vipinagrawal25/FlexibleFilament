@@ -397,7 +397,6 @@ def energy(files,Np=None):
     mesh=Mesh(pos,cells)
     mesh.assign_nbrs()
     cmlst,node_nbr,bond_nbr=mesh.cmlst,mesh.bond_nbr,mesh.node_nbr
-    #
     for filename in files:
         print(filename)
         if extension(filename)=="h5":
