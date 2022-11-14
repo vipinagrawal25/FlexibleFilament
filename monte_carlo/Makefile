@@ -1,4 +1,4 @@
-HOST=norlx65_vipin
+HOST=su_mpi
 include hosts/$(HOST)
 # CC = /usr/bin/h5c++ -O3 -w
 # CC=h5c++ -O2 -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11

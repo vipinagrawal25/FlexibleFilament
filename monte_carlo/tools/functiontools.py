@@ -11,6 +11,10 @@ import glob
 import visitio as vio
 import numpy.linalg as la
 from scipy.special import sph_harm
+from sklearn.decomposition import PCA
+import pyswarms as ps
+from pyswarms.utils.functions import single_obj as fx
+from MESH import *
 #------------------------------------------------------------------------------------#
 def voronoi_area(cotJ,cotK,jsq,ksq,area):
     '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
@@ -32,6 +36,15 @@ def foldername(file):
     for n in x[0:-1]:
         name=name+n+"/"
     return name
+#------------------------------------------------------------------------------------#
+def number(file,prefix="part_"):
+    '''The function return the folder name for a given filename'''
+    x=file.split("/")
+    return int(x[-1].replace(".vtk","").replace(prefix," "))
+#------------------------------------------------------------------------------------#
+def extension(file):
+    x=file.split(".")
+    return x[-1]
 #------------------------------------------------------------------------------------#
 def partition(energy,KbT=1):
     '''Returns the running average of partition function i.e. Z=<exp(-beta*E_tot)>'''
@@ -96,8 +109,8 @@ def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
         restart=g
         wait()
 #---------------------------------------------------------------- #
-def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/",start=0,
-                    nch=10,error=True,nopush="noafm/",index2=None,Ks=False):
+def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/",
+                    start=1000,nch=10,error=True,nopush="noafm/",index2=None,Ks=False):
     if index2 is None:
         index2=index
     if mc_log is None:
@@ -232,19 +245,6 @@ def Ks_spring(folders=None,mc_log=None,datadir="./",subfol="./",KbT=1e0,start=10
         err[irun]=np.std(Ksch)
         Ks[irun]=np.mean(Ksch)
     return Ks,err
-#-------------------------------------------------------------------------------------------#
-def height_field(files,Np=None,nbin=50,radius=1):
-    if Np is None:
-        pfile = foldername(files[0])+"/para_file.in"
-        pdict=pio.read_param(pfile)
-        Np,radius=pdict['N'],pdict['radius']
-    hfluc_all=[]
-    for i,file in enumerate(files):
-        pos=np.loadtxt(file,skiprows=5,max_rows=Np)
-        hfluc=np.sqrt(pos[:,0]**2+pos[:,1]**2+pos[:,2]**2) - radius
-        hfluc_all.extend(hfluc)
-    hist=np.histogram(hfluc_all,bins=nbin,density=True)
-    return hist
 # -----------------------------------------------------------------#
 def cart2sph(points):
     ''' Computes theta and phi for the given points.'''
@@ -276,8 +276,6 @@ def height_field_lm(h_theta_phi,theta,phi,area,l,m,radius=1):
     # m=l
     Np = h_theta_phi.shape[0]
     h_lm=0
-    # theta=list(map(math.degrees,theta))
-    # phi=list(map(math.degrees,phi))
     for ip in range(Np):
         h_lm = h_lm + h_theta_phi[ip]*sph_harm(m,l,theta[ip],phi[ip]).real*area[ip]
     return h_lm
@@ -290,8 +288,6 @@ def spectra(infile,Np=5120,lmax=10):
     theta,phi = cart2sph(points)
     proj_pnts = project_onto_sph(points)
     h_theta_phi = la.norm(points,axis=1)-la.norm(proj_pnts,axis=1)
-    # h_theta_phi = sph_harm(0,5,theta,phi).real
-    # print(np.mean(h_theta_phi))
     sv = SphericalVoronoi(proj_pnts)
     area=sv.calculate_areas()
     h_lm=np.zeros(lmax)
@@ -322,3 +318,133 @@ def stat_error(data,nch=10):
     for ich in range(nch):
         datach[ich]=np.mean(data[ich*chsz:(ich+1)*chsz],axis=0)    
     return np.std(datach,axis=0),np.mean(datach,axis=0)
+#--------------------------------------------------------------------------------------#
+def getheight(file,max_rows,radius=1):
+    try:
+        hfluc=np.load(foldername(file)+"/hfluc"+str(number(file))+".npy")
+    except:
+        pos=np.loadtxt(file,skiprows=5,max_rows=max_rows)
+        hfluc=np.sqrt(pos[:,0]**2+pos[:,1]**2+pos[:,2]**2)-radius
+        np.save(foldername(file)+"/hfluc"+str(number(file)),hfluc)
+        # print(file)
+    return hfluc
+#--------------------------------------------------------------------------------------#
+def height_field(files,Np=None,nbin=50,radius=1,hist=True):
+    if Np is None:
+        pfile=foldername(files[0])+"/para_file.in"
+        pdict=pio.read_param(pfile)
+        Np,radius=pdict['N'],pdict['radius']
+    hfluc_all=np.zeros([len(files),Np])
+    for i,file in enumerate(files):
+        hfluc=getheight(file,max_rows=Np)
+        hfluc_all[i]=hfluc
+    if hist:
+        hist=np.histogram(np.reshape(hfluc_all,(1,Np*len(files))),bins=nbin,
+                density=True)
+        # hist=np.histogram(hfluc_all,bins=nbin,density=True)
+        return hist
+    else:
+        return np.reshape(hfluc_all,(len(files),Np))
+#--------------------------------------------------------------------------------------#
+def data_PCA(fol=None,start=None,end=None,hfluc=None
+            ,ncut=2):
+    if hfluc is None and fol is not None:
+        files=np.empty(end-start,dtype=object)
+        for foln in range(start,end):
+            files[foln-start]=fol+"/part_"+str(foln).zfill(5)+".vtk"
+        hfluc=height_field(files,hist=False)
+    pca_2=PCA(n_components=ncut)
+    data=pca_2.fit_transform(hfluc)
+    return data
+#---------------------------------------------------------------------------------------#
+def entropy_rate(data,n_particles=1000,iters=1000):
+    ''' This function takes the reduced data and calculates the entropy.
+        It uses the pyswarm algorithm to optimize the function.'''
+    ncut=data.shape[0]
+    options={'c1': 0.5, 'c2': 0.3, 'w':0.9, 'k': 2, 'p': 2}
+    optimizer=ps.single.global_best.GlobalBestPSO(n_particles=n_particles,dimensions=ncut,
+                                    options=options)
+    optimizer.optimize(fun4,iters=iters,data=data,n_particles=n_particles)
+    cost=np.array(optimizer.cost_history)
+    sigma=1/cost-1
+    return sigma
+#---------------------------------------------------------------------------------------#
+def costLinear(pars,data):
+    nframes=data.shape[0]
+    ncut=data.shape[1]
+    data_mid = 0.5*data[0:nframes-1,:]+0.5*data[1:nframes,:]
+    data_diff= -data[0:nframes-1,:]+ data[1:nframes,:]
+    jj=data_mid*data_diff
+    jjj=np.zeros(nframes-1)
+    for ig in range(ncut):
+        jjj=jjj+pars[ig]*jj[:,ig]
+    return 2*(np.mean(jjj))*(np.mean(jjj))/(np.var(jjj))
+#--------------------------------------------------------------------------------------#
+def costLinear2(pars,data):
+    return 1/(costLinear(pars,data)+1)
+#--------------------------------------------------------------------------------------#
+def fun4(x,data,n_particles=1000):
+    cost=np.zeros(n_particles)
+    for im in range(n_particles):
+        cost[im]=costLinear2(x[im,:],data)
+    return cost
+#-------------------------------------------------------------------------------------#
+def bend_energy(mesh,BB):
+    curv,dualcell=mesh.curvature()
+    curv0=mesh.sp_curv
+    bendE=np.zeros(mesh.Np)
+    for ip in range(mesh.Np):
+        Nhat=mesh.R[ip]/LA.norm(mesh.R[ip])
+        bendE[ip]=0.5*BB*dualcell[ip]*(LA.norm(curv[ip]-curv0*Nhat))**2
+    return bendE
+#-------------------------------------------------------------------------------------#
+def stretch_energy(mesh,HH):
+    R=mesh.R
+    lij0=mesh.lij0
+    stretchE=np.zeros(mesh.Np)
+    for i in range(mesh.Np):
+        count=0
+        start=mesh.cmlst[i]
+        end=mesh.cmlst[i+1]
+        for j in mesh.node_nbr[start:end]:
+            rij=R[i]-R[j]
+            stretchE[i]=stretchE[i]+(LA.norm(rij)-lij0[start+count])**2
+            count=count+1
+    return 0.25*HH*stretchE
+#-------------------------------------------------------------------------------------#
+def energy(files,Np=None):
+    '''
+        The function takes filenames as an argument,
+        reads the position of every point,
+        computes energy of all the point,
+        and saves it in the same folder.
+    '''
+    fol=foldername(files[0])
+    pdict=pio.read_param(fol+"/para_file.in")
+    Np=pdict['N']
+    BB=pdict['coef_bending']
+    HH=pdict['Y']
+    bendE=[]
+    stretchE=[]
+    filename=files[0]
+    if extension(filename)=="h5":
+        pos=h5py.File(filename)["pos"][()]
+        cells=h5py.File(fol+"/input.h5")["cells"][()]
+    elif extension(filename)=="vtk":
+        pos,cells=vio.vtk_to_data(filename,Np=Np)
+    mesh=Mesh(pos,cells)
+    mesh.assign_nbrs()
+    cmlst,bond_nbr,node_nbr=mesh.cmlst,mesh.bond_nbr,mesh.node_nbr
+    for filename in files:
+        print(filename)
+        if extension(filename)=="h5":
+            pos=h5py.File(filename)["pos"][()]
+            cells=h5py.File(fol+"/input.h5")["cells"][()]
+        elif extension(filename)=="vtk":
+            pos,cells=vio.vtk_to_data(filename,Np=Np)
+        mesh=Mesh(R=pos,cells=cells,cmlst=cmlst,bond_nbr=bond_nbr,node_nbr=node_nbr)
+        mesh.lij0=mesh.lengths()
+        bendE.append(bend_energy(mesh,BB))
+        stretchE.append(stretch_energy(mesh,HH))
+    return bendE,stretchE
+#-------------------------------------------------------------------------------------#
