@@ -4,17 +4,15 @@ import quaternion
 import h5py
 #################################### CLASS ###################################
 class Mesh:
-    cmlst=None
-    node_nbr=None
-    bond_nbr=None
-    radius=1.0
-    sp_curv=2/radius
-    #
-    def __init__(self,R,cells):
+    def __init__(self,R,cells,cmlst=None,node_nbr=None,bond_nbr=None):
             self.Np=R.shape[0]
             self.R=R
             self.cells=cells
-            # cmlst,node_nbr,bond_nbr=neighbours(R,cells)
+            self.sp_curv=2
+            self.cmlst=cmlst
+            self.node_nbr=node_nbr
+            self.bond_nbr=bond_nbr
+            self.lij0=self.lengths()
     #
     def __neighbours(self):
         simpl=self.__sort_simplices()
@@ -50,6 +48,13 @@ class Mesh:
         nsimpl = np.asarray(sorted(nsimpl, key=lambda x: (x[0], x[1])))
         return nsimpl
     #
+    def __check_assign_nbrs(self,sorting=True):
+        if self.cmlst is None or self.node_nbr is None or self.bond_nbr is None:
+            print("# Seems like you are calling the function for the first time, and we have not \
+                     constructed the neighbour list.\n Dont worry, I am going to do it now.")
+            self.assign_nbrs()
+            print("# SUCCESSS:neighbour list is succesfully constructed.")
+    #
     def assign_nbrs(self,sorting=True):
         cmlst,node_nbr,bond_nbr=self.__neighbours()
         self.cmlst=np.array(cmlst).astype(np.int)
@@ -60,17 +65,11 @@ class Mesh:
     #
     def curvature(self):
         '''Given a snapshot, the function computes curvature for all points.'''
-        Np = self.Np
-        curv = np.zeros([Np,3])
+        Np=self.Np
+        curv=np.zeros([Np,3])
+        dualcell=np.zeros(Np)
         R=self.R
-        if self.cmlst is None or self.node_nbr is None or self.bond_nbr is None:
-            print("# Seems like you are calling the function for the first time, and we have not \
-                     constructed the neighbour list.\n Dont worry, I am going to do it now.")
-            self.assign_nbrs()
-            print("# SUCCESSS:neighbour list is succesfully constructed.")
-        # start=self.cmlst[i]
-        # end=self.cmlst[i+1]
-        # Initialize things
+        self.__check_assign_nbrs()
         for i in range(Np):
             start=self.cmlst[i]
             end=self.cmlst[i+1]
@@ -109,7 +108,8 @@ class Mesh:
                 sigma_i=sigma_i+voronoi_area(cot_jkp,cot_kp,likpsq,lijsq,area_ijkp);
             sigma_i=sigma_i/2
             curv[i]=(1/sigma_i)*(cot_times_rij)
-        return curv
+            dualcell[i]=sigma_i
+        return curv,dualcell
     #
     def compute_obtuse(self):
         """For a given triangular mesh, the function returns the list of all the obtuse triangles.
@@ -149,14 +149,12 @@ class Mesh:
                     (a_ki_kj[i] > piby2))
             if(logic):
                 isgt90[i] = 1e0
-            # print (a_ij_ik, a_ji_jk, a_ki_kj)
-            # print (a_ij_ik + a_ji_jk + a_ki_kj)
         return isgt90
     #
     def __sort_nbrs(self):
         zhat = np.array([0.,0.,1.])
         for i in range(self.Np):
-            nbrs=self.node_nbr[self.cmlst[i]:self.cmlst[i+1]]  # neighbours of ith node
+            nbrs=self.node_nbr[self.cmlst[i]:self.cmlst[i+1]] # neighbours of ith node
             vector=self.R[i]
             # I will rotate the coordinate system about this vector
             vhat = np.cross(vector,zhat)       
@@ -189,6 +187,21 @@ class Mesh:
             nbn[i,1] = bn[1]
         hf.create_dataset('bond_nbr',data=nbn)
         hf.close()
+    #
+    def lengths(self):
+        R=self.R
+        Np=self.Np
+        self.__check_assign_nbrs()
+        lengs=np.zeros(self.cmlst[-1])
+        for i in range(Np):
+            start=self.cmlst[i]
+            end=self.cmlst[i+1]
+            count=0
+            for j in self.node_nbr[start:end]:
+                lengs[start+count]=LA.norm(R[i]-R[j])
+                count=count+1
+        print("is it coming?")
+        return lengs
 #################################### OTHER FUNCTIONS ##################################
 def sort_2Dpoints_theta(x,y):
     len_x = len(x)
