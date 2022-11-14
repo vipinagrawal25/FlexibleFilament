@@ -396,7 +396,7 @@ def energy(files,Np=None):
         pos,cells=vio.vtk_to_data(filename,Np=Np)
     mesh=Mesh(pos,cells)
     mesh.assign_nbrs()
-    cmlst,node_nbr,bond_nbr=mesh.cmlst,mesh.bond_nbr,mesh.node_nbr
+    cmlst,bond_nbr,node_nbr=mesh.cmlst,mesh.bond_nbr,mesh.node_nbr
     for filename in files:
         print(filename)
         if extension(filename)=="h5":
@@ -405,7 +405,8 @@ def energy(files,Np=None):
         elif extension(filename)=="vtk":
             pos,cells=vio.vtk_to_data(filename,Np=Np)
         mesh=Mesh(R=pos,cells=cells,cmlst=cmlst,bond_nbr=bond_nbr,node_nbr=node_nbr)
-        stretchE=stretchE.extend(stretch_energy(mesh,HH))
-        bendE=bendE.extend(bend_energy(mesh,BB))
+        mesh.lij0=mesh.lengths()
+        bendE.append(bend_energy(mesh,BB))
+        stretchE.append(stretch_energy(mesh,HH))
     return bendE,stretchE
 #-------------------------------------------------------------------------------------#

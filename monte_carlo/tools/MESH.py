@@ -12,7 +12,7 @@ class Mesh:
             self.cmlst=cmlst
             self.node_nbr=node_nbr
             self.bond_nbr=bond_nbr
-            self.lij0=self.lengths()
+            self.lij0=None
     #
     def __neighbours(self):
         simpl=self.__sort_simplices()
@@ -200,7 +200,6 @@ class Mesh:
             for j in self.node_nbr[start:end]:
                 lengs[start+count]=LA.norm(R[i]-R[j])
                 count=count+1
-        print("is it coming?")
         return lengs
 #################################### OTHER FUNCTIONS ##################################
 def sort_2Dpoints_theta(x,y):
