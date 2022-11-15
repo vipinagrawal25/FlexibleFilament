@@ -60,9 +60,8 @@ def free_energy(energy,KbT=1):
     '''Returns the free energy i.e. Z=<exp(-beta*E_tot)>, F= -KbT*np.log10(Z)'''
     beta = 1.0/KbT
     Nens = energy.shape[0]
-    # FF = Emin
     Emini,ZZ=partition(energy,KbT=KbT)
-    FF = Emini - KbT*np.log(ZZ)
+    FF = Emini - KbT*np.log(ZZ[-1])
     return Emini, FF
 #------------------------------------------------------------------------------------#
 def SphVoronoi(rr,R=1,lplot=False):
@@ -118,13 +117,15 @@ def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/
         mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
     # ------------------ compute average -------------------- #
     nruns=mc_log.shape[0]
-    mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
     avgE=np.zeros(nruns)
     std=np.zeros(nruns)
     err=np.zeros(nruns)
     for ifol in range(nruns):
-        tot_ener=np.abs(mc_log[ifol][start:,index])+np.abs(mc_log[ifol][start:,index2])
-        tot_ener=0.5*tot_ener
+        if index==0:
+            tot_ener=np.abs(mc_log[ifol][start:])
+        else:
+            tot_ener=np.abs(mc_log[ifol][start:,index])+np.abs(mc_log[ifol][start:,index2])
+            tot_ener=0.5*tot_ener
         #
         Nmc=tot_ener.shape[0]
         chsz=int(Nmc/nch)
@@ -138,15 +139,28 @@ def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/
     else:
         return avgE
 #---------------------------------------------------------------- #
-def read_mc_log(folders,datadir="./",subfol="./",start=0):
-    '''It reads the data and returns mc_log for all the folders'''
-    nruns=len(folders)
-    mc_log=np.empty(nruns,dtype=object)
-    for i,fol in enumerate(folders):
-        mc_log[i]=np.loadtxt(datadir+fol+subfol+"/mc_log",skiprows=start)
+def read_mc_log_one(folder,start=0,fname='mc_log'):
+    try:
+        mc_log=np.load(folder+fname+".npy")[start:]
+    except:
+        dd=np.loadtxt(folder+fname)
+        np.save(folder+fname,dd)
+        mc_log=dd[start:]
     return mc_log
 #---------------------------------------------------------------- #
-def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
+def read_mc_log(folders,datadir="",subfol="./",start=0,fname='mc_log'):
+    '''It reads the data and returns mc_log for all the folders'''
+    nruns=len(folders)
+    if len(folders)==1:
+        filein=datadir+folders+subfol
+        mc_log=read_mc_log_one(filein,start=start,fname=fname)
+    mc_log=np.empty(nruns,dtype=object)
+    for i,fol in enumerate(folders):
+        filein=datadir+fol+subfol
+        mc_log[i]=read_mc_log_one(filein,start=start,fname=fname)
+    return mc_log
+#---------------------------------------------------------------- #
+def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=0,
                 nch=10,error=True,nopush="noafm/",fit_end=10):
     fols=sorted(glob.glob(datadir+"/run"))[0:-1]
     fols = [ifol.replace("/run","/") for ifol in fols]
@@ -165,7 +179,6 @@ def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
         dvert,force,baseE,error=avg_quantity_tz(folders=folders,index=-4,datadir="./",
                                                 subfol=subsubfol)
         m,b = np.polyfit(dvert[0:fit_end], force[0:fit_end], 1)
-        # plt.plot(dvert,m*dvert+b,'-')
         print(m)
         mm[i]=m
         bb[i]=b
@@ -174,10 +187,10 @@ def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=1000,
         os.chdir("../")
     return Y3d, mm, bb, dvert_all
 #-------------------------------------------------------------------#
-def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=1000,
+def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=0,
           nch=10,error=True,nopush="noafm/",index1=-3,index2=-2):
     if mc_log is None:
-        mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
+        mc_log=read_mc_log(folders,datadir=datadir,subfol=subfol)
     nruns=mc_log.shape[0]
     mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
     zoavg=np.mean(mc_nopush[start:,index1])-np.mean(mc_nopush[start:,index2])
@@ -190,7 +203,7 @@ def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=1000,
         zch=np.zeros(nch)
         for ich in range(nch):
             zch[ich] = np.mean(zz[ich*chsz:(ich+1)*chsz])
-        print(zch)
+        # print(zch)
         err[ifol]=np.std(1-zch/zoavg)
         dvert[ifol]=np.mean(1-zch/zoavg)
     if error:
@@ -198,7 +211,7 @@ def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=1000,
     else:
         return dvert
 #-------------------------------------------------------------------#
-def isgaussian(folders=None,mc_log=None,datadir="./",subfol="./",index=2,start=1000):
+def isgaussian(folders=None,mc_log=None,datadir="./",subfol="./",index=2,start=0):
     if mc_log is None:
         mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
     data=mc_log[start:,index]
@@ -280,6 +293,31 @@ def spectra(infile,Np=5120,lmax=10):
     h_lm=np.zeros(lmax)
     for l in range(0,lmax):
         h_lm[l]= height_field_lm(h_theta_phi,theta,phi,area,l,m=0)
+    # h_lm=np.zeros(lmax*lmax+2*lmax)
+    # count=0
+    # for l in range(0,lmax):
+    #     for m in range(-l,l+1):
+    #        h_lm[count]= height_field_lm(h_theta_phi,theta,phi,area,l,m)
+    #        count = count+1
+        # h_lm[l]=h_lm[l]/(2*l+1)
+    # print(count,lmax*lmax+2*lmax)
+    return h_lm
+# ----------------------------------------------------------------- #
+def stat_error(data,nch=10):
+    '''
+    Takes a one dimensional function and returns error by binning.
+    It assumes that the quantity of interest is average of the data.
+    It returns 1) the average quantity 2) error in the quantity
+    '''
+    Nmc=data.shape[0]
+    chsz=int(Nmc/nch)
+    if (len(data.shape)>1):
+        datach=np.zeros([nch,data.shape[1]])
+    else:
+        datach=np.zeros(nch)
+    for ich in range(nch):
+        datach[ich]=np.mean(data[ich*chsz:(ich+1)*chsz],axis=0)    
+    return np.std(datach,axis=0),np.mean(datach,axis=0)
 #--------------------------------------------------------------------------------------#
 def getheight(file,max_rows,radius=1):
     try:
