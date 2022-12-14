@@ -124,7 +124,8 @@ def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/
         if index==0:
             tot_ener=np.abs(mc_log[ifol][start:])
         else:
-            tot_ener=np.abs(mc_log[ifol][start:,index])+np.abs(mc_log[ifol][start:,index2])
+            tot_ener=np.abs(mc_log[ifol][start:,index])\
+                    +np.abs(mc_log[ifol][start:,index2])
             tot_ener=0.5*tot_ener
         #
         Nmc=tot_ener.shape[0]
@@ -227,8 +228,8 @@ def isgaussian(folders=None,mc_log=None,datadir="./",subfol="./",index=2,start=0
     plt.semilogy(xx,f)
     plt.show()
 #-------------------------------------------------------------------------------------------#
-def Ks_spring(folders=None,mc_log=None,datadir="./",subfol="./",KbT=1e0,start=10000,nch=10,
-              error=True,index1=-3,index2=-2):
+def Ks_spring(folders=None,mc_log=None,datadir="./",subfol="./",KbT=1e0,start=10000,
+            nch=10,error=True,index1=-3,index2=-2):
     if mc_log is None:
         mc_log = read_mc_log(folders,datadir=datadir,subfol=subfol)
     nruns = mc_log.shape[0]
@@ -280,27 +281,34 @@ def height_field_lm(h_theta_phi,theta,phi,area,l,m,radius=1):
         h_lm = h_lm + h_theta_phi[ip]*sph_harm(m,l,theta[ip],phi[ip]).real*area[ip]
     return h_lm
 # ----------------------------------------------------------------- #
-def spectra(infile,Np=5120,lmax=10):
-    # if Np is None:
-    #     pname=foldername(infile)+"/para_file.in"
-    #     Np=pio.read_param(pname)['Np']
-    points,cells = vio.vtk_to_data(infile,Np=Np)
+def readpos(filename,Np=5120):
+    fol=foldername(filename)
+    if extension(filename)=="h5":
+        pos=h5py.File(filename)["pos"][()]
+        pos=pos.reshape([Np,3])
+        cells=h5py.File(fol+"/input.h5")["triangles"][()]
+    elif extension(filename)=="vtk":
+        pos,cells=vio.vtk_to_data(filename,Np=Np)
+    return pos,cells
+# ----------------------------------------------------------------- #
+def spectra(infile,Np=20252,lmax=25):
+    print(infile)
+    points,cells = readpos(infile,Np=Np)
     theta,phi = cart2sph(points)
     proj_pnts = project_onto_sph(points)
     h_theta_phi = la.norm(points,axis=1)-la.norm(proj_pnts,axis=1)
     sv = SphericalVoronoi(proj_pnts)
     area=sv.calculate_areas()
     h_lm=np.zeros(lmax)
-    for l in range(0,lmax):
-        h_lm[l]= height_field_lm(h_theta_phi,theta,phi,area,l,m=0)
+    # for l in range(0,lmax):
+    #     h_lm[l]= height_field_lm(h_theta_phi,theta,phi,area,l,m=0)
     # h_lm=np.zeros(lmax*lmax+2*lmax)
     # count=0
-    # for l in range(0,lmax):
-    #     for m in range(-l,l+1):
-    #        h_lm[count]= height_field_lm(h_theta_phi,theta,phi,area,l,m)
-    #        count = count+1
-        # h_lm[l]=h_lm[l]/(2*l+1)
-    # print(count,lmax*lmax+2*lmax)
+    h00=height_field_lm(h_theta_phi,theta,phi,area,0,0)
+    for l in range(0,lmax):
+        for m in range(-l,l+1):
+           h_lm[l]=h_lm[l]+height_field_lm(h_theta_phi,theta,phi,area,l,m)
+        h_lm[l]=h_lm[l]*4*np.pi/((2*l+1)*h00*h00)
     return h_lm
 # ----------------------------------------------------------------- #
 def stat_error(data,nch=10):
@@ -362,8 +370,8 @@ def entropy_rate(data,n_particles=1000,iters=1000):
         It uses the pyswarm algorithm to optimize the function.'''
     ncut=data.shape[0]
     options={'c1': 0.5, 'c2': 0.3, 'w':0.9, 'k': 2, 'p': 2}
-    optimizer=ps.single.global_best.GlobalBestPSO(n_particles=n_particles,dimensions=ncut,
-                                    options=options)
+    optimizer=ps.single.global_best.GlobalBestPSO(n_particles=n_particles,
+            dimensions=ncut,options=options)
     optimizer.optimize(fun4,iters=iters,data=data,n_particles=n_particles)
     cost=np.array(optimizer.cost_history)
     sigma=1/cost-1
@@ -410,6 +418,7 @@ def stretch_energy(mesh,HH):
             rij=R[i]-R[j]
             stretchE[i]=stretchE[i]+(LA.norm(rij)-lij0[start+count])**2
             count=count+1
+    print(stretchE)
     return 0.25*HH*stretchE
 #-------------------------------------------------------------------------------------#
 def energy(files,Np=None):
@@ -423,7 +432,7 @@ def energy(files,Np=None):
     pdict=pio.read_param(fol+"/para_file.in")
     Np=pdict['N']
     BB=pdict['coef_bending']
-    HH=pdict['Y']
+    HH=pdict['Y']*np.sqrt(3)/2
     bendE=[]
     stretchE=[]
     filename=files[0]
@@ -448,3 +457,35 @@ def energy(files,Np=None):
         stretchE.append(stretch_energy(mesh,HH))
     return bendE,stretchE
 #-------------------------------------------------------------------------------------#
+def energy_snap(filename,Np=None):
+    '''
+        The function takes filenames as an argument,
+        reads the position of every point,
+        computes energy of all the point,
+        and saves it in the same folder.
+    '''
+    fol=foldername(filename)
+    pdict=pio.read_param(fol+"/para_file.in")
+    Np=pdict['N']
+    BB=pdict['coef_bending']
+    HH=pdict['Y']*np.sqrt(3)/2
+    pos,cells=readpos(filename,Np=Np)
+    mesh=Mesh(pos,cells)
+    mesh.assign_nbrs()
+    mesh.lij0=mesh.lengths()
+    energy=np.hstack([bend_energy(mesh,BB), stretch_energy(mesh,HH)])
+    # np.save(fol+"/energy_"+str(number(filename)).zfill(5),energy)
+#-------------------------------------------------------------------------------------#
+def lastfile(dirname,file_prefix='',zfill=5):
+    ''' The function returns the complete path of last file in the 
+        directory. Here, we use binary search.'''
+    low=2
+    high=2**13
+    while(abs(low-high)>1):
+        if(os.path.exists(dirname+"/"+file_prefix+str(high).zfill(zfill)+'.txt')):
+            low=high
+            high*=2
+        else:
+            high=int((low+high)/2)
+    return low
+#------------------------------------------------------------------------------#
