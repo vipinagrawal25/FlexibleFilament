@@ -291,8 +291,7 @@ def readpos(filename,Np=5120):
         pos,cells=vio.vtk_to_data(filename,Np=Np)
     return pos,cells
 # ----------------------------------------------------------------- #
-def spectra(infile,Np=20252,lmax=25):
-    print(infile)
+def spectra(infile,Np=5120,lmax=25):
     points,cells = readpos(infile,Np=Np)
     theta,phi = cart2sph(points)
     proj_pnts = project_onto_sph(points)
@@ -305,9 +304,10 @@ def spectra(infile,Np=20252,lmax=25):
     # h_lm=np.zeros(lmax*lmax+2*lmax)
     # count=0
     h00=height_field_lm(h_theta_phi,theta,phi,area,0,0)
+    # print(infile)
     for l in range(0,lmax):
         for m in range(-l,l+1):
-           h_lm[l]=h_lm[l]+height_field_lm(h_theta_phi,theta,phi,area,l,m)
+           h_lm[l]=h_lm[l]+height_field_lm(h_theta_phi,theta,phi,area,l,m)**2
         h_lm[l]=h_lm[l]*4*np.pi/((2*l+1)*h00*h00)
     return h_lm
 # ----------------------------------------------------------------- #
