@@ -291,7 +291,7 @@ def readpos(filename,Np=5120):
         pos,cells=vio.vtk_to_data(filename,Np=Np)
     return pos,cells
 # ----------------------------------------------------------------- #
-def spectra(infile,Np=5120,lmax=25):
+def spectra(infile,Np=5120,lmax=50):
     points,cells = readpos(infile,Np=Np)
     theta,phi = cart2sph(points)
     proj_pnts = project_onto_sph(points)
