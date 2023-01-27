@@ -278,9 +278,9 @@ def height_field_lm(h_theta_phi,theta,phi,area,l,m,radius=1):
     Np = h_theta_phi.shape[0]
     h_lm=0
     for ip in range(Np):
-        h_lm = h_lm + h_theta_phi[ip]*sph_harm(m,l,theta[ip],phi[ip]).real*area[ip]
+        h_lm = h_lm + h_theta_phi[ip]*sph_harm(m,l,theta[ip],phi[ip])*area[ip]
     return h_lm
-# ----------------------------------------------------------------- #
+# -----------------------------------------------------------------#
 def readpos(filename,Np=5120):
     fol=foldername(filename)
     if extension(filename)=="h5":
@@ -304,12 +304,16 @@ def spectra(infile,Np=5120,lmax=50):
     # h_lm=np.zeros(lmax*lmax+2*lmax)
     # count=0
     h00=height_field_lm(h_theta_phi,theta,phi,area,0,0)
+    h00sq=np.abs(h00)**2
     # print(infile)
     for l in range(0,lmax):
         for m in range(-l,l+1):
-           h_lm[l]=h_lm[l]+height_field_lm(h_theta_phi,theta,phi,area,l,m)**2
-        h_lm[l]=h_lm[l]*4*np.pi/((2*l+1)*h00*h00)
-    return h_lm
+            hlmtemp=height_field_lm(h_theta_phi,theta,phi,area,l,m)
+            # print(hlmtemp)
+            h_lm[l]=h_lm[l]+np.abs(hlmtemp)**2
+        h_lm[l]=h_lm[l]*4*np.pi/((2*l+1)*h00sq)
+    # print(h00sq)
+    return np.hstack([h00sq,h_lm])
 # ----------------------------------------------------------------- #
 def stat_error(data,nch=10):
     '''
@@ -456,7 +460,7 @@ def energy(files,Np=None):
         bendE.append(bend_energy(mesh,BB))
         stretchE.append(stretch_energy(mesh,HH))
     return bendE,stretchE
-#-------------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------------#
 def energy_snap(filename,Np=None):
     '''
         The function takes filenames as an argument,
@@ -475,7 +479,7 @@ def energy_snap(filename,Np=None):
     mesh.lij0=mesh.lengths()
     energy=np.hstack([bend_energy(mesh,BB), stretch_energy(mesh,HH)])
     # np.save(fol+"/energy_"+str(number(filename)).zfill(5),energy)
-#-------------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------#
 def lastfile(dirname,file_prefix='',zfill=5):
     ''' The function returns the complete path of last file in the 
         directory. Here, we use binary search.'''
