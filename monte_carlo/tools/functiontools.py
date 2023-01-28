@@ -493,3 +493,17 @@ def lastfile(dirname,file_prefix='',zfill=5):
             high=int((low+high)/2)
     return low
 #------------------------------------------------------------------------------#
+def avg_spectra(file,skiprows=10,step=1,FvK=4616):
+    # dd=np.loadtxt(file+"/spec_lm2_avg.txt",skiprows=skiprows)
+    dd=np.load(file+"/spec_lm2_avg2.npy")[skiprows:]
+    dd=dd[::step]
+    print(dd.shape)
+    error,hlm=stat_error(dd[:,1:])
+    # paradict=pio.read_param(file+'/para_file.in')
+    # BB=paradict['coef_bending']
+    # act=paradict['e_activity']
+    # PP=paradict['pressure']
+    # Pc=4*BB*np.sqrt(FvK)
+    # lbl="act="+str(act)+", BB="+str(BB)+", P="+str(float("{0:.3f}".format(PP/Pc)))
+    return hlm,error
+#------------------------------------------------------------------------------#
