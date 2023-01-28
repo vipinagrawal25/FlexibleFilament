@@ -45,7 +45,7 @@ def dump_visit_points_scalar(infile, points, scalar, name_scalar='points_data'):
             for p in scalar:
                 f.write("%.16E\n" %(p))
 def dump_visit_cells_scalar(infile,
-        triangles, 
+        triangles,
         scalar, 
         name_scalar='cell_data'):
     """

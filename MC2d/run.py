@@ -52,7 +52,7 @@ if(inp['do_montecarlo']):
             rr,E = F.MC_surf(rr,Np,Lone=np.pi,Ltwo=2*np.pi,metric='sph',maxiter=10**(int(math.log10(Np))+1),kBT=1.,
                                  dfac=Np,interactive=False,sigma=sigma)
             sv=F.SphVoronoi(rr)
-            obtuse = F.check_obtuse(sv.points, sv._simplices)
+            obtuse = F.check_obtuse(sv.points,sv._simplices)
             mesh=MESH(BB=2.5,HH=1,sv=sv)
             print("|avlij0-lopt|/lopt =",np.abs(np.mean(mesh.lij0)-lopt)/lopt, obtuse.sum())
             dv.dump_visit('output/rrini'+str(i).zfill(4)+'.vtk', sv.points, sv._simplices)

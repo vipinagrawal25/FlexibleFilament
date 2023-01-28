@@ -2,6 +2,8 @@
 #include "../include/Position.h"
 #ifndef FILE_MISC_SEEN
 #define FILE_MISC_SEEN
+#include <iomanip>
+#include <iostream>
 using namespace std;
 /* -----------------------------------------------*/
 template<typename T>  // This type of function definition can take any variable type. 
@@ -23,4 +25,10 @@ void max(int *amaxind, double *amaxval, POSITION *pos, int ndim, char dirn = 'z'
 void min(int *aminind, double *aminval, POSITION *pos, int ndim,char dirn='z');
 // void print(vec2 *arr, int nn);
 /* -----------------------------------------------*/
+template<typename T>
+inline string ZeroPadNumber(T num){
+    ostringstream ss;
+    ss << setfill('0') << setw(5) << (int) num;
+    return ss.str();
+}
 #endif

@@ -68,13 +68,13 @@ typedef struct{
 }MESH;
 //
 typedef struct{
-int N; // number of points defining in afm tip curve
-double extent[4]; // extent in x- x+ y- y+
-POSITION *tip_curve;
-double tip_rad; // radius of the tip
-double tip_pos_z; // position of tip in z
-double sigma, epsilon;
-int icompute;
+    int N; // number of points defining in afm tip curve
+    double extent[4]; // extent in x- x+ y- y+
+    POSITION *tip_curve;
+    double tip_rad; // radius of the tip
+    double tip_pos_z; // position of tip in z
+    double sigma, epsilon;
+    int icompute;
 }AFM_para;
 //
 typedef struct{
@@ -86,9 +86,9 @@ typedef struct{
 }LJpara;
 //
 typedef struct{
-int icompute;
-double constant;
-double nPole_eq_z;
-double sPole_eq_z;
+    int icompute;
+    double constant;
+    double nPole_eq_z;
+    double sPole_eq_z;
 }SPRING_para;
 #endif

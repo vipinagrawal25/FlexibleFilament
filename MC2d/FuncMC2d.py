@@ -18,8 +18,8 @@ import quaternion
 class MESH:
     def __init__(self,BB,HH,R,cells):
             # if (R is None) or (cmlst is None) or (node_nbr is None) or (bond_nbr is None):
-            #     cmlst,node_nbr,bond_nbr=neighbours(sv.points,sv._simplices)
-            #     R=sv.points
+            # cmlst,node_nbr,bond_nbr=neighbours(sv.points,sv._simplices)
+            # R=sv.points
             cmlst,node_nbr,bond_nbr=neighbours(R,cells)
             self.BB=BB
             self.HH=HH
@@ -109,7 +109,7 @@ class MESH:
         stE=0
         for i in range(self.Np):
             beE=beE+self.bend_energy(i)
-            stE=stE++0.5*self.stretch_energy(i)
+            stE=stE+0.5*self.stretch_energy(i)
         # print("beE=",beE)
         # print("stE=",stE)
         return beE+stE

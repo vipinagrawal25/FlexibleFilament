@@ -128,8 +128,8 @@ void calc_stab(double *y, int const neigs){
  cout << "# eps_rel = " << eps_rel << endl;
  //  Vecc eigval(neigs);
  //  Matc eigvec(neigs,mapdim);
- // bool success = jacob_eigvalvec<selectionRule>(&eigval,&eigvec,neigs,mapdim,map_multiple_iter,y,eps_rel);
- //-----------------------
+ //  bool success = jacob_eigvalvec<selectionRule>(&eigval,&eigvec,neigs,mapdim,map_multiple_iter,y,eps_rel);
+ //  -----------------------
  Matd DerM(mapdim,mapdim);
  Jacobian(&DerM, y);
  cout << DerM << endl;
