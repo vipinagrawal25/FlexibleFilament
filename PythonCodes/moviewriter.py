@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
 import sys
 
-
 FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Movie Test', artist='Matplotlib',
                 comment='Movie support!')
@@ -30,7 +29,7 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap,symbol='.',colors=[],colormap='gnuplot
 #####################################################
 def MakePlot2D(ax,Xaxis,Yaxis,tsnap,symbol='.'):
 	# ax.subplot(2,1,2)
-	ax.set_xlim(-0.2,2)
+	ax.set_xlim(-0.2,3)
 	ax.set_ylim(-0.2,1.5)
 	ax.plot(Xaxis,Yaxis,symbol)
 	plt.title(str(tsnap))
