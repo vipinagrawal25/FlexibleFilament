@@ -94,7 +94,7 @@ int main(int argc, char** argv){
   eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS,EForceArr);
   //
   if (ievolve_save){
-     outfile.open(run_dir + "output/var0.txt");
+     outfile.open(run_dir+"output/var0.txt");
       wData(&outfile,&outfile,y,vel);                                     // Code it in your model.cpp
       outfile.close();
   }

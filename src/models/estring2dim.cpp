@@ -550,7 +550,7 @@ void iniconf(double *y){
       XX=y2vec2(y,ip);
       XX.x = XX.x+aa;
       // 5*aa*sin(M_PI*k*aa*double(ip)/height);
-      vec2y(y,XX,ip)
+      vec2y(y,XX,ip);
     case -2:
       // To give perturbation to the filament.
       rData(y,datafile);

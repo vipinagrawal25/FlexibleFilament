@@ -17,7 +17,7 @@ double const dd = 0.005; 					// diameter of the filament.
 											// The particles would also have same diameter.
 double const viscosity = 10;				// Equivalent to kinematic viscosity of glycerin
 double const ShearRate = 2;
-char const UseRP = 'Y';						// N -- Local drag, Y -- Global drag
+char const UseRP = 'N';						// N -- Local drag, Y -- Global drag
 /* BC Not needed in Peskin way*/
 double const bcb = 1;      					// Boundary condition at bottom, 0 - fixed, 1 - free, 2 - clamped.
 double const bct = 1;       				// Boundary condition at top. 1 - free.
@@ -32,7 +32,7 @@ int const fnp = 2;
 int const floc[fnp] = {0,1};					// External force location
 //
 int const iext_flow = 3;   /* External flow: 1->shear rate changes as step function. 3-> Sine type shear rate.*/
-int const niniconf = 1;    /* Configuration of the system at t = 0. 0 -> sine perturbation in  the  filament. 
+int const niniconf = -3;    /* Configuration of the system at t = 0. 0 -> sine perturbation in  the  filament. 
 							1 -> Straight filament, 2-> , -1 -> read from a file*/
 int const ievolve_save=1;
 int const itracer=0;						// 0 -> No tracers, 1 -> tracers on square lattice, 3 -> tracer on circular lattice? 
@@ -55,5 +55,5 @@ void eval_rhs_tr(double time,double EForceArr[],double y[],double y_tr[],double 
 void calc_yone(double *yone, double time);
 void calc_yzero(double *yzero, double time);
 /* ----------------------------------------*/
-#endif /* !FILE_ESTRING_SEEN */
+#endif /*!FILE_ESTRING_SEEN*/
 /* ----------------------------------------*/
