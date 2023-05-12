@@ -14,7 +14,7 @@ using namespace Eigen;
 using namespace std;
 // /*****************************************************************/
 static double compute_eps(double Xstar[], const double x_in[], int nn, double eps_rel);
-// // template<int const SelectionRule, int neigs, int ndim, typename T>
+// template<int const SelectionRule, int neigs, int ndim, typename T>
 // // bool jacob_eigvalvec(double eigval[], double eigvec[][ndim], void func(double*, T*),
 // //                      double Xini[], T *TV);
 
@@ -144,7 +144,7 @@ private:
 // }
 // /*--------------------------------------------------------------------------*/
 template<int const SelectionRule>
-bool jacob_eigvalvec(VectorXcd *eigval, MatrixXcd *eigvec, int neigs, int ndim,void func(double*), 
+bool jacob_eigvalvec(VectorXcd *eigval, MatrixXcd *eigvec, int neigs, int ndim, void func(double*), 
                      double Xini[], double eps_rel=1.e-4){
   JdotX op;
   op.Xstar = Xini;
@@ -204,7 +204,7 @@ bool jacob_eigval(VectorXcd *eigval, int neigs, int ndim, void func(double*),
   op.f_display = func;
   op.nn = ndim;
   op.eps_rel = eps_rel;
-
+  //
   int ncv = min(2*neigs+1,ndim);
   GenEigsSolver< double, selectionRule, JdotX > eigs(&op, neigs, ncv);
   eigs.init();

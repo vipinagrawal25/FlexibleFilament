@@ -8,9 +8,9 @@
 struct MV{
   double time;    // Current time of the simulation
   double dt;      // Current dt for the adaptive scheme
-  int period;      // Number of iteration of the map.
+  int period;     // Number of iteration of the map.
   int iorbit;
-  bool istab;		// Do you want to calculate the stability of the orbit?
+  bool istab;		   // Do you want to calculate the stability of the orbit?
   // bool irel_orb;
   int mapdim;
   std::string guess_space;

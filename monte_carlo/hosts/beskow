@@ -1,0 +1,1 @@
+compile=CC –openmp -O3 -DNDEBUG -Wno-deprecated -Wno-unused-result -std=c++11

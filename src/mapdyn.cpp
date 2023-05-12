@@ -15,7 +15,7 @@
 #include <time.h>
 /* -----------------------------------------------*/
 using namespace std;
-MV MM;
+MV MM;                        // Global variable MM
 /* -----------------------------------------------*/
 // void map_multiple_iter(double y[][ndim],double tAll);
 void write_map_param(string fname);
@@ -28,26 +28,24 @@ void pre_next_iter(double *y,double *ytrans) __attribute__((weak));
 /*-----------------------------------------------*/
 /*1) Prefix a means address to that particular varibale (avar -> address to var).
   2) Idea is not to use Eigen/Spectra namespace anywhere in these files.
-  all of the converting function needs to be defined utils.
-  3) wData,rData needs to be defined in IO.cpp file. Let's do it later.
-  4) Define NewtonRaphson and NewtonKrylov method.*/
+  all of the converting function needs to be defined in utils.
 /*-----------------------------------------------*/
 void assign_map_param(){
   // In principle, this function converts set of ODEs to a poincare map by taking poincare section.
   // For a non-automous flow such as the particular problem of Elastic string in periodically driven
   // Stokes flow, we take Poincare section sin(omega*t)=0 which is 3*N-1 dimensional hyper-plane, 
   // where 'N' is number of ODE to solve. 
-  // This is also the other way of saying that for "n" iteration of the map, we integrate the ODEs for
-  // "n" time period.
+  // This is also the other way of saying that for "n" iteration of the map, we integrate the ODEs 
+  // for "n" time period.
   /* Set up parameters for map iteration */
-  MM.time = 0.;       // Ignore for discrete map
-  MM.dt = 1.e-4;       // Ignore for discrete map
-  MM.period = 3.;
+  MM.time = 0.;    // Ignore for discrete map
+  MM.dt = 1.e-4;   // Ignore for discrete map
+  MM.period = 4.;
   MM.iorbit = 1.;     // 0 if you already have the orbit,
                       // 1 for calculating the orbit using Newton-Krylov
                       // 2 for letting the simulation evolve to a stable orbit.
   // 0 for no stability analysis, 1 for yes.
-  // It computes the eigenvalues and save them in the folder.
+  // It computes the eigenvalues and save them in a file.
   MM.istab = 0.;
   // MM.irel_orb = 0.;     // Do you want to search for relative periodic orbits?
                            // 0 -> no, 1-> yes. Symmetry needs to be defined in model.cpp file.
@@ -55,8 +53,8 @@ void assign_map_param(){
   MM.guess_space = "Real";  // take two values "Real" or "Transformed"
   // (*MM).iter_method=1;   // 1 -> Newton-Raphson
   // I am commenting things for diagnostics.
-  // Since I am converting ODE to a map, I will just save things whenever the dynamical curve crosses
-  // Poincare section.
+  // Since I am converting ODE to a map, I will just save things whenever the dynamical curve 
+  // crosses Poincare section.
   // (*MM).tdiag = 0.;
   // (*MM).ldiag = 0.;
   // (*MM).ndiag = 1.;
@@ -302,7 +300,7 @@ void map_one_iter(double *y){
     // This function convert ODE to map for 1 iteration. It also has flexibility to save a few 
     // intermediate points as well.
     double time = MM.time;
-    double Tmax = period + time;   // We typically get this by defining Poincare section. 
+    double Tmax = period + time;    // We typically get this by defining Poincare section. 
                                     // which can depend on the initial condition, but not in the case
                                     // Elastic string.
     // cout << period << endl;
@@ -347,8 +345,6 @@ bool IsOrbit(double y[]){
   double Error=0;
   if(norm(fy,mapdim)<err_tol*mapdim*10){Error = SqEr(fy,y,mapdim)/(err_tol*mapdim);}
   else{Error = SqEr(fy,y,mapdim)/norm(fy,mapdim);}
-  // cout << "SqEr(fy,y,mapdim) =" << SqEr(fy,y,mapdim) << endl;
-  // cout << "norm(fy,mapdim)" << norm(fy,mapdim) << endl;
   cout << "# Error= " << Error << endl;
   return 1;
   if (Error<err_tol){
@@ -363,8 +359,10 @@ void __attribute__((weak)) coordinate_transform(double *ytrans, double *y){
   int mapdim = MM.mapdim;
   memcpy(ytrans,y,mapdim*sizeof(double));
 }
+/*----------------------------------------------- */
 void __attribute__((weak)) inv_coordinate_transform(double *y,double *ytrans){
   memcpy(y,ytrans,ndim*sizeof(double));
 }
+/*----------------------------------------------- */
 void pre_next_iter(double *y,double *ytrans){}
 /*----------------------------------------------- */

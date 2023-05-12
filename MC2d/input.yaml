@@ -1,0 +1,8 @@
+# Input for the program run.py
+# In the main put all the print statements under if (debug)
+num_particles : 4096
+debug : False
+do_montecarlo : False
+read_ini_particle : False
+facH : 577
+regular_lattice : True

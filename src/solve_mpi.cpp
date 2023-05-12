@@ -181,6 +181,7 @@ int main(int argc, char** argv){
   outfile_time.close();
   outfile_curvature.close();
   outfile_SS.close();
+  outfile_terminal.close();
   MPI_Finalize();
 }
 /********************************************/

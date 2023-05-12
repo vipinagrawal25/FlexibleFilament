@@ -38,10 +38,8 @@ public:
     ColsAtCompileTime = Dynamic,
     MaxColsAtCompileTime = Dynamic,
   };
- 
   Index rows() const { return my_vec->rows(); }
   Index cols() const { return my_vec->cols(); }
- 
   template<typename Rhs>
   Product<MatrixReplacement,Rhs,AliasFreeProduct> operator*(const MatrixBase<Rhs>& x) const 
   {

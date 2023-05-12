@@ -37,9 +37,7 @@ int main( void ){
   pre_evolve(  ndim, TimeScheme , &TT, &dev_tt, Nblock, Nthread  ) ;
   // setup initial configuration 
   initial_configuration( PSI, PARAM );
-  // system("exec rm -rf data");    
-  system("exec mkdir data"); 
-  // wPSI( PSI, TT.time ) ;   
+  system("exec mkdir data");
   H2D( dev_psi, PSI, ndim );
   H2D(dev_vel, VEL, ndim);
   clock_t timer=clock();

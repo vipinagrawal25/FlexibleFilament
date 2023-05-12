@@ -53,8 +53,8 @@ int main(){
     pre_next_iter(y,ytrans);
   }
   else{
-    cout << "# -- guess_space is not mentioned."
-            " Reading input as real space -- # " << endl;
+    cout << "# -- guess_space is not mentioned.\n"
+            "# Reading input as real space -- # " << endl;
     iniconf(y);
     coordinate_transform(ytrans,y);
   }
@@ -102,7 +102,7 @@ int main(){
     else{
      // First check whether you actually have the periodic orbit?
       cout << "# Is it a periodic orbit?"
-             " (if you don't want this, please comment it out in MapSolve.cpp) " << endl;
+             " (if you don't want this, please comment it out in mapsolve.cpp) " << endl;
       if(IsOrbit(ytrans)){calc_stab(ytrans);}
       // if (1){calc_stab(ytrans);}
       else{
@@ -120,7 +120,7 @@ void calc_stab(double *y, int const neigs){
   if(FileExists("eig") || FileExists("Eig")){
     cout << "# I have already calculated the stability of this orbit."
             "There are already some eigenvalues in the folder. I can not replace that.\n"
-            "Please remove the eig file and run the exec again.";
+            "# Please remove the eig file and run the exec again.";
     exit(1);
   }
  // bool success = jacob_eigval<selectionRule>(&eigval,neigs,mapdim,map_multiple_iter,y);
@@ -128,8 +128,8 @@ void calc_stab(double *y, int const neigs){
  cout << "# eps_rel = " << eps_rel << endl;
  //  Vecc eigval(neigs);
  //  Matc eigvec(neigs,mapdim);
- // bool success = jacob_eigvalvec<selectionRule>(&eigval,&eigvec,neigs,mapdim,map_multiple_iter,y,eps_rel);
- //-----------------------
+ //  bool success = jacob_eigvalvec<selectionRule>(&eigval,&eigvec,neigs,mapdim,map_multiple_iter,y,eps_rel);
+ //  -----------------------
  Matd DerM(mapdim,mapdim);
  Jacobian(&DerM, y);
  cout << DerM << endl;

@@ -383,18 +383,35 @@ def reScale(file,factor,file2="downscale.txt",wDataMeth=1):
     return dd,dd2
     
 def getpos(dd,dim=2,wDataMeth=1):
-    NN = dd.size/(dim*2)
-    position=NP.zeros([NN,2])
-    if wDataMeth==1 and dim==3:
-        position=dd[:,1:3]
-    elif wDataMeth==1 and dim==2:
-        position=dd[:,0:2]
-    elif wDataMeth==2 and dim==2:
-        position[:,0] = dd[2::4]
-        position[:,1] = dd[4::4]
-    elif wDataMeth==2 and dim==3:
-        position[:,0] = dd[4::6] 
-        position[:,1] = dd[6::6]
-    else:
-        print("I have no idea what do you want?")
-    return position
+# <<<<<<< HEAD
+#     NN = dd.size/(dim*2)
+#     position=NP.zeros([NN,2])
+#     if wDataMeth==1 and dim==3:
+#         position=dd[:,1:3]
+#     elif wDataMeth==1 and dim==2:
+#         position=dd[:,0:2]
+#     elif wDataMeth==2 and dim==2:
+#         position[:,0] = dd[2::4]
+#         position[:,1] = dd[4::4]
+#     elif wDataMeth==2 and dim==3:
+#         position[:,0] = dd[4::6] 
+#         position[:,1] = dd[6::6]
+#     else:
+#         print("I have no idea what do you want?")
+#     return position
+# =======
+	NN = dd.size/(dim*2)
+	position=NP.zeros([NN,2])
+	if wDataMeth==1 and dim==3:
+		position=dd[:,1:3]
+	elif wDataMeth==1 and dim==2:
+		position=dd[:,0:2]
+	elif wDataMeth==2 and dim==2:
+		position[:,0] = dd[2::4]
+		position[:,1] = dd[4::4]
+	elif wDataMeth==2 and dim==3:
+		position[:,0] = dd[4::6] 
+		position[:,1] = dd[6::6]
+	else:
+		print("I have no idea what do you want?")
+	return position
