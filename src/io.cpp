@@ -5,14 +5,13 @@
 #include "misc.h"
 #include "model.h"
 #include <iomanip>
-#include "input.h"
+#include "constant.h"
 using namespace std;
 /*-----------------------------------------------*/
 void wData(ofstream *fptr, double *y, double time, int Npt, int ppt){
   // If we do not want to write velocity in a file.
   int ndimt = Npt*ppt;
-  int wDataMeth_t=2;
-  switch(wDataMeth_t){
+  switch(wDataMeth){
     case 1:
       for(int ip = 0; ip < Npt; ++ip){
         for (int jp = 0; jp < ppt; ++jp){
@@ -87,15 +86,25 @@ void rData(double *y,string fname, int Npt, int ppt){
   ifstream myfile;
   //
   double ndimt = Npt*ppt;
-  // cout << wDataMeth << endl;
   switch(rDataMeth){
     case 1:
+      if (FileExists(fname)==false){
+        cout << "EXITING: The data file does not exist." << endl;
+        exit(1);
+      }
       myfile.open(fname);
       while(myfile >> ch){cnt++;}
       myfile.close();
       cout << "# Number of elements read: " << cnt << endl;
       if(cnt==Npt){}
       else if(cnt==ndimt){
+        cnt=0;
+        myfile.open(fname);
+        while(myfile >> ch){y[cnt]=ch;cnt++;}
+        myfile.close();
+      }
+      else if(cnt == ndimt+1){
+        myfile >> ch;
         cnt=0;
         myfile.open(fname);
         while(myfile >> ch){y[cnt]=ch;cnt++;}
@@ -113,27 +122,11 @@ void rData(double *y,string fname, int Npt, int ppt){
         }
         myfile.close();
       }
+      else{
+        cout << "EXITING: Number of entries in the data file are either more or less than required." << endl;
+        exit(1);
+      }
       break;
-    // case 2:
-    //   if(){
-    //     l = "data/";
-    //     l.append(filename);
-    //   }else{
-    //     l=filename;
-    //   }
-    //   while( getline(myfile,token) ){
-    //     line=token;
-    //     getline(myfile,token);          // Dumping this: #---------
-    //   }
-    //   // Now convert all the tab separated entries to array.
-    //   iss.str(line);
-    //   // getline(iss, token, '\t');     // First entry is time, delete that.
-    //   for (int idim = 0; idim < ndimt; ++idim){
-    //     getline(iss, token, '\t');      // Get next token.
-    //     y[idim]=stod(token);            // Convert to double and store it in y.
-    //   }
-    //   myfile.close();
-    //   break;
     default:
       cout << "Hey, your choice of reading data does not exist. "
               "If you want a new way, Code function: wData( double y[], string filename) "

@@ -1,0 +1,509 @@
+import numpy as np
+from numpy import linalg as LA
+import matplotlib.pyplot as plt
+import time
+import paramio as pio
+import os
+import psutil
+from scipy.spatial import SphericalVoronoi
+from multipledispatch import dispatch
+import glob
+import visitio as vio
+import numpy.linalg as la
+from scipy.special import sph_harm
+from sklearn.decomposition import PCA
+import pyswarms as ps
+from pyswarms.utils.functions import single_obj as fx
+from MESH import *
+#------------------------------------------------------------------------------------#
+def voronoi_area(cotJ,cotK,jsq,ksq,area):
+    '''Q. Given two cotangent angles, it returns either the area due to perpendicular 
+        bisector, or the barycenter.'''
+    sigma=0
+    if cotJ>0 and cotK>0:
+        if cotJ*cotK <1:
+            sigma = 0.125*(cotJ*jsq+cotK*ksq)
+        else:
+            sigma = 0.5*area
+    else:
+        sigma = 0.25*area
+    return sigma;
+#------------------------------------------------------------------------------------#
+def foldername(file):
+    '''The function return the folder name for a given filename'''
+    x=file.split("/")
+    name=""
+    for n in x[0:-1]:
+        name=name+n+"/"
+    return name
+#------------------------------------------------------------------------------------#
+def number(file,prefix="part_"):
+    '''The function return the folder name for a given filename'''
+    x=file.split("/")
+    return int(x[-1].replace(".vtk","").replace(prefix," "))
+#------------------------------------------------------------------------------------#
+def extension(file):
+    x=file.split(".")
+    return x[-1]
+#------------------------------------------------------------------------------------#
+def partition(energy,KbT=1):
+    '''Returns the running average of partition function i.e. Z=<exp(-beta*E_tot)>'''
+    beta=1.0/KbT
+    Nensemble=energy.shape[0]
+    # O(n^2) algorithm
+    Emin = np.min(energy)
+    ZZ=np.zeros(Nensemble)
+    ZZ = np.cumsum(np.exp(-beta*(energy - Emin)))
+    return Emin,ZZ
+#------------------------------------------------------------------------------------#
+def free_energy(energy,KbT=1):
+    '''Returns the free energy i.e. Z=<exp(-beta*E_tot)>, F= -KbT*np.log10(Z)'''
+    beta = 1.0/KbT
+    Nens = energy.shape[0]
+    Emini,ZZ=partition(energy,KbT=KbT)
+    FF = Emini - KbT*np.log(ZZ[-1])
+    return Emini, FF
+#------------------------------------------------------------------------------------#
+def SphVoronoi(rr,R=1,lplot=False):
+    Np = np.shape(rr)[0]
+    xyz = np.zeros([Np,3])
+    for ip in range(Np):
+        tht = rr[ip,0]
+        phi = rr[ip,1]
+        x = R*np.sin(tht)*np.cos(phi)
+        y = R*np.sin(tht)*np.sin(phi)
+        z = R*np.cos(tht)
+        xyz[ip] = np.array([x,y,z])
+    sv = SphericalVoronoi(xyz,radius=R)
+    if lplot:
+        plot_voronoi(xyz,sv)
+    return sv
+#------------------------------------------------------------------------------------#
+def isrunning(procname='run'):
+    for p in psutil.process_iter(['username','name']):
+        if p.info['name']==procname:
+            running = 1
+        else:
+            running = 0
+    return running
+#---------------------------------------------------------------- #
+def wait(procname='run',timedelay=10):
+    running=1
+    while running==1:
+        time.sleep(timedelay)
+        running=isrunning(procname=procname)
+#---------------------------------------------------------------- #
+def movetip(tz_start,tz_end,step=-0.01,timedelay=10,restart=None):
+    tz_all=np.arange(tz_start,tz_end,step)
+    for tz in tz_all:
+        pio.change_param(tip_pos_z=tz)
+        print("# tz = ", tz)
+        g = str(float("{0:.3f}".format(tz)))
+        os.system("mkdir "+g)
+        if restart is None:
+            pio.change_param(is_restart=0)
+        else:
+            pio.change_param(is_restart=1)
+            os.system("cp "+restart+"/restart.h5 "+g)
+        os.system("./run para_file.in "+ g + "> "+g+"/terminal.txt")
+        restart=g
+        wait()
+#---------------------------------------------------------------- #
+def avg_quantity_tz(folders=None,mc_log=None,index=2,datadir="./",subfol="rerun/",
+                    start=1000,nch=10,error=True,nopush="noafm/",index2=None,Ks=False):
+    if index2 is None:
+        index2=index
+    if mc_log is None:
+        mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
+    # ------------------ compute average -------------------- #
+    nruns=mc_log.shape[0]
+    avgE=np.zeros(nruns)
+    std=np.zeros(nruns)
+    err=np.zeros(nruns)
+    for ifol in range(nruns):
+        if index==0:
+            tot_ener=np.abs(mc_log[ifol][start:])
+        else:
+            tot_ener=np.abs(mc_log[ifol][start:,index])\
+                    +np.abs(mc_log[ifol][start:,index2])
+            tot_ener=0.5*tot_ener
+        #
+        Nmc=tot_ener.shape[0]
+        chsz=int(Nmc/nch)
+        Ech=np.zeros(nch)
+        for ich in range(nch):
+            Ech[ich] = np.mean(tot_ener[ich*chsz:(ich+1)*chsz])
+        err[ifol]=np.std(Ech)
+        avgE[ifol]=np.mean(Ech)
+    if error:
+        return avgE,err
+    else:
+        return avgE
+#---------------------------------------------------------------- #
+def read_mc_log_one(folder,start=0,fname='mc_log'):
+    try:
+        mc_log=np.load(folder+fname+".npy")[start:]
+    except:
+        dd=np.loadtxt(folder+fname)
+        np.save(folder+fname,dd)
+        mc_log=dd[start:]
+    return mc_log
+#---------------------------------------------------------------- #
+def read_mc_log(folders,datadir="",subfol="./",start=0,fname='mc_log'):
+    '''It reads the data and returns mc_log for all the folders'''
+    nruns=len(folders)
+    if len(folders)==1:
+        filein=datadir+folders+subfol
+        mc_log=read_mc_log_one(filein,start=start,fname=fname)
+    mc_log=np.empty(nruns,dtype=object)
+    for i,fol in enumerate(folders):
+        filein=datadir+fol+subfol
+        mc_log[i]=read_mc_log_one(filein,start=start,fname=fname)
+    return mc_log
+#---------------------------------------------------------------- #
+def Ks_vs_Y3d(datadir="./",subsubfol="rerun/",start=0,
+                nch=10,error=True,nopush="noafm/",fit_end=10):
+    fols=sorted(glob.glob(datadir+"/run"))[0:-1]
+    fols = [ifol.replace("/run","/") for ifol in fols]
+    Y3d = [float(ifol.replace("/run",""))*(10**9)/3 for ifol in fols]
+    mm=np.zeros(len(fols))
+    bb=np.zeros(len(fols))
+    dvert_all=np.empty(len(fols),dtype=object)
+    for i,ifol in enumerate(fols):
+        os.chdir(ifol)
+        tzall=sorted(glob.glob("*/mc_log"))
+        step=float(tzall[1].replace("/mc_log",""))-float(tzall[0].replace("/mc_log",""))
+        tz_start=float(tzall[-4].replace("/mc_log",""))
+        tz_end=float(tzall[0].replace("/mc_log",""))
+        nruns=int(abs(tz_start-tz_end)/step+2)
+        folders=np.linspace(tz_start,tz_end,nruns)
+        dvert,force,baseE,error=avg_quantity_tz(folders=folders,index=-4,datadir="./",
+                                                subfol=subsubfol)
+        m,b = np.polyfit(dvert[0:fit_end], force[0:fit_end], 1)
+        print(m)
+        mm[i]=m
+        bb[i]=b
+        dvert_all[i]=dvert
+        # plt.legend()
+        os.chdir("../")
+    return Y3d, mm, bb, dvert_all
+#-------------------------------------------------------------------#
+def dvert(folders=None,mc_log=None,datadir="./",subfol="rerun/",start=0,
+          nch=10,error=True,nopush="noafm/",index1=-3,index2=-2):
+    if mc_log is None:
+        mc_log=read_mc_log(folders,datadir=datadir,subfol=subfol)
+    nruns=mc_log.shape[0]
+    mc_nopush = np.loadtxt(datadir+nopush+subfol+"/mc_log")
+    zoavg=np.mean(mc_nopush[start:,index1])-np.mean(mc_nopush[start:,index2])
+    dvert=np.zeros(nruns)
+    err=np.zeros(nruns)
+    for ifol in range(nruns):
+        zz=mc_log[ifol][start:,index1]-mc_log[ifol][start:,index2]
+        Nmc=zz.shape[0]
+        chsz=int(Nmc/nch)
+        zch=np.zeros(nch)
+        for ich in range(nch):
+            zch[ich] = np.mean(zz[ich*chsz:(ich+1)*chsz])
+        # print(zch)
+        err[ifol]=np.std(1-zch/zoavg)
+        dvert[ifol]=np.mean(1-zch/zoavg)
+    if error:
+        return dvert,err
+    else:
+        return dvert
+#-------------------------------------------------------------------#
+def isgaussian(folders=None,mc_log=None,datadir="./",subfol="./",index=2,start=0):
+    if mc_log is None:
+        mc_log= read_mc_log(folders,datadir=datadir,subfol=subfol)
+    data=mc_log[start:,index]
+    avg=np.mean(mc_log[start:,index])
+    std=np.std(mc_log[start:,index])
+    nbin=50
+    hist=np.histogram((data-avg)/std,bins=nbin,density=True)
+    cen = hist[1][1:] + hist[1][:-1]
+    plt.subplots()
+    plt.plot(cen*0.5,hist[0],'.-')
+    xx = (np.linspace(0,nbin,nbin+1)-nbin/2)*8/nbin
+    f = 1/(np.sqrt(2*np.pi))*np.exp(-0.5*xx**2)
+    plt.semilogy(xx,f)
+    plt.show()
+#-------------------------------------------------------------------------------------------#
+def Ks_spring(folders=None,mc_log=None,datadir="./",subfol="./",KbT=1e0,start=10000,
+            nch=10,error=True,index1=-3,index2=-2):
+    if mc_log is None:
+        mc_log = read_mc_log(folders,datadir=datadir,subfol=subfol)
+    nruns = mc_log.shape[0]
+    Ks=np.zeros(nruns)
+    err=np.zeros(nruns)
+    for irun in range(nruns):
+        z0=mc_log[irun][start:,index1]-mc_log[irun][start:,index2]
+        ## Divide the data into 10 bins
+        Nmc=zz.shape[0]
+        chsz=int(Nmc/nch)
+        Ksch=np.zeros(nch)
+        for ich in range(nch):
+            Ksch[ich] = KbT/np.var(zz[ich*chsz:(ich+1)*chsz])
+        err[irun]=np.std(Ksch)
+        Ks[irun]=np.mean(Ksch)
+    return Ks,err
+# -----------------------------------------------------------------#
+def cart2sph(points):
+    ''' Computes theta and phi for the given points.'''
+    Np=points.shape[0]
+    theta = np.zeros(Np)
+    phi = np.zeros(Np)
+    for ip,pos in enumerate(points):
+        x,y,z=pos[0],pos[1],pos[2]
+        #
+        xy=np.sqrt(x**2+y**2)
+        theta[ip] = np.arctan2(y,x)
+        phi[ip] = np.arctan2(xy,z);
+    return theta,phi
+# -----------------------------------------------------------------#
+def project_onto_sph(points,radius=1):
+    ''' The function take the points (3 dimensional vector) and 
+        projects on an unit sphere. '''
+    Np = points.shape[0]
+    proj_pnts=np.zeros([Np,3])
+    for ip,pos in enumerate(points):
+        # x,y,z=pos[0],pos[1],pos[2]
+        rad_act=la.norm(pos)
+        proj_pnts[ip,0]=pos[0]/rad_act  
+        proj_pnts[ip,1]=pos[1]/rad_act
+        proj_pnts[ip,2]=pos[2]/rad_act
+    return proj_pnts
+# ----------------------------------------------------------------- #
+def height_field_lm(h_theta_phi,theta,phi,area,l,m,radius=1):
+    # m=l
+    Np = h_theta_phi.shape[0]
+    h_lm=0
+    for ip in range(Np):
+        h_lm = h_lm + h_theta_phi[ip]*sph_harm(m,l,theta[ip],phi[ip])*area[ip]
+    return h_lm
+# -----------------------------------------------------------------#
+def readpos(filename,Np=5120):
+    fol=foldername(filename)
+    if extension(filename)=="h5":
+        pos=h5py.File(filename)["pos"][()]
+        pos=pos.reshape([Np,3])
+        cells=h5py.File(fol+"/input.h5")["triangles"][()]
+    elif extension(filename)=="vtk":
+        pos,cells=vio.vtk_to_data(filename,Np=Np)
+    return pos,cells
+# ----------------------------------------------------------------- #
+def spectra(infile,Np=5120,lmax=50):
+    points,cells = readpos(infile,Np=Np)
+    theta,phi = cart2sph(points)
+    proj_pnts = project_onto_sph(points)
+    h_theta_phi = la.norm(points,axis=1)-la.norm(proj_pnts,axis=1)
+    sv = SphericalVoronoi(proj_pnts)
+    area=sv.calculate_areas()
+    h_lm=np.zeros(lmax)
+    # for l in range(0,lmax):
+    #     h_lm[l]= height_field_lm(h_theta_phi,theta,phi,area,l,m=0)
+    # h_lm=np.zeros(lmax*lmax+2*lmax)
+    # count=0
+    h00=height_field_lm(h_theta_phi,theta,phi,area,0,0)
+    h00sq=np.abs(h00)**2
+    # print(infile)
+    for l in range(0,lmax):
+        for m in range(-l,l+1):
+            hlmtemp=height_field_lm(h_theta_phi,theta,phi,area,l,m)
+            # print(hlmtemp)
+            h_lm[l]=h_lm[l]+np.abs(hlmtemp)**2
+        h_lm[l]=h_lm[l]*4*np.pi/((2*l+1)*h00sq)
+    # print(h00sq)
+    return np.hstack([h00sq,h_lm])
+# ----------------------------------------------------------------- #
+def stat_error(data,nch=10):
+    '''
+    Takes a one dimensional function and returns error by binning.
+    It assumes that the quantity of interest is average of the data.
+    It returns 1) the average quantity 2) error in the quantity
+    '''
+    Nmc=data.shape[0]
+    chsz=int(Nmc/nch)
+    if (len(data.shape)>1):
+        datach=np.zeros([nch,data.shape[1]])
+    else:
+        datach=np.zeros(nch)
+    for ich in range(nch):
+        datach[ich]=np.mean(data[ich*chsz:(ich+1)*chsz],axis=0)    
+    return np.std(datach,axis=0),np.mean(datach,axis=0)
+#--------------------------------------------------------------------------------------#
+def getheight(file,max_rows,radius=1):
+    try:
+        hfluc=np.load(foldername(file)+"/hfluc"+str(number(file))+".npy")
+    except:
+        pos=np.loadtxt(file,skiprows=5,max_rows=max_rows)
+        hfluc=np.sqrt(pos[:,0]**2+pos[:,1]**2+pos[:,2]**2)-radius
+        np.save(foldername(file)+"/hfluc"+str(number(file)),hfluc)
+        # print(file)
+    return hfluc
+#--------------------------------------------------------------------------------------#
+def height_field(files,Np=None,nbin=50,radius=1,hist=True):
+    if Np is None:
+        pfile=foldername(files[0])+"/para_file.in"
+        pdict=pio.read_param(pfile)
+        Np,radius=pdict['N'],pdict['radius']
+    hfluc_all=np.zeros([len(files),Np])
+    for i,file in enumerate(files):
+        hfluc=getheight(file,max_rows=Np)
+        hfluc_all[i]=hfluc
+    if hist:
+        hist=np.histogram(np.reshape(hfluc_all,(1,Np*len(files))),bins=nbin,
+                density=True)
+        # hist=np.histogram(hfluc_all,bins=nbin,density=True)
+        return hist
+    else:
+        return np.reshape(hfluc_all,(len(files),Np))
+#--------------------------------------------------------------------------------------#
+def data_PCA(fol=None,start=None,end=None,hfluc=None
+            ,ncut=2):
+    if hfluc is None and fol is not None:
+        files=np.empty(end-start,dtype=object)
+        for foln in range(start,end):
+            files[foln-start]=fol+"/part_"+str(foln).zfill(5)+".vtk"
+        hfluc=height_field(files,hist=False)
+    pca_2=PCA(n_components=ncut)
+    data=pca_2.fit_transform(hfluc)
+    return data
+#---------------------------------------------------------------------------------------#
+def entropy_rate(data,n_particles=1000,iters=1000):
+    ''' This function takes the reduced data and calculates the entropy.
+        It uses the pyswarm algorithm to optimize the function.'''
+    ncut=data.shape[0]
+    options={'c1': 0.5, 'c2': 0.3, 'w':0.9, 'k': 2, 'p': 2}
+    optimizer=ps.single.global_best.GlobalBestPSO(n_particles=n_particles,
+            dimensions=ncut,options=options)
+    optimizer.optimize(fun4,iters=iters,data=data,n_particles=n_particles)
+    cost=np.array(optimizer.cost_history)
+    sigma=1/cost-1
+    return sigma
+#---------------------------------------------------------------------------------------#
+def costLinear(pars,data):
+    nframes=data.shape[0]
+    ncut=data.shape[1]
+    data_mid = 0.5*data[0:nframes-1,:]+0.5*data[1:nframes,:]
+    data_diff= -data[0:nframes-1,:]+ data[1:nframes,:]
+    jj=data_mid*data_diff
+    jjj=np.zeros(nframes-1)
+    for ig in range(ncut):
+        jjj=jjj+pars[ig]*jj[:,ig]
+    return 2*(np.mean(jjj))*(np.mean(jjj))/(np.var(jjj))
+#--------------------------------------------------------------------------------------#
+def costLinear2(pars,data):
+    return 1/(costLinear(pars,data)+1)
+#--------------------------------------------------------------------------------------#
+def fun4(x,data,n_particles=1000):
+    cost=np.zeros(n_particles)
+    for im in range(n_particles):
+        cost[im]=costLinear2(x[im,:],data)
+    return cost
+#-------------------------------------------------------------------------------------#
+def bend_energy(mesh,BB):
+    curv,dualcell=mesh.curvature()
+    curv0=mesh.sp_curv
+    bendE=np.zeros(mesh.Np)
+    for ip in range(mesh.Np):
+        Nhat=mesh.R[ip]/LA.norm(mesh.R[ip])
+        bendE[ip]=0.5*BB*dualcell[ip]*(LA.norm(curv[ip]-curv0*Nhat))**2
+    return bendE
+#-------------------------------------------------------------------------------------#
+def stretch_energy(mesh,HH):
+    R=mesh.R
+    lij0=mesh.lij0
+    stretchE=np.zeros(mesh.Np)
+    for i in range(mesh.Np):
+        count=0
+        start=mesh.cmlst[i]
+        end=mesh.cmlst[i+1]
+        for j in mesh.node_nbr[start:end]:
+            rij=R[i]-R[j]
+            stretchE[i]=stretchE[i]+(LA.norm(rij)-lij0[start+count])**2
+            count=count+1
+    print(stretchE)
+    return 0.25*HH*stretchE
+#-------------------------------------------------------------------------------------#
+def energy(files,Np=None):
+    '''
+        The function takes filenames as an argument,
+        reads the position of every point,
+        computes energy of all the point,
+        and saves it in the same folder.
+    '''
+    fol=foldername(files[0])
+    pdict=pio.read_param(fol+"/para_file.in")
+    Np=pdict['N']
+    BB=pdict['coef_bending']
+    HH=pdict['Y']*np.sqrt(3)/2
+    bendE=[]
+    stretchE=[]
+    filename=files[0]
+    if extension(filename)=="h5":
+        pos=h5py.File(filename)["pos"][()]
+        cells=h5py.File(fol+"/input.h5")["cells"][()]
+    elif extension(filename)=="vtk":
+        pos,cells=vio.vtk_to_data(filename,Np=Np)
+    mesh=Mesh(pos,cells)
+    mesh.assign_nbrs()
+    cmlst,bond_nbr,node_nbr=mesh.cmlst,mesh.bond_nbr,mesh.node_nbr
+    for filename in files:
+        print(filename)
+        if extension(filename)=="h5":
+            pos=h5py.File(filename)["pos"][()]
+            cells=h5py.File(fol+"/input.h5")["cells"][()]
+        elif extension(filename)=="vtk":
+            pos,cells=vio.vtk_to_data(filename,Np=Np)
+        mesh=Mesh(R=pos,cells=cells,cmlst=cmlst,bond_nbr=bond_nbr,node_nbr=node_nbr)
+        mesh.lij0=mesh.lengths()
+        bendE.append(bend_energy(mesh,BB))
+        stretchE.append(stretch_energy(mesh,HH))
+    return bendE,stretchE
+#-----------------------------------------------------------------------------------#
+def energy_snap(filename,Np=None):
+    '''
+        The function takes filenames as an argument,
+        reads the position of every point,
+        computes energy of all the point,
+        and saves it in the same folder.
+    '''
+    fol=foldername(filename)
+    pdict=pio.read_param(fol+"/para_file.in")
+    Np=pdict['N']
+    BB=pdict['coef_bending']
+    HH=pdict['Y']*np.sqrt(3)/2
+    pos,cells=readpos(filename,Np=Np)
+    mesh=Mesh(pos,cells)
+    mesh.assign_nbrs()
+    mesh.lij0=mesh.lengths()
+    energy=np.hstack([bend_energy(mesh,BB), stretch_energy(mesh,HH)])
+    # np.save(fol+"/energy_"+str(number(filename)).zfill(5),energy)
+#---------------------------------------------------------------------------------#
+def lastfile(dirname,file_prefix='',zfill=5):
+    ''' The function returns the complete path of last file in the 
+        directory. Here, we use binary search.'''
+    low=2
+    high=2**13
+    while(abs(low-high)>1):
+        if(os.path.exists(dirname+"/"+file_prefix+str(high).zfill(zfill)+'.txt')):
+            low=high
+            high*=2
+        else:
+            high=int((low+high)/2)
+    return low
+#------------------------------------------------------------------------------#
+def avg_spectra(file,skiprows=10,step=1,FvK=4616):
+    # dd=np.loadtxt(file+"/spec_lm2_avg.txt",skiprows=skiprows)
+    dd=np.load(file+"/spec_lm2_avg2.npy")[skiprows:]
+    dd=dd[::step]
+    print(dd.shape)
+    error,hlm=stat_error(dd[:,1:])
+    # paradict=pio.read_param(file+'/para_file.in')
+    # BB=paradict['coef_bending']
+    # act=paradict['e_activity']
+    # PP=paradict['pressure']
+    # Pc=4*BB*np.sqrt(FvK)
+    # lbl="act="+str(act)+", BB="+str(BB)+", P="+str(float("{0:.3f}".format(PP/Pc)))
+    return hlm,error
+#------------------------------------------------------------------------------#

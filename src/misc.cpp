@@ -67,7 +67,7 @@ void print(double *arr, int nn, int pp){
 //   }
 // }
 /*-----------------------------------------------*/
-void add(double *added, double *arr1, double *arr2, int nn ){
+void add(double *added, double *arr1, double *arr2, int nn){
   for (int ii = 0; ii < nn; ++ii){
     added[ii] = arr1[ii] + arr2[ii];
   }
