@@ -17,7 +17,8 @@ using namespace std;
 /* 1) We consider simulation of elastic filament in 2 dimension. Filament is in XY dimension.
       X direction is horizontal. */
 /**************************/
-void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,double time);
+void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, 
+          bool flag_kappa,double time);
 void getub(double *bk, vec2 *uk, int kp, vec2 X[]);
 int MatrixtoVector(int i, int j, int N);
 void GetRij(vec2 X[], int i, int j, double *Distance, vec2 *rij);
@@ -543,6 +544,13 @@ void iniconf(double *y){
   double ch;
   int cnt=0;
   switch(niniconf){
+    case -3:
+      rData(y,datafile);
+      ip=(int)Np/2;
+      XX=y2vec2(y,ip);
+      XX.x = XX.x+aa;
+      // 5*aa*sin(M_PI*k*aa*double(ip)/height);
+      vec2y(y,XX,ip)
     case -2:
       // To give perturbation to the filament.
       rData(y,datafile);
@@ -643,7 +651,7 @@ void iniconf(double *y){
       for (int ip_cons = 0; ip_cons < np_cons; ++ip_cons){
         R[loc_con[ip_cons]] = Xcons[ip_cons];
       }
-      if( norm(R[loc_con[np_cons-1]] - R[loc_con[0]]) < aa*loc_con[np_cons-1] - aa*loc_con[0]){
+      if(norm(R[loc_con[np_cons-1]] - R[loc_con[0]]) < aa*loc_con[np_cons-1] - aa*loc_con[0]){
          k = height/(tiny + aa*loc_con[np_cons-1] - aa*loc_con[0]);
       }
       //
