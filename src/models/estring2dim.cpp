@@ -542,7 +542,8 @@ void iniconf(double *y){
   vec2 Xcons[np_cons],XX;
   ifstream myfile;
   double ch;
-  int cnt=0;  
+  int cnt=0;
+  int ip;
   switch(niniconf){
     case -3:
       rData(y,datafile);
