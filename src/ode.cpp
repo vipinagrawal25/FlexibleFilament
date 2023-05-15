@@ -9,10 +9,10 @@ using namespace std;
 double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], k7[ndim], ynew[ndim];
 /*********************************/
 void eval_rhs(double rhs[], double y[], double time){
-  /* Wrapper function to call the standard format of eval_rhs i.e. 
-  / void eval_rhs(double rhs[], double y[], double time, double EForceArr[], bool iEforceArr);*/
+   // Wrapper function to call the standard format of eval_rhs i.e. 
+  // / void 
   double EForceArr[ndim];
-  eval_rhs(rhs,y,time,EForceArr,0);
+  // eval_rhs(rhs,y,time,EForceArr,0)
 }
 /*********************************/
 // void euler(double *y,double* vel, double time,double dt){

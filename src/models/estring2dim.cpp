@@ -546,7 +546,7 @@ void iniconf(double *y){
   switch(niniconf){
     case -3:
       rData(y,datafile);
-      ip=(int)Np/2;
+      int ip=(int)Np/2;
       XX=y2vec2(y,ip);
       XX.x = XX.x+aa;
       // 5*aa*sin(M_PI*k*aa*double(ip)/height);

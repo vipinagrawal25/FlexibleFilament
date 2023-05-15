@@ -46,7 +46,7 @@ void check_param();
 void write_param(std::string fname);
 void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]);
 void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[],
-			 				double EForceArr[], bool iEforceArr=1);
+			 				double EForceArr[], bool iEforceArr);
 void coordinate_transform(double *y_trans, double *y);
 void inv_coordinate_transform(double *y, double *y_trans);
 void pre_next_iter(double *y, double *y_trans);

@@ -33,7 +33,8 @@ int main(){
   //----------------------------
   int itn=1;
   clock_t timer;
-  // For storing the Mean square displacement of the rod with timer, every row would have different MSD wrt 
+  // For storing the Mean square displacement of the rod with timer, 
+  // every row would have different MSD with respect to
   // time for a particular value of AA.
   check_param();
   time = start_time;
@@ -49,15 +50,15 @@ int main(){
   }else if(wDataMeth==2){
     outfile.open("PSI", ios::out);
     outfile_vel.open("VEL", ios::out);
-    wData(&outfile,&outfile_vel,y,vel);                                     //Code it in your model.cpp
+    wData(&outfile,&outfile_vel,y,vel);                                 // Code it in your model.cpp
   }
   /*Opening every file again in mode. This thing does not depend on configuration number and that's why 
     it is outside the loop */
   fstream outfile_time("output/time.txt", ios::app);
   timer = clock();
-  timer_global = timer/CLOCKS_PER_SEC;
+  timer_global=timer/CLOCKS_PER_SEC;
   if (time>0){
-    outfile_time << endl;
+    outfile_time<<endl;
   }
   while(time < TMAX){
     memcpy(y_prev,y,ndim*sizeof(double));
@@ -67,9 +68,9 @@ int main(){
     if (dt<dt_min){
       dt_min = dt;
     }
-    if (time+dt>=tdiag*filenumber && time<tdiag*filenumber){tdiagnos=1;}
+    if(time+dt>=tdiag*filenumber && time<tdiag*filenumber){tdiagnos=1;}
     else{tdiagnos=0;}
-    if (time>=tdiag*filenumber){
+    if(time>=tdiag*filenumber){
       if (wDataMeth==1){
         string l = "output/var" + to_string(filenumber) + ".txt";
         outfile.open(l, ios::out);
