@@ -543,6 +543,7 @@ void iniconf(double *y){
   ifstream myfile;
   double ch;
   int cnt=0;
+  int ip;
   switch(niniconf){
     case -3:
       rData(y,datafile);
