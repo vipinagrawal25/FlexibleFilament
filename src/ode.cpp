@@ -1,19 +1,12 @@
 #include <iostream>
-#include <fstream>
-#include <cmath>
+#include<fstream>
+#include<cmath>
 #include "ode.h"
 #include "model.h"
 #include "constant.h"
 using namespace std;
 /*********************************/
 double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], k7[ndim], ynew[ndim];
-/*********************************/
-void eval_rhs(double rhs[], double y[], double time){
-  /* Wrapper function to call the standard format of eval_rhs i.e. 
-  / void eval_rhs(double rhs[], double y[], double time, double EForceArr[], bool iEforceArr);*/
-  double EForceArr[ndim];
-  eval_rhs(rhs,y,time,EForceArr,0);
-}
 /*********************************/
 // void euler(double *y,double* vel, double time,double dt){
 //   double  k1[ndim];
@@ -24,14 +17,14 @@ void eval_rhs(double rhs[], double y[], double time){
 //   }
 // }
 /*********************************/
-// void euler_tr(unsigned int ndim_tr,double *y, double *y_tr, double* vel_tr, double time, double dt,
-//               double *EForceArr){
-//   int idim;
-//   eval_rhs_tr(time,EForceArr,y,y_tr,vel_tr);
-//   for(idim=0;idim<ndim_tr;idim++){
-//     y_tr[idim]=y_tr[idim]+vel_tr[idim]*dt;
-//   }
-// }
+void euler_tr(unsigned int ndim_tr,double *y, double *y_tr, double* vel_tr, double time, double dt,
+              double *EForceArr){
+  int idim;
+  eval_rhs_tr(time,EForceArr,y,y_tr,vel_tr);
+  for(idim=0;idim<ndim_tr;idim++){
+    y_tr[idim]=y_tr[idim]+vel_tr[idim]*dt;
+  }
+}
 /*********************************/
 // void rnkt2(double *y,double* vel,double time,double dt){
 //   double  temp[ndim],k1[ndim],k2[ndim];
@@ -49,38 +42,40 @@ void eval_rhs(double rhs[], double y[], double time){
 // /*********************************/
 // Wrapper function for rnkt4.
 void rnkt4(double *y,double *add_time, double* add_dt){
-  double vel[ndim];
+  double CurvSqr[ndim],SS[ndim],vel[ndim];
   double ldiagnos=0;
   // CurvSqr[0]=NULL;
   // SS[0]=NULL;
-  rnkt4(ndim,&y[0],&vel[0],add_time,add_dt,ldiagnos);
+  rnkt4(ndim,&y[0],&vel[0],add_time,add_dt,&CurvSqr[0],&SS[0],ldiagnos);
 }
 /*********************************/
-void rnkt4(unsigned int ndim, double *y, double *vel, double *add_time, double *add_dt, double ldiagnos){
+void rnkt4(unsigned int ndim, double *y, double *vel, double *add_time, double *add_dt, double* CurvSqr, 
+           double* SS, double ldiagnos){
   int idim;
   double dt = *add_dt;
   double time = *add_time;
   bool flag_kappa;
+
   if (ldiagnos){
       flag_kappa = false;
   }
   else{
       flag_kappa = true;
   }
-  eval_rhs(k1,y,time);
+  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS);
   for(idim=0;idim<ndim;idim++){
     temp[idim]=y[idim]+k1[idim]*dt/2.;
   }
   flag_kappa = false;
-  eval_rhs(k2, temp, time+(dt/2.));
+  eval_rhs(time+(dt/2.),temp,k2,flag_kappa,CurvSqr,SS);
   for(idim=0;idim<ndim;idim++){
     temp[idim]=y[idim]+k2[idim]*dt/2.;
   }
-  eval_rhs(k3, temp, time+(dt/2.));
+  eval_rhs(time+(dt/2.),temp,k3,flag_kappa,CurvSqr,SS);
   for(idim=0;idim<ndim;idim++){
     temp[idim]=y[idim]+k3[idim]*dt;
   }
-  eval_rhs(k4, temp, time+dt);
+  eval_rhs(time+dt,temp,k4,flag_kappa,CurvSqr,SS);
   for(idim=0;idim<ndim;idim++){
     y[idim]=y[idim]+dt*(  (k1[idim]/6.) + (k2[idim]/3.) + (k3[idim]/3.) + (k4[idim]/6.) );
     vel[idim]=k1[idim];
@@ -90,19 +85,19 @@ void rnkt4(unsigned int ndim, double *y, double *vel, double *add_time, double *
 /*********************************/
 // Wrapper function for rnkf45.
 void rnkf45(double *y, double *add_time, double* add_dt){
-  double vel[ndim],EForceArr[ndim];
+  double CurvSqr[ndim],SS[ndim],vel[ndim],EForceArr[ndim];
   double ldiagnos=0;
-  rnkf45(ndim,&y[0],&vel[0],add_time,add_dt,&EForceArr[0],ldiagnos);
+  rnkf45(ndim,&y[0],&vel[0],add_time,add_dt,&CurvSqr[0],&SS[0],&EForceArr[0],ldiagnos);
 }
 /*********************************/
-void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double *EForceArr, 
-            double ldiagnos){
-// Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
-// add_time is the address of time and the same goes for dt as well.
-// 	double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, yold[ndim];
-// 	int idim ;
-// 	double error = 0;
-// 	double dt = *add_dt;
+void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr,
+            double* SS,double *EForceArr, double ldiagnos){
+  // Details of method: http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
+  // add_time is the address of time and the same goes for dt as well.
+//  double temp[ndim], k1[ndim], k2[ndim], k3[ndim], k4[ndim], k5[ndim], k6[ndim], s, yold[ndim];
+//  int idim ;
+//  double error = 0;
+//  double dt = *add_dt;
 //   double tol_dt = pow(10,-6);
   double s;
   int idim ;
@@ -141,35 +136,44 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
   double bi[6] = {2825./27648.,0,18575./48384,13525./55296.,277./14336.,0.25};
   if (ldiagnos){flag_kappa = true;}
   else{flag_kappa = false;}
-  eval_rhs(k1,y,time,EForceArr,1); // save data to EForceArr
+  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS,EForceArr);
   for(idim=0;idim<ndim;idim++){
       temp[idim]=y[idim]+k1[idim]*dt*aij[1][0];
   }
   //
   flag_kappa = false;
-  eval_rhs(k2,temp,time+dt*ci[1]);
+  eval_rhs(time+dt*ci[1],temp,k2, flag_kappa, CurvSqr, SS);
   //
   for(idim=0;idim<ndim;idim++){
     temp[idim]=y[idim]+(aij[2][0]*k1[idim]+aij[2][1]*k2[idim])*dt;
   }
-  eval_rhs(k3, temp, time+ci[2]*dt);
+  eval_rhs(time+ci[2]*dt,temp,k3, flag_kappa, CurvSqr, SS);
   //
   for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim]+ (aij[3][0]*k1[idim]+aij[3][1]*k2[idim]+aij[3][2]*k3[idim])*dt ;
   }
-  eval_rhs(k4, temp, time+ci[3]*dt);
+//   s = epsilon*pow(Delta,0.25);
+//   if (Delta>=0.5)
+//   {
+//       *add_time = time + dt;
+//       if (s>truncationmax)
+//       {
+//           s=truncationmax;
+//       }
+//       *add_dt = s*dt;
+  eval_rhs(time+ci[3]*dt, temp, k4, flag_kappa, CurvSqr, SS);
   //
   for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim] + aij[4][0]*dt*k1[idim] + aij[4][1]*k2[idim]*dt + aij[4][2]*k3[idim]*dt + 
                   aij[4][3]*k4[idim]*dt ;
   }
-  eval_rhs(k5, temp, time+ci[4]*dt);
+  eval_rhs(time+ci[4]*dt, temp, k5, flag_kappa, CurvSqr, SS);
   //
   for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim] + aij[5][0]*k1[idim]*dt + aij[5][1]*k2[idim]*dt + aij[5][2]*k3[idim]*dt
                          + aij[5][3]*k4[idim]*dt + aij[5][4]*k5[idim]*dt ;
   }
-  eval_rhs(k6, temp, time+dt*ci[5]);
+  eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
   error=0;
   for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim] + dt*(bi[0]*k1[idim] + bi[1]*k2[idim] + bi[2]*k3[idim] + bi[3]*k4[idim] 
@@ -197,14 +201,15 @@ void rnkf45(unsigned int ndim, double *y, double *vel, double *add_time, double*
       cout << "# time-step is not a number." << endl;
       exit(1);
     }
-    rnkf45(ndim, &y[0], &vel[0],add_time, add_dt, &EForceArr[0], ldiagnos);
+    rnkf45(ndim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], &EForceArr[0], ldiagnos);
   }
 }
 /*********************************/
-void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double *EForceArr, double ldiagnos){
+void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* add_dt, double* CurvSqr, 
+          double* SS,double *EForceArr, double ldiagnos){
   // In this function I have implemented Dormand-Prince Method which is more suitable than rkf45 for 
   // high order integration.
-  // Details could be found in Numerical recipes book and a short description on the link:
+  // Details could be found in Numerical recipes book and a short description on the link: 
   // https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method
   double s;
   double error,temp_error;
@@ -235,40 +240,42 @@ void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* a
   else{
       flag_kappa = false;
   }
-  eval_rhs(k1,y,time,EForceArr,1);
+  eval_rhs(time,y,k1,flag_kappa,CurvSqr,SS,EForceArr);
   // CurvSqr_Store = CurvSqr;
+
   for(idim=0;idim<ndim;idim++){
       temp[idim]=y[idim]+k1[idim]*dt*aij[1][0];
   }
   flag_kappa = false; 
-  eval_rhs(k2, temp, time+dt*ci[1]);
+  eval_rhs(time+dt*ci[1],temp,k2, flag_kappa, CurvSqr, SS);
 
   for(idim=0;idim<ndim;idim++){
     temp[idim]=y[idim]+(aij[2][0]*k1[idim]+aij[2][1]*k2[idim])*dt;
   }
-  eval_rhs(k3, temp, time+ci[2]*dt);
+  eval_rhs(time+ci[2]*dt,temp,k3,flag_kappa,CurvSqr,SS);
 
   for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim]+ (aij[3][0]*k1[idim]+aij[3][1]*k2[idim]+aij[3][2]*k3[idim])*dt ;
   }
-  eval_rhs(k4, temp, time+ci[3]*dt);
+  eval_rhs(time+ci[3]*dt, temp, k4, flag_kappa, CurvSqr, SS);
+
   for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim] + aij[4][0]*dt*k1[idim] + aij[4][1]*k2[idim]*dt + aij[4][2]*k3[idim]*dt 
                          + aij[4][3]*k4[idim]*dt ;
   }
-  eval_rhs(k5, temp, time+ci[4]*dt);
+  eval_rhs(time+ci[4]*dt, temp, k5, flag_kappa, CurvSqr, SS);
 
   for (int idim = 0; idim < ndim; ++idim){
     temp[idim] = y[idim] + aij[5][0]*k1[idim]*dt + aij[5][1]*k2[idim]*dt + aij[5][2]*k3[idim]*dt 
                          + aij[5][3]*k4[idim]*dt + aij[5][4]*k5[idim]*dt ;
   }
-  eval_rhs(k6, temp, time+dt*ci[5]);
+  eval_rhs(time+dt*ci[5], temp, k6, flag_kappa, CurvSqr, SS);
 
   for (int idim = 0; idim < ndim; ++idim){
     ynew[idim] = y[idim] + aij[6][0]*k1[idim]*dt + aij[6][1]*k2[idim]*dt + aij[6][2]*k3[idim]*dt 
                          + aij[6][3]*k4[idim]*dt + aij[6][4]*k5[idim]*dt + aij[6][5]*k6[idim]*dt  ;
   }
-  eval_rhs(k7, ynew, time+dt*ci[6]);
+  eval_rhs(time+dt*ci[6], ynew, k7, flag_kappa, CurvSqr, SS);
 
   error= 0;
   temp_error=0;
@@ -295,6 +302,6 @@ void DP54(unsigned int ndim, double *y, double *vel, double *add_time, double* a
     if (s<truncationmin){s=truncationmin;}
     *add_dt = s*dt;
     // cout << "So you mean to say that the segmentation fault is here?" << endl;
-    DP54(ndim, &y[0], &vel[0],add_time, add_dt, &EForceArr[0], ldiagnos);
+    DP54(ndim, &y[0], &vel[0],add_time, add_dt, &CurvSqr[0], &SS[0], &EForceArr[0], ldiagnos);
   }
 }

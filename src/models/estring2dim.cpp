@@ -38,12 +38,12 @@ void calc_Xconstrain(vec2* Xcons, double time);
 double y_start[2*pp] = {0.,0.,0.,aa};
 string cc;
 /**************************/
-void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
+void eval_rhs(double time,double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[]){
   double EForceArr[ndim];
   eval_rhs(time,y,rhs,flag_kappa,CurvSqr,SS,EForceArr,0);
 }
 /**************************/
-void eval_rhs(double time, double y[], double rhs[], bool flag_kappa, double CurvSqr[], double SS[], 
+void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double CurvSqr[], double SS[], 
               double EForceArr[], bool iEforceArr){
   vec2 R[Np],dR[Np],EForce_ip,FF0,EForce[Np];
   // R is the position of the beads.
@@ -542,7 +542,8 @@ void iniconf(double *y){
   vec2 Xcons[np_cons],XX;
   ifstream myfile;
   double ch;
-  int cnt=0;  
+  int cnt=0;
+  int ip;
   switch(niniconf){
     case -3:
       rData(y,datafile);
@@ -903,31 +904,31 @@ void kappa2y(double y[], double kappa[]){
     vec2y(y,XX,ip);
   }
   // Is it physical?
-  // bool isphysical=1;
-  // double d_rij;
-  // vec2 X1;
-  // vec2 X2;
-  // for (int ip = 0; ip < Np; ++ip){
-  //   for (int jp = ip+1; jp < Np; ++jp){
-  //      X1 = y2vec2(y,ip);
-  //      X2 = y2vec2(y,jp);
-  //      d_rij = norm(X1-X2);
-  //      if (d_rij<dd/2){
-  //        isphysical=0;
-  //        break;
-  //      }
-  //   }
-  //   if (isphysical==0){
-  //     break;
-  //   }
-  // }
-  // if (isphysical==0){
-  //   cout << "# I am halving the curvature to take a physical NK step." << endl;
-  //   for (int ip = 0; ip < Np; ++ip){
-  //     kappa[ip] = kappa[ip]/2;
-  //   }
-  //   kappa2y(y,kappa);
-  // }
+  bool isphysical=1;
+  double d_rij;
+  vec2 X1;
+  vec2 X2;
+  for (int ip = 0; ip < Np; ++ip){
+    for (int jp = ip+1; jp < Np; ++jp){
+       X1 = y2vec2(y,ip);
+       X2 = y2vec2(y,jp);
+       d_rij = norm(X1-X2);
+       if (d_rij<dd/2){
+         isphysical=0;
+         break;
+       }
+    }
+    if (isphysical==0){
+      break;
+    }
+  }
+  if (isphysical==0){
+    // cout << "# I am halving the curvature to take a physical NK step." << endl;
+    for (int ip = 0; ip < Np; ++ip){
+      kappa[ip] = kappa[ip]/2;
+    }
+    kappa2y(y,kappa);
+  }
   // cc = "previous";
 }
 /********************************************/
