@@ -1,3 +1,4 @@
+import numpy as np
 from pylab import *
 import ipywidgets as wid
 from mpl_toolkits.mplot3d import Axes3D
@@ -165,7 +166,7 @@ def LeebyL(Np,Folder='output'):
     return LeebyL
 
 def PowerSpec(hh,Delta,deali=True):
-    hh=hh-NP.mean(hh)
+    hh=hh-np.mean(hh)
     NN = int(hh.size)
     NNBy2 = int(NN/2)
     # Check whether hh is one dimensional, or power of 2
@@ -220,13 +221,15 @@ def GetCurv(Folder='output/',code='CPU',dim=3,wDataMeth=1):
     nsnap = nrowcol[0]
     print(nsnap)
     NN=nrowcol[1]-1
-    kappa=zeros([nsnap,NN+1])
-    kappa[:,0]=time
+    kappa=zeros([nsnap+1,NN+1])
+    kappa[0,0]=0
+    kappa[1:,0]=time
     tangent=zeros([NN-1,2])
     position=zeros([NN,2])
     if (code=='CPU'):
-        for isnap in range(1,nsnap):
+        for isnap in range(0,nsnap+1):
             dd = loadtxt(Folder+'var'+str(isnap)+'.txt')
+            # print(isnap)
             if wDataMeth==1 and dim==3:
                 position=dd[:,1:3]
             elif wDataMeth==1 and dim==2:
@@ -236,8 +239,8 @@ def GetCurv(Folder='output/',code='CPU',dim=3,wDataMeth=1):
                 position[:,1] = dd[4::4]
             tangent=diff(position,axis=0)
             for iN in range(NN-1):
-                tangent[iN,:]=tangent[iN,:]/sqrt( tangent[iN,0]**2 + tangent[iN,1]**2 )
-            kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])
+                tangent[iN,:]=tangent[iN,:]/sqrt(tangent[iN,0]**2 + tangent[iN,1]**2 )
+            kappa[isnap,2:NN]=cross(tangent[0:-1],tangent[1:])/0.05
     elif (code == 'GPU'):
         dd=loadtxt(Folder+"PSI")
         zz=zeros(NN)
@@ -250,9 +253,9 @@ def GetCurv(Folder='output/',code='CPU',dim=3,wDataMeth=1):
             tangent[:,1]=diff(zz)
             for iN in range(NN-1):
                 tangent[iN,:]=tangent[iN,:]/sqrt( tangent[iN,0]**2 + tangent[iN,1]**2 )
-            kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])            
+            kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])
             # kappa[isnap,1:NN+1]=sqrt(curvsqr[isnap,:])*CurvatureSign(curvsqr[isnap,:],yy,zz,eps)
-    savetxt(Folder+'kappa.txt',kappa,fmt='%.5e')
+    savetxt(Folder+'kappa.txt',kappa,fmt='%.8f')
 
 def GetCurv2(Folder='output/',code='CPU',dim=3,wDataMeth=1):
     # This function will take the square root of curvature. Sign of the final thing would be decided
@@ -382,26 +385,8 @@ def reScale(file,factor,file2="downscale.txt",wDataMeth=1):
     dd2 = dd[0:factor:-1,:]
     return dd,dd2
     
-def getpos(dd,dim=2,wDataMeth=1):
-# <<<<<<< HEAD
-#     NN = dd.size/(dim*2)
-#     position=NP.zeros([NN,2])
-#     if wDataMeth==1 and dim==3:
-#         position=dd[:,1:3]
-#     elif wDataMeth==1 and dim==2:
-#         position=dd[:,0:2]
-#     elif wDataMeth==2 and dim==2:
-#         position[:,0] = dd[2::4]
-#         position[:,1] = dd[4::4]
-#     elif wDataMeth==2 and dim==3:
-#         position[:,0] = dd[4::6] 
-#         position[:,1] = dd[6::6]
-#     else:
-#         print("I have no idea what do you want?")
-#     return position
-# =======
-	NN = dd.size/(dim*2)
-	position=NP.zeros([NN,2])
+def getpos(dd,NN=256,dim=2,wDataMeth=1):
+	position=np.zeros([NN,2])
 	if wDataMeth==1 and dim==3:
 		position=dd[:,1:3]
 	elif wDataMeth==1 and dim==2:
@@ -415,3 +400,12 @@ def getpos(dd,dim=2,wDataMeth=1):
 	else:
 		print("I have no idea what do you want?")
 	return position
+
+def getvel(dd,NN=256,dim=2,wDataMeth=1):
+    velocity=np.zeros([NN,2])
+    if wDataMeth==2 and dim==2:
+        velocity[:,0] = dd[3::4]
+        velocity[:,1] = dd[5::4]
+    else:
+        print("I have no idea what do you want?")
+    return velocity

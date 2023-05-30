@@ -113,7 +113,7 @@ class MESH:
         # print("beE=",beE)
         # print("stE=",stE)
         return beE+stE
-    def sort_nbrs(self):
+    # def sort_nbrs(self):
         '''The function sorts the neighbours of every node in an anti-clockwise direction
            such that the normal is in outward direction.'''
 #-----------------------------------------
@@ -715,8 +715,8 @@ def WriteMesh(pos,cumu_list,node_nbr,bond_nbr,triangles,fname='input'):
     hf.create_dataset('pos',data=pos)
     hf.create_dataset('cumu_list',data=cumu_list)
     hf.create_dataset('node_nbr',data=node_nbr)
-    hf.create_dataset('bond_nbr',data=bond_nbr)
-    hf.create_dataset('triangles',data=triangles)
+    # hf.create_dataset('bond_nbr',data=bond_nbr)
+    # hf.create_dataset('triangles',data=triangles)
     hf.close()
 #-----------------------------------------#
 def distance2d(x1,y1,x2,y2,lenx, leny, metric='cart'):

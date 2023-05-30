@@ -31,7 +31,7 @@ if debug:
     # np.savetxt('initial_rrini.dat', rrini)
 else:
     if (inp['regular_lattice']):
-        points,cells=meshzoo.icosa_sphere(20)
+        points,cells=meshzoo.icosa_sphere(10)
         # print("Intersection = ",F.mesh_intersect(points,cells))
         Np = points.shape[0]
         print("Np =",Np)
@@ -63,7 +63,7 @@ if(inp['do_montecarlo']):
     cells=sv.cells
 else:
     if inp['regular_lattice']:
-        pass
+        mesh=MESH(BB=2.5,HH=1,R=points,cells=cells)
     else:    
         rr=rrini
         sv = F.SphVoronoi(rr)
@@ -77,6 +77,10 @@ else:
 # sv = F.SphVoronoi(rr)
 # cmlst,node_neighbour,bond_neighbour=F.neighbours(sv)
 #
+F.WriteMesh(pos=points,cumu_list=mesh.cmlst,node_nbr=mesh.node_nbr,bond_nbr=mesh.bond_nbr,
+            triangles=cells,
+            fname='../monte_carlo/input/input_icosa_20252')
+exit(1)
 eps=0.05
 mesh=MESH(BB=50*eps,HH=1,R=points,cells=cells)
 avlij0 = np.mean(mesh.lij0)
@@ -85,8 +89,6 @@ print(avlij0)
 YY=inp['facH']*eps/(avlij0*avlij0)
 mesh.HH=YY*np.sqrt(3)/2
 print("mesh.HH =",mesh.HH)
-F.WriteMesh(points,mesh.cmlst,mesh.node_nbr,mesh.bond_nbr,cells,
-            fname='../monte_carlo/input/input_icosa')
 #
 with open('energy.dat', "w") as file:
     dv.dump_visit('output/var'+str(0).zfill(4)+'.vtk', mesh.R, cells)

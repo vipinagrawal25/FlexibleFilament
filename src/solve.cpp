@@ -64,13 +64,6 @@ int main(){
   //
   if (ievolve_save){
      outfile.open("output/var0.txt");
-      // if (bcb==2){
-      //   calc_yone(yonetime);
-      //   calc_yzero(yzero,time);
-      //   //
-      //   wData(&outfile,&outfile,yzero,velzero,time,1,pp);
-      //   wData(&outfile,&outfile,yone,velzero,time,1,pp);
-      // }
       wData(&outfile,&outfile,y,vel);                                     // Code it in your model.cpp
       outfile.close();
   }
