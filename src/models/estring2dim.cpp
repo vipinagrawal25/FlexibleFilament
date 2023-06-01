@@ -508,6 +508,24 @@ void dHdR(int kp, vec2 X[], vec2* add_FF, double* add_kappasqr, bool flag_kappa,
   }
   *add_FF = FF;
 }
+/*----------------------------------------------------*/
+vec2 reflectvec2(const vec2& p, double A, double B, double C) {
+    // Calculate the perpendicular distance from the vec2 to the line
+    double distance = (A * p.x + B * p.y + C) / (A * A + B * B);
+    vec2 reflectedvec2;
+    reflectedvec2.x = -2 * distance * A + p.x;
+    reflectedvec2.y = -2 * distance * B + p.y;
+    return reflectedvec2;
+}
+/*----------------------------------------------------*/
+void get_line(double *A, double *B, double *C, const vec2& p1, const vec2& p2){
+    // Given two vec2s, what is the equation of line
+    // in the form (ax+by+c=0).
+    double slope=(p2.y-p1.y)/(p2.x-p1.x);
+    *A=slope;
+    *B=-1;
+    *C=p1.y-slope*p1.x;
+}
 /****************************************************/
 void iniconf(double *y, double *aTime, double tdiag){
   int itn = (int) ((*aTime)/tdiag);
@@ -544,14 +562,24 @@ void iniconf(double *y){
   double ch;
   int cnt=0;
   int ip;
+  double A,B,C;
   switch(niniconf){
     case -3:
       rData(y,datafile);
+      print(y,Np,pp);
       ip=(int)Np/2;
-      XX=y2vec2(y,ip);
-      XX.x = XX.x+aa;
+      // XX=y2vec2(y,ip);
+      print(y2vec2(y,ip));
+      get_line(&A,&B,&C,y2vec2(y,ip-1),y2vec2(y,ip+1));
+      XX = reflectvec2(y2vec2(y,ip), A, B, C);
+      print(XX);
+      // XX.x = XX.x+aa;
       // 5*aa*sin(M_PI*k*aa*double(ip)/height);
       vec2y(y,XX,ip);
+      exit(1);
+      break;
+      // print(y,Np,pp);
+      // exit(1);
     case -2:
       // To give perturbation to the filament.
       rData(y,datafile);

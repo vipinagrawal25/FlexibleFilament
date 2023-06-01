@@ -6,7 +6,7 @@
 extern double period;
 extern double AA;
 extern double HH;
-extern std::string datafile;	// Filename to read data
+extern std::string datafile;
 /**************************/
 double const height = 1.28;					// height of the box we are doing simulations in.
 unsigned int const Np= 256;					// total number of points on the rod.
@@ -25,7 +25,7 @@ double const bct = 1;       				// Boundary condition at top. 1 - free.
 int const icons = 0;						// 0 -- No constrain, 1 -- circle, 2 -- '8'.
 int const np_cons = 2;						// Number of points to constrain?
 int const loc_con[np_cons] = {0,1};
-double const angularVel = 3;				// It has nothing to do by rate of shearrate change
+double const angularVel = 0;				// It has nothing to do by rate of shearrate change
 //
 int const iext_force = 0; 					// 0 -- No force, 1 means Peskin way to clamp points
 int const fnp = 2;
@@ -35,6 +35,7 @@ int const iext_flow = 3;   /* External flow: 1->shear rate changes as step funct
 int const niniconf = -3;    /* Configuration of the system at t = 0. 0 -> sine perturbation in  the  filament. 
 							1 -> Straight filament, 2-> , -1 -> read from a file*/
 int const ievolve_save=1;
+// std::string const datafile = "sol1";		// If you want to read input from some file, Mention the file name.
 int const itracer=0;						// 0 -> No tracers, 1 -> tracers on square lattice, 3 -> tracer on circular lattice? 
 int const np_tracer=1024;
 int const pp_tracer=3;
@@ -55,5 +56,5 @@ void eval_rhs_tr(double time,double EForceArr[],double y[],double y_tr[],double 
 void calc_yone(double *yone, double time);
 void calc_yzero(double *yzero, double time);
 /* ----------------------------------------*/
-#endif /*!FILE_ESTRING_SEEN*/
+#endif /* !FILE_ESTRING_SEEN */
 /* ----------------------------------------*/

@@ -2,7 +2,10 @@ from functions import *
 import matplotlib.pyplot as plt
 import moviewriter as MOVIE
 import numpy as NP
-
+import sys
+print(sys.argv[1])
+exit(1)
+#
 AA = 1.5*0.00001*1*0.4**4
 Np = 41
 HH = 16*AA*(0.005**2)
@@ -23,7 +26,7 @@ Thing7 = "MSD_no_trans"
 Thing8 = "SqrtCurvature"
 Thing9 = "TracerVelocity"
 
-Things = [Thing1]
+Things = [Thing8]
 Xtracer2 = [0.01,0,0.5]
 Xtracer9 = [0.01,1.2,0.5]
 
@@ -50,7 +53,7 @@ for i in range(0,len(Things)):
 	elif Things[i]=="MSD_no_trans":
 		MSD_no_trans()
 	elif Things[i]=="SqrtCurvature":
-		GetCurv(Folder='output_old/',dim=2,wDataMeth=1)
+		GetCurv(Folder=sys.argv[1],dim=2,wDataMeth=2)
 	elif Things[i]=="TracerVelocity":
 		Vtracer=VtraceTimeSer(sigma=0.75,Xtracer=Xtracer9)
 		NP.save('output/Vtracer9.npy',Vtracer)

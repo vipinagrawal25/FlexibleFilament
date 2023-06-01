@@ -110,13 +110,27 @@ void rData(double *y,string fname, int Npt, int ppt){
         while(myfile >> ch){y[cnt]=ch;cnt++;}
         myfile.close();
       }
-      else if(cnt==pp*ndimt){
+      else if(cnt==ppt*ndimt){
         myfile.open(fname);
         for(int idim = 0; idim < Npt; ++idim){
           for (int ip = 0; ip < ppt; ++ip){
             myfile >> y[idim*ppt+ip];
+            // cout << y[idim*ppt+ip] << endl;
           }
           for (int ip = 0; ip < pp; ++ip){
+            myfile >> ch;
+
+          }
+        }
+        myfile.close();
+      }
+      else if(cnt==ppt*ndimt+2){
+        myfile.open(fname);
+        myfile >> ch;
+        myfile >> ch;
+        for(int idim = 0; idim < Npt; ++idim){
+          for (int ip = 0; ip < ppt; ++ip){
+            myfile >> y[idim*ppt+ip];
             myfile >> ch;
           }
         }

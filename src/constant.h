@@ -6,9 +6,8 @@
 #define err_tol 2.e-2
 #define tiny 1.e-12
 #define SysType "continuous"
-#define ievolve_save 1
-#define wDataMeth 2
-#define rDataMeth 2
+#define wDataMeth 1
+#define rDataMeth 1
 /* typedef enum {
     heading = 1,
     direction,
