@@ -526,6 +526,24 @@ void iniconf(double *y, double *aTime, double tdiag){
   }
   rData(y,fname);
 }
+/*----------------------------------------------------*/
+vec2 reflectvec2(const vec2& p, double A, double B, double C) {
+    // Calculate the perpendicular distance from the vec2 to the line
+    double distance = (A * p.x + B * p.y + C) / (A * A + B * B);
+    vec2 reflectedvec2;
+    reflectedvec2.x = -2 * distance * A + p.x;
+    reflectedvec2.y = -2 * distance * B + p.y;
+    return reflectedvec2;
+}
+/*----------------------------------------------------*/
+void get_line(double *A, double *B, double *C, const vec2& p1, const vec2& p2){
+    // Given two vec2s, what is the equation of line
+    // in the form (ax+by+c=0).
+    double slope=(p2.y-p1.y)/(p2.x-p1.x);
+    *A=slope;
+    *B=-1;
+    *C=p1.y-slope*p1.x;
+}
 /****************************************************/
 void iniconf(double *y){
   // Merge all three cases into 1;
