@@ -566,7 +566,7 @@ void iniconf(double *y){
   switch(niniconf){
     case -3:
       rData(y,datafile);
-      yold=y;
+      // yold=y;
       // print(y,Np,pp);
       ip=(int)Np/2;
       // XX=y2vec2(y,ip);

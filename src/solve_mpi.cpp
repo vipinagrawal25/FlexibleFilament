@@ -173,12 +173,12 @@ int main(int argc, char** argv){
   fstream outfile_done("done", ios::out);
   //
   MPI_Barrier(MPI_COMM_WORLD);
+  timer_global = clock()/CLOCKS_PER_SEC - timer_global;
   //
   outfile_terminal << "Total number of iteration: " << itn << endl;
   outfile_terminal << "Total time elapsed: " << timer_global << "s" << endl;
   outfile_terminal << "Minimum value of dt: " << dt_min << endl; 
   //----------------------------
-  timer_global = clock()/CLOCKS_PER_SEC - timer_global;
   outfile_time.close();
   outfile_curvature.close();
   outfile_SS.close();
