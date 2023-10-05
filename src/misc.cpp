@@ -2,6 +2,8 @@
 #include <sys/stat.h>
 #include "math.h"
 #include <string>
+#include "misc.h"
+// #include "modules/2vec.h"
 using namespace std;
 /*-----------------------------------------------*/
 double SqEr(double Arr1[], double Arr2[],int nn){
@@ -79,7 +81,7 @@ void substract(double *subsed, double *arr1, double *arr2, int nn ){
   }
 }
 /*-----------------------------------------------*/
-double norm(double *y, int nn ){
+double norm(double *y, int nn){
   double norr =0;
   for (int ii = 0; ii < nn; ++ii){
     norr = norr+y[ii]*y[ii];
@@ -87,7 +89,7 @@ double norm(double *y, int nn ){
   return sqrt(norr);
 }
 /*-----------------------------------------------*/
-double norm(const double *y, int nn ){
+double norm(const double *y, int nn){
   double norr =0;
   for (int ii = 0; ii < nn; ++ii){
     norr = norr+y[ii]*y[ii];

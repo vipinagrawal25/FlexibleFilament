@@ -23,6 +23,7 @@ void write_param(string fname);
 /* ----------------------------------------*/
 double period, AA, HH, TMAX;
 int TotalFiles;
+string datafile;
 /* ----------------------------------------*/
 int main(int argc, char** argv){
   /*-------------MPI part starts-------------------------*/
@@ -94,7 +95,7 @@ int main(int argc, char** argv){
   eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS,EForceArr);
   //
   if (ievolve_save){
-     outfile.open(run_dir + "output/var0.txt");
+      outfile.open(run_dir+"output/var0.txt");
       wData(&outfile,&outfile,y,vel);                                     // Code it in your model.cpp
       outfile.close();
   }
@@ -172,12 +173,12 @@ int main(int argc, char** argv){
   fstream outfile_done("done", ios::out);
   //
   MPI_Barrier(MPI_COMM_WORLD);
+  timer_global = clock()/CLOCKS_PER_SEC - timer_global;
   //
   outfile_terminal << "Total number of iteration: " << itn << endl;
   outfile_terminal << "Total time elapsed: " << timer_global << "s" << endl;
   outfile_terminal << "Minimum value of dt: " << dt_min << endl; 
   //----------------------------
-  timer_global = clock()/CLOCKS_PER_SEC - timer_global;
   outfile_time.close();
   outfile_curvature.close();
   outfile_SS.close();
@@ -187,7 +188,7 @@ int main(int argc, char** argv){
 /********************************************/
 void read_param(string fname){
   double sigma, facAA;
-  string datafile;
+  // string datafile;
   ifstream myfile;
   myfile.open(fname);
   myfile>>sigma;

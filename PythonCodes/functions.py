@@ -5,6 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from scipy.fftpack import dst
 from scipy.interpolate import interp1d
+import numpy.linalg as la
 
 def curvatureplot(FILE='output',omega=3,length=1,tmin=0,tmax=-1):
     dd = loadtxt(FILE+'/kappa.txt')
@@ -140,29 +141,25 @@ def Energy(AA,HH,FILE='output'):
             # TE[i] = BE[i]+SE[i]
     return time,BE,SE
 
-def LeebyL(Np,Folder='output'):
+def LeebyL(Np,Folder='output',dim=2):
     ddMP = loadtxt(Folder+'/material_point.txt')
     time = loadtxt(Folder+'/time.txt')
     nrowcol = ddMP.shape
     nsnap=nrowcol[0]
-
     LeebyL = zeros(nsnap)
     for isnap in range(0,nsnap,1):
-        dd = loadtxt(Folder+'/var'+str(isnap)+'.txt')
-        Lee = (dd[0,0]-dd[-1,0])**2 + (dd[0,1]-dd[-1,1])**2 + (dd[0,2]-dd[-1,2])**2
-        Lee = sqrt(Lee)
-        #
+        dd = loadtxt(Folder+'/var'+str(isnap)+'.txt')[:,0:dim]
+        Lee = la.norm(dd[-1,:]-dd[0,:])
         L = 0
         for ip in range(0,Np-1):
-            L = L+(dd[ip+1,0]-dd[ip,0])**2 + (dd[ip+1,1]-dd[ip,1])**2 + (dd[ip,2]-dd[ip+1,2])**2
-        LeebyL[isnap] = Lee/L
-
-    plt.plot(time,LeebyL,'o-')
-    plt.plot(time,Lee,'o-')
-    # plt.ylim((0, 0.1))
-    plt.savefig('LeebyL.eps')
-    plt.show()
-
+            L = L+la.norm(dd[ip+1,:]-dd[ip,:])
+        # print(L)
+    LeebyL[isnap] = Lee/L
+    # plt.plot(time,LeebyL,'o-')
+    # plt.plot(time,Lee,'o-')
+    # # plt.ylim((0, 0.1))
+    # plt.savefig('LeebyL.eps')
+    # plt.show()
     return LeebyL
 
 def PowerSpec(hh,Delta,deali=True):
@@ -216,6 +213,7 @@ def GetCurv(Folder='output/',code='CPU',dim=3,wDataMeth=1):
     # by double derivative of the position vector. If the function is convex, curvature can be negative
     # else the curvature would be positive.
     dd=loadtxt(Folder+'curvature.txt')
+    # dd=load(Folder+'curvature.npy')
     time=dd[:,0]
     nrowcol=dd.shape
     nsnap = nrowcol[0]
@@ -256,6 +254,7 @@ def GetCurv(Folder='output/',code='CPU',dim=3,wDataMeth=1):
             kappa[isnap,1:NN-1]=cross(tangent[0:-1],tangent[1:])
             # kappa[isnap,1:NN+1]=sqrt(curvsqr[isnap,:])*CurvatureSign(curvsqr[isnap,:],yy,zz,eps)
     savetxt(Folder+'kappa.txt',kappa,fmt='%.8f')
+    save(Folder+'kappa.npy',kappa)
 
 def GetCurv2(Folder='output/',code='CPU',dim=3,wDataMeth=1):
     # This function will take the square root of curvature. Sign of the final thing would be decided
@@ -409,3 +408,11 @@ def getvel(dd,NN=256,dim=2,wDataMeth=1):
     else:
         print("I have no idea what do you want?")
     return velocity
+
+def Lee(dir_pref,isnap1,isnap2):
+    Lee=np.zeros(isnap2-isnap1)
+    for isn in range(isnap1,isnap2):
+        path=dir_pref+"/var"+str(isn)+".txt"
+        dd=np.loadtxt(path)[:,0:2]
+        Lee[isn-isnap1]= la.norm(dd[-1,:]-dd[0,:])
+    return Lee

@@ -60,10 +60,11 @@ int main(){
   // exit(1);
   eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS,EForceArr);
   //
-  system("exec mkdir output");
+  string output = sys.argv[1];
+  system("exec mkdir "+output);
   //
   if (ievolve_save){
-     outfile.open("output/var0.txt");
+     outfile.open(output+"/var0.txt");
       wData(&outfile,&outfile,y,vel);                                     // Code it in your model.cpp
       outfile.close();
   }
@@ -73,7 +74,7 @@ int main(){
     // memcpy(&y_tr[ndim_tr],&y_tr[0],ndim_tr*sizeof(double));
     eval_rhs_tr(time,EForceArr,y,y_tr,vel_tr);
     //
-    outfile.open("output/tracer0.txt");
+    outfile.open(output+"/tracer0.txt");
     wData(&outfile,&outfile,y_tr,vel_tr,time,np_tracer,pp_tracer);         // Code it in your model.cpp
     outfile.close();
   }
@@ -87,9 +88,9 @@ int main(){
   /* Opening every file again in mode. This thing does not depend on configuration number and that's why 
      it is outside the loop */
   // fstream outfile_MSD("MSD.txt", ios::app);
-  fstream outfile_time("output/time.txt", ios::app);
-  fstream outfile_curvature("output/curvature.txt", ios::app);
-  fstream outfile_SS("output/material_point.txt", ios::app);
+  fstream outfile_time(output+"/time.txt", ios::app);
+  fstream outfile_curvature(output+"/curvature.txt", ios::app);
+  fstream outfile_SS(output+"/material_point.txt", ios::app);
   timer = clock();
   timer_global = timer/CLOCKS_PER_SEC;
   if (time>0){
@@ -117,7 +118,7 @@ int main(){
     if (time>=tdiag*filenumber){
       //
       if (ievolve_save){
-        string l = "output/var" + to_string(filenumber) + ".txt";
+        string l = output+"/var" + to_string(filenumber) + ".txt";
         outfile.open(l, ios::out);
       // if (bcb==2){
       //   calc_yzero(yzero,time);
@@ -130,7 +131,7 @@ int main(){
       }
       //
       if(itracer){
-        string l_tr = "output/tracer" + to_string(filenumber) + ".txt";
+        string l_tr = output+"/tracer" + to_string(filenumber) + ".txt";
         outfile.open(l_tr, ios::out);
         wData(&outfile,&outfile,y_tr,vel_tr,time,np_tracer,pp_tracer);
         outfile.close();
