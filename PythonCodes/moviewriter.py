@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
 import sys
 
-
 FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Movie Test', artist='Matplotlib',
                 comment='Movie support!')
@@ -30,8 +29,8 @@ def MakePlot3D(ax,Xaxis,Yaxis,Zaxis,tsnap,symbol='.',colors=[],colormap='gnuplot
 #####################################################
 def MakePlot2D(ax,Xaxis,Yaxis,tsnap,symbol='.'):
 	# ax.subplot(2,1,2)
-	ax.set_xlim(1.5,-0.5)
-	ax.set_ylim(0.5,-0.5)
+	ax.set_xlim(-0.5,1)
+	ax.set_ylim(0,1.5)
 	ax.plot(Xaxis,Yaxis,symbol)
 	plt.title(str(int(tsnap*10)/100))
 #####################################################
@@ -69,8 +68,31 @@ def MultiFileMovie(FILE='output',dim=3):
 	nsnap=nrowcol[0]
 	with writer.saving(fig,"movie.mp4", 100):
 		for isnap in range(0,nsnap,1):
-	 		dd=loadtxt(FILE+'/position'+str(isnap)+'.txt')
+	 		dd=loadtxt(FILE+'/var'+str(isnap)+'.txt')
 	 		xx,yy,zz=GetCoordinate(dd,dim)
+	 		if dim==2:
+	 			MakePlot2D(ax,yy,zz,time[isnap],'o-')
+	 		else:
+	 			MakePlot3D(ax,xx,yy,zz,time[isnap],'o')
+	 		writer.grab_frame()
+	 		ax.clear()
+	 		print('plot = ' + str(isnap)+ 'Done')
+#####################################################
+def MultiFileMovie_two(FILE1='output',FILE2='output_pertu_100per',dim=2):
+	if dim==2:
+		ax=fig.add_subplot(1,1,1)
+	elif dim==3:
+		ax=fig.add_subplot(1,1,1,projection='3d')
+	else:
+		sys.exit('The dimension does not exist.')
+	time = loadtxt(FILE+'/time.txt')
+	nrowcol=time.shape
+	nsnap=nrowcol[0]
+	with writer.saving(fig,"movie.mp4", 100):
+		for isnap in range(0,nsnap,1):
+	 		dd=loadtxt(FILE+'/var'+str(isnap)+'.txt')
+	 		xx,yy,zz=GetCoordinate(dd,dim)
+	 		dd=loadtxt(Fil)
 	 		if dim==2:
 	 			MakePlot2D(ax,yy,zz,time[isnap],'o-')
 	 		else:
@@ -139,20 +161,6 @@ def TracerMovieCycle(omega,FILE='output',dim=3,symbol='o',nparticles=256):
 # 	TT = 2*pi/omega;
 # 	snap1 = int(50*TT*cy1)
 # 	snap2 = int(50*TT*cy2)
-# <<<<<<< HEAD
-# with writer.saving(fig,"movie.mp4", 100):
-# 	for isnap in range(1,itn,1):
-# 		dd = loadtxt(FILE+'/position'+str(isnap)+'.txt')
-# 		xx = dd[:,0]
-# 		yy = dd[:,1]
-# 		zz = dd[:,2]
-# 		# MakePlot3D(ax1,xx,yy,zz,isnap)
-# 		MakePlot2D(ax2,yy,zz,isnap)
-# 		writer.grab_frame()
-# 		ax2.clear()
-# 		# ax1.clear()
-# 		print('plot = ' + str(isnap)+ 'Done')
-# =======
 # 	with writer.saving(fig,"movie_tracer"+str(cy2-cy1)+".mp4", 100):
 # 		for isnap in range(snap1,snap2,1):
 # 	 		dd=loadtxt(FILE+'/tracer'+str(isnap)+'.txt')

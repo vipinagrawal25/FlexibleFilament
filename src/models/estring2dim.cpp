@@ -63,11 +63,11 @@ void eval_rhs(double time, double y[],double rhs[], bool flag_kappa, double Curv
       }
     }
     dHdR(ip, R, &EForce_ip, &kappasqr, flag_kappa, time);
-    EForce[ip] = EForce_ip;
+    EForce[ip]=EForce_ip;
     CurvSqr[ip]=kappasqr;
   }
-  // Is the string forced at some points? Implement it here. 
-  ext_force(EForce,y,time); 
+  // Is the string forced at some points? Implement it here.
+  ext_force(EForce,y,time);
   drag(R, dR, EForce);
   for (int ip = 0; ip < Np; ++ip){
     dR[ip]=dR[ip]+ext_flow(R[ip],time);
