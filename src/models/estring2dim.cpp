@@ -569,24 +569,24 @@ void iniconf(double *y){
       // yold=y;
       // print(y,Np,pp);
       ip=(int)Np/2;
-      // XX=y2vec2(y,ip);
+      XX=y2vec2(y,ip);
       // print(y2vec2(y,ip));
       // print(y2vec2(y,ip-1));
       // print(y2vec2(y,ip+1)); 
-      get_line(&A,&B,&C,y2vec2(y,ip-1),y2vec2(y,ip+1));
-      XX = reflectvec2(y2vec2(y,ip), A, B, C);
+      // get_line(&A,&B,&C,y2vec2(y,ip-1),y2vec2(y,ip+1));
+      // XX = reflectvec2(y2vec2(y,ip), A, B, C);
       // print(XX);
       // cout << "distances = " << endl;
       // cout << norm(y2vec2(y,ip)-y2vec2(y,ip-1))
       // << "\t" << norm(y2vec2(y,ip)-y2vec2(y,ip+1)) << endl;
       // cout << norm(XX-y2vec2(y,ip-1))
       // << "\t" << norm(XX-y2vec2(y,ip+1)) << endl;
-      // XX.x = XX.x+aa;
+      XX.x = XX.x+0.04*aa;
       // 5*aa*sin(M_PI*k*aa*double(ip)/height);
       vec2y(y,XX,ip);
       // cout << endl;
-      print(y,Np,pp);
-      exit(1);
+      // print(y,Np,pp);
+      // exit(1);
       break;
       // print(y,Np,pp);
       // exit(1);
@@ -594,7 +594,7 @@ void iniconf(double *y){
       // To give perturbation to the filament.
       rData(y,datafile);
       // print(y,Np,pp);
-      cout << endl;
+      // cout << endl;
       // add perturbation to the file.
       for (int ip = 0; ip < Np; ++ip){
         XX = y2vec2(y,ip);
