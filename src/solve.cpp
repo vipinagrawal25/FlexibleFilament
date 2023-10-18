@@ -13,12 +13,13 @@
 #include <fstream>
 #include <unistd.h>
 #include <memory.h>
+#include <stdio.h>
 /********************************************/
 void write_param(string fname);
 /********************************************/
 using namespace std;
 /* ----------------------------------------*/
-int main(){
+int main(int argc, char *argv[]){
   pid_t pid = getpid();
   cout << "# ID for this process is: " << pid << endl;
   int ndim_tr = np_tracer*pp_tracer;
@@ -60,8 +61,9 @@ int main(){
   // exit(1);
   eval_rhs(time,y,vel,tdiagnos,CurvSqr,SS,EForceArr);
   //
-  string output = sys.argv[1];
-  system("exec mkdir "+output);
+  string output =  argv[1];
+  string syscmd = "exec mkdir " + output;
+  system(syscmd.c_str());
   //
   if (ievolve_save){
      outfile.open(output+"/var0.txt");

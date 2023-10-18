@@ -1,12 +1,22 @@
 import numpy as np
 from pylab import *
-import ipywidgets as wid
+# import ipywidgets as wid
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from scipy.fftpack import dst
 from scipy.interpolate import interp1d
 import numpy.linalg as la
-
+#
+def minperiod(arr,isnap1,isnap2,cydiff,cutoff=1):
+    '''This function calculates the minimum of a given 
+        time-series in a particular cycle.'''
+    minsnaps=[]
+    for snap_st in range(isnap1,isnap2,cydiff):
+        minsnap_cy=np.argmin(arr[snap_st:snap_st+cydiff])
+        if arr[minsnapcy]<cutoff:
+            np.vstack([minsnaps,minsnapcy])
+    return minsnaps
+#
 def curvatureplot(FILE='output',omega=3,length=1,tmin=0,tmax=-1):
     dd = loadtxt(FILE+'/kappa.txt')
     dd_SS = loadtxt(FILE+'/material_point.txt')

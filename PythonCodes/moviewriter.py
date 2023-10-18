@@ -78,6 +78,29 @@ def MultiFileMovie(FILE='output',dim=3):
 	 		ax.clear()
 	 		print('plot = ' + str(isnap)+ 'Done')
 #####################################################
+def MultiFileMovie_two(FILE1='output',FILE2='output_pertu_100per',dim=2):
+	if dim==2:
+		ax=fig.add_subplot(1,1,1)
+	elif dim==3:
+		ax=fig.add_subplot(1,1,1,projection='3d')
+	else:
+		sys.exit('The dimension does not exist.')
+	time = loadtxt(FILE+'/time.txt')
+	nrowcol=time.shape
+	nsnap=nrowcol[0]
+	with writer.saving(fig,"movie.mp4", 100):
+		for isnap in range(0,nsnap,1):
+	 		dd=loadtxt(FILE+'/var'+str(isnap)+'.txt')
+	 		xx,yy,zz=GetCoordinate(dd,dim)
+	 		dd=loadtxt(Fil)
+	 		if dim==2:
+	 			MakePlot2D(ax,yy,zz,time[isnap],'o-')
+	 		else:
+	 			MakePlot3D(ax,xx,yy,zz,time[isnap],'o')
+	 		writer.grab_frame()
+	 		ax.clear()
+	 		print('plot = ' + str(isnap)+ 'Done')
+#####################################################
 def TracerMovie(FILE='output',dim=3,symbol='o'):
 	if dim==2:
 		ax=fig.add_subplot(1,1,1)
