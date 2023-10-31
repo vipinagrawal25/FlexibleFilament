@@ -581,7 +581,7 @@ void iniconf(double *y){
       // << "\t" << norm(y2vec2(y,ip)-y2vec2(y,ip+1)) << endl;
       // cout << norm(XX-y2vec2(y,ip-1))
       // << "\t" << norm(XX-y2vec2(y,ip+1)) << endl;
-      XX.x = XX.x+0.04*aa;
+      XX.x = XX.x+perturb;
       // 5*aa*sin(M_PI*k*aa*double(ip)/height);
       vec2y(y,XX,ip);
       // cout << endl;

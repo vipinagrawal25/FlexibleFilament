@@ -21,7 +21,7 @@ void read_param(string param_name);
 void read_evolve(string fname);
 void write_param(string fname);
 /* ----------------------------------------*/
-double period, AA, HH, TMAX;
+double period, AA, HH, TMAX, start_time;
 int TotalFiles;
 string datafile;
 /* ----------------------------------------*/
@@ -83,7 +83,7 @@ int main(int argc, char** argv){
   //
   time = start_time;
   if (time){
-    // read data from output/time.txt
+    // read data from output/time.txt.
     // Let's just say that we are saving data as the same interval as earlier.
     iniconf(y,&time,tdiag);
   }
@@ -206,12 +206,15 @@ void read_param(string fname){
 void read_evolve(string fname){
   ifstream myfile;
   myfile.open(fname);
+  myfile>>start_time;
   myfile>>TMAX;
   myfile>>TotalFiles;
-  cout << "TMAX = " << TMAX << "; TotalFiles = " << TotalFiles << endl;
+  cout << "TMAX = " << TMAX << 
+  "; TotalFiles = " << TotalFiles << 
+  "; start_time = " << start_time << endl;
   myfile.close();
 }
 /********************************************/
 void  __attribute__((weak)) write_param( string fname ){
-  cout << "The user has not implmented way to write data!!!" << endl;
+  cout << "The user has not implmented way to write data !!!" << endl;
 }

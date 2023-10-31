@@ -227,7 +227,7 @@ def GetCurv(Folder='output/',code='CPU',dim=3,wDataMeth=1):
     time=dd[:,0]
     nrowcol=dd.shape
     nsnap = nrowcol[0]
-    print(nsnap)
+    # print(nsnap)
     NN=nrowcol[1]-1
     kappa=zeros([nsnap+1,NN+1])
     kappa[0,0]=0
@@ -273,7 +273,7 @@ def GetCurv2(Folder='output/',code='CPU',dim=3,wDataMeth=1):
     dd=loadtxt('revolve.txt')
     # time=dd[:,0]
     nsnap = int(dd[1])
-    print(nsnap)
+    # print(nsnap)
     NN=256
     kappa=zeros([nsnap,NN+1])
     # kappa[:,0]=time

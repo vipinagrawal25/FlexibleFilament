@@ -34,6 +34,7 @@ int const floc[fnp] = {0,1};					// External force location
 int const iext_flow = 3;   /* External flow: 1->shear rate changes as step function. 3-> Sine type shear rate.*/
 int const niniconf = -3;    /* Configuration of the system at t = 0. 0 -> sine perturbation in  the  filament. 
 							1 -> Straight filament, 2-> , -1 -> read from a file*/
+double const perturb = 0.02*aa;
 int const ievolve_save=1;
 // std::string const datafile = "sol1";		// If you want to read input from some file, Mention the file name.
 int const itracer=0;						// 0 -> No tracers, 1 -> tracers on square lattice, 3 -> tracer on circular lattice? 

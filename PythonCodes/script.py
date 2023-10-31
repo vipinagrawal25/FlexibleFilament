@@ -1,9 +1,9 @@
 from functions import *
 import matplotlib.pyplot as plt
-import moviewriter as MOVIE
+# import moviewriter as MOVIE
 import numpy as NP
 import sys
-# print(sys.argv[1])
+print(sys.argv[1])
 #
 AA = 1.5*0.00001*1*0.4**4
 Np = 41
@@ -24,7 +24,7 @@ Thing6 = "SineCurvature"
 Thing7 = "MSD_no_trans"
 Thing8 = "SqrtCurvature"
 Thing9 = "TracerVelocity"
-Things = [Thing5]
+Things = [Thing8]
 
 Xtracer2 = [0.01,0,0.5]
 Xtracer9 = [0.01,1.2,0.5]

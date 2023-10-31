@@ -7,7 +7,7 @@
 #define tiny 1.e-12
 #define SysType "continuous"
 #define wDataMeth 1
-#define rDataMeth 2
+#define rDataMeth 1
 /* typedef enum {
     heading = 1,
     direction,
